@@ -1,0 +1,106 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Clock, Trash2 } from 'lucide-react';
+import api from '../services/api';
+
+interface HistoryEntry {
+  id: string;
+  sql: string;
+  row_count: number | null;
+  execution_time: number | null;
+  success: boolean;
+  error_message: string | null;
+  executed_at: string;
+}
+
+export default function QueryHistory({ onSelectQuery }: { onSelectQuery: (sql: string) => void }) {
+  const { connectionId } = useParams();
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (connectionId) {
+      fetchHistory();
+    }
+  }, [connectionId]);
+
+  const fetchHistory = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/api/connections/${connectionId}/history`);
+      setHistory(response.data);
+    } catch (err: unknown) {
+      console.error('Failed to fetch history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClear = async () => {
+    if (!confirm('Clear all query history?')) return;
+    try {
+      await api.delete(`/api/connections/${connectionId}/history`);
+      setHistory([]);
+    } catch (err: unknown) {
+      alert('Failed to clear history');
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString();
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-bg-1 border-l border-border w-72">
+      <div className="p-4 border-b border-border flex justify-between items-center">
+        <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
+          <Clock size={14} /> History
+        </h2>
+        <button 
+          onClick={handleClear}
+          disabled={history.length === 0}
+          className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-error disabled:opacity-50"
+          title="Clear History"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="p-4 text-center text-text-secondary text-sm">Loading...</div>
+        ) : history.length === 0 ? (
+          <div className="p-4 text-center text-text-secondary text-sm">No history found</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {history.map(entry => (
+              <div 
+                key={entry.id}
+                className="p-3 hover:bg-bg-2 cursor-pointer group transition-colors"
+                onClick={() => onSelectQuery(entry.sql)}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${entry.success ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+                    {entry.success ? 'SUCCESS' : 'ERROR'}
+                  </span>
+                  <span className="text-[10px] text-text-secondary">{formatDate(entry.executed_at)}</span>
+                </div>
+                <pre className="text-xs text-text-primary font-mono line-clamp-3 my-2 whitespace-pre-wrap break-all">
+                  {entry.sql}
+                </pre>
+                <div className="flex gap-3 text-[10px] text-text-secondary">
+                  {entry.execution_time !== null && (
+                    <span>{entry.execution_time}ms</span>
+                  )}
+                  {entry.row_count !== null && (
+                    <span>{entry.row_count} rows</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

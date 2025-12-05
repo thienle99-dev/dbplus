@@ -1,5 +1,6 @@
 pub mod connection;
-pub mod query;
-pub mod schema;
+pub mod dashboard;
 pub mod history;
+pub mod query;
 pub mod saved_query;
+pub mod schema;
