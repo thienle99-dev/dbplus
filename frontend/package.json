@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:dmg": "mkdir -p src-tauri/resources && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/resources/ && cd ../frontend && tauri build --target aarch64-apple-darwin",
+    "build:dmg": "mkdir -p src-tauri/binaries && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && chmod +x ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && cd ../frontend && tauri build --target aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri"
   },

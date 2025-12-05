@@ -15,8 +15,9 @@ interface ConnectionState {
     deleteConnection: (id: string) => void;
     setActiveConnection: (id: string | null) => void;
     fetchConnections: () => Promise<void>;
-    createConnection: (connection: Omit<Connection, 'id'>) => Promise<void>;
+    createConnection: (connection: Omit<Connection, 'id'>) => Promise<Connection>;
     testConnection: (id: string) => Promise<boolean>;
+    testConnectionDetails: (connection: Omit<Connection, 'id'>) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
@@ -70,20 +71,25 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
                 name: connectionData.name,
                 type: connectionData.type,
                 host: connectionData.host,
+                port: connectionData.port,
                 database: connectionData.database,
+                username: connectionData.username,
+                password: connectionData.password,
+                ssl: connectionData.ssl,
             });
 
             set((state) => ({
                 connections: [...state.connections, newConnection],
                 isLoading: false,
             }));
+            return newConnection;
         } catch (error) {
             console.error('Failed to create connection:', error);
             set({
                 error: error instanceof Error ? error.message : 'Failed to create connection',
                 isLoading: false
             });
-            throw error; // Re-throw to allow UI to handle
+            throw error;
         }
     },
 
@@ -94,6 +100,25 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         } catch (error) {
             console.error('Failed to test connection:', error);
             return false;
+        }
+    },
+
+    testConnectionDetails: async (connectionData: Omit<Connection, 'id'>) => {
+        try {
+            const result = await connectionApi.testDetails({
+                name: connectionData.name,
+                type: connectionData.type,
+                host: connectionData.host,
+                port: connectionData.port,
+                database: connectionData.database,
+                username: connectionData.username,
+                password: connectionData.password,
+            });
+            return result;
+        } catch (error) {
+            console.error('Failed to test connection details:', error);
+            const message = error instanceof Error ? error.message : 'Connection failed';
+            return { success: false, message };
         }
     },
 }));

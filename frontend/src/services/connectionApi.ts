@@ -51,4 +51,10 @@ export const connectionApi = {
         const response = await api.post(`/api/connections/${id}/test`);
         return response.data;
     },
+
+    // Test connection parameters (ad-hoc)
+    testDetails: async (data: CreateConnectionRequest): Promise<{ success: boolean; message?: string }> => {
+        const response = await api.post('/api/connections/test', data);
+        return response.data;
+    },
 };

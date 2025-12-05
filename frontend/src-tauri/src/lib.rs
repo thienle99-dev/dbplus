@@ -21,29 +21,30 @@ pub fn run() {
             child: Mutex::new(None),
         })
         .setup(|app| {
-            let resource_path = app
-                .path()
-                .resource_dir()
-                .expect("failed to get resource dir")
-                .join("resources/dbplus-backend");
-
             let app_data_dir = app
                 .path()
                 .app_data_dir()
                 .expect("failed to get app data dir");
-
-            // Ensure app data dir exists
             if !app_data_dir.exists() {
                 std::fs::create_dir_all(&app_data_dir).expect("failed to create app data dir");
             }
-
             let db_path = app_data_dir.join("dbplus.db");
 
-            #[cfg(target_os = "macos")]
-            let backend_path = resource_path;
+            let current_exe = std::env::current_exe().expect("failed to get current exe");
+            let bin_dir = current_exe.parent().expect("failed to get parent dir");
+            let mut backend_path = bin_dir.join("dbplus-backend");
 
             #[cfg(target_os = "windows")]
-            let backend_path = resource_path.with_extension("exe");
+            {
+                backend_path = backend_path.with_extension("exe");
+            }
+
+            // Fallback for dev mode (look in project root/binaries if not found in target)
+            // This is optional but helpful
+            if !backend_path.exists() {
+                // logic to find it in source?
+                // For now, let's just stick to the bundle path or failure.
+            }
 
             // Check if backend exists (might not in dev mode if not copied)
             if backend_path.exists() {

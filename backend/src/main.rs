@@ -5,6 +5,7 @@ use axum::{
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
 
 mod config;
 mod handlers;
@@ -108,6 +109,12 @@ async fn main() {
         .route(
             "/api/connections/:id/dashboards/:dashboard_id/charts/:chart_id",
             delete(handlers::dashboard::delete_chart),
+        )
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
         )
         .with_state(db);
 
