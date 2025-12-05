@@ -1,0 +1,4 @@
+# Ignore all files in the backend folder
+.shared
+.agent
+/docs
