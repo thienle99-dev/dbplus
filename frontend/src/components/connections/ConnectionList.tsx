@@ -7,9 +7,10 @@ interface ConnectionListProps {
     connections: Connection[];
     onAdd: () => void;
     onOpen: (id: string) => void;
+    onEdit: (connection: Connection) => void;
 }
 
-export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onAdd, onOpen }) => {
+export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onAdd, onOpen, onEdit }) => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredConnections = useMemo(() => {
@@ -57,6 +58,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                                 key={connection.id}
                                 connection={connection}
                                 onOpen={onOpen}
+                                onEdit={onEdit}
                                 index={index}
                             />
                         ))}

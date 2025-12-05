@@ -11,8 +11,8 @@ interface ConnectionState {
     // Actions
     setConnections: (connections: Connection[]) => void;
     addConnection: (connection: Connection) => void;
-    updateConnection: (id: string, updates: Partial<Connection>) => void;
-    deleteConnection: (id: string) => void;
+    updateConnection: (id: string, updates: Partial<Connection>) => Promise<void>;
+    deleteConnection: (id: string) => Promise<void>;
     setActiveConnection: (id: string | null) => void;
     fetchConnections: () => Promise<void>;
     createConnection: (connection: Omit<Connection, 'id'>) => Promise<Connection>;
@@ -33,18 +33,45 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             connections: [...state.connections, connection],
         })),
 
-    updateConnection: (id, updates) =>
-        set((state) => ({
-            connections: state.connections.map((conn) =>
-                conn.id === id ? { ...conn, ...updates } : conn
-            ),
-        })),
+    updateConnection: async (id, updates) => {
+        set({ isLoading: true, error: null });
+        try {
+            // Remove typically read-only fields before sending to API if necessary, 
+            // but connectionApi.update takes Partial<CreateConnectionRequest>.
+            // We assume updates contains valid editable fields.
+            const updatedConnection = await connectionApi.update(id, updates as any);
+            set((state) => ({
+                connections: state.connections.map((conn) =>
+                    conn.id === id ? updatedConnection : conn
+                ),
+                isLoading: false,
+            }));
+        } catch (error) {
+            console.error('Failed to update connection:', error);
+            set({
+                error: error instanceof Error ? error.message : 'Failed to update connection',
+                isLoading: false,
+            });
+        }
+    },
 
-    deleteConnection: (id) =>
-        set((state) => ({
-            connections: state.connections.filter((conn) => conn.id !== id),
-            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
-        })),
+    deleteConnection: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+            await connectionApi.delete(id);
+            set((state) => ({
+                connections: state.connections.filter((conn) => conn.id !== id),
+                activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
+                isLoading: false,
+            }));
+        } catch (error) {
+            console.error('Failed to delete connection:', error);
+            set({
+                error: error instanceof Error ? error.message : 'Failed to delete connection',
+                isLoading: false,
+            });
+        }
+    },
 
     setActiveConnection: (id) => set({ activeConnectionId: id }),
 

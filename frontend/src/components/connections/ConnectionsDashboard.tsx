@@ -11,21 +11,33 @@ import { LogViewer } from '../LogViewer';
 
 export const ConnectionsDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [isDbSelectorOpen, setIsDbSelectorOpen] = useState(false);
+  const [isdbSelectorOpen, setIsDbSelectorOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedDbType, setSelectedDbType] = useState<string>('postgres');
-  const { connections, isLoading, error, fetchConnections, createConnection } = useConnectionStore();
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
+  const { connections, isLoading, error, fetchConnections, createConnection, updateConnection } = useConnectionStore();
 
   useEffect(() => {
     fetchConnections();
   }, [fetchConnections]);
 
-  const handleCreateConnection = async (connectionData: Omit<Connection, 'id'>) => {
-    const newConnection = await createConnection({ ...connectionData, type: selectedDbType as Connection['type'] });
-    if (newConnection) {
+  const handleFormSubmit = async (connectionData: Omit<Connection, 'id'>) => {
+    if (editingConnection) {
+      await updateConnection(editingConnection.id, connectionData);
+      setEditingConnection(null);
       setIsFormModalOpen(false);
-      navigate(`/workspace/${newConnection.id}`);
+    } else {
+      const newConnection = await createConnection({ ...connectionData, type: selectedDbType as Connection['type'] });
+      if (newConnection) {
+        setIsFormModalOpen(false);
+        navigate(`/workspace/${newConnection.id}`);
+      }
     }
+  };
+
+  const handleEdit = (connection: Connection) => {
+    setEditingConnection(connection);
+    setIsFormModalOpen(true);
   };
 
   if (isLoading && connections.length === 0) {
@@ -60,18 +72,20 @@ export const ConnectionsDashboard: React.FC = () => {
             connections={connections}
             onAdd={() => setIsDbSelectorOpen(true)}
             onOpen={(id) => navigate(`/workspace/${id}`)}
+            onEdit={handleEdit}
           />
         </div>
       </div>
 
       <ConnectionFormModal
         isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        onSubmit={handleCreateConnection}
+        onClose={() => { setIsFormModalOpen(false); setEditingConnection(null); }}
+        onSubmit={handleFormSubmit}
+        initialValues={editingConnection || undefined}
       />
 
       <DatabaseSelectorModal
-        isOpen={isDbSelectorOpen}
+        isOpen={isdbSelectorOpen}
         onClose={() => setIsDbSelectorOpen(false)}
         onSelect={(type) => {
           setIsDbSelectorOpen(false);

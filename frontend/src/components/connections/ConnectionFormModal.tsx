@@ -7,6 +7,7 @@ interface ConnectionFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (connection: Omit<Connection, 'id'>) => Promise<void>;
+    initialValues?: Omit<Connection, 'id'>;
 }
 
 const DB_TYPES = [
@@ -25,17 +26,34 @@ const STATUS_COLORS = [
     { name: 'Red', class: 'bg-red-500' },
 ];
 
-export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        type: 'postgres' as Connection['type'],
-        host: 'localhost',
-        port: '5432',
-        database: '',
-        user: '',
-        password: '',
-        statusColor: 'bg-blue-500',
-    });
+const DEFAULT_FORM_DATA = {
+    name: '',
+    type: 'postgres' as Connection['type'],
+    host: 'localhost',
+    port: '5432',
+    database: '',
+    user: '',
+    password: '',
+    statusColor: 'bg-blue-500',
+};
+
+export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit, initialValues }) => {
+    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (initialValues) {
+                setFormData(prev => ({
+                    ...prev,
+                    ...initialValues,
+                    port: String(initialValues.port || '5432'),
+                    user: initialValues.username || '',
+                }));
+            } else {
+                setFormData(DEFAULT_FORM_DATA);
+            }
+        }
+    }, [isOpen, initialValues]);
 
     const { testConnectionDetails } = useConnectionStore();
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -128,8 +146,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 <form onSubmit={handleSubmit} className="p-6">
                     {(error || testMessage) && (
                         <div className={`mb-4 px-4 py-3 border rounded-lg text-sm flex items-start gap-3 ${testStatus === 'success'
-                                ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                                : 'bg-red-500/10 border-red-500/30 text-red-400'
+                            ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                            : 'bg-red-500/10 border-red-500/30 text-red-400'
                             }`}>
                             <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 {testStatus === 'success' ? (
