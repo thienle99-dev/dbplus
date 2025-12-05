@@ -16,7 +16,7 @@ const DB_ICONS: Record<Connection['type'], { icon: string; color: string }> = {
 
 export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOpen, index = 0 }) => {
     const isLocal = connection.host === 'localhost' || connection.host === '127.0.0.1';
-    const dbConfig = DB_ICONS[connection.type];
+    const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
 
     return (
         <div

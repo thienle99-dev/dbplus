@@ -48,8 +48,13 @@ pub fn run() {
 
             // Check if backend exists (might not in dev mode if not copied)
             if backend_path.exists() {
+                // ENCRYPTION_KEY is required for the backend to encrypt/decrypt passwords
+                // In production, this should be generated per-install and stored in keychain
+                let encryption_key = "XDoMU6C+aLtlLJ6rBQV5rv5SxClZ17cjeSUS8JovyP0=";
+
                 let child = Command::new(backend_path)
                     .arg(db_path.to_string_lossy().to_string())
+                    .env("ENCRYPTION_KEY", encryption_key)
                     .spawn();
 
                 match child {

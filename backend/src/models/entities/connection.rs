@@ -7,12 +7,13 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
+    #[serde(rename = "type")]
     pub db_type: String,
     pub host: String,
     pub port: i32,
     pub database: String,
     pub username: String,
-    pub password: String,        // Encrypted
+    pub password: String, // Encrypted
     pub ssl: bool,
     pub ssl_cert: Option<String>, // Encrypted
     pub last_used: Option<DateTimeWithTimeZone>,
