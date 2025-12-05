@@ -47,6 +47,16 @@ body {
   to { height: 0; }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .CollapsibleContent {
   overflow: hidden;
 }
@@ -57,4 +67,12 @@ body {
 
 .CollapsibleContent[data-state='closed'] {
   animation: slideUp 300ms ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
 }

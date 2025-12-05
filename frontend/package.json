@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:dmg": "tauri build --target x86_64-apple-darwin",
+    "build:dmg": "mkdir -p src-tauri/resources && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/resources/ && cd ../frontend && tauri build --target aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri"
   },
@@ -35,7 +35,8 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^6.22.0",
     "recharts": "^2.12.0",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

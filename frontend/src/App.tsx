@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import ConnectionList from './components/ConnectionList';
+import { ConnectionsDashboard } from './components/connections/ConnectionsDashboard';
 import Sidebar from './components/Sidebar';
 import TableDataView from './components/TableDataView';
 import QueryTabs from './components/QueryTabs';
@@ -29,7 +29,7 @@ const WorkspacePage = () => (
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<ConnectionList />} />
+      <Route path="/" element={<ConnectionsDashboard />} />
       <Route path="/workspace/:connectionId/*" element={<WorkspacePage />} />
     </Routes>
   );

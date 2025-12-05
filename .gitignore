@@ -3,7 +3,7 @@
 .agent
 
 # Rust
-backend/target/
+**/target/
 **/*.rs.bk
 *.pdb
 
@@ -15,12 +15,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .pnpm-debug.log*
+.npm/
+.yarn/
+.pnp.*
 
 # Build outputs
 dist/
 dist-ssr/
 build/
 *.local
+.next/
+.turbo/
+out/
 
 # Environment variables
 .env
@@ -38,6 +44,10 @@ build/
 .DS_Store
 *.sublime-project
 *.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
 
 # OS
 .DS_Store
@@ -54,8 +64,17 @@ logs/
 *.log
 
 # Tauri
-frontend/src-tauri/target/
 frontend/src-tauri/WixTools/
+frontend/src-tauri/resources/dbplus-backend
+frontend/src-tauri/gen/
+
+# Installer/Bundle outputs
+*.dmg
+*.msi
+*.deb
+*.AppImage
+*.rpm
+*.pkg
 
 # Testing
 coverage/

@@ -449,7 +449,47 @@ impl EncryptionService {
 
 ---
 
-## UI/UX Design System
+### Detailed UI Screen Specifications
+
+Based on the "TablePlus-style" open design:
+
+1.  **Launch / Connection Manager**:
+    *   Left Brand Panel: "MyDB Client" + Backup/Restore/Create buttons.
+    *   Right List Panel: Searchable connection list with "Local" tags and DB icons.
+2.  **Main Workspace**:
+    *   Native Toolbar + Sidebar (Object Browser).
+    *   Center Tab Area: Tables, Queries, Metrics.
+    *   Bottom Console: Logs and Errors.
+3.  **Database Switcher**:
+    *   Quick modal to switch/create/drop databases.
+4.  **Table Data View**:
+    *   Spreadsheet grid, inline editing, filter toolbar, pagination.
+5.  **Table Structure View**:
+    *   Columns list, Indexes, Constraints, DDL preview.
+6.  **Row/Column Editors**:
+    *   Modal forms for detailed row editing and column schema modification.
+7.  **Filter Panel**:
+    *   Visual "Where" clause builder.
+8.  **Object Editors**:
+    *   Views, Functions, Procedures, Triggers (Source view).
+9.  **Import/Export**:
+    *   Wizards for CSV/SQL/JSON data movement.
+10. **Backup/Restore**:
+    *   GUI wrappers for standard DB tools.
+11. **User Management**:
+    *   Role/User administration.
+12. **Query Editor**:
+    *   Multi-tab, autocomplete, history, favorites, split panes.
+13. **Metrics Board**:
+    *   Custom dashboards from SQL queries.
+14. **Preferences**:
+    *   Theme, Keymaps, Editor settings (font, tab size).
+15. **About**:
+    *   Clean version info, no licensing.
+
+---
+
+### UI/UX Design System
 
 ### Design Philosophy
 
@@ -1005,6 +1045,21 @@ npm run test
 - [ ] Set up deadpool connection pooling
 - [ ] Create ConnectionList component
 - [ ] Create ConnectionForm component
+- [ ] Implement TablePlus-style Connections Dashboard:
+    - [ ] **Left Panel (Brand/Actions)**:
+      - [ ] Gradient background, App Logo, "MyDB Client" title.
+      - [ ] Buttons: Backup, Restore, Create Connection.
+    - [ ] **Right Panel (Connections List)**:
+      - [ ] Search bar with "Cmd+F" shortcut.
+      - [ ] Scrollable list of connection items.
+    - [ ] **Connection Item**:
+      - [ ] DB Type Icon, Connection Name, "(local)" tag (Green).
+      - [ ] Host + Database subtext.
+      - [ ] Hover/Active states, Double-click to open.
+    - [ ] **Styling**:
+      - [ ] Dark theme (#111/#141414).
+      - [ ] Soft shadows, subtle gradients.
+      - [ ] Tailwind CSS for layout and transitions.
 - [ ] Add async test connection functionality
 - [ ] Implement connection state management (Zustand)
 
@@ -1095,29 +1150,36 @@ npm run test
 
 ---
 
-### Phase 7: Safety & Polish (Days 15-16)
+### Phase 7: Editors & Tools (Days 15-16)
 
 **Tasks:**
-- [ ] Implement dangerous query detection
-- [ ] Create confirmation modals for risky operations
-- [ ] Add keyboard shortcuts
-- [ ] Implement error boundaries
-- [ ] Add loading states throughout
-- [ ] Create toast notification system
-- [ ] Add rate limiting
-- [ ] Optimize performance (virtual scrolling)
-- [ ] Polish dark mode theme
-- [ ] Add animations and transitions
+- [ ] **Row/Column Editors**:
+  - [ ] Row Editor Modal (single record form view).
+  - [ ] Column Editor Dialog (modify schema).
+- [ ] **Database Objects**:
+  - [ ] Views/Functions/Procedures definition viewers.
+  - [ ] Constraint/Index management dialogs.
+- [ ] **Advanced Tools**:
+  - [ ] Import/Export Wizard (CSV, SQL, JSON).
+  - [ ] Backup/Restore UI (pg_dump integration).
+  - [ ] User Management Screen (Users, Roles, Privileges).
+- [ ] **Filter Panel**:
+  - [ ] Visual filter builder (AND/OR groups).
 
-**Deliverables:**
-- Safety mechanisms in place
-- Keyboard shortcuts working
-- Polished UI/UX
-- Performance optimizations
+### Phase 8: Settings & Dashboard (Days 17-19)
 
----
+**Tasks:**
+- [ ] **Metrics Board**:
+  - [ ] Drag-and-drop widget canvas.
+  - [ ] Chart/Table widgets from queries.
+- [ ] **Preferences Window**:
+  - [ ] General, Editor, Keymap, Theme settings.
+- [ ] **About Screen**:
+  - [ ] Version info, links (no license checks).
+- [ ] **Polish**:
+  - [ ] Animations, Toast notifications, Loading states.
 
-### Phase 8: Testing & Documentation (Days 17-18)
+### Phase 9: Testing & Documentation (Days 20-22)
 
 **Tasks:**
 - [ ] Write backend unit tests

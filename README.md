@@ -73,10 +73,10 @@ To build the optimized executable for your operating system:
     cd frontend
     ```
 
-2.  Run the build command:
+2.  Run the build command (this bundles the backend automatically):
 
     ```bash
-    npm run tauri build
+    npm run build:dmg
     ```
 
 3.  **Output**: The disk image will be located at:

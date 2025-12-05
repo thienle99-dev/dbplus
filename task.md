@@ -49,6 +49,29 @@
   - [x] Test connection UI flow
   - [x] State management setup
 
+## Phase 2b: Connections Dashboard Redesign (TablePlus-style)
+
+- [x] Left Panel (Brand & Actions)
+  - [x] Layout & Gradient Background
+  - [x] App Logo & Title
+  - [x] Action Buttons (Backup, Restore, Create)
+- [x] Right Panel (Connections List)
+  - [x] Search Bar (Visual & Functional)
+  - [x] Add Connection Button
+  - [x] Scrollable List Container
+- [x] Connection Item Component
+  - [x] Icon mapping (Postgres, MySQL, etc.)
+  - [x] Status indicators (Local tag)
+  - [x] Metadata display (Host/DB)
+  - [x] Hover & Click interactions
+  - [x] Double-click handler
+- [x] Integration
+  - [x] Integrate with Zustand store
+  - [x] Connect "Create" and "Open" actions
+  - [x] Implement Search filtering logic
+  - [x] Connection creation modal
+  - [x] Backend API integration
+
 ## Phase 3: Schema Browser
 
 - [x] Implement schema introspection
@@ -151,22 +174,35 @@
   - [ ] Debouncing
   - [ ] Connection pooling optimization
 
-## Phase 8: Dashboard & Charts
-
-- [x] Build dashboard backend
-  - [x] Dashboard/Chart entities & migrations
-  - [x] Dashboard CRUD endpoints
-  - [x] Chart CRUD endpoints
-- [x] Create dashboard UI
-  - [x] Dashboard list view
-  - [x] Dashboard grid layout
-  - [x] Add/Edit dashboard modal
-- [x] Create chart widgets
+- [ ] Create chart widgets
   - [x] Chart configuration UI
   - [x] Integration with charting library (Recharts)
   - [x] Visualizing query results
 
-## Phase 9: Polish & Finalize
+## Phase 9: Advanced Tools & Polish
+
+- [ ] **Editors & Modals**
+  - [ ] Row Editor Modal
+  - [ ] Column/Schema Editor
+  - [ ] View/Function Definition Viewer
+  - [ ] Filter Builder Panel
+- [ ] **Data Tools**
+  - [ ] Import Wizard (CSV/JSON/SQL)
+  - [ ] Export Wizard
+  - [ ] Backup/Restore UI
+- [ ] **Administration**
+  - [ ] Database Switcher/Manager
+  - [ ] User/Role Management Screen
+- [ ] **App Settings**
+  - [ ] Preferences Window (General, Editor, Theme)
+  - [ ] About Screen
+- [ ] **Final Polish**
+  - [ ] Keyboard Shortcuts Map
+  - [ ] Toast Notifications
+  - [ ] Error Boundaries
+  - [ ] Loading States
+
+## Phase 10: Final Polish & Release
 
 - [x] Limit/Offset controls
 - [x] Integrate with Query Editor
