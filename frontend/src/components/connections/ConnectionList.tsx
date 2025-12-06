@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Connection } from '../../types';
 import { SearchBar } from './SearchBar';
 import { ConnectionItem } from './ConnectionItem';
+import { useConnectionStore } from '../../store/connectionStore';
 
 interface ConnectionListProps {
     connections: Connection[];
@@ -12,18 +13,30 @@ interface ConnectionListProps {
 
 export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onAdd, onOpen, onEdit }) => {
     const [searchQuery, setSearchQuery] = useState('');
+    const { sortOption } = useConnectionStore();
 
     const filteredConnections = useMemo(() => {
-        if (!searchQuery.trim()) return connections;
+        let result = connections;
 
-        const query = searchQuery.toLowerCase();
-        return connections.filter(conn =>
-            conn.name.toLowerCase().includes(query) ||
-            conn.host.toLowerCase().includes(query) ||
-            conn.database.toLowerCase().includes(query) ||
-            conn.type.toLowerCase().includes(query)
-        );
-    }, [connections, searchQuery]);
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = connections.filter(conn =>
+                conn.name.toLowerCase().includes(query) ||
+                conn.host.toLowerCase().includes(query) ||
+                conn.database.toLowerCase().includes(query) ||
+                conn.type.toLowerCase().includes(query)
+            );
+        }
+
+        return [...result].sort((a, b) => {
+            const fieldA = String(a[sortOption.field] || '').toLowerCase();
+            const fieldB = String(b[sortOption.field] || '').toLowerCase();
+
+            if (fieldA < fieldB) return sortOption.direction === 'asc' ? -1 : 1;
+            if (fieldA > fieldB) return sortOption.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [connections, searchQuery, sortOption]);
 
     return (
         <div className="flex flex-col h-full">

@@ -54,7 +54,8 @@ export const connectionApi = {
 
     // Test connection parameters (ad-hoc)
     testDetails: async (data: CreateConnectionRequest): Promise<{ success: boolean; message?: string }> => {
-        const response = await api.post('/api/connections/test', data);
+        const payload = { ...data, ssl: data.ssl ?? false };
+        const response = await api.post('/api/connections/test', payload);
         return response.data;
     },
 };

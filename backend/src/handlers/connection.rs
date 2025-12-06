@@ -22,7 +22,8 @@ pub struct CreateConnectionRequest {
     pub database: String,
     pub username: String,
     pub password: String,
-    pub ssl: bool,
+    #[serde(default)]
+    pub ssl: Option<bool>,
     pub ssl_cert: Option<String>,
 }
 
@@ -65,7 +66,7 @@ pub async fn create_connection(
         database: payload.database,
         username: payload.username,
         password: payload.password,
-        ssl: payload.ssl,
+        ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
         last_used: None,
         created_at: Utc::now().into(),
@@ -95,7 +96,7 @@ pub async fn update_connection(
         database: payload.database,
         username: payload.username,
         password: payload.password,
-        ssl: payload.ssl,
+        ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
         last_used: None,
         created_at: Utc::now().into(),
@@ -137,7 +138,7 @@ pub async fn test_connection(
         database: payload.database,
         username: payload.username,
         password: payload.password.clone(),
-        ssl: payload.ssl,
+        ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
         last_used: None,
         created_at: Utc::now().into(),

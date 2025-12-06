@@ -35,6 +35,7 @@ const DEFAULT_FORM_DATA = {
     user: '',
     password: '',
     statusColor: 'bg-blue-500',
+    ssl: false,
 };
 
 export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit, initialValues }) => {
@@ -79,6 +80,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         database: formData.database,
         username: formData.user,
         password: formData.password,
+        ssl: formData.ssl ?? false,
     });
 
     const handleChange = (field: keyof typeof formData, value: string) => {
@@ -112,16 +114,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
 
         try {
             await onSubmit(getConnectionData());
-            setFormData({
-                name: '',
-                type: 'postgres',
-                host: 'localhost',
-                port: '5432',
-                database: '',
-                user: '',
-                password: '',
-                statusColor: 'bg-blue-500',
-            });
+            setFormData(DEFAULT_FORM_DATA);
             onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create connection');

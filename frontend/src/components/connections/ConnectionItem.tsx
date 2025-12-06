@@ -1,6 +1,6 @@
 import React from 'react';
 import { Connection } from '../../types';
-import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from '../ui/CustomContextMenu';
+import { ContextMenu, ContextMenuItem, ContextMenuSeparator, ContextMenuLabel } from '../ui/CustomContextMenu';
 
 import { useConnectionStore } from '../../store/connectionStore';
 
@@ -19,10 +19,11 @@ const DB_ICONS: Record<Connection['type'], { icon: string; color: string }> = {
 };
 
 export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOpen, onEdit, index = 0 }) => {
-    const { deleteConnection, createConnection } = useConnectionStore();
+    const { deleteConnection, createConnection, connections, setSortOption } = useConnectionStore();
     const isLocal = connection.host === 'localhost' || connection.host === '127.0.0.1';
     const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
     const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -49,6 +50,49 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
             name: `${data.name} Copy`
         });
         setMenuPosition(null);
+    };
+
+    const handleSort = (field: 'name' | 'type' | 'host') => {
+        setSortOption({ field, direction: 'asc' });
+        setMenuPosition(null);
+    };
+
+    const handleExport = () => {
+        const dataStr = JSON.stringify(connections, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "connections.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setMenuPosition(null);
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+        setMenuPosition(null);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const text = await file.text();
+        try {
+            const imported = JSON.parse(text) as Connection[];
+            if (Array.isArray(imported)) {
+                for (const item of imported) {
+                    const { id, ...data } = item; // Strip ID
+                    await createConnection(data);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to import connections', err);
+            alert('Failed to import connections: Invalid JSON');
+        }
+        e.target.value = ''; // Reset
     };
 
     return (
@@ -82,6 +126,14 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                 </div>
             </div>
 
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".json"
+                onChange={handleFileChange}
+            />
+
             {menuPosition && (
                 <ContextMenu
                     x={menuPosition.x}
@@ -104,12 +156,15 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                     <ContextMenuSeparator />
 
-                    <ContextMenuItem hasSubmenu>Sort By</ContextMenuItem>
+                    <ContextMenuLabel>Sort By</ContextMenuLabel>
+                    <ContextMenuItem onClick={() => handleSort('name')}>Name</ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleSort('type')}>Type</ContextMenuItem>
+                    <ContextMenuItem onClick={() => handleSort('host')}>Host</ContextMenuItem>
 
                     <ContextMenuSeparator />
 
-                    <ContextMenuItem>Import Connections...</ContextMenuItem>
-                    <ContextMenuItem hasSubmenu>Export Connections</ContextMenuItem>
+                    <ContextMenuItem onClick={handleImportClick}>Import Connections...</ContextMenuItem>
+                    <ContextMenuItem onClick={handleExport}>Export Connections</ContextMenuItem>
 
                     <ContextMenuSeparator />
 

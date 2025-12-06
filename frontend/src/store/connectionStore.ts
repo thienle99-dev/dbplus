@@ -18,6 +18,10 @@ interface ConnectionState {
     createConnection: (connection: Omit<Connection, 'id'>) => Promise<Connection>;
     testConnection: (id: string) => Promise<boolean>;
     testConnectionDetails: (connection: Omit<Connection, 'id'>) => Promise<{ success: boolean; message?: string }>;
+
+    // Sorting
+    sortOption: { field: 'name' | 'type' | 'host'; direction: 'asc' | 'desc' };
+    setSortOption: (option: { field: 'name' | 'type' | 'host'; direction: 'asc' | 'desc' }) => void;
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
@@ -148,4 +152,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             return { success: false, message };
         }
     },
+
+    sortOption: { field: 'name', direction: 'asc' },
+    setSortOption: (option) => set({ sortOption: option }),
 }));
