@@ -13,7 +13,15 @@ interface HistoryEntry {
   executed_at: string;
 }
 
-export default function QueryHistory({ onSelectQuery }: { onSelectQuery: (sql: string) => void }) {
+export default function QueryHistory({
+  onSelectQuery,
+  embedded = false,
+  searchTerm = ''
+}: {
+  onSelectQuery: (sql: string) => void;
+  embedded?: boolean;
+  searchTerm?: string;
+}) {
   const { connectionId } = useParams();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,31 +58,37 @@ export default function QueryHistory({ onSelectQuery }: { onSelectQuery: (sql: s
     return new Date(dateStr).toLocaleString();
   };
 
+  const filteredHistory = history.filter(entry =>
+    !searchTerm || entry.sql.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="flex flex-col h-full bg-bg-1 border-l border-border w-72">
-      <div className="p-4 border-b border-border flex justify-between items-center">
-        <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
-          <Clock size={14} /> History
-        </h2>
-        <button 
-          onClick={handleClear}
-          disabled={history.length === 0}
-          className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-error disabled:opacity-50"
-          title="Clear History"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+    <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-l border-border w-72' : ''}`}>
+      {!embedded && (
+        <div className="p-4 border-b border-border flex justify-between items-center">
+          <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
+            <Clock size={14} /> History
+          </h2>
+          <button
+            onClick={handleClear}
+            disabled={history.length === 0}
+            className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-error disabled:opacity-50"
+            title="Clear History"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4 text-center text-text-secondary text-sm">Loading...</div>
-        ) : history.length === 0 ? (
+        ) : filteredHistory.length === 0 ? (
           <div className="p-4 text-center text-text-secondary text-sm">No history found</div>
         ) : (
           <div className="divide-y divide-border">
-            {history.map(entry => (
-              <div 
+            {filteredHistory.map(entry => (
+              <div
                 key={entry.id}
                 className="p-3 hover:bg-bg-2 cursor-pointer group transition-colors"
                 onClick={() => onSelectQuery(entry.sql)}

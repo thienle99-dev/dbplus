@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, ChevronDown, Database, Table } from 'lucide-react';
+import { ChevronRight, Database, Table } from 'lucide-react';
 import api from '../services/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
@@ -13,14 +13,17 @@ interface TableInfo {
 interface SchemaNodeProps {
   schemaName: string;
   connectionId: string;
+  searchTerm?: string;
+  defaultOpen?: boolean;
 }
 
-function SchemaNode({ schemaName, connectionId }: SchemaNodeProps) {
-  const [isOpen, setIsOpen] = useState(false);
+function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: SchemaNodeProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch tables when expanded
   const fetchTables = async () => {
     if (tables.length > 0) return;
     setLoading(true);
@@ -34,28 +37,51 @@ function SchemaNode({ schemaName, connectionId }: SchemaNodeProps) {
     }
   };
 
+  // If search term is present, we might want to auto-expand or filter
+  // For now, let's just use it to filter visible tables if we have them
+  const filteredTables = tables.filter(t =>
+    !searchTerm || t.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const shouldShow = !searchTerm || filteredTables.length > 0 || schemaName.toLowerCase().includes(searchTerm.toLowerCase());
+
+  // Auto-expand if searching and matches
+  useEffect(() => {
+    if (searchTerm && filteredTables.length > 0 && !isOpen) {
+      setIsOpen(true);
+      if (tables.length === 0) fetchTables(); // Force fetch if not loaded
+    }
+  }, [searchTerm, filteredTables.length]);
+
+
+  if (!shouldShow) return null;
+
   return (
     <Collapsible.Root open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
       if (open) fetchTables();
     }}>
-      <Collapsible.Trigger className="flex items-center gap-1 w-full p-1 hover:bg-bg-2 rounded text-sm text-text-primary group">
-        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <Database size={14} className="text-accent" />
-        <span className="truncate">{schemaName}</span>
+      <Collapsible.Trigger className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors">
+        <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
+          <ChevronRight size={12} className="text-text-secondary" />
+        </div>
+        <Database size={14} className="text-accent/80" />
+        <span className="truncate font-medium">{schemaName}</span>
       </Collapsible.Trigger>
 
-      <Collapsible.Content className="pl-4 border-l border-border ml-2 mt-1 space-y-0.5 CollapsibleContent">
+      <Collapsible.Content className="pl-3 ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
         {loading ? (
-          <div className="text-xs text-text-secondary p-1">Loading...</div>
+          <div className="text-[10px] text-text-secondary py-1 pl-4">Loading tables...</div>
+        ) : filteredTables.length === 0 && tables.length > 0 ? (
+          <div className="text-[10px] text-text-secondary py-1 pl-4">No matching tables</div>
         ) : (
-          tables.map((table) => (
+          filteredTables.map((table) => (
             <div
               key={table.name}
               onClick={() => navigate(`/workspace/${connectionId}/tables/${schemaName}/${table.name}`)}
-              className="flex items-center gap-2 p-1 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary cursor-pointer"
+              className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors"
             >
-              <Table size={14} />
+              <Table size={14} className="flex-shrink-0 opacity-70" />
               <span className="truncate">{table.name}</span>
             </div>
           ))
@@ -65,7 +91,7 @@ function SchemaNode({ schemaName, connectionId }: SchemaNodeProps) {
   );
 }
 
-export default function SchemaTree() {
+export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
   const { connectionId } = useParams();
   const [schemas, setSchemas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,12 +113,17 @@ export default function SchemaTree() {
     }
   };
 
-  if (loading) return <div className="p-4 text-sm text-text-secondary">Loading schemas...</div>;
+  if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
 
   return (
-    <div className="flex flex-col gap-1 p-2">
+    <div className="flex flex-col pb-4">
       {schemas.map((schema) => (
-        <SchemaNode key={schema} schemaName={schema} connectionId={connectionId!} />
+        <SchemaNode
+          key={schema}
+          schemaName={schema}
+          connectionId={connectionId!}
+          searchTerm={searchTerm}
+        />
       ))}
     </div>
   );
