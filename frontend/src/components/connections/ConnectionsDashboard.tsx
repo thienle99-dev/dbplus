@@ -7,8 +7,6 @@ import { DatabaseSelectorModal } from './DatabaseSelectorModal';
 import { ConnectionFormModal } from './ConnectionFormModal';
 import { useConnectionStore } from '../../store/connectionStore';
 
-import { LogViewer } from '../LogViewer';
-
 export const ConnectionsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isdbSelectorOpen, setIsDbSelectorOpen] = useState(false);
@@ -93,8 +91,6 @@ export const ConnectionsDashboard: React.FC = () => {
           setIsFormModalOpen(true);
         }}
       />
-
-      <LogViewer />
     </div>
   );
 };

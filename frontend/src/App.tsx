@@ -28,12 +28,19 @@ const WorkspacePage = () => (
   </div>
 );
 
+import { LogViewer } from './components/LogViewer';
+
+// ... other imports ...
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<ConnectionsDashboard />} />
-      <Route path="/workspace/:connectionId/*" element={<WorkspacePage />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<ConnectionsDashboard />} />
+        <Route path="/workspace/:connectionId/*" element={<WorkspacePage />} />
+      </Routes>
+      <LogViewer />
+    </>
   );
 }
 

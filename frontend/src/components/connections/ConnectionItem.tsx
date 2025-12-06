@@ -3,6 +3,7 @@ import { Connection } from '../../types';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator, ContextMenuLabel } from '../ui/CustomContextMenu';
 
 import { useConnectionStore } from '../../store/connectionStore';
+import { connectionApi } from '../../services/connectionApi';
 
 interface ConnectionItemProps {
     connection: Connection;
@@ -22,8 +23,33 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     const { deleteConnection, createConnection, connections, setSortOption } = useConnectionStore();
     const isLocal = connection.host === 'localhost' || connection.host === '127.0.0.1';
     const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
+
+    // UI State
     const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Expansion State
+    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [databases, setDatabases] = React.useState<string[]>([]);
+    const [isLoadingDbs, setIsLoadingDbs] = React.useState(false);
+
+    // Lazy load databases on expand
+    const handleToggleExpand = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (!isExpanded && databases.length === 0) {
+            setIsLoadingDbs(true);
+            try {
+                const dbs = await connectionApi.getDatabases(connection.id);
+                setDatabases(dbs);
+            } catch (err) {
+                console.error("Failed to load databases", err);
+            } finally {
+                setIsLoadingDbs(false);
+            }
+        }
+        setIsExpanded(!isExpanded);
+    };
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -98,12 +124,24 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 select-none"
+                className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 select-none group"
                 style={{ animationDelay: `${index * 30}ms` }}
-                onDoubleClick={() => onOpen(connection.id)}
+                onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
                 <div className="flex items-center gap-3">
+                    {/* Expand Toggle */}
+                    <button
+                        onClick={handleToggleExpand}
+                        className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                    >
+                        {isExpanded ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                        ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                        )}
+                    </button>
+
                     {/* DB Type Icon */}
                     <div className={`w-10 h-10 rounded-lg ${dbConfig.color} flex items-center justify-center flex-shrink-0 shadow-md`}>
                         <span className="text-white text-sm font-bold">{dbConfig.icon}</span>
@@ -124,6 +162,26 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                         </p>
                     </div>
                 </div>
+
+                {/* Inline Database List */}
+                {isExpanded && (
+                    <div className="mt-2 pl-[3.25rem] border-l-2 border-white/5 ml-5">
+                        {isLoadingDbs ? (
+                            <div className="py-1 px-2 text-xs text-gray-500 italic">Loading databases...</div>
+                        ) : databases.length > 0 ? (
+                            <div className="flex flex-col">
+                                {databases.map(db => (
+                                    <div key={db} className="flex items-center gap-2 py-1 px-2 hover:bg-white/5 rounded text-xs text-gray-300">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
+                                        {db}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-1 px-2 text-xs text-gray-500 italic">No databases found</div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <input
