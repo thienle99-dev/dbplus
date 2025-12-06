@@ -59,6 +59,10 @@ async fn main() {
                 .delete(handlers::connection::delete_connection),
         )
         .route(
+            "/api/connections/:id/databases",
+            get(handlers::database::list_databases),
+        )
+        .route(
             "/api/connections/:id/schemas",
             get(handlers::schema::list_schemas),
         )

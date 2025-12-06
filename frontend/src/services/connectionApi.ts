@@ -58,4 +58,10 @@ export const connectionApi = {
         const response = await api.post('/api/connections/test', payload);
         return response.data;
     },
+
+    // Get all databases
+    getDatabases: async (id: string): Promise<string[]> => {
+        const response = await api.get(`/api/connections/${id}/databases`);
+        return response.data;
+    },
 };

@@ -86,6 +86,18 @@ impl DatabaseDriver for PostgresDriver {
         Ok(())
     }
 
+    async fn get_databases(&self) -> Result<Vec<String>> {
+        let client = self.pool.get().await?;
+        let rows = client
+            .query(
+                "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname",
+                &[],
+            )
+            .await?;
+
+        Ok(rows.iter().map(|row| row.get(0)).collect())
+    }
+
     async fn get_schemas(&self) -> Result<Vec<String>> {
         let client = self.pool.get().await?;
         let rows = client

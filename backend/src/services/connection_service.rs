@@ -54,6 +54,28 @@ impl ConnectionService {
             .map_err(|e| anyhow::anyhow!(e))
     }
 
+    pub async fn get_databases(&self, connection_id: Uuid) -> Result<Vec<String>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_databases().await
+            }
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for listing databases"
+            )),
+        }
+    }
+
     pub async fn get_schemas(&self, connection_id: Uuid) -> Result<Vec<String>> {
         let connection = self
             .get_connection_by_id(connection_id)
