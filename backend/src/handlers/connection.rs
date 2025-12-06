@@ -128,6 +128,13 @@ pub async fn test_connection(
 ) -> impl IntoResponse {
     let service = ConnectionService::new(db).expect("Failed to create service");
 
+    tracing::info!(
+        "Testing connection attempt for: {} ({})",
+        payload.name,
+        payload.db_type
+    );
+    let connection_name = payload.name.clone();
+
     // Create a temporary model from request
     let model = connection::Model {
         id: Uuid::new_v4(),
@@ -146,7 +153,13 @@ pub async fn test_connection(
     };
 
     match service.test_connection(model, &payload.password).await {
-        Ok(_) => (StatusCode::OK, "Connection successful").into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+        Ok(_) => {
+            tracing::info!("Connection test successful for: {}", connection_name);
+            (StatusCode::OK, "Connection successful").into_response()
+        }
+        Err(e) => {
+            tracing::error!("Connection test failed for {}: {:?}", connection_name, e);
+            (StatusCode::BAD_REQUEST, format!("{:#?}", e)).into_response()
+        }
     }
 }

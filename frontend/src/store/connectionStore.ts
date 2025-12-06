@@ -148,8 +148,10 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
             return result;
         } catch (error) {
             console.error('Failed to test connection details:', error);
-            const message = error instanceof Error ? error.message : 'Connection failed';
-            return { success: false, message };
+            const message = error instanceof Error
+                ? ((error as any).response?.data || error.message)
+                : 'Connection failed';
+            return { success: false, message: typeof message === 'string' ? message : JSON.stringify(message) };
         }
     },
 

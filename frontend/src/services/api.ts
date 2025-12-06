@@ -64,7 +64,10 @@ api.interceptors.response.use(
     if (error.code === 'ERR_NETWORK') {
       logMessage = `Network Error: Connection refused or CORS blocked. Check backend is running on ${api.defaults.baseURL}`;
     } else if (error.response) {
-      logMessage = `API Error: ${error.response.status} ${error.response.statusText}`;
+      const detail = error.response.data
+        ? (typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : String(error.response.data))
+        : '';
+      logMessage = `API Error: ${error.response.status} ${error.response.statusText}${detail ? ` - ${detail}` : ''}`;
     }
 
     useLogStore.getState().addLog({
