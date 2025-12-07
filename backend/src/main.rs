@@ -126,6 +126,10 @@ async fn main() {
             "/api/connections/:id/table-stats",
             get(handlers::table_info::get_table_statistics),
         )
+        .route(
+            "/api/connections/:id/indexes",
+            get(handlers::table_info::get_table_indexes),
+        )
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)

@@ -66,6 +66,18 @@ pub struct TableStatistics {
     pub last_modified: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexInfo {
+    pub name: String,
+    pub columns: Vec<String>,
+    pub is_unique: bool,
+    pub is_primary: bool,
+    pub algorithm: String,
+    pub condition: Option<String>,
+    pub include: Option<Vec<String>>,
+    pub comment: Option<String>,
+}
+
 #[async_trait]
 pub trait DatabaseDriver: Send + Sync {
     async fn execute(&self, query: &str) -> Result<u64>;
@@ -91,4 +103,5 @@ pub trait DatabaseDriver: Send + Sync {
     // Table Info Enhancements
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
+    async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
 }

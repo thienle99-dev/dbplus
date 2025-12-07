@@ -301,4 +301,29 @@ impl ConnectionService {
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
+
+    pub async fn get_table_indexes(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<crate::services::db_driver::IndexInfo>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_table_indexes(schema, table).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
 }

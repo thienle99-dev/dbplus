@@ -722,4 +722,72 @@ impl DatabaseDriver for PostgresDriver {
             })
         }
     }
+
+    async fn get_table_indexes(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<super::db_driver::IndexInfo>> {
+        tracing::info!(
+            "[PostgresDriver] get_table_indexes - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        // Query indexes using pg_indexes and system catalogs for details
+        let query = "
+            SELECT 
+                i.relname AS index_name,
+                array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) AS columns,
+                ix.indisunique AS is_unique,
+                ix.indisprimary AS is_primary,
+                am.amname AS algorithm,
+                pg_get_expr(ix.indpred, ix.indrelid) AS condition,
+                obj_description(i.oid) AS comment
+            FROM pg_class t
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            JOIN pg_index ix ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            JOIN pg_am am ON am.oid = i.relam
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+            WHERE n.nspname = $1
+                AND t.relname = $2
+            GROUP BY i.relname, ix.indisunique, ix.indisprimary, am.amname, ix.indpred, ix.indrelid, i.oid
+            ORDER BY i.relname";
+
+        let rows = client.query(query, &[&schema, &table]).await?;
+
+        tracing::info!(
+            "[PostgresDriver] get_table_indexes - found {} indexes",
+            rows.len()
+        );
+
+        let indexes = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get(0);
+                let columns: Vec<String> = row.get(1);
+                let is_unique: bool = row.get(2);
+                let is_primary: bool = row.get(3);
+                let algorithm: String = row.get(4);
+                let condition: Option<String> = row.get(5);
+                let comment: Option<String> = row.get(6);
+
+                super::db_driver::IndexInfo {
+                    name,
+                    columns,
+                    is_unique,
+                    is_primary,
+                    algorithm,
+                    condition,
+                    include: None,
+                    comment,
+                }
+            })
+            .collect();
+
+        Ok(indexes)
+    }
 }

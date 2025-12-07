@@ -91,20 +91,10 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
 
                 setSqlDefinition(sql);
 
-                // Extract index information from columns
-                const indexMap = new Map<string, IndexInfo>();
+                setSqlDefinition(sql);
 
-                // Add primary key index
-                if (pkColumns) {
-                    indexMap.set(`${table}_pkey`, {
-                        name: `${table}_pkey`,
-                        columns: fetchedColumns.filter((col: any) => col.is_primary_key).map((col: any) => col.name),
-                        is_unique: true,
-                        is_primary: true,
-                    });
-                }
-
-                setIndexes(Array.from(indexMap.values()));
+                // Fetch indexes from backend (replaced client-side inference)
+                fetchIndexes();
 
                 // Fetch constraints
                 fetchConstraints();
@@ -116,6 +106,18 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 setSqlDefinition('-- Failed to load table definition');
             } finally {
                 setLoading(false);
+            }
+        };
+
+        const fetchIndexes = async () => {
+            try {
+                const response = await api.get(
+                    `/api/connections/${connectionId}/indexes?schema=${schema}&table=${table}`
+                );
+                setIndexes(response.data);
+            } catch (err) {
+                console.error('Failed to fetch indexes:', err);
+                setIndexes([]);
             }
         };
 

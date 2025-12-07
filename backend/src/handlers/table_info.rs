@@ -81,3 +81,35 @@ pub async fn get_table_statistics(
         }
     }
 }
+
+// Get table indexes
+pub async fn get_table_indexes(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /indexes - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .get_table_indexes(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(indexes) => {
+            tracing::info!(
+                "[API] GET /indexes - SUCCESS - found {} indexes",
+                indexes.len()
+            );
+            (StatusCode::OK, Json(indexes)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /indexes - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
