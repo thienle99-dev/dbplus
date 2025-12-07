@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, Database, Table } from 'lucide-react';
 import api from '../services/api';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import { useTabContext } from '../context/TabContext';
 
 interface TableInfo {
   schema: string;
@@ -22,6 +23,20 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Try to get tab context - it's only available when inside QueryTabs
+  let tabContext;
+  try {
+    tabContext = useTabContext();
+  } catch {
+    // Not inside TabProvider, that's okay
+    tabContext = null;
+  }
+
+  // Use tabs if we're on the query route and context is available
+  const isQueryRoute = location.pathname.includes('/query');
+  const shouldUseTabs = isQueryRoute && tabContext;
 
   // Fetch tables when expanded
   const fetchTables = async () => {
@@ -78,7 +93,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
           filteredTables.map((table) => (
             <div
               key={table.name}
-              onClick={() => navigate(`/workspace/${connectionId}/tables/${schemaName}/${table.name}`)}
+              onClick={() => {
+                if (shouldUseTabs && tabContext) {
+                  // Already on query route, open in tab
+                  tabContext.openTableInTab(schemaName, table.name, true);
+                } else {
+                  // Navigate to query route with state to auto-open table
+                  navigate(`/workspace/${connectionId}/query`, {
+                    state: { openTable: { schema: schemaName, table: table.name } }
+                  });
+                }
+              }}
               className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors"
             >
               <Table size={14} className="flex-shrink-0 opacity-70" />

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   useReactTable,
@@ -32,8 +32,17 @@ interface EditState {
   };
 }
 
-export default function TableDataView() {
-  const { connectionId, schema, table } = useParams();
+interface TableDataViewProps {
+  schema?: string;
+  table?: string;
+}
+
+export default function TableDataView({ schema: schemaProp, table: tableProp }: TableDataViewProps = {}) {
+  const params = useParams();
+  // Use props if provided, otherwise fall back to URL params
+  const schema = schemaProp || params.schema;
+  const table = tableProp || params.table;
+  const connectionId = params.connectionId;
   const [data, setData] = useState<QueryResult | null>(null);
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,8 +52,23 @@ export default function TableDataView() {
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
   const { setSelectedRow } = useSelectedRow();
+  const fetchingRef = useRef(false);
+  const fetchingColumnsRef = useRef(false);
+  const columnsCacheKeyRef = useRef<string>('');
+
+  // Guard: Return early if schema or table is not defined
+  if (!schema || !table) {
+    return <div className="p-8 text-text-secondary">Select a table to view data</div>;
+  }
 
   const fetchColumns = useCallback(async () => {
+    if (!connectionId || !schema || !table || fetchingColumnsRef.current) return;
+    const cacheKey = `${connectionId}-${schema}-${table}`;
+    if (columnsCacheKeyRef.current === cacheKey) {
+      return;
+    }
+    fetchingColumnsRef.current = true;
+    columnsCacheKeyRef.current = cacheKey;
     try {
       const response = await api.get(
         `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
@@ -52,10 +76,15 @@ export default function TableDataView() {
       setColumnsInfo(response.data);
     } catch (err) {
       console.error('Failed to fetch columns:', err);
+      columnsCacheKeyRef.current = '';
+    } finally {
+      fetchingColumnsRef.current = false;
     }
   }, [connectionId, schema, table]);
 
   const fetchData = useCallback(async () => {
+    if (!connectionId || !schema || !table || fetchingRef.current) return;
+    fetchingRef.current = true;
     setLoading(true);
     setError(null);
     try {
@@ -70,23 +99,34 @@ export default function TableDataView() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  }, [connectionId, schema, table, page]);
+  }, [connectionId, schema, table, page, pageSize]);
+
+  useEffect(() => {
+    const cacheKey = `${connectionId}-${schema}-${table}`;
+    if (columnsCacheKeyRef.current !== cacheKey) {
+      columnsCacheKeyRef.current = '';
+      setColumnsInfo([]);
+    }
+  }, [connectionId, schema, table]);
 
   useEffect(() => {
     if (connectionId && schema && table) {
       fetchColumns();
       fetchData();
     }
-  }, [connectionId, schema, table, fetchColumns, fetchData]);
+  }, [connectionId, schema, table, page, pageSize]);
 
   useEffect(() => {
     const handleRefresh = () => {
-      fetchData();
+      if (connectionId && schema && table) {
+        fetchData();
+      }
     };
     window.addEventListener('refresh-table-data', handleRefresh);
     return () => window.removeEventListener('refresh-table-data', handleRefresh);
-  }, [fetchData]);
+  }, [connectionId, schema, table, page, pageSize]);
 
   const handleEdit = (rowIndex: number, colIndex: number, value: unknown) => {
     setEdits(prev => ({
@@ -305,8 +345,8 @@ export default function TableDataView() {
             {tableInstance.getRowModel().rows.map((row) => {
               const isModified = edits[row.index] !== undefined;
               return (
-                <tr 
-                  key={row.id} 
+                <tr
+                  key={row.id}
                   className={`hover:bg-bg-1/50 cursor-pointer ${isModified ? 'bg-accent/5' : ''}`}
                   onClick={() => {
                     if (data) {

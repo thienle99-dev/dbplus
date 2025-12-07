@@ -14,6 +14,17 @@ const MAX_DRAFTS = 10;
 export function useDraftPersistence(connectionId: string) {
     const storageKey = `${STORAGE_PREFIX}${connectionId}`;
 
+    const loadDrafts = useCallback((): DraftQuery[] => {
+        try {
+            const stored = localStorage.getItem(storageKey);
+            if (!stored) return [];
+            return JSON.parse(stored) as DraftQuery[];
+        } catch (error) {
+            console.error('Failed to load drafts:', error);
+            return [];
+        }
+    }, [storageKey]);
+
     const saveDraft = useCallback((draft: DraftQuery) => {
         try {
             const existing = loadDrafts();
@@ -28,18 +39,7 @@ export function useDraftPersistence(connectionId: string) {
         } catch (error) {
             console.error('Failed to save draft:', error);
         }
-    }, [storageKey]);
-
-    const loadDrafts = useCallback((): DraftQuery[] => {
-        try {
-            const stored = localStorage.getItem(storageKey);
-            if (!stored) return [];
-            return JSON.parse(stored) as DraftQuery[];
-        } catch (error) {
-            console.error('Failed to load drafts:', error);
-            return [];
-        }
-    }, [storageKey]);
+    }, [storageKey, loadDrafts]);
 
     const deleteDraft = useCallback((draftId: string) => {
         try {

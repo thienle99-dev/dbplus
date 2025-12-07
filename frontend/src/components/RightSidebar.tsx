@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Info, X, Save, Trash2, Plus, Edit2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useSelectedRow } from '../context/SelectedRowContext';
@@ -39,6 +39,58 @@ export default function RightSidebar() {
   const [newRowValues, setNewRowValues] = useState<Record<string, unknown>>({});
   const [showNewRow, setShowNewRow] = useState(false);
   const { showToast } = useToast();
+  const fetchingRef = useRef(false);
+  const fetchingColumnsRef = useRef(false);
+  const columnsCacheKeyRef = useRef<string>('');
+
+  const fetchColumns = useCallback(async () => {
+    if (!connectionId || !schema || !table || fetchingColumnsRef.current) return;
+    const cacheKey = `${connectionId}-${schema}-${table}`;
+    if (columnsCacheKeyRef.current === cacheKey) {
+      return;
+    }
+    fetchingColumnsRef.current = true;
+    columnsCacheKeyRef.current = cacheKey;
+    try {
+      const response = await api.get(
+        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
+      );
+      setColumnsInfo(response.data);
+    } catch (err) {
+      console.error('Failed to fetch columns:', err);
+      columnsCacheKeyRef.current = '';
+    } finally {
+      fetchingColumnsRef.current = false;
+    }
+  }, [connectionId, schema, table]);
+
+  const fetchData = useCallback(async () => {
+    if (!connectionId || !schema || !table || fetchingRef.current) return;
+    fetchingRef.current = true;
+    try {
+      setLoading(true);
+      const offset = currentPage * pageSize;
+      const response = await api.get(
+        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`
+      );
+      setData(response.data);
+      setEditingValues({});
+      setEditingRowIndex(null);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+    } finally {
+      setLoading(false);
+      fetchingRef.current = false;
+    }
+  }, [connectionId, schema, table, currentPage, pageSize]);
+
+  useEffect(() => {
+    const cacheKey = `${connectionId}-${schema}-${table}`;
+    if (columnsCacheKeyRef.current !== cacheKey) {
+      columnsCacheKeyRef.current = '';
+      setColumnsInfo([]);
+    }
+  }, [connectionId, schema, table]);
 
   useEffect(() => {
     if (connectionId && schema && table) {
@@ -47,16 +99,19 @@ export default function RightSidebar() {
     } else {
       setColumnsInfo([]);
       setData(null);
+      columnsCacheKeyRef.current = '';
     }
-  }, [connectionId, schema, table, currentPage]);
+  }, [connectionId, schema, table, currentPage, pageSize]);
 
   useEffect(() => {
     const handleRefresh = () => {
-      fetchData();
+      if (connectionId && schema && table) {
+        fetchData();
+      }
     };
     window.addEventListener('refresh-table-data', handleRefresh);
     return () => window.removeEventListener('refresh-table-data', handleRefresh);
-  }, [connectionId, schema, table, currentPage]);
+  }, [connectionId, schema, table, currentPage, pageSize]);
 
   useEffect(() => {
     sidebarWidthRef.current = sidebarWidth;
@@ -89,36 +144,6 @@ export default function RightSidebar() {
       };
     }
   }, [isResizing]);
-
-  const fetchColumns = async () => {
-    if (!connectionId || !schema || !table) return;
-    try {
-      const response = await api.get(
-        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
-      );
-      setColumnsInfo(response.data);
-    } catch (err) {
-      console.error('Failed to fetch columns:', err);
-    }
-  };
-
-  const fetchData = async () => {
-    if (!connectionId || !schema || !table) return;
-    try {
-      setLoading(true);
-      const offset = currentPage * pageSize;
-      const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`
-      );
-      setData(response.data);
-      setEditingValues({});
-      setEditingRowIndex(null);
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getDisplayColumns = () => {
     if (!columnsInfo.length || !data) return [];
@@ -376,209 +401,172 @@ export default function RightSidebar() {
           </div>
         ) : (
           <div className="p-1.5">
-            <div className="mb-1.5 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setShowNewRow(!showNewRow);
-                  if (!showNewRow) {
-                    setNewRowValues({});
-                  }
-                }}
-                className="p-1 text-text-secondary hover:text-accent hover:bg-bg-2 rounded transition-colors"
-                title="Add new row"
-              >
-                <Plus size={14} />
-              </button>
-              <div className="text-[10px] text-text-secondary">
-                {data.rows.length} row{data.rows.length !== 1 ? 's' : ''}
-              </div>
-            </div>
-
-            {showNewRow && (
-              <div className="mb-2 p-1.5 bg-bg-2 rounded border border-accent/30 max-h-[300px] overflow-y-auto">
-                <div className="text-[10px] font-medium text-accent mb-1.5 sticky top-0 bg-bg-2 pb-1">New Record</div>
-                <div className="space-y-1.5">
-                  {columnsInfo.map((col) => (
-                    <div key={col.name} className="space-y-0.5">
-                      <label className="text-[10px] text-text-secondary flex items-center justify-between">
-                        <span className="flex items-center gap-1">
-                          {col.name}
-                          {col.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
-                        </span>
-                        <span className="text-[9px] text-text-secondary/60">{col.data_type}</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={newRowValues[col.name] === null || newRowValues[col.name] === undefined ? '' : String(newRowValues[col.name])}
-                        onChange={(e) => handleNewRowValueChange(col.name, e.target.value === '' ? null : e.target.value)}
-                        placeholder={col.is_nullable ? 'NULL' : col.default_value || 'Required'}
-                        disabled={col.is_primary_key && col.default_value !== null}
-                        className="w-full bg-bg-0 border border-border rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                  ))}
-                  <div className="flex gap-1 pt-1">
-                    <button
-                      onClick={handleCreateNew}
-                      disabled={saving}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-[10px] font-medium disabled:opacity-50"
-                    >
-                      <Save size={11} />
-                      Create
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowNewRow(false);
-                        setNewRowValues({});
-                      }}
-                      className="px-2 py-1 bg-bg-3 hover:bg-bg-2 text-text-secondary rounded text-[10px]"
-                    >
-                      <X size={11} />
-                    </button>
+            {/* Show selected row details if a row is selected */}
+            {selectedRow ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[10px] font-medium text-accent">Row Details</div>
+                  <div className="flex gap-0.5">
+                    {editingRowIndex === selectedRow.rowIndex ? (
+                      <>
+                        <button
+                          onClick={() => handleSave(selectedRow.rowIndex)}
+                          disabled={saving}
+                          className="p-0.5 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
+                          title="Save changes"
+                        >
+                          <Save size={11} />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={saving}
+                          className="p-0.5 text-text-secondary hover:bg-bg-2 rounded disabled:opacity-50"
+                          title="Cancel editing"
+                        >
+                          <X size={11} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(selectedRow.rowIndex)}
+                          className="p-0.5 text-text-secondary hover:text-accent hover:bg-bg-2 rounded"
+                          title="Edit row"
+                        >
+                          <Edit2 size={11} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(selectedRow.rowIndex)}
+                          disabled={saving}
+                          className="p-0.5 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
+                          title="Delete row"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedRow(null)}
+                          className="p-0.5 text-text-secondary hover:bg-bg-2 rounded"
+                          title="Close details"
+                        >
+                          <X size={11} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-[10px] border-collapse">
-                <thead className="bg-bg-2 sticky top-0">
-                  <tr>
-                    <th className="border-b border-border px-0.5 py-0.5 text-left">
-                      <input
-                        type="checkbox"
-                        className="cursor-pointer"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            data.rows.forEach((_, idx) => toggleRowSelection(idx));
-                          } else {
-                            data.rows.forEach((_, idx) => {
-                              if (selectedRows.has(idx)) toggleRowSelection(idx);
-                            });
-                          }
-                        }}
-                      />
-                    </th>
-                    {displayColumns.map((col) => {
-                      const colInfo = columnsInfo.find(c => c.name === col);
-                      return (
-                        <th
-                          key={col}
-                          className="border-b border-border px-1.5 py-0.5 text-left text-text-secondary font-medium truncate max-w-[80px]"
-                          title={colInfo ? `${col} (${colInfo.data_type})${colInfo.is_primary_key ? ' - PK' : ''}${colInfo.is_nullable ? ' - Nullable' : ''}` : col}
-                        >
-                          <div className="flex items-center gap-0.5">
-                            {col}
-                            {colInfo?.is_primary_key && <span className="text-[7px] bg-accent/20 text-accent px-0.5 rounded">PK</span>}
-                          </div>
-                        </th>
-                      );
-                    })}
-                    <th className="border-b border-border px-0.5 py-0.5 text-right text-text-secondary text-[9px]">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.rows.map((row, rowIndex) => {
-                    const isSelected = isRowSelected(rowIndex);
-                    const isEditing = isRowEditing(rowIndex);
-                    const rowEdits = editingValues[rowIndex] || {};
+                <div className="space-y-1.5 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {columnsInfo.map((col) => {
+                    const colIndex = data.columns.findIndex(c => c === col.name);
+                    const isEditing = editingRowIndex === selectedRow.rowIndex;
+                    const rowEdits = editingValues[selectedRow.rowIndex] || {};
+                    const value = isEditing && rowEdits[col.name] !== undefined
+                      ? rowEdits[col.name]
+                      : (colIndex !== -1 ? selectedRow.rowData[colIndex] : null);
 
                     return (
-                      <tr
-                        key={rowIndex}
-                        className={`hover:bg-bg-2/50 cursor-pointer ${isSelected ? 'bg-accent/10' : ''} ${isEditing ? 'bg-accent/5' : ''}`}
-                        onClick={() => handleRowClick(rowIndex)}
-                      >
-                        <td className="border-b border-border px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+                      <div key={col.name} className="space-y-0.5 pb-1.5 border-b border-border/30 last:border-0">
+                        <label className="text-[10px] text-text-secondary flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            {col.name}
+                            {col.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
+                          </span>
+                          <span className="text-[9px] text-text-secondary/60">{col.data_type}</span>
+                        </label>
+                        {isEditing && !col.is_primary_key ? (
                           <input
-                            type="checkbox"
-                            checked={selectedRows.has(rowIndex)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleRowSelection(rowIndex);
-                            }}
-                            className="cursor-pointer"
+                            type="text"
+                            value={value === null || value === undefined ? '' : String(value)}
+                            onChange={(e) => handleValueChange(selectedRow.rowIndex, col.name, e.target.value === '' ? null : e.target.value)}
+                            className="w-full bg-bg-0 border border-accent rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:outline-none"
                           />
-                        </td>
-                        {displayColumns.map((col) => {
-                          const colIndex = data.columns.findIndex(c => c === col);
-                          const colInfo = columnsInfo.find(c => c.name === col);
-                          const isPK = colInfo?.is_primary_key || false;
-                          const value = isEditing && rowEdits[col] !== undefined ? rowEdits[col] : (colIndex !== -1 ? row[colIndex] : null);
-
-                          return (
-                            <td key={col} className="border-b border-border px-1.5 py-0.5 text-text-primary truncate max-w-[80px]">
-                              {isEditing && !isPK ? (
-                                <input
-                                  type="text"
-                                  value={value === null || value === undefined ? '' : String(value)}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    handleValueChange(rowIndex, col, e.target.value === '' ? null : e.target.value);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-full bg-bg-0 border border-accent rounded px-1 py-0.5 text-[10px] text-text-primary focus:outline-none"
-                                />
-                              ) : (
-                                <span className="truncate block" title={value === null || value === undefined ? 'NULL' : String(value)}>
-                                  {value === null || value === undefined ? (
-                                    <span className="text-text-secondary italic">NULL</span>
-                                  ) : (
-                                    String(value)
-                                  )}
-                                </span>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td className="border-b border-border px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-0.5">
-                            {isEditing ? (
-                              <>
-                                <button
-                                  onClick={() => handleSave(rowIndex)}
-                                  disabled={saving}
-                                  className="p-0.5 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
-                                  title="Save changes"
-                                >
-                                  <Save size={11} />
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  disabled={saving}
-                                  className="p-0.5 text-text-secondary hover:bg-bg-2 rounded disabled:opacity-50"
-                                  title="Cancel editing"
-                                >
-                                  <X size={11} />
-                                </button>
-                              </>
+                        ) : (
+                          <div className="text-[10px] text-text-primary bg-bg-2 px-1.5 py-1 rounded break-all">
+                            {value === null || value === undefined ? (
+                              <span className="text-text-secondary italic">NULL</span>
                             ) : (
-                              <>
-                                <button
-                                  onClick={() => handleEdit(rowIndex)}
-                                  className="p-0.5 text-text-secondary hover:text-accent hover:bg-bg-2 rounded"
-                                  title="Edit row"
-                                >
-                                  <Edit2 size={11} />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(rowIndex)}
-                                  disabled={saving}
-                                  className="p-0.5 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
-                                  title="Delete row"
-                                >
-                                  <Trash2 size={11} />
-                                </button>
-                              </>
+                              String(value)
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        )}
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ) : (
+              /* Show mini table when no row is selected */
+              <>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      setShowNewRow(!showNewRow);
+                      if (!showNewRow) {
+                        setNewRowValues({});
+                      }
+                    }}
+                    className="p-1 text-text-secondary hover:text-accent hover:bg-bg-2 rounded transition-colors"
+                    title="Add new row"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <div className="text-[10px] text-text-secondary">
+                    {data.rows.length} row{data.rows.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+
+                {showNewRow && (
+                  <div className="mb-2 p-1.5 bg-bg-2 rounded border border-accent/30 max-h-[300px] overflow-y-auto">
+                    <div className="text-[10px] font-medium text-accent mb-1.5 sticky top-0 bg-bg-2 pb-1">New Record</div>
+                    <div className="space-y-1.5">
+                      {columnsInfo.map((col) => (
+                        <div key={col.name} className="space-y-0.5">
+                          <label className="text-[10px] text-text-secondary flex items-center justify-between">
+                            <span className="flex items-center gap-1">
+                              {col.name}
+                              {col.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
+                            </span>
+                            <span className="text-[9px] text-text-secondary/60">{col.data_type}</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={newRowValues[col.name] === null || newRowValues[col.name] === undefined ? '' : String(newRowValues[col.name])}
+                            onChange={(e) => handleNewRowValueChange(col.name, e.target.value === '' ? null : e.target.value)}
+                            placeholder={col.is_nullable ? 'NULL' : col.default_value || 'Required'}
+                            disabled={col.is_primary_key && col.default_value !== null}
+                            className="w-full bg-bg-0 border border-border rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      ))}
+                      <div className="flex gap-1 pt-1">
+                        <button
+                          onClick={handleCreateNew}
+                          disabled={saving}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-[10px] font-medium disabled:opacity-50"
+                        >
+                          <Save size={11} />
+                          Create
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowNewRow(false);
+                            setNewRowValues({});
+                          }}
+                          className="px-2 py-1 bg-bg-3 hover:bg-bg-2 text-text-secondary rounded text-[10px]"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center text-text-secondary text-[10px] mt-4 p-2 bg-bg-2/30 rounded">
+                  <Info size={16} className="mx-auto mb-1 opacity-50" />
+                  <p>Click a row in the table to view details</p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

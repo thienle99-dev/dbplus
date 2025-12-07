@@ -12,6 +12,13 @@ pub struct PostgresDriver {
 
 impl PostgresDriver {
     pub async fn new(connection: &connection::Model, password: &str) -> Result<Self> {
+        tracing::info!(
+            "[PostgresDriver] Creating new connection pool to {}:{}/{}",
+            connection.host,
+            connection.port,
+            connection.database
+        );
+
         let mut cfg = Config::new();
         cfg.host = Some(connection.host.clone());
         cfg.port = Some(connection.port as u16);
@@ -22,13 +29,19 @@ impl PostgresDriver {
             recycling_method: RecyclingMethod::Fast,
         });
 
+        tracing::debug!("[PostgresDriver] Pool config created, attempting to create pool...");
+
         match cfg.create_pool(Some(Runtime::Tokio1), NoTls) {
-            Ok(pool) => Ok(Self { pool }),
+            Ok(pool) => {
+                tracing::info!("[PostgresDriver] Connection pool created successfully");
+                Ok(Self { pool })
+            }
             Err(e) => {
                 let error_msg = e.to_string();
+                tracing::error!("[PostgresDriver] Failed to create pool: {}", error_msg);
                 let error_lower = error_msg.to_lowercase();
-                
-                if error_lower.contains("does not exist") 
+
+                if error_lower.contains("does not exist")
                     || error_lower.contains("3d000")
                     || error_lower.contains("database") && error_lower.contains("not exist")
                 {
@@ -68,19 +81,28 @@ impl PostgresDriver {
             Err(e) => {
                 let error_msg = e.to_string();
                 let error_lower = error_msg.to_lowercase();
-                
-                if error_lower.contains("connection refused") || error_lower.contains("could not connect") {
+
+                if error_lower.contains("connection refused")
+                    || error_lower.contains("could not connect")
+                {
                     Err(anyhow::anyhow!(
                         "Connection refused. Please check if PostgreSQL is running on {}:{}",
                         connection.host,
                         connection.port
                     ))
-                } else if error_lower.contains("password authentication failed") || error_lower.contains("authentication failed") {
-                    Err(anyhow::anyhow!("Authentication failed. Please check your username and password."))
+                } else if error_lower.contains("password authentication failed")
+                    || error_lower.contains("authentication failed")
+                {
+                    Err(anyhow::anyhow!(
+                        "Authentication failed. Please check your username and password."
+                    ))
                 } else if error_lower.contains("timeout") {
                     Err(anyhow::anyhow!("Connection timeout. Please check your network connection and firewall settings."))
                 } else {
-                    Err(anyhow::anyhow!("Failed to connect to PostgreSQL server: {}", error_msg))
+                    Err(anyhow::anyhow!(
+                        "Failed to connect to PostgreSQL server: {}",
+                        error_msg
+                    ))
                 }
             }
         }
@@ -105,14 +127,18 @@ impl PostgresDriver {
 
         let db_name = &connection.database;
         let query = "SELECT 1 FROM pg_database WHERE datname = $1";
-        
+
         let exists = client.query_opt(query, &[db_name]).await?;
-        
+
         if exists.is_none() {
             let escaped_name = db_name.replace("\"", "\"\"");
             let create_query = format!("CREATE DATABASE \"{}\"", escaped_name);
-            client.execute(&create_query, &[]).await
-                .with_context(|| format!("Failed to create database '{}'. Make sure you have the necessary privileges.", db_name))?;
+            client.execute(&create_query, &[]).await.with_context(|| {
+                format!(
+                    "Failed to create database '{}'. Make sure you have the necessary privileges.",
+                    db_name
+                )
+            })?;
         }
 
         Ok(())
@@ -232,7 +258,25 @@ impl DatabaseDriver for PostgresDriver {
         schema: &str,
         table: &str,
     ) -> Result<Vec<super::db_driver::TableColumn>> {
-        let client = self.pool.get().await?;
+        tracing::info!(
+            "[PostgresDriver] get_columns - schema: {}, table: {}",
+            schema,
+            table
+        );
+        tracing::debug!("[PostgresDriver] Acquiring connection from pool...");
+
+        let client = match self.pool.get().await {
+            Ok(c) => {
+                tracing::debug!("[PostgresDriver] Connection acquired from pool");
+                c
+            }
+            Err(e) => {
+                tracing::error!("[PostgresDriver] Failed to get connection from pool: {}", e);
+                return Err(anyhow::anyhow!("Failed to get connection: {}", e));
+            }
+        };
+
+        tracing::debug!("[PostgresDriver] Executing get_columns query...");
         let rows = client
             .query(
                 "SELECT 
@@ -258,6 +302,11 @@ impl DatabaseDriver for PostgresDriver {
             )
             .await?;
 
+        tracing::info!(
+            "[PostgresDriver] get_columns - found {} columns",
+            rows.len()
+        );
+
         Ok(rows
             .iter()
             .map(|row| {
@@ -280,17 +329,20 @@ impl DatabaseDriver for PostgresDriver {
         limit: i64,
         offset: i64,
     ) -> Result<super::db_driver::QueryResult> {
-        // Note: This is vulnerable to SQL injection if schema/table are not validated.
-        // In a real app, we should use quote_identifier or similar.
-        // For now, we assume internal use or trusted input, but we should be careful.
-        // tokio-postgres doesn't support dynamic table names in parameters easily.
-        // We'll do simple sanitization by ensuring no spaces or semicolons for now.
+        tracing::info!(
+            "[PostgresDriver] get_table_data - schema: {}, table: {}, limit: {}, offset: {}",
+            schema,
+            table,
+            limit,
+            offset
+        );
 
         if schema.contains(';')
             || table.contains(';')
             || schema.contains(' ')
             || table.contains(' ')
         {
+            tracing::error!("[PostgresDriver] Invalid schema or table name detected");
             return Err(anyhow::anyhow!("Invalid schema or table name"));
         }
 
@@ -298,11 +350,34 @@ impl DatabaseDriver for PostgresDriver {
             "SELECT * FROM \"{}\".\"{}\" LIMIT $1 OFFSET $2",
             schema, table
         );
+        tracing::debug!("[PostgresDriver] Query: {}", query);
 
-        let client = self.pool.get().await?;
-        let rows = client.query(&query, &[&limit, &offset]).await?;
+        tracing::debug!("[PostgresDriver] Acquiring connection from pool...");
+        let client = match self.pool.get().await {
+            Ok(c) => {
+                tracing::debug!("[PostgresDriver] Connection acquired from pool");
+                c
+            }
+            Err(e) => {
+                tracing::error!("[PostgresDriver] Failed to get connection from pool: {}", e);
+                return Err(anyhow::anyhow!("Failed to get connection: {}", e));
+            }
+        };
+
+        tracing::debug!("[PostgresDriver] Executing query...");
+        let rows = match client.query(&query, &[&limit, &offset]).await {
+            Ok(r) => {
+                tracing::debug!("[PostgresDriver] Query executed successfully");
+                r
+            }
+            Err(e) => {
+                tracing::error!("[PostgresDriver] Query failed: {}", e);
+                return Err(anyhow::anyhow!("Query failed: {}", e));
+            }
+        };
 
         if rows.is_empty() {
+            tracing::info!("[PostgresDriver] get_table_data - no rows found");
             return Ok(super::db_driver::QueryResult {
                 columns: vec![],
                 rows: vec![],
@@ -339,6 +414,11 @@ impl DatabaseDriver for PostgresDriver {
             }
             result_rows.push(current_row);
         }
+
+        tracing::info!(
+            "[PostgresDriver] get_table_data - returning {} rows",
+            result_rows.len()
+        );
 
         Ok(super::db_driver::QueryResult {
             columns,

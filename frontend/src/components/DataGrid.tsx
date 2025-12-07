@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   useReactTable,
@@ -22,13 +22,8 @@ export default function DataGrid() {
   const [page, setPage] = useState(0);
   const pageSize = 100;
 
-  useEffect(() => {
-    if (connectionId && schema && table) {
-      fetchData();
-    }
-  }, [connectionId, schema, table, page]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!connectionId || !schema || !table) return;
     setLoading(true);
     setError(null);
     try {
@@ -43,7 +38,11 @@ export default function DataGrid() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [connectionId, schema, table, page, pageSize]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const columns = useMemo(() => {
     if (!data?.columns) return [];
