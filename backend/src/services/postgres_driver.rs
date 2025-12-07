@@ -790,4 +790,123 @@ impl DatabaseDriver for PostgresDriver {
 
         Ok(indexes)
     }
+
+    async fn add_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column: &super::db_driver::ColumnDefinition,
+    ) -> Result<()> {
+        let client = self.pool.get().await?;
+        let mut query = format!(
+            "ALTER TABLE \"{}\".\"{}\" ADD COLUMN \"{}\" {}",
+            schema, table, column.name, column.data_type
+        );
+
+        if !column.is_nullable {
+            query.push_str(" NOT NULL");
+        }
+
+        if let Some(default) = &column.default_value {
+            if !default.is_empty() {
+                query.push_str(&format!(" DEFAULT {}", default));
+            }
+        }
+
+        tracing::info!("[PostgresDriver] add_column - query: {}", query);
+        client.execute(&query, &[]).await?;
+        Ok(())
+    }
+
+    async fn alter_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column_name: &str,
+        new_def: &super::db_driver::ColumnDefinition,
+    ) -> Result<()> {
+        let client = self.pool.get().await?;
+
+        // 1. Rename if needed
+        if column_name != new_def.name {
+            let query = format!(
+                "ALTER TABLE \"{}\".\"{}\" RENAME COLUMN \"{}\" TO \"{}\"",
+                schema, table, column_name, new_def.name
+            );
+            tracing::info!("[PostgresDriver] rename column - query: {}", query);
+            client.execute(&query, &[]).await?;
+        }
+
+        let current_column_name = &new_def.name;
+
+        // 2. Change Type
+        // We use USING to attempt casting, but this might fail if incompatible.
+        let type_query = format!(
+            "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" TYPE {} USING \"{}\"::{}",
+            schema,
+            table,
+            current_column_name,
+            new_def.data_type,
+            current_column_name,
+            new_def.data_type
+        );
+        tracing::info!("[PostgresDriver] alter column type - query: {}", type_query);
+        client.execute(&type_query, &[]).await?;
+
+        // 3. Nullability
+        let null_query = if new_def.is_nullable {
+            format!(
+                "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" DROP NOT NULL",
+                schema, table, current_column_name
+            )
+        } else {
+            format!(
+                "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" SET NOT NULL",
+                schema, table, current_column_name
+            )
+        };
+        tracing::info!(
+            "[PostgresDriver] alter column nullability - query: {}",
+            null_query
+        );
+        client.execute(&null_query, &[]).await?;
+
+        // 4. Default Value
+        let default_query = if let Some(default) = &new_def.default_value {
+            if default.is_empty() {
+                format!(
+                    "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" DROP DEFAULT",
+                    schema, table, current_column_name
+                )
+            } else {
+                format!(
+                    "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" SET DEFAULT {}",
+                    schema, table, current_column_name, default
+                )
+            }
+        } else {
+            format!(
+                "ALTER TABLE \"{}\".\"{}\" ALTER COLUMN \"{}\" DROP DEFAULT",
+                schema, table, current_column_name
+            )
+        };
+        tracing::info!(
+            "[PostgresDriver] alter column default - query: {}",
+            default_query
+        );
+        client.execute(&default_query, &[]).await?;
+
+        Ok(())
+    }
+
+    async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
+        let client = self.pool.get().await?;
+        let query = format!(
+            "ALTER TABLE \"{}\".\"{}\" DROP COLUMN \"{}\"",
+            schema, table, column_name
+        );
+        tracing::info!("[PostgresDriver] drop_column - query: {}", query);
+        client.execute(&query, &[]).await?;
+        Ok(())
+    }
 }

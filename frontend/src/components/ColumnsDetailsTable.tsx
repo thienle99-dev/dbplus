@@ -1,20 +1,75 @@
 import { useState, useMemo } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TableColumn, ForeignKey } from '../types';
-
+import ColumnModal from './ColumnModal';
+import api from '../services/api';
+import { useToast } from '../context/ToastContext';
+import { useParams } from 'react-router-dom';
 
 interface ColumnsDetailsTableProps {
     columns: TableColumn[];
     foreignKeys: ForeignKey[];
     indexes: { name: string; columns: string[] }[];
+    onRefresh: () => void;
 }
 
 type SortField = 'name' | 'data_type' | 'nullable' | 'default';
 type SortDirection = 'asc' | 'desc' | null;
 
-export default function ColumnsDetailsTable({ columns, foreignKeys, indexes }: ColumnsDetailsTableProps) {
+export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onRefresh }: ColumnsDetailsTableProps) {
+    const { connectionId, schema, table } = useParams();
+    const { showToast } = useToast();
     const [sortField, setSortField] = useState<SortField | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [selectedColumn, setSelectedColumn] = useState<TableColumn | undefined>(undefined);
+    const [deletingColumn, setDeletingColumn] = useState<string | null>(null);
+
+    const handleAddColumn = () => {
+        setModalMode('create');
+        setSelectedColumn(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditColumn = (column: TableColumn) => {
+        setModalMode('edit');
+        setSelectedColumn(column);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteColumn = async (columnName: string) => {
+        if (!confirm(`Are you sure you want to delete column "${columnName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        setDeletingColumn(columnName);
+        try {
+            await api.delete(`/api/connections/${connectionId}/columns/${columnName}?schema=${schema}&table=${table}`);
+            showToast('Column deleted successfully', 'success');
+            onRefresh();
+        } catch (err: any) {
+            console.error('Failed to delete column:', err);
+            showToast(err.response?.data?.error || 'Failed to delete column', 'error');
+        } finally {
+            setDeletingColumn(null);
+        }
+    };
+
+    const handleSaveColumn = async (columnData: any) => {
+        try {
+            if (modalMode === 'create') {
+                await api.post(`/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`, columnData);
+                showToast('Column added successfully', 'success');
+            } else {
+                await api.put(`/api/connections/${connectionId}/columns/${selectedColumn?.name}?schema=${schema}&table=${table}`, columnData);
+                showToast('Column updated successfully', 'success');
+            }
+            onRefresh();
+        } catch (err: any) {
+            throw err; // Let modal handle error display
+        }
+    };
 
     // Create lookup maps for quick checks
     const fkColumns = useMemo(() => {
@@ -93,6 +148,15 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes }: C
 
     return (
         <div className="bg-bg-0 border border-border rounded overflow-hidden">
+            <div className="p-2 border-b border-border flex justify-end">
+                <button
+                    onClick={handleAddColumn}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] md:text-xs bg-accent hover:bg-blue-600 text-white rounded transition-colors"
+                >
+                    <Plus size={12} />
+                    Add Column
+                </button>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-[10px] md:text-xs">
                     <thead className="bg-bg-1">
@@ -135,6 +199,9 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes }: C
                                     Default
                                     <SortIcon field="default" />
                                 </div>
+                            </th>
+                            <th className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-right font-medium text-text-secondary whitespace-nowrap">
+                                Actions
                             </th>
                         </tr>
                     </thead>
@@ -198,12 +265,39 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes }: C
                                             <span className="italic opacity-50">NULL</span>
                                         )}
                                     </td>
+                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <button
+                                                onClick={() => handleEditColumn(column)}
+                                                className="p-1 text-text-secondary hover:text-accent hover:bg-bg-2 rounded"
+                                                title="Edit Column"
+                                            >
+                                                <Edit2 size={12} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteColumn(column.name)}
+                                                className="p-1 text-text-secondary hover:text-red-500 hover:bg-bg-2 rounded"
+                                                title="Delete Column"
+                                                disabled={deletingColumn === column.name}
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             );
                         })}
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <ColumnModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveColumn}
+                initialData={selectedColumn}
+                mode={modalMode}
+            />
+        </div >
     );
 }

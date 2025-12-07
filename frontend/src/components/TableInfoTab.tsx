@@ -56,85 +56,81 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         return effectiveTheme === 'dark' || effectiveTheme === 'midnight' ? oneDark : undefined;
     }, [theme]);
 
+    const fetchIndexes = async () => {
+        try {
+            const response = await api.get(
+                `/api/connections/${connectionId}/indexes?schema=${schema}&table=${table}`
+            );
+            setIndexes(response.data);
+        } catch (err) {
+            console.error('Failed to fetch indexes:', err);
+            setIndexes([]);
+        }
+    };
+
+    const fetchConstraints = async () => {
+        try {
+            const response = await api.get(
+                `/api/connections/${connectionId}/constraints?schema=${schema}&table=${table}`
+            );
+            setConstraints(response.data);
+        } catch (err) {
+            console.error('Failed to fetch constraints:', err);
+            setConstraints({ foreign_keys: [], check_constraints: [], unique_constraints: [] });
+        }
+    };
+
+    const fetchStatistics = async () => {
+        setLoadingStatistics(true);
+        try {
+            const response = await api.get(
+                `/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`
+            );
+            setStatistics(response.data);
+        } catch (err) {
+            console.error('Failed to fetch statistics:', err);
+            setStatistics({
+                row_count: null,
+                table_size: null,
+                index_size: null,
+                total_size: null,
+                created_at: null,
+                last_modified: null,
+            });
+        } finally {
+            setLoadingStatistics(false);
+        }
+    };
+
+    const fetchTableInfo = async () => {
+        setLoading(true);
+        try {
+            // Fetch columns for SQL definition
+            const response = await api.get(
+                `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
+            );
+
+            const fetchedColumns = response.data;
+            setColumns(fetchedColumns);
+
+            // Fetch indexes from backend (replaced client-side inference)
+            fetchIndexes();
+
+            // Fetch constraints
+            fetchConstraints();
+
+            // Fetch statistics
+            fetchStatistics();
+        } catch (err) {
+            console.error('Failed to fetch table info:', err);
+            setSqlDefinition('-- Failed to load table definition');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!connectionId || !schema || !table) return;
-
-        const fetchTableInfo = async () => {
-            setLoading(true);
-            try {
-                // Fetch columns for SQL definition
-                const response = await api.get(
-                    `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
-                );
-
-                const fetchedColumns = response.data;
-                setColumns(fetchedColumns);
-
-                // SQL definition is now handled by a separate useEffect
-
-
-                // Fetch indexes from backend (replaced client-side inference)
-                fetchIndexes();
-
-                // Fetch constraints
-                fetchConstraints();
-
-                // Fetch statistics
-                fetchStatistics();
-            } catch (err) {
-                console.error('Failed to fetch table info:', err);
-                setSqlDefinition('-- Failed to load table definition');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const fetchIndexes = async () => {
-            try {
-                const response = await api.get(
-                    `/api/connections/${connectionId}/indexes?schema=${schema}&table=${table}`
-                );
-                setIndexes(response.data);
-            } catch (err) {
-                console.error('Failed to fetch indexes:', err);
-                setIndexes([]);
-            }
-        };
-
-        const fetchConstraints = async () => {
-            try {
-                const response = await api.get(
-                    `/api/connections/${connectionId}/constraints?schema=${schema}&table=${table}`
-                );
-                setConstraints(response.data);
-            } catch (err) {
-                console.error('Failed to fetch constraints:', err);
-                setConstraints({ foreign_keys: [], check_constraints: [], unique_constraints: [] });
-            }
-        };
-
-        const fetchStatistics = async () => {
-            setLoadingStatistics(true);
-            try {
-                const response = await api.get(
-                    `/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`
-                );
-                setStatistics(response.data);
-            } catch (err) {
-                console.error('Failed to fetch statistics:', err);
-                setStatistics({
-                    row_count: null,
-                    table_size: null,
-                    index_size: null,
-                    total_size: null,
-                    created_at: null,
-                    last_modified: null,
-                });
-            } finally {
-                setLoadingStatistics(false);
-            }
-        };
-
         fetchTableInfo();
     }, [connectionId, schema, table]);
 
@@ -686,6 +682,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             columns={columns}
                             foreignKeys={constraints.foreign_keys}
                             indexes={indexes}
+                            onRefresh={fetchTableInfo}
                         />
                     </div>
                 )}

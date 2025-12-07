@@ -78,6 +78,14 @@ pub struct IndexInfo {
     pub comment: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ColumnDefinition {
+    pub name: String,
+    pub data_type: String,
+    pub is_nullable: bool,
+    pub default_value: Option<String>,
+}
+
 #[async_trait]
 pub trait DatabaseDriver: Send + Sync {
     async fn execute(&self, query: &str) -> Result<u64>;
@@ -104,4 +112,15 @@ pub trait DatabaseDriver: Send + Sync {
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
+
+    // Column Management
+    async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
+    async fn alter_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column_name: &str,
+        new_def: &ColumnDefinition,
+    ) -> Result<()>;
+    async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()>;
 }

@@ -326,4 +326,76 @@ impl ConnectionService {
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
+
+    pub async fn add_column(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        column: &crate::services::db_driver::ColumnDefinition,
+    ) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+        let password = self.encryption.decrypt(&connection.password)?;
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.add_column(schema, table, column).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn alter_column(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        column_name: &str,
+        new_def: &crate::services::db_driver::ColumnDefinition,
+    ) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+        let password = self.encryption.decrypt(&connection.password)?;
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver
+                    .alter_column(schema, table, column_name, new_def)
+                    .await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn drop_column(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        column_name: &str,
+    ) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+        let password = self.encryption.decrypt(&connection.password)?;
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.drop_column(schema, table, column_name).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
 }

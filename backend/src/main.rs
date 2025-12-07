@@ -75,7 +75,11 @@ async fn main() {
         )
         .route(
             "/api/connections/:id/columns",
-            get(handlers::schema::list_columns),
+            get(handlers::schema::list_columns).post(handlers::schema::add_column),
+        )
+        .route(
+            "/api/connections/:id/columns/:name",
+            put(handlers::schema::alter_column).delete(handlers::schema::drop_column),
         )
         .route(
             "/api/connections/:id/query",
