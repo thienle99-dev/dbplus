@@ -8,7 +8,7 @@ export default function EmptyState() {
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <div className="w-64 h-64 mb-6 opacity-80">
                 <img
-                    src="/Users/thienle/.gemini/antigravity/brain/30a54432-4735-4474-b46b-e5302cdc1b96/empty_state_fishbowl_1764996610578.png"
+                    src="/workspace_welcome.png"
                     alt="Welcome to Workspace"
                     className="w-full h-full object-contain"
                 />

@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
+import { oneDark } from '@codemirror/theme-one-dark';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
@@ -14,6 +15,7 @@ import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
 import { useToast } from '../context/ToastContext';
+import { useSettingsStore } from '../store/settingsStore';
 
 interface QueryResult {
   columns: string[];
@@ -25,14 +27,25 @@ interface QueryEditorProps {
   initialSql?: string;
   initialMetadata?: Record<string, any>;
   isActive?: boolean;
+  isDraft?: boolean;
+  onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
 }
 
-export default function QueryEditor({ initialSql, initialMetadata, isActive }: QueryEditorProps) {
+export default function QueryEditor({ initialSql, initialMetadata, isActive, isDraft, onQueryChange }: QueryEditorProps) {
   const { connectionId } = useParams();
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
   const [visualState, setVisualState] = useState<any>(initialMetadata || null);
   const { showToast } = useToast();
+  const { theme } = useSettingsStore();
+
+  const codeMirrorTheme = useMemo(() => {
+    let effectiveTheme = theme;
+    if (theme === 'system') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return effectiveTheme === 'dark' || effectiveTheme === 'midnight' ? oneDark : undefined;
+  }, [theme]);
 
   // Update query when initialSql changes (e.g. loading from sidebar)
   useEffect(() => {
@@ -42,6 +55,17 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive }: Q
       setMode('visual');
     }
   }, [initialSql, initialMetadata]);
+
+  // Debounced auto-save for drafts
+  useEffect(() => {
+    if (!isDraft || !onQueryChange) return;
+
+    const timeoutId = setTimeout(() => {
+      onQueryChange(query, visualState);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [query, visualState, isDraft, onQueryChange]);
 
   const [result, setResult] = useState<QueryResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -167,19 +191,28 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive }: Q
           </button>
         </div>
 
-        <div className="flex bg-bg-2 rounded p-0.5">
-          <button
-            onClick={() => setMode('sql')}
-            className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'sql' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            <Code size={14} /> SQL
-          </button>
-          <button
-            onClick={() => setMode('visual')}
-            className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'visual' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            <LayoutTemplate size={14} /> Visual
-          </button>
+        <div className="flex items-center gap-3">
+          {isDraft && (
+            <span className="text-xs text-yellow-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+              Draft - Auto-saved
+            </span>
+          )}
+
+          <div className="flex bg-bg-2 rounded p-0.5">
+            <button
+              onClick={() => setMode('sql')}
+              className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'sql' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <Code size={14} /> SQL
+            </button>
+            <button
+              onClick={() => setMode('visual')}
+              className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'visual' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <LayoutTemplate size={14} /> Visual
+            </button>
+          </div>
         </div>
       </div>
 
@@ -188,9 +221,8 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive }: Q
           <CodeMirror
             value={query}
             height="300px"
-            extensions={[sql()]}
+            extensions={[sql(), ...(codeMirrorTheme ? [codeMirrorTheme] : [])]}
             onChange={useCallback((val: string) => setQuery(val), [])}
-            theme="dark"
             className="text-base w-full"
           />
         ) : (
@@ -203,7 +235,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive }: Q
 
       <div className="flex-1 overflow-auto bg-bg-0">
         {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
-        {error && <div className="p-4 text-red-500 font-mono text-sm whitespace-pre-wrap">{error}</div>}
+        {error && <div className="p-4 text-error font-mono text-sm whitespace-pre-wrap">{error}</div>}
 
         {result && (
           <div className="flex flex-col h-full">

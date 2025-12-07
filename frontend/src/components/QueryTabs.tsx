@@ -1,29 +1,69 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, X, FileCode, BookMarked, History } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useParams } from 'react-router-dom';
 import QueryEditor from './QueryEditor';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
+import { useDraftPersistence } from '../hooks/useDraftPersistence';
 
 interface Tab {
   id: string;
   title: string;
   sql?: string;
   metadata?: Record<string, any>;
+  isDraft?: boolean;
+  savedQueryId?: string;
+  lastModified?: number;
 }
 
 export default function QueryTabs() {
-  const [tabs, setTabs] = useState<Tab[]>([{ id: '1', title: 'Query 1' }]);
-  const [activeTabId, setActiveTabId] = useState('1');
+  const { connectionId } = useParams<{ connectionId: string }>();
+  const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(connectionId || '');
+
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState('');
   const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
+
+  // Load drafts on mount
+  useEffect(() => {
+    if (!connectionId) return;
+
+    const drafts = loadDrafts();
+    if (drafts.length > 0) {
+      const draftTabs: Tab[] = drafts.map(draft => ({
+        id: draft.id,
+        title: draft.title,
+        sql: draft.sql,
+        metadata: draft.metadata,
+        isDraft: true,
+        lastModified: draft.lastModified,
+      }));
+      setTabs(draftTabs);
+      setActiveTabId(draftTabs[0].id);
+    } else {
+      // Create initial draft tab if no drafts exist
+      const initialTab: Tab = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: 'Draft Query 1',
+        isDraft: true,
+        lastModified: Date.now(),
+      };
+      setTabs([initialTab]);
+      setActiveTabId(initialTab.id);
+    }
+  }, [connectionId, loadDrafts]);
 
   const addTab = useCallback((sql?: string, metadata?: Record<string, any>) => {
     const newId = Math.random().toString(36).substr(2, 9);
-    const newTab = {
+    const draftCount = tabs.filter(t => t.isDraft).length;
+    const newTab: Tab = {
       id: newId,
-      title: `Query ${tabs.length + 1}`,
+      title: sql ? `Query ${tabs.length + 1}` : `Draft Query ${draftCount + 1}`,
       sql,
-      metadata
+      metadata,
+      isDraft: !sql, // New tabs without SQL are drafts
+      lastModified: Date.now(),
     };
     setTabs(prev => [...prev, newTab]);
     setActiveTabId(newId);
@@ -33,6 +73,12 @@ export default function QueryTabs() {
     e?.stopPropagation();
     if (tabs.length === 1) return;
 
+    // Delete draft from localStorage if it's a draft
+    const tabToClose = tabs.find(t => t.id === id);
+    if (tabToClose?.isDraft) {
+      deleteDraft(id);
+    }
+
     setTabs(prev => {
       const newTabs = prev.filter(t => t.id !== id);
       if (activeTabId === id) {
@@ -40,12 +86,33 @@ export default function QueryTabs() {
       }
       return newTabs;
     });
-  }, [tabs.length, activeTabId]);
+  }, [tabs, activeTabId, deleteDraft]);
 
   const handleLoadQuery = (sql: string, metadata?: Record<string, any>) => {
     // Update current tab's SQL and metadata
     setTabs(tabs.map(t => t.id === activeTabId ? { ...t, sql, metadata } : t));
   };
+
+  // Handle query changes from editor (for auto-save)
+  const handleQueryChange = useCallback((tabId: string, sql: string, metadata?: Record<string, any>) => {
+    setTabs(prev => prev.map(t => {
+      if (t.id === tabId) {
+        const updated = { ...t, sql, metadata, lastModified: Date.now() };
+        // Auto-save draft to localStorage
+        if (updated.isDraft) {
+          saveDraft({
+            id: updated.id,
+            title: updated.title,
+            sql: sql || '',
+            metadata,
+            lastModified: updated.lastModified || Date.now(),
+          });
+        }
+        return updated;
+      }
+      return t;
+    }));
+  }, [saveDraft]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -107,6 +174,9 @@ export default function QueryTabs() {
             >
               <FileCode size={14} className={activeTabId === tab.id ? "text-accent" : ""} />
               <span className="truncate flex-1">{tab.title}</span>
+              {tab.isDraft && (
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" title="Draft - Auto-saved" />
+              )}
               <button
                 onClick={(e) => closeTab(tab.id, e)}
                 className={clsx(
@@ -141,6 +211,8 @@ export default function QueryTabs() {
                 initialSql={tab.sql}
                 initialMetadata={tab.metadata}
                 isActive={activeTabId === tab.id}
+                isDraft={tab.isDraft}
+                onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
               />
             </div>
           ))}

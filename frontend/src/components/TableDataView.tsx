@@ -10,6 +10,7 @@ import { Save, X, RefreshCw, Plus } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useSelectedRow } from '../context/SelectedRowContext';
+import { useTablePage } from '../context/TablePageContext';
 
 interface TableColumn {
   name: string;
@@ -37,13 +38,11 @@ export default function TableDataView() {
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
+  const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
   const { setSelectedRow } = useSelectedRow();
-
-  const pageSize = 100;
 
   const fetchColumns = useCallback(async () => {
     try {
@@ -264,7 +263,7 @@ export default function TableDataView() {
           </button>
           <div className="h-4 w-px bg-border mx-2 self-center" />
           <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => setPage(Math.max(0, page - 1))}
             disabled={page === 0 || loading}
             className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
           >
@@ -274,7 +273,7 @@ export default function TableDataView() {
             Page {page + 1}
           </span>
           <button
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPage(page + 1)}
             disabled={!data.rows.length || data.rows.length < pageSize || loading}
             className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
           >
