@@ -122,9 +122,8 @@ export default function RightSidebar() {
 
   const getDisplayColumns = () => {
     if (!columnsInfo.length || !data) return [];
-    const pkColumns = columnsInfo.filter(col => col.is_primary_key).map(col => col.name);
-    const otherColumns = columnsInfo.filter(col => !col.is_primary_key).slice(0, 3).map(col => col.name);
-    return [...pkColumns, ...otherColumns].filter(col => data.columns.includes(col));
+    // Show all columns for detailed view
+    return data.columns;
   };
 
   const getRowPK = (rowIndex: number) => {
@@ -219,7 +218,7 @@ export default function RightSidebar() {
       }
 
       const setClauses = changes.map(([col, val]) => {
-        const escapedValue = val === null || val === '' ? 'NULL' : 
+        const escapedValue = val === null || val === '' ? 'NULL' :
           typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
         return `"${col}" = ${escapedValue}`;
       });
@@ -333,7 +332,7 @@ export default function RightSidebar() {
   }
 
   return (
-    <div 
+    <div
       className="border-l border-border bg-bg-1 flex flex-col h-full transition-all duration-300 relative"
       style={{ width: `${sidebarWidth}px` }}
     >
@@ -346,8 +345,8 @@ export default function RightSidebar() {
         title="Drag to resize"
       />
       <div className="flex items-center border-b border-border bg-bg-2/50">
-        <div className="flex-1 px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 border-b-2 border-accent text-accent bg-bg-1">
-          <Info size={14} />
+        <div className="flex-1 px-2 py-1.5 text-xs font-medium flex items-center justify-center gap-1.5 border-b-2 border-accent text-accent bg-bg-1">
+          <Info size={12} />
           Details
         </div>
         <button
@@ -355,28 +354,29 @@ export default function RightSidebar() {
             setIsOpen(false);
             setSelectedRow(null);
           }}
-          className="p-2 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-2"
+          className="p-1 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-2"
+          title="Close sidebar"
         >
-          <X size={14} />
+          <X size={12} />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {!connectionId || !schema || !table ? (
-          <div className="text-center text-text-secondary text-sm mt-10 p-4">
-            <Info size={32} className="mx-auto mb-2 opacity-50" />
+          <div className="text-center text-text-secondary text-xs mt-8 p-2">
+            <Info size={24} className="mx-auto mb-1.5 opacity-50" />
             <p>Select a table to view rows</p>
           </div>
         ) : loading ? (
-          <div className="text-center text-text-secondary text-sm mt-10 p-4">Loading...</div>
+          <div className="text-center text-text-secondary text-xs mt-8 p-2">Loading...</div>
         ) : !data || !data.rows.length ? (
-          <div className="text-center text-text-secondary text-sm mt-10 p-4">
-            <Info size={32} className="mx-auto mb-2 opacity-50" />
+          <div className="text-center text-text-secondary text-xs mt-8 p-2">
+            <Info size={24} className="mx-auto mb-1.5 opacity-50" />
             <p>No rows found</p>
           </div>
         ) : (
-          <div className="p-2">
-            <div className="mb-2 flex items-center justify-between">
+          <div className="p-1.5">
+            <div className="mb-1.5 flex items-center justify-between">
               <button
                 onClick={() => {
                   setShowNewRow(!showNewRow);
@@ -384,29 +384,36 @@ export default function RightSidebar() {
                     setNewRowValues({});
                   }
                 }}
-                className="p-1.5 text-text-secondary hover:text-accent hover:bg-bg-2 rounded transition-colors"
-                title="Add New Row"
+                className="p-1 text-text-secondary hover:text-accent hover:bg-bg-2 rounded transition-colors"
+                title="Add new row"
               >
-                <Plus size={16} />
+                <Plus size={14} />
               </button>
-              <div className="text-xs text-text-secondary">
+              <div className="text-[10px] text-text-secondary">
                 {data.rows.length} row{data.rows.length !== 1 ? 's' : ''}
               </div>
             </div>
 
             {showNewRow && (
-              <div className="mb-2 p-2 bg-bg-2 rounded border border-accent/30">
-                <div className="text-xs font-medium text-accent mb-2">New Record</div>
-                <div className="space-y-2">
-                  {columnsInfo.slice(0, 4).map((col) => (
-                    <div key={col.name} className="space-y-1">
-                      <label className="text-xs text-text-secondary">{col.name}</label>
+              <div className="mb-2 p-1.5 bg-bg-2 rounded border border-accent/30 max-h-[300px] overflow-y-auto">
+                <div className="text-[10px] font-medium text-accent mb-1.5 sticky top-0 bg-bg-2 pb-1">New Record</div>
+                <div className="space-y-1.5">
+                  {columnsInfo.map((col) => (
+                    <div key={col.name} className="space-y-0.5">
+                      <label className="text-[10px] text-text-secondary flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          {col.name}
+                          {col.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
+                        </span>
+                        <span className="text-[9px] text-text-secondary/60">{col.data_type}</span>
+                      </label>
                       <input
                         type="text"
                         value={newRowValues[col.name] === null || newRowValues[col.name] === undefined ? '' : String(newRowValues[col.name])}
                         onChange={(e) => handleNewRowValueChange(col.name, e.target.value === '' ? null : e.target.value)}
-                        placeholder={col.is_nullable ? 'NULL' : 'Required'}
-                        className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
+                        placeholder={col.is_nullable ? 'NULL' : col.default_value || 'Required'}
+                        disabled={col.is_primary_key && col.default_value !== null}
+                        className="w-full bg-bg-0 border border-border rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   ))}
@@ -414,9 +421,9 @@ export default function RightSidebar() {
                     <button
                       onClick={handleCreateNew}
                       disabled={saving}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-xs font-medium disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-[10px] font-medium disabled:opacity-50"
                     >
-                      <Save size={12} />
+                      <Save size={11} />
                       Create
                     </button>
                     <button
@@ -424,9 +431,9 @@ export default function RightSidebar() {
                         setShowNewRow(false);
                         setNewRowValues({});
                       }}
-                      className="px-2 py-1 bg-bg-3 hover:bg-bg-2 text-text-secondary rounded text-xs"
+                      className="px-2 py-1 bg-bg-3 hover:bg-bg-2 text-text-secondary rounded text-[10px]"
                     >
-                      <X size={12} />
+                      <X size={11} />
                     </button>
                   </div>
                 </div>
@@ -434,10 +441,10 @@ export default function RightSidebar() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
+              <table className="w-full text-[10px] border-collapse">
                 <thead className="bg-bg-2 sticky top-0">
                   <tr>
-                    <th className="border-b border-border px-1 py-1 text-left">
+                    <th className="border-b border-border px-0.5 py-0.5 text-left">
                       <input
                         type="checkbox"
                         className="cursor-pointer"
@@ -452,12 +459,22 @@ export default function RightSidebar() {
                         }}
                       />
                     </th>
-                    {displayColumns.map((col) => (
-                      <th key={col} className="border-b border-border px-2 py-1 text-left text-text-secondary font-medium truncate max-w-[100px]">
-                        {col}
-                      </th>
-                    ))}
-                    <th className="border-b border-border px-1 py-1 text-right text-text-secondary">Actions</th>
+                    {displayColumns.map((col) => {
+                      const colInfo = columnsInfo.find(c => c.name === col);
+                      return (
+                        <th
+                          key={col}
+                          className="border-b border-border px-1.5 py-0.5 text-left text-text-secondary font-medium truncate max-w-[80px]"
+                          title={colInfo ? `${col} (${colInfo.data_type})${colInfo.is_primary_key ? ' - PK' : ''}${colInfo.is_nullable ? ' - Nullable' : ''}` : col}
+                        >
+                          <div className="flex items-center gap-0.5">
+                            {col}
+                            {colInfo?.is_primary_key && <span className="text-[7px] bg-accent/20 text-accent px-0.5 rounded">PK</span>}
+                          </div>
+                        </th>
+                      );
+                    })}
+                    <th className="border-b border-border px-0.5 py-0.5 text-right text-text-secondary text-[9px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +489,7 @@ export default function RightSidebar() {
                         className={`hover:bg-bg-2/50 cursor-pointer ${isSelected ? 'bg-accent/10' : ''} ${isEditing ? 'bg-accent/5' : ''}`}
                         onClick={() => handleRowClick(rowIndex)}
                       >
-                        <td className="border-b border-border px-1 py-1" onClick={(e) => e.stopPropagation()}>
+                        <td className="border-b border-border px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={selectedRows.has(rowIndex)}
@@ -490,7 +507,7 @@ export default function RightSidebar() {
                           const value = isEditing && rowEdits[col] !== undefined ? rowEdits[col] : (colIndex !== -1 ? row[colIndex] : null);
 
                           return (
-                            <td key={col} className="border-b border-border px-2 py-1 text-text-primary truncate max-w-[100px]">
+                            <td key={col} className="border-b border-border px-1.5 py-0.5 text-text-primary truncate max-w-[80px]">
                               {isEditing && !isPK ? (
                                 <input
                                   type="text"
@@ -500,7 +517,7 @@ export default function RightSidebar() {
                                     handleValueChange(rowIndex, col, e.target.value === '' ? null : e.target.value);
                                   }}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="w-full bg-bg-0 border border-accent rounded px-1 py-0.5 text-xs text-text-primary focus:outline-none"
+                                  className="w-full bg-bg-0 border border-accent rounded px-1 py-0.5 text-[10px] text-text-primary focus:outline-none"
                                 />
                               ) : (
                                 <span className="truncate block" title={value === null || value === undefined ? 'NULL' : String(value)}>
@@ -514,43 +531,43 @@ export default function RightSidebar() {
                             </td>
                           );
                         })}
-                        <td className="border-b border-border px-1 py-1" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
+                        <td className="border-b border-border px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-0.5">
                             {isEditing ? (
                               <>
                                 <button
                                   onClick={() => handleSave(rowIndex)}
                                   disabled={saving}
-                                  className="p-1 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
-                                  title="Save"
+                                  className="p-0.5 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
+                                  title="Save changes"
                                 >
-                                  <Save size={12} />
+                                  <Save size={11} />
                                 </button>
                                 <button
                                   onClick={handleCancelEdit}
                                   disabled={saving}
-                                  className="p-1 text-text-secondary hover:bg-bg-2 rounded disabled:opacity-50"
-                                  title="Cancel"
+                                  className="p-0.5 text-text-secondary hover:bg-bg-2 rounded disabled:opacity-50"
+                                  title="Cancel editing"
                                 >
-                                  <X size={12} />
+                                  <X size={11} />
                                 </button>
                               </>
                             ) : (
                               <>
                                 <button
                                   onClick={() => handleEdit(rowIndex)}
-                                  className="p-1 text-text-secondary hover:text-accent hover:bg-bg-2 rounded"
-                                  title="Edit"
+                                  className="p-0.5 text-text-secondary hover:text-accent hover:bg-bg-2 rounded"
+                                  title="Edit row"
                                 >
-                                  <Edit2 size={12} />
+                                  <Edit2 size={11} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(rowIndex)}
                                   disabled={saving}
-                                  className="p-1 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
-                                  title="Delete"
+                                  className="p-0.5 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
+                                  title="Delete row"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={11} />
                                 </button>
                               </>
                             )}

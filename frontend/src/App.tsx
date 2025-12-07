@@ -10,6 +10,7 @@ import Breadcrumbs from './components/ui/Breadcrumbs';
 import EmptyState from './components/EmptyState';
 import { SelectedRowProvider } from './context/SelectedRowContext';
 import { TablePageProvider } from './context/TablePageContext';
+import { BottomPanel } from './components/BottomPanel';
 
 const WorkspacePage = () => (
   <SelectedRowProvider>
@@ -29,6 +30,7 @@ const WorkspacePage = () => (
           </div>
         </div>
         <RightSidebar />
+        <BottomPanel />
       </div>
     </TablePageProvider>
   </SelectedRowProvider>
@@ -36,7 +38,6 @@ const WorkspacePage = () => (
 
 import { useEffect } from 'react';
 import { useSettingsStore } from './store/settingsStore';
-import { LogViewer } from './components/LogViewer';
 
 // ... other imports ...
 
@@ -63,7 +64,6 @@ function App() {
         <Route path="/" element={<ConnectionsDashboard />} />
         <Route path="/workspace/:connectionId/*" element={<WorkspacePage />} />
       </Routes>
-      <LogViewer />
     </>
   );
 }

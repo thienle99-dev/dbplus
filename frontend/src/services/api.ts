@@ -9,7 +9,7 @@ console.log('[API] Initializing. isDevServer:', isDevServer, 'port:', window?.lo
 
 const api = axios.create({
   baseURL,
-  timeout: 5000, // 5s timeout
+  timeout: 30000, // 30s timeout for database operations
   headers: {
     'Content-Type': 'application/json',
   },
@@ -63,6 +63,8 @@ api.interceptors.response.use(
     let logMessage = `Error: ${error.message}`;
     if (error.code === 'ERR_NETWORK') {
       logMessage = `Network Error: Connection refused or CORS blocked. Check backend is running on ${api.defaults.baseURL}`;
+    } else if (error.code === 'ECONNABORTED') {
+      logMessage = `Request Timeout: The backend took too long to respond. Check if the backend is running on ${api.defaults.baseURL} or if there's a performance issue.`;
     } else if (error.response) {
       const detail = error.response.data
         ? (typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : String(error.response.data))

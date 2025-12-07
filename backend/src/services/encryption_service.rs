@@ -10,17 +10,33 @@ pub struct EncryptionService {
 
 impl EncryptionService {
     pub fn new() -> Result<Self> {
-        let key_str =
-            env::var("ENCRYPTION_KEY").map_err(|_| anyhow!("ENCRYPTION_KEY must be set"))?;
+        let key_str = match env::var("ENCRYPTION_KEY") {
+            Ok(key) => key,
+            Err(_) => {
+                tracing::warn!("ENCRYPTION_KEY not set, generating a default key. This is not secure for production!");
+                let default_key = Self::generate_default_key()?;
+                default_key
+            }
+        };
+        
         let key_bytes = BASE64
-            .decode(key_str)
+            .decode(&key_str)
             .map_err(|_| anyhow!("Invalid base64 key"))?;
 
         let unbound_key = UnboundKey::new(&aead::AES_256_GCM, &key_bytes)
-            .map_err(|_| anyhow!("Invalid key length"))?;
+            .map_err(|_| anyhow!("Invalid key length. Key must be 32 bytes (256 bits) for AES-256-GCM"))?;
         let key = LessSafeKey::new(unbound_key);
 
         Ok(Self { key })
+    }
+
+    fn generate_default_key() -> Result<String> {
+        use ring::rand::SecureRandom;
+        let rng = SystemRandom::new();
+        let mut key_bytes = [0u8; 32];
+        rng.fill(&mut key_bytes)
+            .map_err(|_| anyhow!("Failed to generate default key"))?;
+        Ok(BASE64.encode(key_bytes))
     }
 
     pub fn encrypt(&self, data: &str) -> Result<String> {
