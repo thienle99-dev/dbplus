@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Connection } from '../../types';
+import { Connection, ConnectionFormModalProps } from '../../types';
 import { useConnectionStore } from '../../store/connectionStore';
 import { ChevronDown } from 'lucide-react';
-
-interface ConnectionFormModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (connection: Omit<Connection, 'id'>) => Promise<void>;
-    initialValues?: Omit<Connection, 'id'>;
-}
 
 const DB_TYPES = [
     { value: 'postgres', label: 'PostgreSQL' },

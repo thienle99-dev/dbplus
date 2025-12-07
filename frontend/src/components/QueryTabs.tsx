@@ -8,20 +8,7 @@ import QueryHistory from './QueryHistory';
 import TableDataView from './TableDataView';
 import { useDraftPersistence } from '../hooks/useDraftPersistence';
 import { TabProvider } from '../context/TabContext';
-
-interface Tab {
-  id: string;
-  title: string;
-  type: 'query' | 'table';
-  sql?: string;
-  // For table tabs
-  schema?: string;
-  table?: string;
-  metadata?: Record<string, any>;
-  isDraft?: boolean;
-  savedQueryId?: string;
-  lastModified?: number;
-}
+import { Tab } from '../types';
 
 export default function QueryTabs() {
   const { connectionId } = useParams<{ connectionId: string }>();

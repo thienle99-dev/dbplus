@@ -6,22 +6,8 @@ import { useTablePage } from '../context/TablePageContext';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { LogViewer } from './LogViewer';
+import { TableColumn, QueryResult } from '../types';
 
-interface TableColumn {
-  name: string;
-  data_type: string;
-  is_nullable: boolean;
-  default_value: string | null;
-  is_primary_key: boolean;
-}
-
-interface QueryResult {
-  columns: string[];
-  rows: unknown[][];
-  affected_rows: number;
-}
-
-// Assuming EditState is defined elsewhere or is a type alias for Record<number, Record<string, unknown>>
 type EditState = Record<number, Record<string, unknown>>;
 
 export default function RightSidebar() {

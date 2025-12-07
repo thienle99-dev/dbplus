@@ -2,19 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { Database } from 'lucide-react';
-
-interface TableColumn {
-    name: string;
-    data_type: string;
-    is_nullable: boolean;
-    default_value: string | null;
-    is_primary_key: boolean;
-}
-
-interface TableStructureTabProps {
-    schema?: string;
-    table?: string;
-}
+import { TableColumn, TableStructureTabProps } from '../types';
 
 export default function TableStructureTab({ schema: schemaProp, table: tableProp }: TableStructureTabProps) {
     const params = useParams();

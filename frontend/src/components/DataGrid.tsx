@@ -7,12 +7,7 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import api from '../services/api';
-
-interface QueryResult {
-  columns: string[];
-  rows: unknown[][];
-  affected_rows: number;
-}
+import { QueryResult } from '../types';
 
 export default function DataGrid() {
   const { connectionId, schema, table } = useParams();

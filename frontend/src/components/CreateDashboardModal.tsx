@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import api from '../services/api';
-
-interface CreateDashboardModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
+import { CreateDashboardModalProps } from '../types';
 
 export default function CreateDashboardModal({ isOpen, onClose, onSuccess }: CreateDashboardModalProps) {
   const { connectionId } = useParams();

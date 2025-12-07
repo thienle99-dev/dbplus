@@ -3,13 +3,7 @@ import { useParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import api from '../services/api';
 import { SavedQuery } from './SavedQueriesList';
-
-interface AddChartModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  dashboardId: string;
-}
+import { AddChartModalProps } from '../types';
 
 export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId }: AddChartModalProps) {
   const { connectionId } = useParams();

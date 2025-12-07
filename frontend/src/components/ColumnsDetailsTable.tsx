@@ -5,13 +5,7 @@ import ColumnModal from './ColumnModal';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useParams } from 'react-router-dom';
-
-interface ColumnsDetailsTableProps {
-    columns: TableColumn[];
-    foreignKeys: ForeignKey[];
-    indexes: { name: string; columns: string[] }[];
-    onRefresh: () => void;
-}
+import { ColumnsDetailsTableProps } from '../types';
 
 type SortField = 'name' | 'data_type' | 'nullable' | 'default';
 type SortDirection = 'asc' | 'desc' | null;

@@ -3,13 +3,7 @@ import { X } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
-
-interface SaveQueryModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  sql: string;
-  onSave: () => void;
-}
+import { SaveQueryModalProps } from '../types';
 
 export default function SaveQueryModal({ isOpen, onClose, sql, onSave }: SaveQueryModalProps) {
   const { connectionId } = useParams();
@@ -31,7 +25,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, onSave }: SaveQue
         tags: []
       });
       showToast('Query saved successfully', 'success');
-      onSave();
+      onSave(name, description);
       onClose();
     } catch (err: unknown) {
       showToast('Failed to save query', 'error');

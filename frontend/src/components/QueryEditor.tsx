@@ -17,12 +17,7 @@ import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
 import { useToast } from '../context/ToastContext';
 import { useSettingsStore } from '../store/settingsStore';
-
-interface QueryResult {
-  columns: string[];
-  rows: unknown[][];
-  affected_rows: number;
-}
+import { QueryResult } from '../types';
 
 interface QueryEditorProps {
   initialSql?: string;

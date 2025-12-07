@@ -1,12 +1,6 @@
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { TableStats } from '../types';
-
-interface TableStatisticsProps {
-    statistics: TableStats;
-    onRefresh: () => void;
-    loading?: boolean;
-}
+import { TableStats, TableStatisticsProps } from '../types';
 
 function formatBytes(bytes: number | null): string {
     if (bytes === null || bytes === undefined) return 'N/A';

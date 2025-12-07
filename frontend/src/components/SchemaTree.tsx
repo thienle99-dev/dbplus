@@ -4,12 +4,7 @@ import api from '../services/api';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useTabContext } from '../context/TabContext';
-
-interface TableInfo {
-  schema: string;
-  name: string;
-  table_type: string;
-}
+import { TableInfo } from '../types';
 
 interface SchemaNodeProps {
   schemaName: string;

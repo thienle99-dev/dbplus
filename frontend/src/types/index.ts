@@ -1,13 +1,7 @@
-export interface Connection {
-  id: string;
-  name: string;
-  type: "postgres" | "mysql" | "mongo" | "redis";
-  host: string;
-  port?: number;
-  database: string;
-  username?: string;
-  password?: string;
-  ssl?: boolean;
-}
-
 export * from './table';
+export * from './database';
+export * from './components';
+export * from './connections';
+export * from './modals';
+export * from './tabs';
+export * from './schema';
