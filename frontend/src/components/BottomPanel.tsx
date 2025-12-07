@@ -10,9 +10,9 @@ interface BottomPanelProps {
     table?: string;
 }
 
-export function BottomPanel({ connectionId, schema, table }: BottomPanelProps) {
+export function BottomPanel({ }: BottomPanelProps) {
     const [activeTab, setActiveTab] = useState<TabType>('sql');
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const [panelHeight, setPanelHeight] = useState(() => {
         const saved = localStorage.getItem('bottom-panel-height');
         return saved ? parseInt(saved, 10) : 300;

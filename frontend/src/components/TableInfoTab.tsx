@@ -70,28 +70,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 const fetchedColumns = response.data;
                 setColumns(fetchedColumns);
 
-                // Build CREATE TABLE statement
-                const columnDefs = fetchedColumns.map((col: any) => {
-                    let def = `  "${col.name}" ${col.data_type}`;
-                    if (!col.is_nullable) def += ' NOT NULL';
-                    if (col.default_value) def += ` DEFAULT ${col.default_value}`;
-                    return def;
-                }).join(',\n');
+                // SQL definition is now handled by a separate useEffect
 
-                const pkColumns = fetchedColumns
-                    .filter((col: any) => col.is_primary_key)
-                    .map((col: any) => `"${col.name}"`)
-                    .join(', ');
-
-                let sql = `CREATE TABLE "${schema}"."${table}" (\n${columnDefs}`;
-                if (pkColumns) {
-                    sql += `,\n  PRIMARY KEY (${pkColumns})`;
-                }
-                sql += '\n);';
-
-                setSqlDefinition(sql);
-
-                setSqlDefinition(sql);
 
                 // Fetch indexes from backend (replaced client-side inference)
                 fetchIndexes();
@@ -157,6 +137,110 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
 
         fetchTableInfo();
     }, [connectionId, schema, table]);
+
+    // Generate SQL Definition
+    useEffect(() => {
+        if (!schema || !table || columns.length === 0) return;
+
+        let sql = `-- Table Definition for ${schema}.${table}\n`;
+
+        // 1. CREATE TABLE
+        const columnDefs = columns.map((col: any) => {
+            let def = `  "${col.name}" ${col.data_type}`;
+            if (!col.is_nullable) def += ' NOT NULL';
+            if (col.default_value) def += ` DEFAULT ${col.default_value}`;
+            return def;
+        }).join(',\n');
+
+        const pkColumns = columns
+            .filter((col: any) => col.is_primary_key)
+            .map((col: any) => `"${col.name}"`)
+            .join(', ');
+
+        sql += `CREATE TABLE "${schema}"."${table}" (\n${columnDefs}`;
+        if (pkColumns) {
+            sql += `,\n  PRIMARY KEY (${pkColumns})`;
+        }
+        sql += '\n);\n';
+
+        // 2. Constraints
+        if (constraints) {
+            // Foreign Keys
+            if (constraints.foreign_keys.length > 0) {
+                sql += '\n-- Foreign Keys\n';
+                constraints.foreign_keys.forEach(fk => {
+                    let fkSql = `ALTER TABLE "${schema}"."${table}" ADD CONSTRAINT "${fk.constraint_name}" FOREIGN KEY ("${fk.column_name}") REFERENCES "${fk.foreign_schema}"."${fk.foreign_table}" ("${fk.foreign_column}")`;
+                    if (fk.update_rule && fk.update_rule !== 'NO ACTION') fkSql += ` ON UPDATE ${fk.update_rule}`;
+                    if (fk.delete_rule && fk.delete_rule !== 'NO ACTION') fkSql += ` ON DELETE ${fk.delete_rule}`;
+                    fkSql += ';';
+                    sql += `${fkSql}\n`;
+                });
+            }
+
+            // Check Constraints
+            if (constraints.check_constraints.length > 0) {
+                sql += '\n-- Check Constraints\n';
+                constraints.check_constraints.forEach(ck => {
+                    sql += `ALTER TABLE "${schema}"."${table}" ADD CONSTRAINT "${ck.constraint_name}" CHECK (${ck.check_clause});\n`;
+                });
+            }
+
+            // Unique Constraints
+            if (constraints.unique_constraints.length > 0) {
+                sql += '\n-- Unique Constraints\n';
+                constraints.unique_constraints.forEach(uq => {
+                    const cols = uq.columns.map(c => `"${c}"`).join(', ');
+                    sql += `ALTER TABLE "${schema}"."${table}" ADD CONSTRAINT "${uq.constraint_name}" UNIQUE (${cols});\n`;
+                });
+            }
+        }
+
+        // 3. Indexes
+        const nonPkIndexes = indexes.filter(idx => !idx.is_primary);
+        // Exclude indexes that backup unique constraints to avoid duplication if desired, 
+        // but for a full script it's safer to check existence or just list what's returned.
+        // However, usually `ADD CONSTRAINT UNIQUE` implicitly creates an index. 
+        // Showing both creates redundancy if run blindly.
+        // For display purposes, we filter out unique indexes that match unique constraint names essentially.
+        const visibleIndexes = nonPkIndexes.filter(idx => {
+            if (idx.is_unique && constraints?.unique_constraints.some(uc => uc.constraint_name === idx.name)) {
+                return false;
+            }
+            return true;
+        });
+
+        if (visibleIndexes.length > 0) {
+            sql += '\n-- Indexes\n';
+            visibleIndexes.forEach(idx => {
+                const indexType = idx.is_unique ? 'UNIQUE INDEX' : 'INDEX';
+                const colList = idx.columns.map(c => `"${c}"`).join(', ');
+                let indexSql = `CREATE ${indexType} "${idx.name}" ON "${schema}"."${table}"`;
+
+                if (idx.algorithm && idx.algorithm !== 'BTREE') {
+                    indexSql += ` USING ${idx.algorithm}`;
+                }
+
+                indexSql += ` (${colList})`;
+
+                if (idx.include && idx.include.length > 0) {
+                    indexSql += ` INCLUDE (${idx.include.map(c => `"${c}"`).join(', ')})`;
+                }
+
+                if (idx.condition) {
+                    indexSql += ` WHERE ${idx.condition}`;
+                }
+
+                indexSql += ';';
+                sql += `${indexSql}\n`;
+
+                if (idx.comment) {
+                    sql += `COMMENT ON INDEX "${idx.name}" IS '${idx.comment.replace(/'/g, "''")}';\n`;
+                }
+            });
+        }
+
+        setSqlDefinition(sql);
+    }, [schema, table, columns, indexes, constraints]);
 
 
     const handleCreateIndex = async () => {

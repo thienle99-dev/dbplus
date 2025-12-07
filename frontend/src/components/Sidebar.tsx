@@ -34,7 +34,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-bg-1 border-r border-border flex flex-col h-screen flex-shrink-0">
+    <div className="w-64 bg-bg-1 pb-[30px] border-r border-border flex flex-col h-screen flex-shrink-0">
 
       {/* Search Header */}
       <div className="p-3 border-b border-border space-y-3">
