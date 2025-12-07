@@ -181,11 +181,11 @@
 
 ## Phase 9: Advanced Tools & Polish
 
-- [ ] **Editors & Modals**
-  - [ ] Row Editor Modal
-  - [ ] Column/Schema Editor
-  - [ ] View/Function Definition Viewer
-  - [ ] Filter Builder Panel
+- [/] **Editors & Modals**
+  - [/] Row Editor Modal (Backend complete, frontend pending)
+  - [x] Column/Schema Editor (ColumnModal.tsx exists)
+  - [/] View/Function Definition Viewer (Backend complete, frontend pending)
+  - [/] Filter Builder Panel (Backend complete, frontend pending)
 - [ ] **Data Tools**
   - [ ] Import Wizard (CSV/JSON/SQL)
   - [ ] Export Wizard
@@ -219,38 +219,38 @@
 
 ### Phase 11.1 - Essential Features (High Priority)
 
-- [ ] **Constraints & Foreign Keys** ⭐⭐⭐⭐⭐
-  - [ ] Backend: Create API endpoint `GET /api/connections/:id/constraints`
-    - [ ] Query foreign keys with ON DELETE/UPDATE actions
-    - [ ] Query check constraints
-    - [ ] Query unique constraints
-  - [ ] Frontend: Constraints display component
-    - [ ] Foreign keys section with navigation buttons
-    - [ ] Check constraints section
-    - [ ] Unique constraints section
-    - [ ] Click to navigate to referenced tables
+- [x] **Constraints & Foreign Keys** ⭐⭐⭐⭐⭐
+  - [x] Backend: Create API endpoint `GET /api/connections/:id/constraints`
+    - [x] Query foreign keys with ON DELETE/UPDATE actions
+    - [x] Query check constraints
+    - [x] Query unique constraints
+  - [x] Frontend: Constraints display component
+    - [x] Foreign keys section with navigation buttons
+    - [x] Check constraints section
+    - [x] Unique constraints section
+    - [x] Click to navigate to referenced tables
 
-- [ ] **Columns Details Table** ⭐⭐⭐⭐
-  - [ ] Frontend: Enhanced columns table component
-    - [ ] Display all column properties in table format
-    - [ ] Add icons for Primary Key, Foreign Key, Indexed columns
-    - [ ] Show data type with precision/length
-    - [ ] Display nullable, default values
-    - [ ] Add column comments/descriptions
-    - [ ] Sortable columns
+- [x] **Columns Details Table** ⭐⭐⭐⭐
+  - [x] Frontend: Enhanced columns table component
+    - [x] Display all column properties in table format
+    - [x] Add icons for Primary Key, Foreign Key, Indexed columns
+    - [x] Show data type with precision/length
+    - [x] Display nullable, default values
+    - [x] Add column comments/descriptions
+    - [x] Sortable columns
 
-- [ ] **Table Statistics** ⭐⭐⭐⭐
-  - [ ] Backend: Create API endpoint `GET /api/connections/:id/table-stats`
-    - [ ] Query row count (estimated)
-    - [ ] Query table size
-    - [ ] Query index size
-    - [ ] Query creation/modification timestamps
-    - [ ] PostgreSQL: Use pg_stat_user_tables, pg_total_relation_size()
-  - [ ] Frontend: Statistics display component
-    - [ ] Display all statistics in card format
-    - [ ] Add refresh button
-    - [ ] Format sizes (MB, GB)
-    - [ ] Format numbers with commas
+- [x] **Table Statistics** ⭐⭐⭐⭐
+  - [x] Backend: Create API endpoint `GET /api/connections/:id/table-stats`
+    - [x] Query row count (estimated)
+    - [x] Query table size
+    - [x] Query index size
+    - [x] Query creation/modification timestamps
+    - [x] PostgreSQL: Use pg_stat_user_tables, pg_total_relation_size()
+  - [x] Frontend: Statistics display component
+    - [x] Display all statistics in card format
+    - [x] Add refresh button
+    - [x] Format sizes (MB, GB)
+    - [x] Format numbers with commas
 
 ### Phase 11.2 - Enhanced Features (Medium Priority)
 

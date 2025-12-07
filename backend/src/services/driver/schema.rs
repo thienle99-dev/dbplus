@@ -1,0 +1,11 @@
+use anyhow::Result;
+use async_trait::async_trait;
+use crate::services::db_driver::{TableColumn, TableInfo};
+
+#[async_trait]
+pub trait SchemaIntrospection: Send + Sync {
+    async fn get_databases(&self) -> Result<Vec<String>>;
+    async fn get_schemas(&self) -> Result<Vec<String>>;
+    async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>>;
+    async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>>;
+}

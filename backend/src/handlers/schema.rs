@@ -23,7 +23,6 @@ pub struct ColumnParams {
     table: String,
 }
 
-// Get schemas
 pub async fn list_schemas(
     State(db): State<DatabaseConnection>,
     Path(connection_id): Path<Uuid>,
@@ -271,6 +270,134 @@ pub async fn drop_column(
                 column_name,
                 e
             );
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ViewParams {
+    schema: String,
+}
+
+#[derive(Deserialize)]
+pub struct ViewDefinitionParams {
+    schema: String,
+    view: String,
+}
+
+pub async fn list_views(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<ViewParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /views - connection_id: {}, schema: {}",
+        connection_id,
+        params.schema
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service.list_views(connection_id, &params.schema).await {
+        Ok(views) => {
+            tracing::info!(
+                "[API] GET /views - SUCCESS - found {} views",
+                views.len()
+            );
+            (StatusCode::OK, Json(views)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /views - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+pub async fn get_view_definition(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<ViewDefinitionParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /view-definition - connection_id: {}, schema: {}, view: {}",
+        connection_id,
+        params.schema,
+        params.view
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .get_view_definition(connection_id, &params.schema, &params.view)
+        .await
+    {
+        Ok(view) => {
+            tracing::info!("[API] GET /view-definition - SUCCESS");
+            (StatusCode::OK, Json(view)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /view-definition - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct FunctionParams {
+    schema: String,
+}
+
+#[derive(Deserialize)]
+pub struct FunctionDefinitionParams {
+    schema: String,
+    function: String,
+}
+
+pub async fn list_functions(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<FunctionParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /functions - connection_id: {}, schema: {}",
+        connection_id,
+        params.schema
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service.list_functions(connection_id, &params.schema).await {
+        Ok(functions) => {
+            tracing::info!(
+                "[API] GET /functions - SUCCESS - found {} functions",
+                functions.len()
+            );
+            (StatusCode::OK, Json(functions)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /functions - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+pub async fn get_function_definition(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<FunctionDefinitionParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /function-definition - connection_id: {}, schema: {}, function: {}",
+        connection_id,
+        params.schema,
+        params.function
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .get_function_definition(connection_id, &params.schema, &params.function)
+        .await
+    {
+        Ok(function) => {
+            tracing::info!("[API] GET /function-definition - SUCCESS");
+            (StatusCode::OK, Json(function)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /function-definition - ERROR: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }

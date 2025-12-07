@@ -134,6 +134,23 @@ async fn main() {
             "/api/connections/:id/indexes",
             get(handlers::table_info::get_table_indexes),
         )
+        // Views and Functions routes
+        .route(
+            "/api/connections/:id/views",
+            get(handlers::schema::list_views),
+        )
+        .route(
+            "/api/connections/:id/view-definition",
+            get(handlers::schema::get_view_definition),
+        )
+        .route(
+            "/api/connections/:id/functions",
+            get(handlers::schema::list_functions),
+        )
+        .route(
+            "/api/connections/:id/function-definition",
+            get(handlers::schema::get_function_definition),
+        )
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)

@@ -59,3 +59,32 @@ export interface TableStats {
     created_at: string | null;
     last_modified: string | null;
 }
+
+export interface ViewInfo {
+    schema: string;
+    name: string;
+    definition: string;
+    owner?: string;
+    created_at?: string;
+}
+
+export interface FunctionInfo {
+    schema: string;
+    name: string;
+    definition: string;
+    return_type: string;
+    language: string;
+    owner?: string;
+}
+
+export interface FilterCondition {
+    column: string;
+    operator: string;
+    value: string | null;
+    logic: 'AND' | 'OR';
+}
+
+export interface FilterGroup {
+    conditions: FilterCondition[];
+    logic: 'AND' | 'OR';
+}

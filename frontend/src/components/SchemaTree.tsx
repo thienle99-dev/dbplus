@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Database, Table } from 'lucide-react';
+import { ChevronRight, Database, Table, Pin } from 'lucide-react';
 import api from '../services/api';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useTabContext } from '../context/TabContext';
 import { TableInfo } from '../types';
+import TableContextMenu from './TableContextMenu';
+import { usePinnedTables } from '../hooks/usePinnedTables';
 
 interface SchemaNodeProps {
   schemaName: string;
@@ -17,8 +19,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    table: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isPinned, togglePin } = usePinnedTables(connectionId);
 
   // Try to get tab context - it's only available when inside QueryTabs
   let tabContext;
@@ -53,6 +60,16 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
     !searchTerm || t.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Sort tables: pinned first, then alphabetically
+  const sortedTables = [...filteredTables].sort((a, b) => {
+    const aIsPinned = isPinned(schemaName, a.name);
+    const bIsPinned = isPinned(schemaName, b.name);
+
+    if (aIsPinned && !bIsPinned) return -1;
+    if (!aIsPinned && bIsPinned) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
   const shouldShow = !searchTerm || filteredTables.length > 0 || schemaName.toLowerCase().includes(searchTerm.toLowerCase());
 
   // Auto-expand if searching and matches
@@ -65,6 +82,27 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
 
 
   if (!shouldShow) return null;
+
+  const handleTableClick = (table: TableInfo) => {
+    if (shouldUseTabs && tabContext) {
+      // Already on query route, open in tab
+      tabContext.openTableInTab(schemaName, table.name, true);
+    } else {
+      // Navigate to query route with state to auto-open table
+      navigate(`/workspace/${connectionId}/query`, {
+        state: { openTable: { schema: schemaName, table: table.name } }
+      });
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, tableName: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      table: tableName,
+      position: { x: e.clientX, y: e.clientY },
+    });
+  };
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={(open) => {
@@ -85,28 +123,37 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
         ) : filteredTables.length === 0 && tables.length > 0 ? (
           <div className="text-[10px] text-text-secondary py-1 pl-4">No matching tables</div>
         ) : (
-          filteredTables.map((table) => (
-            <div
-              key={table.name}
-              onClick={() => {
-                if (shouldUseTabs && tabContext) {
-                  // Already on query route, open in tab
-                  tabContext.openTableInTab(schemaName, table.name, true);
-                } else {
-                  // Navigate to query route with state to auto-open table
-                  navigate(`/workspace/${connectionId}/query`, {
-                    state: { openTable: { schema: schemaName, table: table.name } }
-                  });
-                }
-              }}
-              className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors"
-            >
-              <Table size={14} className="flex-shrink-0 opacity-70" />
-              <span className="truncate">{table.name}</span>
-            </div>
-          ))
+          sortedTables.map((table) => {
+            const tablePinned = isPinned(schemaName, table.name);
+            return (
+              <div
+                key={table.name}
+                onClick={() => handleTableClick(table)}
+                onContextMenu={(e) => handleContextMenu(e, table.name)}
+                className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors group"
+              >
+                <Table size={14} className="flex-shrink-0 opacity-70" />
+                <span className="truncate flex-1">{table.name}</span>
+                {tablePinned && (
+                  <Pin size={12} className="flex-shrink-0 text-accent opacity-60" />
+                )}
+              </div>
+            );
+          })
         )}
       </Collapsible.Content>
+
+      {contextMenu && (
+        <TableContextMenu
+          table={contextMenu.table}
+          schema={schemaName}
+          connectionId={connectionId}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          isPinned={isPinned(schemaName, contextMenu.table)}
+          onTogglePin={() => togglePin(schemaName, contextMenu.table)}
+        />
+      )}
     </Collapsible.Root>
   );
 }

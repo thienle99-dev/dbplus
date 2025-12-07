@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableColumn {
     pub name: String,
@@ -86,13 +87,45 @@ pub struct ColumnDefinition {
     pub default_value: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewInfo {
+    pub schema: String,
+    pub name: String,
+    pub definition: String,
+    pub owner: Option<String>,
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionInfo {
+    pub schema: String,
+    pub name: String,
+    pub definition: String,
+    pub return_type: String,
+    pub language: String,
+    pub owner: Option<String>,
+}
+
+use crate::services::driver::{
+    ConnectionDriver, QueryDriver, SchemaIntrospection, TableOperations,
+    ColumnManagement, ViewOperations, FunctionOperations, NoSQLOperations,
+};
+
 #[async_trait]
-pub trait DatabaseDriver: Send + Sync {
+pub trait DatabaseDriver: 
+    ConnectionDriver 
+    + QueryDriver 
+    + SchemaIntrospection 
+    + TableOperations 
+    + ColumnManagement 
+    + ViewOperations 
+    + FunctionOperations 
+    + Send 
+    + Sync 
+{
     async fn execute(&self, query: &str) -> Result<u64>;
     async fn query(&self, query: &str) -> Result<QueryResult>;
     async fn test_connection(&self) -> Result<()>;
-
-    // Schema Introspection
     async fn get_databases(&self) -> Result<Vec<String>>;
     async fn get_schemas(&self) -> Result<Vec<String>>;
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>>;
@@ -104,17 +137,16 @@ pub trait DatabaseDriver: Send + Sync {
         limit: i64,
         offset: i64,
     ) -> Result<QueryResult>;
-
-    // Query Execution
     async fn execute_query(&self, query: &str) -> Result<QueryResult>;
-
-    // Table Info Enhancements
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
-
-    // Column Management
-    async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
+    async fn add_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column: &ColumnDefinition,
+    ) -> Result<()>;
     async fn alter_column(
         &self,
         schema: &str,
@@ -123,4 +155,148 @@ pub trait DatabaseDriver: Send + Sync {
         new_def: &ColumnDefinition,
     ) -> Result<()>;
     async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()>;
+    async fn list_views(&self, schema: &str) -> Result<Vec<ViewInfo>>;
+    async fn get_view_definition(&self, schema: &str, view_name: &str) -> Result<ViewInfo>;
+    async fn list_functions(&self, schema: &str) -> Result<Vec<FunctionInfo>>;
+    async fn get_function_definition(
+        &self,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<FunctionInfo>;
+}
+
+#[async_trait]
+impl<T> DatabaseDriver for T 
+where 
+    T: ConnectionDriver 
+        + QueryDriver 
+        + SchemaIntrospection 
+        + TableOperations 
+        + ColumnManagement 
+        + ViewOperations 
+        + FunctionOperations 
+        + Send 
+        + Sync
+{
+    async fn execute(&self, query: &str) -> Result<u64> {
+        <Self as QueryDriver>::execute(self, query).await
+    }
+
+    async fn query(&self, query: &str) -> Result<QueryResult> {
+        <Self as QueryDriver>::query(self, query).await
+    }
+
+    async fn test_connection(&self) -> Result<()> {
+        <Self as ConnectionDriver>::test_connection(self).await
+    }
+
+    async fn get_databases(&self) -> Result<Vec<String>> {
+        <Self as SchemaIntrospection>::get_databases(self).await
+    }
+
+    async fn get_schemas(&self) -> Result<Vec<String>> {
+        <Self as SchemaIntrospection>::get_schemas(self).await
+    }
+
+    async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>> {
+        <Self as SchemaIntrospection>::get_tables(self, schema).await
+    }
+
+    async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>> {
+        <Self as SchemaIntrospection>::get_columns(self, schema, table).await
+    }
+
+    async fn get_table_data(
+        &self,
+        schema: &str,
+        table: &str,
+        limit: i64,
+        offset: i64,
+    ) -> Result<QueryResult> {
+        <Self as TableOperations>::get_table_data(self, schema, table, limit, offset).await
+    }
+
+    async fn execute_query(&self, query: &str) -> Result<QueryResult> {
+        <Self as QueryDriver>::execute_query(self, query).await
+    }
+
+    async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints> {
+        <Self as TableOperations>::get_table_constraints(self, schema, table).await
+    }
+
+    async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics> {
+        <Self as TableOperations>::get_table_statistics(self, schema, table).await
+    }
+
+    async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>> {
+        <Self as TableOperations>::get_table_indexes(self, schema, table).await
+    }
+
+    async fn add_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column: &ColumnDefinition,
+    ) -> Result<()> {
+        <Self as ColumnManagement>::add_column(self, schema, table, column).await
+    }
+
+    async fn alter_column(
+        &self,
+        schema: &str,
+        table: &str,
+        column_name: &str,
+        new_def: &ColumnDefinition,
+    ) -> Result<()> {
+        <Self as ColumnManagement>::alter_column(self, schema, table, column_name, new_def).await
+    }
+
+    async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
+        <Self as ColumnManagement>::drop_column(self, schema, table, column_name).await
+    }
+
+    async fn list_views(&self, schema: &str) -> Result<Vec<ViewInfo>> {
+        <Self as ViewOperations>::list_views(self, schema).await
+    }
+
+    async fn get_view_definition(&self, schema: &str, view_name: &str) -> Result<ViewInfo> {
+        <Self as ViewOperations>::get_view_definition(self, schema, view_name).await
+    }
+
+    async fn list_functions(&self, schema: &str) -> Result<Vec<FunctionInfo>> {
+        <Self as FunctionOperations>::list_functions(self, schema).await
+    }
+
+    async fn get_function_definition(
+        &self,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<FunctionInfo> {
+        <Self as FunctionOperations>::get_function_definition(self, schema, function_name).await
+    }
+}
+
+pub trait SQLDatabaseDriver: DatabaseDriver {
+}
+
+impl<T> SQLDatabaseDriver for T 
+where 
+    T: DatabaseDriver
+{
+}
+
+#[async_trait]
+pub trait NoSQLDatabaseDriver: 
+    ConnectionDriver 
+    + NoSQLOperations 
+    + Send 
+    + Sync 
+{
+}
+
+#[async_trait]
+impl<T> NoSQLDatabaseDriver for T 
+where 
+    T: ConnectionDriver + NoSQLOperations + Send + Sync
+{
 }
