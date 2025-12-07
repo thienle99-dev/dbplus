@@ -58,6 +58,53 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const fetchingColumnsRef = useRef(false);
   const columnsCacheKeyRef = useRef<string>('');
   const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
+  const [isAddingRow, setIsAddingRow] = useState(false);
+  const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
+
+  const handleNewRowChange = (colIndex: number, value: string) => {
+    setNewRowData(prev => ({
+      ...prev,
+      [colIndex]: value
+    }));
+  };
+
+  const handleSaveNewRow = async () => {
+    if (!data) return;
+    setSaving(true);
+    try {
+      // Filter out undefined/empty values (assuming they should be NULL or DEFAULT)
+      const entries = Object.entries(newRowData);
+      if (entries.length === 0) {
+        showToast('No data to insert', 'error');
+        setSaving(false);
+        return;
+      }
+
+      const columns: string[] = [];
+      const values: string[] = [];
+
+      entries.forEach(([colIndexStr, value]) => {
+        const colIndex = parseInt(colIndexStr);
+        const colName = data.columns[colIndex];
+        columns.push(`"${colName}"`);
+        // Basic escaping
+        values.push(`'${String(value).replace(/'/g, "''")}'`);
+      });
+
+      const query = `INSERT INTO "${schema}"."${table}" (${columns.join(', ')}) VALUES (${values.join(', ')});`;
+
+      await api.post(`/api/connections/${connectionId}/execute`, { query });
+
+      await fetchData(); // Refresh data
+      showToast('Row added successfully', 'success');
+      setIsAddingRow(false);
+      setNewRowData({});
+    } catch (err: unknown) {
+      showToast(`Failed to add row: ${(err as Error).message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Guard: Return early if schema or table is not defined
   if (!schema || !table) {
@@ -295,6 +342,29 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
               <h2 className="text-lg font-semibold text-text-primary">
                 {schema}.{table}
               </h2>
+              {isAddingRow && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSaveNewRow}
+                    disabled={saving}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50"
+                  >
+                    <Save size={14} />
+                    Save Row
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingRow(false);
+                      setNewRowData({});
+                    }}
+                    disabled={saving}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bg-3 hover:bg-bg-2 text-text-primary rounded text-sm font-medium"
+                  >
+                    <X size={14} />
+                    Cancel
+                  </button>
+                </div>
+              )}
               {hasChanges && (
                 <div className="flex items-center gap-2">
                   <button
@@ -320,13 +390,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
               <button
                 onClick={() => {
                   if (data) {
-                    setSelectedRow({
-                      rowIndex: -1,
-                      rowData: new Array(data.columns.length).fill(null),
-                      columns: data.columns,
-                      schema: schema,
-                      table: table,
-                    });
+                    setIsAddingRow(true);
                   }
                 }}
                 className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium"
@@ -384,6 +448,32 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
                 ))}
               </thead>
               <tbody>
+                {isAddingRow && (
+                  <tr className="bg-accent/10">
+                    {data.columns.map((_col, index) => (
+                      <td
+                        key={`new-row-${index}`}
+                        className="border-b border-r border-border px-4 py-1.5"
+                      >
+                        <input
+                          autoFocus={index === 0}
+                          className="w-full bg-transparent border-b border-accent/50 outline-none p-0 text-sm text-text-primary placeholder:text-text-secondary/50"
+                          value={newRowData[index] === undefined ? '' : String(newRowData[index])}
+                          onChange={(e) => handleNewRowChange(index, e.target.value)}
+                          placeholder="NULL"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveNewRow();
+                            } else if (e.key === 'Escape') {
+                              setIsAddingRow(false);
+                              setNewRowData({});
+                            }
+                          }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                )}
                 {tableInstance.getRowModel().rows.map((row) => {
                   const isModified = edits[row.index] !== undefined;
                   return (
