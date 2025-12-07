@@ -6,26 +6,27 @@ interface DatabaseType {
     name: string;
     abbreviation: string;
     color: string;
+    isAvailable: boolean;
 }
 
 const DATABASE_TYPES: DatabaseType[] = [
-    { id: 'postgres', name: 'PostgreSQL', abbreviation: 'Pg', color: 'bg-blue-600' },
-    { id: 'redshift', name: 'Amazon Redshift', abbreviation: 'Rs', color: 'bg-blue-800' },
-    { id: 'mysql', name: 'MySQL', abbreviation: 'Ms', color: 'bg-orange-500' },
-    { id: 'mariadb', name: 'MariaDB', abbreviation: 'Mb', color: 'bg-blue-700' },
-    { id: 'sqlserver', name: 'SQL Server', abbreviation: 'Ss', color: 'bg-red-600' },
-    { id: 'cassandra', name: 'Cassandra', abbreviation: 'Ca', color: 'bg-cyan-600' },
-    { id: 'clickhouse', name: 'ClickHouse', abbreviation: 'Ch', color: 'bg-yellow-500' },
-    { id: 'bigquery', name: 'BigQuery', abbreviation: 'Bq', color: 'bg-blue-500' },
-    { id: 'libsql', name: 'LibSQL', abbreviation: 'Ls', color: 'bg-purple-600' },
-    { id: 'd1', name: 'Cloudflare D1', abbreviation: 'D1', color: 'bg-orange-600' },
-    { id: 'mongo', name: 'MongoDB', abbreviation: 'Mg', color: 'bg-green-600' },
-    { id: 'snowflake', name: 'Snowflake', abbreviation: 'Sf', color: 'bg-cyan-500' },
-    { id: 'redis', name: 'Redis', abbreviation: 'Re', color: 'bg-red-500' },
-    { id: 'sqlite', name: 'SQLite', abbreviation: 'Sq', color: 'bg-blue-400' },
-    { id: 'duckdb', name: 'DuckDB', abbreviation: 'Dk', color: 'bg-yellow-600' },
-    { id: 'oracle', name: 'Oracle', abbreviation: 'Or', color: 'bg-red-700' },
-    { id: 'cockroach', name: 'CockroachDB', abbreviation: 'Cr', color: 'bg-indigo-600' },
+    { id: 'postgres', name: 'PostgreSQL', abbreviation: 'Pg', color: 'bg-blue-600', isAvailable: true },
+    { id: 'redshift', name: 'Amazon Redshift', abbreviation: 'Rs', color: 'bg-blue-800', isAvailable: false },
+    { id: 'mysql', name: 'MySQL', abbreviation: 'Ms', color: 'bg-orange-500', isAvailable: false },
+    { id: 'mariadb', name: 'MariaDB', abbreviation: 'Mb', color: 'bg-blue-700', isAvailable: false },
+    { id: 'sqlserver', name: 'SQL Server', abbreviation: 'Ss', color: 'bg-red-600', isAvailable: false },
+    { id: 'cassandra', name: 'Cassandra', abbreviation: 'Ca', color: 'bg-cyan-600', isAvailable: false },
+    { id: 'clickhouse', name: 'ClickHouse', abbreviation: 'Ch', color: 'bg-yellow-500', isAvailable: false },
+    { id: 'bigquery', name: 'BigQuery', abbreviation: 'Bq', color: 'bg-blue-500', isAvailable: false },
+    { id: 'libsql', name: 'LibSQL', abbreviation: 'Ls', color: 'bg-purple-600', isAvailable: false },
+    { id: 'd1', name: 'Cloudflare D1', abbreviation: 'D1', color: 'bg-orange-600', isAvailable: false },
+    { id: 'mongo', name: 'MongoDB', abbreviation: 'Mg', color: 'bg-green-600', isAvailable: false },
+    { id: 'snowflake', name: 'Snowflake', abbreviation: 'Sf', color: 'bg-cyan-500', isAvailable: false },
+    { id: 'redis', name: 'Redis', abbreviation: 'Re', color: 'bg-red-500', isAvailable: false },
+    { id: 'sqlite', name: 'SQLite', abbreviation: 'Sq', color: 'bg-blue-400', isAvailable: false },
+    { id: 'duckdb', name: 'DuckDB', abbreviation: 'Dk', color: 'bg-yellow-600', isAvailable: false },
+    { id: 'oracle', name: 'Oracle', abbreviation: 'Or', color: 'bg-red-700', isAvailable: false },
+    { id: 'cockroach', name: 'CockroachDB', abbreviation: 'Cr', color: 'bg-indigo-600', isAvailable: false },
 ];
 
 interface DatabaseSelectorModalProps {
@@ -36,7 +37,7 @@ interface DatabaseSelectorModalProps {
 
 export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ isOpen, onClose, onSelect }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDb, setSelectedDb] = useState('redis');
+    const [selectedDb, setSelectedDb] = useState('postgres');
 
     const filteredDatabases = DATABASE_TYPES.filter(db =>
         db.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -71,26 +72,48 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                 {/* Database Grid */}
                 <div className="p-6 max-h-[500px] overflow-y-auto">
                     <div className="grid grid-cols-6 gap-4">
-                        {filteredDatabases.map((db) => (
-                            <button
-                                key={db.id}
-                                onClick={() => setSelectedDb(db.id)}
-                                className={`
-                  flex flex-col items-center gap-3 p-4 rounded-lg transition-all
-                  ${selectedDb === db.id
-                                        ? 'border-2 border-blue-500 bg-blue-500/10'
-                                        : 'border-2 border-transparent hover:bg-white/5'
-                                    }
-                `}
-                            >
-                                {/* Icon Circle */}
-                                <div className={`w-12 h-12 rounded-full ${db.color} flex items-center justify-center shadow-lg`}>
-                                    <span className="text-white text-sm font-bold">{db.abbreviation}</span>
-                                </div>
-                                {/* Label */}
-                                <span className="text-xs text-gray-300 text-center leading-tight">{db.name}</span>
-                            </button>
-                        ))}
+                        {filteredDatabases.map((db) => {
+                            const isSelected = selectedDb === db.id;
+                            const isDisabled = !db.isAvailable;
+                            
+                            return (
+                                <button
+                                    key={db.id}
+                                    onClick={() => {
+                                        if (db.isAvailable) {
+                                            setSelectedDb(db.id);
+                                        }
+                                    }}
+                                    disabled={isDisabled}
+                                    title={isDisabled ? `${db.name} - Coming Soon` : db.name}
+                                    className={`
+                                        flex flex-col items-center gap-3 p-4 rounded-lg transition-all relative
+                                        ${isSelected && db.isAvailable
+                                            ? 'border-2 border-blue-500 bg-blue-500/10'
+                                            : 'border-2 border-transparent'
+                                        }
+                                        ${isDisabled
+                                            ? 'opacity-60 cursor-not-allowed'
+                                            : 'hover:bg-white/5 cursor-pointer'
+                                        }
+                                    `}
+                                >
+                                    {/* Icon Circle */}
+                                    <div className={`w-12 h-12 rounded-full ${db.color} flex items-center justify-center shadow-lg ${isDisabled ? 'opacity-70' : ''}`}>
+                                        <span className="text-white text-sm font-bold">{db.abbreviation}</span>
+                                    </div>
+                                    {/* Label */}
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className="text-xs text-gray-300 text-center leading-tight">{db.name}</span>
+                                        {!db.isAvailable && (
+                                            <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded border border-yellow-500/30 font-medium">
+                                                Coming Soon
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -117,7 +140,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                         </button>
                         <button
                             onClick={handleSelect}
-                            disabled={!selectedDb}
+                            disabled={!selectedDb || !DATABASE_TYPES.find(db => db.id === selectedDb)?.isAvailable}
                             className="h-9 px-4 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         >
                             Create
