@@ -144,3 +144,134 @@ pub async fn get_table_data(
         }
     }
 }
+
+use crate::services::db_driver::ColumnDefinition;
+
+#[derive(Deserialize)]
+pub struct AddColumnParams {
+    schema: String,
+    table: String,
+}
+
+pub async fn add_column(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<AddColumnParams>,
+    Json(column_def): Json<ColumnDefinition>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] POST /connections/{}/columns - schema: {}, table: {}, column: {}",
+        connection_id,
+        params.schema,
+        params.table,
+        column_def.name
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .add_column(connection_id, &params.schema, &params.table, &column_def)
+        .await
+    {
+        Ok(_) => {
+            tracing::info!(
+                "[API] POST /connections/{}/columns - SUCCESS",
+                connection_id
+            );
+            (StatusCode::OK, "Column added successfully").into_response()
+        }
+        Err(e) => {
+            tracing::error!(
+                "[API] POST /connections/{}/columns - ERROR: {}",
+                connection_id,
+                e
+            );
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AlterColumnParams {
+    schema: String,
+    table: String,
+}
+
+pub async fn alter_column(
+    State(db): State<DatabaseConnection>,
+    Path((connection_id, column_name)): Path<(Uuid, String)>,
+    Query(params): Query<AlterColumnParams>,
+    Json(column_def): Json<ColumnDefinition>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] PUT /connections/{}/columns/{} - schema: {}, table: {}",
+        connection_id,
+        column_name,
+        params.schema,
+        params.table
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .alter_column(
+            connection_id,
+            &params.schema,
+            &params.table,
+            &column_name,
+            &column_def,
+        )
+        .await
+    {
+        Ok(_) => {
+            tracing::info!(
+                "[API] PUT /connections/{}/columns/{} - SUCCESS",
+                connection_id,
+                column_name
+            );
+            (StatusCode::OK, "Column altered successfully").into_response()
+        }
+        Err(e) => {
+            tracing::error!(
+                "[API] PUT /connections/{}/columns/{} - ERROR: {}",
+                connection_id,
+                column_name,
+                e
+            );
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+pub async fn drop_column(
+    State(db): State<DatabaseConnection>,
+    Path((connection_id, column_name)): Path<(Uuid, String)>,
+    Query(params): Query<ColumnParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] DELETE /connections/{}/columns/{} - schema: {}, table: {}",
+        connection_id,
+        column_name,
+        params.schema,
+        params.table
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .drop_column(connection_id, &params.schema, &params.table, &column_name)
+        .await
+    {
+        Ok(_) => {
+            tracing::info!(
+                "[API] DELETE /connections/{}/columns/{} - SUCCESS",
+                connection_id,
+                column_name
+            );
+            (StatusCode::OK, "Column dropped successfully").into_response()
+        }
+        Err(e) => {
+            tracing::error!(
+                "[API] DELETE /connections/{}/columns/{} - ERROR: {}",
+                connection_id,
+                column_name,
+                e
+            );
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
