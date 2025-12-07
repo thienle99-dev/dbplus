@@ -665,17 +665,29 @@ impl DatabaseDriver for PostgresDriver {
 
             let last_modified = if let Some(time_row) = time_row {
                 // Get the most recent timestamp
-                // PostgreSQL timestamps are returned as SystemTime or we can get them as strings
-                let last_vacuum: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(0).ok().flatten();
-                let last_autovacuum: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(1).ok().flatten();
-                let last_analyze: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(2).ok().flatten();
-                let last_autoanalyze: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(3).ok().flatten();
+                // PostgreSQL timestamps are returned as SystemTime
+                let last_vacuum: Option<std::time::SystemTime> = time_row.try_get(0).ok().flatten();
+                let last_autovacuum: Option<std::time::SystemTime> =
+                    time_row.try_get(1).ok().flatten();
+                let last_analyze: Option<std::time::SystemTime> =
+                    time_row.try_get(2).ok().flatten();
+                let last_autoanalyze: Option<std::time::SystemTime> =
+                    time_row.try_get(3).ok().flatten();
 
                 [last_vacuum, last_autovacuum, last_analyze, last_autoanalyze]
                     .iter()
                     .filter_map(|t| t.as_ref())
                     .max()
-                    .map(|t| t.to_string())
+                    .and_then(|st| {
+                        st.duration_since(std::time::UNIX_EPOCH).ok().map(|d| {
+                            chrono::DateTime::<chrono::Utc>::from_timestamp(
+                                d.as_secs() as i64,
+                                d.subsec_nanos(),
+                            )
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_else(|| "".to_string())
+                        })
+                    })
             } else {
                 None
             };

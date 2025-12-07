@@ -10,6 +10,7 @@ import { EditorView } from '@codemirror/view';
 import { useSettingsStore } from '../store/settingsStore';
 import ConstraintsSection from './ConstraintsSection';
 import TableStatistics from './TableStatistics';
+import ColumnsDetailsTable from './ColumnsDetailsTable';
 
 interface TableInfoTabProps {
     schema?: string;
@@ -88,11 +89,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const [newIndexInclude, setNewIndexInclude] = useState<string[]>([]);
     const [newIndexComment, setNewIndexComment] = useState('');
     const [creating, setCreating] = useState(false);
-    const [showColumnDropdown, setShowColumnDropdown] = useState(false);
-    const [columnSearch, setColumnSearch] = useState('');
     const [constraints, setConstraints] = useState<TableConstraints | null>(null);
     const [statistics, setStatistics] = useState<TableStats | null>(null);
-    const [loadingConstraints, setLoadingConstraints] = useState(false);
     const [loadingStatistics, setLoadingStatistics] = useState(false);
     const { showToast } = useToast();
     const { theme } = useSettingsStore();
@@ -169,7 +167,6 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         };
 
         const fetchConstraints = async () => {
-            setLoadingConstraints(true);
             try {
                 const response = await api.get(
                     `/api/connections/${connectionId}/constraints?schema=${schema}&table=${table}`
@@ -178,8 +175,6 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
             } catch (err) {
                 console.error('Failed to fetch constraints:', err);
                 setConstraints({ foreign_keys: [], check_constraints: [], unique_constraints: [] });
-            } finally {
-                setLoadingConstraints(false);
             }
         };
 
@@ -276,8 +271,6 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
             setNewIndexCondition('');
             setNewIndexInclude([]);
             setNewIndexComment('');
-            setShowColumnDropdown(false);
-            setColumnSearch('');
         } catch (err: any) {
             console.error('Failed to create index:', err);
             showToast(err.response?.data?.error || 'Failed to create index', 'error');
@@ -391,8 +384,6 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                                         setNewIndexCondition('');
                                         setNewIndexInclude([]);
                                         setNewIndexComment('');
-                                        setShowColumnDropdown(false);
-                                        setColumnSearch('');
                                     }}
                                     className="p-0.5 hover:bg-bg-3 rounded text-text-secondary"
                                 >
@@ -642,6 +633,23 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                     )
                     }
                 </div>
+
+                {/* Columns Details */}
+                {columns.length > 0 && constraints && (
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Database size={12} className="md:w-3.5 md:h-3.5 text-text-secondary" />
+                            <h4 className="text-[10px] md:text-xs font-medium text-text-secondary uppercase">
+                                Columns ({columns.length})
+                            </h4>
+                        </div>
+                        <ColumnsDetailsTable
+                            columns={columns}
+                            foreignKeys={constraints.foreign_keys}
+                            indexes={indexes}
+                        />
+                    </div>
+                )}
 
                 {/* Constraints */}
                 {constraints && (
