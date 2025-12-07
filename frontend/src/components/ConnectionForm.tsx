@@ -26,11 +26,28 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
   const handleTestConnection = async () => {
     setTesting(true);
     try {
-      await api.post('/api/connections/test', formData);
-      alert('Connection successful!');
-    } catch (error) {
+      const response = await api.post('/api/connections/test', formData);
+      const result = response.data;
+      
+      const message = result?.message || (result?.success ? 'Connection successful!' : 'Connection failed');
+      alert(message);
+    } catch (error: any) {
       console.error('Connection failed:', error);
-      alert('Connection failed. Check console for details.');
+      
+      let errorMessage = 'Connection failed. Please check your connection details.';
+      
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (data?.message) {
+          errorMessage = data.message;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setTesting(false);
     }
@@ -95,6 +112,9 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                   value={formData.host}
                   onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                 />
               </div>
@@ -116,6 +136,9 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                 className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                 value={formData.database}
                 onChange={(e) => setFormData({ ...formData, database: e.target.value })}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 required
               />
             </div>
@@ -127,6 +150,9 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                 />
               </div>

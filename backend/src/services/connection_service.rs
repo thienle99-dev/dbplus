@@ -67,7 +67,7 @@ impl ConnectionService {
 
         match connection.db_type.as_str() {
             "postgres" => {
-                let driver = PostgresDriver::new(&connection, &password).await?;
+                let driver = PostgresDriver::new_for_test(&connection, &password).await?;
                 driver.get_databases().await
             }
             _ => Err(anyhow::anyhow!(
@@ -244,7 +244,7 @@ impl ConnectionService {
 
         match connection.db_type.as_str() {
             "postgres" => {
-                let driver = PostgresDriver::new(&connection, password).await?;
+                let driver = PostgresDriver::new_for_test(&connection, password).await?;
                 driver.test_connection().await?;
                 Ok(())
             }

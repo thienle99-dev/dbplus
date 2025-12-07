@@ -3,20 +3,14 @@
 @tailwind utilities;
 
 :root {
-  /* Backgrounds */
+  /* Default (Dark) */
   --bg-0: #0f1115;
   --bg-1: #161a1f;
   --bg-2: #1d232a;
   --bg-3: #2a323c;
-
-  /* Borders */
   --border: rgba(255, 255, 255, 0.08);
-
-  /* Text */
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
-
-  /* Accents */
   --accent: #4f83ff;
   --accent-muted: rgba(79, 131, 255, 0.15);
   --error: #ef4444;
@@ -29,6 +23,42 @@
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
+.theme-light {
+  --bg-0: #ffffff;
+  --bg-1: #f3f4f6;
+  --bg-2: #e5e7eb;
+  --bg-3: #d1d5db;
+  --border: rgba(0, 0, 0, 0.1);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --accent: #2563eb;
+  --accent-muted: rgba(37, 99, 235, 0.1);
+}
+
+.theme-solar {
+  --bg-0: #fdf6e3;
+  --bg-1: #eee8d5;
+  --bg-2: #e0d7c6;
+  --bg-3: #d2c8b6;
+  --border: rgba(0, 0, 0, 0.08);
+  --text-primary: #657b83;
+  --text-secondary: #93a1a1;
+  --accent: #b58900;
+  --accent-muted: rgba(181, 137, 0, 0.1);
+}
+
+.theme-midnight {
+  --bg-0: #0f172a;
+  --bg-1: #1e293b;
+  --bg-2: #334155;
+  --bg-3: #475569;
+  --border: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent: #38bdf8;
+  --accent-muted: rgba(56, 189, 248, 0.15);
+}
+
 body {
   background-color: var(--bg-0);
   color: var(--text-primary);
@@ -38,23 +68,47 @@ body {
 }
 
 @keyframes slideDown {
-  from { height: 0; }
-  to { height: var(--radix-collapsible-content-height); }
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
 }
 
 @keyframes slideUp {
-  from { height: var(--radix-collapsible-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+
+  to {
+    height: 0;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .CollapsibleContent {

@@ -711,6 +711,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "deadpool-postgres",
+ "dotenvy",
  "migration",
  "regex",
  "reqwest",

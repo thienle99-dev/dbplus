@@ -13,7 +13,11 @@ tower-http = { version = "0.5", features = ["cors"] }
 tokio = { version = "1", features = ["full"] }
 
 # Database
-sea-orm = { version = "0.12", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros"] }
+sea-orm = { version = "0.12", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-native-tls",
+    "macros",
+] }
 tokio-postgres = "0.7"
 deadpool-postgres = "0.13"
 migration = { path = "migration" }
@@ -32,6 +36,7 @@ chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0"
 thiserror = "1.0"
 async-trait = "0.1"
+dotenvy = "0.15"
 # Ensure regex builds with std enabled for transitive deps (sea-orm-cli)
 regex = "1.11"
 

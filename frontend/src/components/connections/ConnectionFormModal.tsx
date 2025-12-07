@@ -199,6 +199,9 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     value={formData.host}
                                     onChange={(e) => handleChange('host', e.target.value)}
                                     placeholder="localhost"
+                                    autoCapitalize="off"
+                                    autoCorrect="off"
+                                    spellCheck={false}
                                     required
                                     className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
                                 />
@@ -222,6 +225,9 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     value={formData.user}
                                     onChange={(e) => handleChange('user', e.target.value)}
                                     placeholder="postgres"
+                                    autoCapitalize="off"
+                                    autoCorrect="off"
+                                    spellCheck={false}
                                     className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
                                 />
                                 <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm flex items-center gap-2 hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
@@ -258,6 +264,9 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     value={formData.database}
                                     onChange={(e) => handleChange('database', e.target.value)}
                                     placeholder="my_database"
+                                    autoCapitalize="off"
+                                    autoCorrect="off"
+                                    spellCheck={false}
                                     required
                                     className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
                                 />

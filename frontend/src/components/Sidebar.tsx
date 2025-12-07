@@ -1,15 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Search, Database, FileText, Clock, Settings, LogOut, Plus } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
+import { SettingsModal } from './settings/SettingsModal';
+import { CommandPalette } from './CommandPalette';
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { connectionId } = useParams();
   const [activeTab, setActiveTab] = useState<'items' | 'queries' | 'history'>('items');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Mock handler for selecting a query from history/saved
   const handleSelectQuery = (sql: string) => {
@@ -22,15 +39,24 @@ export default function Sidebar() {
       {/* Search Header */}
       <div className="p-3 border-b border-border space-y-3">
         {/* Global Search Input */}
-        <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-text-secondary" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-2.5 top-2.5 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
+            />
+          </div>
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="px-2 py-1.5 bg-bg-2 border border-border rounded text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
+            title="Switch Database (Cmd+K)"
+          >
+            <Database size={16} />
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -99,7 +125,10 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-2 border-t border-border space-y-1 bg-bg-1 z-10">
-        <button className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors">
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
           <Settings size={16} />
           Settings
         </button>
@@ -111,6 +140,16 @@ export default function Sidebar() {
           Disconnect
         </button>
       </div>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
     </div>
   );
 }

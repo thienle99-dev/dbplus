@@ -6,9 +6,10 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { Save, X, RefreshCw } from 'lucide-react';
+import { Save, X, RefreshCw, Plus } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useSelectedRow } from '../context/SelectedRowContext';
 
 interface TableColumn {
   name: string;
@@ -40,6 +41,7 @@ export default function TableDataView() {
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
+  const { setSelectedRow } = useSelectedRow();
 
   const pageSize = 100;
 
@@ -78,6 +80,14 @@ export default function TableDataView() {
       fetchData();
     }
   }, [connectionId, schema, table, fetchColumns, fetchData]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchData();
+    };
+    window.addEventListener('refresh-table-data', handleRefresh);
+    return () => window.removeEventListener('refresh-table-data', handleRefresh);
+  }, [fetchData]);
 
   const handleEdit = (rowIndex: number, colIndex: number, value: unknown) => {
     setEdits(prev => ({
@@ -229,6 +239,23 @@ export default function TableDataView() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => {
+              if (data) {
+                setSelectedRow({
+                  rowIndex: -1,
+                  rowData: new Array(data.columns.length).fill(null),
+                  columns: data.columns,
+                });
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium"
+            title="Add New Record"
+          >
+            <Plus size={14} />
+            Add Record
+          </button>
+          <div className="h-4 w-px bg-border mx-2 self-center" />
+          <button
             onClick={fetchData}
             className="p-1.5 text-text-secondary hover:text-text-primary rounded hover:bg-bg-2"
             title="Refresh"
@@ -279,7 +306,19 @@ export default function TableDataView() {
             {tableInstance.getRowModel().rows.map((row) => {
               const isModified = edits[row.index] !== undefined;
               return (
-                <tr key={row.id} className={`hover:bg-bg-1/50 ${isModified ? 'bg-accent/5' : ''}`}>
+                <tr 
+                  key={row.id} 
+                  className={`hover:bg-bg-1/50 cursor-pointer ${isModified ? 'bg-accent/5' : ''}`}
+                  onClick={() => {
+                    if (data) {
+                      setSelectedRow({
+                        rowIndex: row.index,
+                        rowData: row.original,
+                        columns: data.columns,
+                      });
+                    }
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}

@@ -121,6 +121,12 @@ pub async fn delete_connection(
     }
 }
 
+#[derive(serde::Serialize)]
+struct TestConnectionResponse {
+    success: bool,
+    message: String,
+}
+
 // Test connection
 pub async fn test_connection(
     State(db): State<DatabaseConnection>,
@@ -134,6 +140,8 @@ pub async fn test_connection(
         payload.db_type
     );
     let connection_name = payload.name.clone();
+    let host = payload.host.clone();
+    let port = payload.port;
 
     // Create a temporary model from request
     let model = connection::Model {
@@ -155,11 +163,35 @@ pub async fn test_connection(
     match service.test_connection(model, &payload.password).await {
         Ok(_) => {
             tracing::info!("Connection test successful for: {}", connection_name);
-            (StatusCode::OK, "Connection successful").into_response()
+            (
+                StatusCode::OK,
+                Json(TestConnectionResponse {
+                    success: true,
+                    message: "Connection successful".to_string(),
+                }),
+            )
+                .into_response()
         }
         Err(e) => {
             tracing::error!("Connection test failed for {}: {:?}", connection_name, e);
-            (StatusCode::BAD_REQUEST, format!("{:#?}", e)).into_response()
+            let error_msg = format!("{}", e);
+            let message = if error_msg.contains("connection refused") || error_msg.contains("Connection refused") {
+                format!("Cannot connect to PostgreSQL server at {}:{}. Please check if the server is running and the host/port are correct.", host, port)
+            } else if error_msg.contains("password authentication failed") || error_msg.contains("authentication failed") {
+                "Authentication failed. Please check your username and password.".to_string()
+            } else if error_msg.contains("does not exist") {
+                format!("Database connection failed: {}", error_msg)
+            } else {
+                format!("Connection failed: {}", error_msg)
+            };
+            (
+                StatusCode::BAD_REQUEST,
+                Json(TestConnectionResponse {
+                    success: false,
+                    message,
+                }),
+            )
+                .into_response()
         }
     }
 }

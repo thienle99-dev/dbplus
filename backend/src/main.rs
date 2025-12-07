@@ -15,6 +15,9 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
+    // Load environment variables from .env file
+    dotenvy::dotenv().ok();
+
     // Initialize logging
     tracing_subscriber::fmt::init();
 
