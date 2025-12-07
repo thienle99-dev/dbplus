@@ -1,15 +1,9 @@
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { TableStats } from '../types';
 
 interface TableStatisticsProps {
-    statistics: {
-        row_count: number | null;
-        table_size: number | null;
-        index_size: number | null;
-        total_size: number | null;
-        created_at: string | null;
-        last_modified: string | null;
-    };
+    statistics: TableStats;
     onRefresh: () => void;
     loading?: boolean;
 }

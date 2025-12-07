@@ -1,26 +1,8 @@
 import { useMemo } from 'react';
 import { Link2, AlertCircle, Shield } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ForeignKey, CheckConstraint, UniqueConstraint } from '../types';
 
-interface ForeignKey {
-    constraint_name: string;
-    column_name: string;
-    foreign_schema: string;
-    foreign_table: string;
-    foreign_column: string;
-    update_rule: string;
-    delete_rule: string;
-}
-
-interface CheckConstraint {
-    constraint_name: string;
-    check_clause: string;
-}
-
-interface UniqueConstraint {
-    constraint_name: string;
-    columns: string[];
-}
 
 interface ConstraintsSectionProps {
     foreignKeys: ForeignKey[];

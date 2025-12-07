@@ -11,65 +11,18 @@ import { useSettingsStore } from '../store/settingsStore';
 import ConstraintsSection from './ConstraintsSection';
 import TableStatistics from './TableStatistics';
 import ColumnsDetailsTable from './ColumnsDetailsTable';
+import {
+    TableColumn,
+    IndexInfo,
+    TableConstraints,
+    TableStats
+} from '../types';
 
 interface TableInfoTabProps {
     schema?: string;
     table?: string;
 }
 
-interface IndexInfo {
-    name: string;
-    columns: string[];
-    is_unique: boolean;
-    is_primary: boolean;
-    algorithm?: string;
-    condition?: string;
-    include?: string[];
-    comment?: string;
-}
-
-interface TableColumn {
-    name: string;
-    data_type: string;
-    is_nullable: boolean;
-    default_value: string | null;
-    is_primary_key: boolean;
-}
-
-interface ForeignKey {
-    constraint_name: string;
-    column_name: string;
-    foreign_schema: string;
-    foreign_table: string;
-    foreign_column: string;
-    update_rule: string;
-    delete_rule: string;
-}
-
-interface CheckConstraint {
-    constraint_name: string;
-    check_clause: string;
-}
-
-interface UniqueConstraint {
-    constraint_name: string;
-    columns: string[];
-}
-
-interface TableConstraints {
-    foreign_keys: ForeignKey[];
-    check_constraints: CheckConstraint[];
-    unique_constraints: UniqueConstraint[];
-}
-
-interface TableStats {
-    row_count: number | null;
-    table_size: number | null;
-    index_size: number | null;
-    total_size: number | null;
-    created_at: string | null;
-    last_modified: string | null;
-}
 
 export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
     const params = useParams();

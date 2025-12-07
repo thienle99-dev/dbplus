@@ -1,20 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { TableColumn, ForeignKey } from '../types';
 
-interface TableColumn {
-    name: string;
-    data_type: string;
-    is_nullable: boolean;
-    default_value: string | null;
-    is_primary_key: boolean;
-}
-
-interface ForeignKey {
-    column_name: string;
-    foreign_schema: string;
-    foreign_table: string;
-    foreign_column: string;
-}
 
 interface ColumnsDetailsTableProps {
     columns: TableColumn[];

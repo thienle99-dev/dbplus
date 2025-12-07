@@ -9,3 +9,5 @@ export interface Connection {
   password?: string;
   ssl?: boolean;
 }
+
+export * from './table';
