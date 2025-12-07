@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Database, FileText, User, Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { Code, ChevronDown, ChevronUp } from 'lucide-react';
 import { LogViewer } from './LogViewer';
 
-type TabType = 'data' | 'structure' | 'row' | 'sql';
+type TabType = 'sql';
 
 interface BottomPanelProps {
     connectionId?: string;
@@ -85,39 +85,6 @@ export function BottomPanel({ connectionId, schema, table }: BottomPanelProps) {
             <div className="flex items-center justify-between border-b border-border bg-bg-2/50 px-2">
                 <div className="flex items-center gap-1">
                     <button
-                        onClick={() => setActiveTab('data')}
-                        className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${activeTab === 'data'
-                            ? 'text-accent border-b-2 border-accent bg-bg-1'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                            }`}
-                        title="Data view"
-                    >
-                        <Database size={12} />
-                        Data
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('structure')}
-                        className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${activeTab === 'structure'
-                            ? 'text-accent border-b-2 border-accent bg-bg-1'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                            }`}
-                        title="Table structure"
-                    >
-                        <FileText size={12} />
-                        Structure
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('row')}
-                        className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${activeTab === 'row'
-                            ? 'text-accent border-b-2 border-accent bg-bg-1'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                            }`}
-                        title="Selected row details"
-                    >
-                        <User size={12} />
-                        Row
-                    </button>
-                    <button
                         onClick={() => setActiveTab('sql')}
                         className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${activeTab === 'sql'
                             ? 'text-accent border-b-2 border-accent bg-bg-1'
@@ -140,25 +107,6 @@ export function BottomPanel({ connectionId, schema, table }: BottomPanelProps) {
 
             {/* Tab Content */}
             <div className="flex-1 overflow-hidden">
-                {activeTab === 'data' && (
-                    <div className="h-full p-2 overflow-auto">
-                        <div className="text-xs text-text-secondary">
-                            Current table view (integrate with main table component)
-                        </div>
-                    </div>
-                )}
-                {activeTab === 'structure' && (
-                    <div className="h-full overflow-auto">
-                        <StructureTab connectionId={connectionId} schema={schema} table={table} />
-                    </div>
-                )}
-                {activeTab === 'row' && (
-                    <div className="h-full p-2 overflow-auto">
-                        <div className="text-xs text-text-secondary">
-                            Selected row details will appear here
-                        </div>
-                    </div>
-                )}
                 {activeTab === 'sql' && (
                     <div className="h-full flex flex-col">
                         <LogViewer />

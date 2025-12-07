@@ -502,4 +502,212 @@ impl DatabaseDriver for PostgresDriver {
             })
         }
     }
+
+    async fn get_table_constraints(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::TableConstraints> {
+        tracing::info!(
+            "[PostgresDriver] get_table_constraints - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        // Query foreign keys
+        let fk_query = "
+            SELECT 
+                tc.constraint_name,
+                kcu.column_name,
+                ccu.table_schema AS foreign_schema,
+                ccu.table_name AS foreign_table,
+                ccu.column_name AS foreign_column,
+                rc.update_rule,
+                rc.delete_rule
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu 
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema = tc.table_schema
+            JOIN information_schema.referential_constraints rc
+                ON rc.constraint_name = tc.constraint_name
+                AND rc.constraint_schema = tc.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+                AND tc.table_schema = $1
+                AND tc.table_name = $2
+            ORDER BY tc.constraint_name, kcu.ordinal_position";
+
+        let fk_rows = client.query(fk_query, &[&schema, &table]).await?;
+        let foreign_keys: Vec<super::db_driver::ForeignKey> = fk_rows
+            .iter()
+            .map(|row| super::db_driver::ForeignKey {
+                constraint_name: row.get(0),
+                column_name: row.get(1),
+                foreign_schema: row.get(2),
+                foreign_table: row.get(3),
+                foreign_column: row.get(4),
+                update_rule: row.get(5),
+                delete_rule: row.get(6),
+            })
+            .collect();
+
+        // Query check constraints
+        let check_query = "
+            SELECT 
+                con.conname AS constraint_name,
+                pg_get_constraintdef(con.oid) AS check_clause
+            FROM pg_constraint con
+            JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+            JOIN pg_class cls ON cls.oid = con.conrelid
+            WHERE con.contype = 'c'
+                AND nsp.nspname = $1
+                AND cls.relname = $2
+            ORDER BY con.conname";
+
+        let check_rows = client.query(check_query, &[&schema, &table]).await?;
+        let check_constraints: Vec<super::db_driver::CheckConstraint> = check_rows
+            .iter()
+            .map(|row| super::db_driver::CheckConstraint {
+                constraint_name: row.get(0),
+                check_clause: row.get(1),
+            })
+            .collect();
+
+        // Query unique constraints
+        let unique_query = "
+            SELECT 
+                tc.constraint_name,
+                array_agg(kcu.column_name ORDER BY kcu.ordinal_position) AS columns
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+            WHERE tc.constraint_type = 'UNIQUE'
+                AND tc.table_schema = $1
+                AND tc.table_name = $2
+            GROUP BY tc.constraint_name
+            ORDER BY tc.constraint_name";
+
+        let unique_rows = client.query(unique_query, &[&schema, &table]).await?;
+        let unique_constraints: Vec<super::db_driver::UniqueConstraint> = unique_rows
+            .iter()
+            .map(|row| super::db_driver::UniqueConstraint {
+                constraint_name: row.get(0),
+                columns: row.get(1),
+            })
+            .collect();
+
+        tracing::info!(
+            "[PostgresDriver] get_table_constraints - found {} FKs, {} checks, {} uniques",
+            foreign_keys.len(),
+            check_constraints.len(),
+            unique_constraints.len()
+        );
+
+        Ok(super::db_driver::TableConstraints {
+            foreign_keys,
+            check_constraints,
+            unique_constraints,
+        })
+    }
+
+    async fn get_table_statistics(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::TableStatistics> {
+        tracing::info!(
+            "[PostgresDriver] get_table_statistics - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        // Query table statistics
+        let stats_query = "
+            SELECT 
+                c.reltuples::bigint AS row_count,
+                pg_total_relation_size(c.oid) AS total_size,
+                pg_relation_size(c.oid) AS table_size,
+                pg_indexes_size(c.oid) AS index_size,
+                obj_description(c.oid) AS table_comment
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = $1
+                AND c.relname = $2
+                AND c.relkind = 'r'";
+
+        let stats_row = client.query_opt(stats_query, &[&schema, &table]).await?;
+
+        if let Some(row) = stats_row {
+            let row_count: Option<i64> = row.get(0);
+            let total_size: Option<i64> = row.get(1);
+            let table_size: Option<i64> = row.get(2);
+            let index_size: Option<i64> = row.get(3);
+
+            // Query timestamps from pg_stat_user_tables
+            let time_query = "
+                SELECT 
+                    last_vacuum,
+                    last_autovacuum,
+                    last_analyze,
+                    last_autoanalyze
+                FROM pg_stat_user_tables
+                WHERE schemaname = $1
+                    AND relname = $2";
+
+            let time_row = client.query_opt(time_query, &[&schema, &table]).await?;
+
+            let last_modified = if let Some(time_row) = time_row {
+                // Get the most recent timestamp
+                // PostgreSQL timestamps are returned as SystemTime or we can get them as strings
+                let last_vacuum: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(0).ok().flatten();
+                let last_autovacuum: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(1).ok().flatten();
+                let last_analyze: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(2).ok().flatten();
+                let last_autoanalyze: Option<chrono::DateTime<chrono::Utc>> = time_row.try_get(3).ok().flatten();
+
+                [last_vacuum, last_autovacuum, last_analyze, last_autoanalyze]
+                    .iter()
+                    .filter_map(|t| t.as_ref())
+                    .max()
+                    .map(|t| t.to_string())
+            } else {
+                None
+            };
+
+            tracing::info!(
+                "[PostgresDriver] get_table_statistics - rows: {:?}, total_size: {:?}",
+                row_count,
+                total_size
+            );
+
+            Ok(super::db_driver::TableStatistics {
+                row_count,
+                table_size,
+                index_size,
+                total_size,
+                created_at: None, // PostgreSQL doesn't track creation time by default
+                last_modified,
+            })
+        } else {
+            tracing::warn!(
+                "[PostgresDriver] get_table_statistics - table not found: {}.{}",
+                schema,
+                table
+            );
+            Ok(super::db_driver::TableStatistics {
+                row_count: None,
+                table_size: None,
+                index_size: None,
+                total_size: None,
+                created_at: None,
+                last_modified: None,
+            })
+        }
+    }
 }

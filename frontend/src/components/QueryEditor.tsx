@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorView } from '@codemirror/view';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
@@ -36,6 +37,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
   const [visualState, setVisualState] = useState<any>(initialMetadata || null);
+  const [editorView, setEditorView] = useState<EditorView | null>(null);
   const { showToast } = useToast();
   const { theme } = useSettingsStore();
 
@@ -72,18 +74,20 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const [error, setError] = useState<string | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
   const isDangerousQuery = useCallback((sql: string) => {
     const dangerousKeywords = /\b(DROP|DELETE|TRUNCATE|UPDATE|ALTER)\b/i;
     return dangerousKeywords.test(sql);
   }, []);
 
-  const execute = useCallback(async () => {
+  const execute = useCallback(async (queryOverride?: string) => {
+    const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const response = await api.post(`/api/connections/${connectionId}/execute`, { query });
+      const response = await api.post(`/api/connections/${connectionId}/execute`, { query: sqlToExecute });
       setResult(response.data);
       if (response.data.affected_rows > 0) {
         showToast(`Query executed successfully. ${response.data.affected_rows} rows affected.`, 'success');
@@ -98,15 +102,24 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   }, [connectionId, query, showToast]);
 
   const handleExecute = useCallback(async () => {
-    if (!query.trim()) return;
+    let sqlToRun = query;
+    if (editorView) {
+      const selection = editorView.state.selection.main;
+      if (!selection.empty) {
+        sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
+      }
+    }
 
-    if (isDangerousQuery(query)) {
+    if (!sqlToRun.trim()) return;
+
+    if (isDangerousQuery(sqlToRun)) {
+      setPendingQuery(sqlToRun);
       setIsConfirmationOpen(true);
       return;
     }
 
-    execute();
-  }, [query, isDangerousQuery, execute]);
+    execute(sqlToRun);
+  }, [query, isDangerousQuery, execute, editorView]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -158,7 +171,10 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setIsConfirmationOpen(false)}
-        onConfirm={execute}
+        onConfirm={() => {
+          if (pendingQuery) execute(pendingQuery);
+          setIsConfirmationOpen(false);
+        }}
         title="Dangerous Query Detected"
         message="This query contains keywords that may modify or delete data (DROP, DELETE, TRUNCATE, UPDATE, ALTER). Are you sure you want to execute it?"
         confirmText="Execute"
@@ -223,6 +239,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
             height="300px"
             extensions={[sql(), ...(codeMirrorTheme ? [codeMirrorTheme] : [])]}
             onChange={useCallback((val: string) => setQuery(val), [])}
+            onCreateEditor={setEditorView}
             className="text-base w-full"
           />
         ) : (
@@ -239,47 +256,62 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
         {result && (
           <div className="flex flex-col h-full">
-            <div className="p-2 bg-bg-2 text-xs text-text-secondary border-b border-border">
-              {result.affected_rows > 0
-                ? `Affected rows: ${result.affected_rows}`
-                : `${result.rows.length} rows returned`}
+            <div className="p-2 bg-bg-2 text-xs text-text-secondary border-b border-border flex items-center justify-between">
+              <span>
+                {result.affected_rows > 0
+                  ? `Affected rows: ${result.affected_rows}`
+                  : `${result.rows.length} rows returned`}
+              </span>
+              {result.rows.length > 0 && (
+                <span className="bg-accent/20 text-accent px-2 py-0.5 rounded-full text-[10px] font-medium">
+                  {result.rows.length} {result.rows.length === 1 ? 'row' : 'rows'}
+                </span>
+              )}
             </div>
 
             {result.columns.length > 0 && (
               <div className="flex-1 overflow-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead className="bg-bg-1 sticky top-0 z-10">
-                    {tableInstance.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <th
-                            key={header.id}
-                            className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[100px]"
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                          </th>
-                        ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {tableInstance.getRowModel().rows.map((row) => (
-                      <tr key={row.id} className="hover:bg-bg-1/50">
-                        {row.getVisibleCells().map((cell) => (
-                          <td
-                            key={cell.id}
-                            className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {result.rows.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-text-secondary">
+                    <div className="text-4xl mb-2">📊</div>
+                    <div className="text-sm">Query executed successfully</div>
+                    <div className="text-xs mt-1">No rows returned</div>
+                  </div>
+                ) : (
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="bg-bg-1 sticky top-0 z-10">
+                      {tableInstance.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <th
+                              key={header.id}
+                              className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[100px]"
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </th>
+                          ))}
+                        </tr>
+                      ))}
+                    </thead>
+                    <tbody>
+                      {tableInstance.getRowModel().rows.map((row) => (
+                        <tr key={row.id} className="hover:bg-bg-1/50">
+                          {row.getVisibleCells().map((cell) => (
+                            <td
+                              key={cell.id}
+                              className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>

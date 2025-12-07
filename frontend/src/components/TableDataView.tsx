@@ -6,11 +6,13 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { Save, X, RefreshCw, Plus } from 'lucide-react';
+import { Save, X, RefreshCw, Plus, Database, Info, Table } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useSelectedRow } from '../context/SelectedRowContext';
 import { useTablePage } from '../context/TablePageContext';
+import TableStructureTab from './TableStructureTab';
+import TableInfoTab from './TableInfoTab';
 
 interface TableColumn {
   name: string;
@@ -55,6 +57,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const fetchingRef = useRef(false);
   const fetchingColumnsRef = useRef(false);
   const columnsCacheKeyRef = useRef<string>('');
+  const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
 
   // Guard: Return early if schema or table is not defined
   if (!schema || !table) {
@@ -250,131 +253,178 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border flex justify-between items-center bg-bg-1">
-        <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-text-primary">
-            {schema}.{table}
-          </h2>
-          {hasChanges && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50"
-              >
-                <Save size={14} />
-                Save ({Object.keys(edits).length})
-              </button>
-              <button
-                onClick={() => setEdits({})}
-                disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-bg-3 hover:bg-bg-2 text-text-primary rounded text-sm font-medium"
-              >
-                <X size={14} />
-                Discard
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              if (data) {
-                setSelectedRow({
-                  rowIndex: -1,
-                  rowData: new Array(data.columns.length).fill(null),
-                  columns: data.columns,
-                });
-              }
-            }}
-            className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium"
-            title="Add New Record"
-          >
-            <Plus size={14} />
-            Add Record
-          </button>
-          <div className="h-4 w-px bg-border mx-2 self-center" />
-          <button
-            onClick={fetchData}
-            className="p-1.5 text-text-secondary hover:text-text-primary rounded hover:bg-bg-2"
-            title="Refresh"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <div className="h-4 w-px bg-border mx-2 self-center" />
-          <button
-            onClick={() => setPage(Math.max(0, page - 1))}
-            disabled={page === 0 || loading}
-            className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
-          >
-            Previous
-          </button>
-          <span className="flex items-center text-sm text-text-secondary">
-            Page {page + 1}
-          </span>
-          <button
-            onClick={() => setPage(page + 1)}
-            disabled={!data.rows.length || data.rows.length < pageSize || loading}
-            className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
-          >
-            Next
-          </button>
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex items-center border-b border-border bg-bg-1">
+        <button
+          onClick={() => setActiveTab('data')}
+          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'data'
+            ? 'text-accent border-accent bg-bg-0'
+            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
+            }`}
+        >
+          <Table size={14} />
+          Data
+        </button>
+        <button
+          onClick={() => setActiveTab('structure')}
+          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'structure'
+            ? 'text-accent border-accent bg-bg-0'
+            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
+            }`}
+        >
+          <Database size={14} />
+          Structure
+        </button>
+        <button
+          onClick={() => setActiveTab('info')}
+          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'info'
+            ? 'text-accent border-accent bg-bg-0'
+            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
+            }`}
+        >
+          <Info size={14} />
+          Info
+        </button>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-bg-1 sticky top-0 z-10">
-            {tableInstance.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[150px]"
+      {/* Tab Content */}
+      {activeTab === 'data' ? (
+        <>
+          <div className="p-4 border-b border-border flex justify-between items-center bg-bg-1">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-text-primary">
+                {schema}.{table}
+              </h2>
+              {hasChanges && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50"
                   >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
+                    <Save size={14} />
+                    Save ({Object.keys(edits).length})
+                  </button>
+                  <button
+                    onClick={() => setEdits({})}
+                    disabled={saving}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bg-3 hover:bg-bg-2 text-text-primary rounded text-sm font-medium"
+                  >
+                    <X size={14} />
+                    Discard
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (data) {
+                    setSelectedRow({
+                      rowIndex: -1,
+                      rowData: new Array(data.columns.length).fill(null),
+                      columns: data.columns,
+                      schema: schema,
+                      table: table,
+                    });
+                  }
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium"
+                title="Add New Record"
+              >
+                <Plus size={14} />
+                Row
+              </button>
+              <div className="h-4 w-px bg-border mx-2 self-center" />
+              <button
+                onClick={fetchData}
+                className="p-1.5 text-text-secondary hover:text-text-primary rounded hover:bg-bg-2"
+                title="Refresh"
+              >
+                <RefreshCw size={16} />
+              </button>
+              <div className="h-4 w-px bg-border mx-2 self-center" />
+              <button
+                onClick={() => setPage(Math.max(0, page - 1))}
+                disabled={page === 0 || loading}
+                className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
+              >
+                Previous
+              </button>
+              <span className="flex items-center text-sm text-text-secondary">
+                Page {page + 1}
+              </span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={!data.rows.length || data.rows.length < pageSize || loading}
+                className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-bg-1 sticky top-0 z-10">
+                {tableInstance.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[150px]"
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </th>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {tableInstance.getRowModel().rows.map((row) => {
-              const isModified = edits[row.index] !== undefined;
-              return (
-                <tr
-                  key={row.id}
-                  className={`hover:bg-bg-1/50 cursor-pointer ${isModified ? 'bg-accent/5' : ''}`}
-                  onClick={() => {
-                    if (data) {
-                      setSelectedRow({
-                        rowIndex: row.index,
-                        rowData: row.original,
-                        columns: data.columns,
-                      });
-                    }
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
+              </thead>
+              <tbody>
+                {tableInstance.getRowModel().rows.map((row) => {
+                  const isModified = edits[row.index] !== undefined;
+                  return (
+                    <tr
+                      key={row.id}
+                      className={`hover:bg-bg-1/50 cursor-pointer ${isModified ? 'bg-accent/5' : ''}`}
+                      onClick={() => {
+                        if (data) {
+                          setSelectedRow({
+                            rowIndex: row.index,
+                            rowData: row.original,
+                            columns: data.columns,
+                            schema: schema,
+                            table: table,
+                          });
+                        }
+                      }}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        {data.rows.length === 0 && (
-          <div className="p-8 text-center text-text-secondary">No rows found</div>
-        )}
-      </div>
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {data.rows.length === 0 && (
+              <div className="p-8 text-center text-text-secondary">No rows found</div>
+            )}
+          </div>
+        </>
+      ) : activeTab === 'structure' ? (
+        <TableStructureTab schema={schema} table={table} />
+      ) : (
+        <TableInfoTab schema={schema} table={table} />
+      )}
     </div>
   );
 }

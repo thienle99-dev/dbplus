@@ -117,6 +117,15 @@ async fn main() {
             "/api/connections/:id/dashboards/:dashboard_id/charts/:chart_id",
             delete(handlers::dashboard::delete_chart),
         )
+        // Table Info routes
+        .route(
+            "/api/connections/:id/constraints",
+            get(handlers::table_info::get_table_constraints),
+        )
+        .route(
+            "/api/connections/:id/table-stats",
+            get(handlers::table_info::get_table_statistics),
+        )
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)

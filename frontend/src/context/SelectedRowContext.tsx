@@ -4,6 +4,8 @@ interface SelectedRow {
   rowIndex: number;
   rowData: unknown[];
   columns: string[];
+  schema?: string;
+  table?: string;
 }
 
 interface SelectedRowContextType {
@@ -40,8 +42,8 @@ export function SelectedRowProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SelectedRowContext.Provider value={{ 
-      selectedRow, 
+    <SelectedRowContext.Provider value={{
+      selectedRow,
       setSelectedRow,
       selectedRows,
       toggleRowSelection,

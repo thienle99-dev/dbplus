@@ -1,71 +1,100 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useLogStore, LogEntry } from '../store/logStore';
-import { ChevronDown, ChevronUp, Trash2, Activity } from 'lucide-react';
+import { Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 
 export const LogViewer: React.FC = () => {
-    const { logs, isOpen, toggleOpen, clearLogs } = useLogStore();
-    const endRef = useRef<HTMLDivElement>(null);
+    const { logs, clearLogs, maxLogs, setMaxLogs } = useLogStore();
+    const [filter, setFilter] = useState<'all' | 'request' | 'response' | 'error'>('all');
 
-    // Auto-scroll to bottom when new logs arrive (if open)
-    useEffect(() => {
-        if (isOpen && endRef.current) {
-            endRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [logs, isOpen]);
-
-    if (!isOpen) {
-        return (
-            <div className="fixed bottom-0 right-4 z-50">
-                <button
-                    onClick={toggleOpen}
-                    className="bg-[#1e1e1e] border border-[#3a3a3a] border-b-0 text-gray-300 px-4 py-2 rounded-t-lg shadow-lg flex items-center gap-2 hover:bg-[#2a2a2a] transition-colors text-xs font-mono"
-                >
-                    <Activity className="w-3 h-3 text-blue-400" />
-                    Console ({logs.length})
-                    <ChevronUp className="w-3 h-3" />
-                </button>
-            </div>
-        );
-    }
+    const filteredLogs = logs.filter(log => {
+        if (filter === 'all') return true;
+        return log.type === filter;
+    });
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 h-[300px] bg-[#1e1e1e] border-t border-[#3a3a3a] shadow-2xl flex flex-col font-mono text-xs">
+        <div className="h-full flex flex-col bg-bg-0">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3a3a3a]">
-                <div className="flex items-center gap-2 text-gray-300">
-                    <Activity className="w-4 h-4 text-blue-400" />
-                    <span className="font-medium">Network Logs</span>
-                    <span className="bg-[#3a3a3a] px-2 py-0.5 rounded-full text-[10px] text-gray-400">
-                        {logs.length}
+            <div className="flex items-center justify-between px-3 py-2 bg-bg-1 border-b border-border">
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-text-secondary">
+                        Network Logs ({filteredLogs.length})
                     </span>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setFilter('all')}
+                            className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'all'
+                                ? 'bg-accent text-white'
+                                : 'bg-bg-2 text-text-secondary hover:text-text-primary'
+                                }`}
+                        >
+                            All
+                        </button>
+                        <button
+                            onClick={() => setFilter('request')}
+                            className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'request'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-bg-2 text-text-secondary hover:text-text-primary'
+                                }`}
+                        >
+                            Request
+                        </button>
+                        <button
+                            onClick={() => setFilter('response')}
+                            className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'response'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-bg-2 text-text-secondary hover:text-text-primary'
+                                }`}
+                        >
+                            Response
+                        </button>
+                        <button
+                            onClick={() => setFilter('error')}
+                            className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'error'
+                                ? 'bg-red-500 text-white'
+                                : 'bg-bg-2 text-text-secondary hover:text-text-primary'
+                                }`}
+                        >
+                            Error
+                        </button>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-text-secondary">Limit:</span>
+                        <select
+                            value={maxLogs}
+                            onChange={(e) => setMaxLogs(Number(e.target.value))}
+                            className="text-[10px] bg-bg-2 text-text-primary border border-border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-accent"
+                        >
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                            <option value={200}>200</option>
+                            <option value={500}>500</option>
+                        </select>
+                    </div>
                     <button
                         onClick={clearLogs}
-                        className="p-1.5 hover:bg-[#3a3a3a] rounded text-gray-400 hover:text-white transition-colors"
+                        className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-text-primary transition-colors"
                         title="Clear logs"
                     >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                        onClick={toggleOpen}
-                        className="p-1.5 hover:bg-[#3a3a3a] rounded text-gray-400 hover:text-white transition-colors"
-                    >
-                        <ChevronDown className="w-3.5 h-3.5" />
+                        <Trash2 size={14} />
                     </button>
                 </div>
             </div>
 
             {/* Log List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#1e1e1e]">
-                {logs.length === 0 ? (
-                    <div className="text-gray-600 text-center mt-10 italic">No logs yet...</div>
+            <div className="flex-1 overflow-y-auto">
+                {filteredLogs.length === 0 ? (
+                    <div className="text-text-secondary text-center mt-10 text-xs">
+                        No logs yet...
+                    </div>
                 ) : (
-                    logs.slice().reverse().map((log) => (
-                        <LogItem key={log.id} log={log} />
-                    ))
+                    <div className="divide-y divide-border">
+                        {filteredLogs.map((log) => (
+                            <LogItem key={log.id} log={log} />
+                        ))}
+                    </div>
                 )}
-                <div ref={endRef} />
             </div>
         </div>
     );
@@ -74,40 +103,92 @@ export const LogViewer: React.FC = () => {
 const LogItem: React.FC<{ log: LogEntry }> = ({ log }) => {
     const [expanded, setExpanded] = useState(false);
 
-    // Status color
-    const getStatusColor = () => {
-        if (log.type === 'error' || (log.status && log.status >= 400)) return 'text-red-400';
-        if (log.status && log.status >= 200 && log.status < 300) return 'text-green-400';
-        return 'text-blue-400';
+    const getTypeStyles = () => {
+        switch (log.type) {
+            case 'error':
+                return 'bg-red-500/10 border-l-2 border-l-red-500';
+            case 'response':
+                return log.status && log.status >= 400
+                    ? 'bg-red-500/10 border-l-2 border-l-red-500'
+                    : 'bg-green-500/10 border-l-2 border-l-green-500';
+            case 'request':
+                return 'bg-blue-500/10 border-l-2 border-l-blue-500';
+            default:
+                return 'bg-bg-1 border-l-2 border-l-border';
+        }
     };
 
+    const getMethodColor = () => {
+        if (log.type === 'error' || (log.status && log.status >= 400)) return 'text-red-400';
+        if (log.status && log.status >= 200 && log.status < 300) return 'text-green-400';
+        if (log.type === 'request') return 'text-blue-400';
+        return 'text-text-secondary';
+    };
+
+    const hasDetails = log.data || log.url;
+
     return (
-        <div className="border-b border-[#2a2a2a] pb-2 last:border-0">
+        <div className={`p-2 ${getTypeStyles()}`}>
             <div
-                className="flex items-start gap-2 cursor-pointer hover:bg-[#252526] p-1 rounded"
-                onClick={() => setExpanded(!expanded)}
+                className={`flex items-start gap-2 ${hasDetails ? 'cursor-pointer' : ''}`}
+                onClick={() => hasDetails && setExpanded(!expanded)}
             >
-                <div className="text-gray-500 w-[70px] shrink-0">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                </div>
-                <div className={`w-[60px] font-bold shrink-0 ${getStatusColor()}`}>
-                    {log.method || 'LOG'}
-                </div>
-                <div className="flex-1 truncate text-gray-300" title={log.message}>
-                    {log.message}
-                </div>
-                {log.data && (
-                    <div className="text-gray-600 shrink-0 text-[10px]">
-                        {expanded ? '▲' : '▼'}
+                {hasDetails && (
+                    <div className="text-text-secondary mt-0.5">
+                        {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                     </div>
                 )}
+                {!hasDetails && <div className="w-3" />}
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="text-text-secondary text-[10px] font-mono">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                        {log.method && (
+                            <span className={`font-bold text-[10px] font-mono ${getMethodColor()}`}>
+                                {log.method}
+                            </span>
+                        )}
+                        {log.status && (
+                            <span className={`font-mono text-[10px] ${getMethodColor()}`}>
+                                {log.status}
+                            </span>
+                        )}
+                        {log.url && (
+                            <span className="text-text-secondary text-[10px] font-mono truncate">
+                                {log.url}
+                            </span>
+                        )}
+                    </div>
+                    <div className="text-xs text-text-primary mt-0.5">
+                        {log.message}
+                    </div>
+                </div>
             </div>
 
-            {expanded && log.data && (
-                <div className="mt-2 ml-[80px] bg-[#121212] p-2 rounded overflow-x-auto">
-                    <pre className="text-gray-400 whitespace-pre-wrap">
-                        {JSON.stringify(log.data, null, 2)}
-                    </pre>
+            {expanded && (
+                <div className="mt-2 ml-5 space-y-2">
+                    {log.url && (
+                        <div className="bg-bg-2 p-2 rounded">
+                            <div className="text-[10px] font-semibold text-text-secondary mb-1">URL</div>
+                            <div className="text-[10px] font-mono text-text-primary break-all">{log.url}</div>
+                        </div>
+                    )}
+
+                    {log.data && (
+                        <div className="bg-bg-2 p-2 rounded">
+                            <div className="text-[10px] font-semibold text-text-secondary mb-1">
+                                {log.type === 'request' ? 'Request Payload' :
+                                    log.type === 'error' ? 'Error Details' : 'Response Data'}
+                            </div>
+                            <pre className="text-[10px] font-mono text-text-primary overflow-x-auto whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                {typeof log.data === 'string'
+                                    ? log.data
+                                    : JSON.stringify(log.data, null, 2)}
+                            </pre>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

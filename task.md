@@ -215,6 +215,117 @@
   - [ ] Performance testing
   - [ ] Security audit
 
+## Phase 11: Table Info Tab Enhancements
+
+### Phase 11.1 - Essential Features (High Priority)
+
+- [ ] **Constraints & Foreign Keys** ⭐⭐⭐⭐⭐
+  - [ ] Backend: Create API endpoint `GET /api/connections/:id/constraints`
+    - [ ] Query foreign keys with ON DELETE/UPDATE actions
+    - [ ] Query check constraints
+    - [ ] Query unique constraints
+  - [ ] Frontend: Constraints display component
+    - [ ] Foreign keys section with navigation buttons
+    - [ ] Check constraints section
+    - [ ] Unique constraints section
+    - [ ] Click to navigate to referenced tables
+
+- [ ] **Columns Details Table** ⭐⭐⭐⭐
+  - [ ] Frontend: Enhanced columns table component
+    - [ ] Display all column properties in table format
+    - [ ] Add icons for Primary Key, Foreign Key, Indexed columns
+    - [ ] Show data type with precision/length
+    - [ ] Display nullable, default values
+    - [ ] Add column comments/descriptions
+    - [ ] Sortable columns
+
+- [ ] **Table Statistics** ⭐⭐⭐⭐
+  - [ ] Backend: Create API endpoint `GET /api/connections/:id/table-stats`
+    - [ ] Query row count (estimated)
+    - [ ] Query table size
+    - [ ] Query index size
+    - [ ] Query creation/modification timestamps
+    - [ ] PostgreSQL: Use pg_stat_user_tables, pg_total_relation_size()
+  - [ ] Frontend: Statistics display component
+    - [ ] Display all statistics in card format
+    - [ ] Add refresh button
+    - [ ] Format sizes (MB, GB)
+    - [ ] Format numbers with commas
+
+### Phase 11.2 - Enhanced Features (Medium Priority)
+
+- [ ] **Triggers** ⭐⭐⭐
+  - [ ] Backend: Create API endpoint `GET /api/connections/:id/triggers`
+    - [ ] Query trigger information
+    - [ ] Get trigger definitions
+  - [ ] Frontend: Triggers display component
+    - [ ] List all triggers with event/timing
+    - [ ] Show function names
+    - [ ] Display enabled/disabled status
+    - [ ] View trigger definition modal
+
+- [ ] **Table Comments & Description** ⭐⭐⭐
+  - [ ] Backend: Create API endpoints for comments
+    - [ ] GET table comment
+    - [ ] POST/PUT update table comment
+  - [ ] Frontend: Comment editor component
+    - [ ] Display current comment
+    - [ ] Edit mode with save/cancel
+    - [ ] Markdown support (optional)
+
+- [ ] **Permissions & Grants** ⭐⭐⭐
+  - [ ] Backend: Create API endpoint `GET /api/connections/:id/permissions`
+    - [ ] Query table privileges
+    - [ ] Get user/role permissions
+  - [ ] Frontend: Permissions display component
+    - [ ] List all roles and their privileges
+    - [ ] Display grant options
+    - [ ] Show granted by information
+
+- [ ] **UI Improvements**
+  - [ ] Add tab navigation within Info Tab
+    - [ ] Overview, Columns, Constraints, Indexes, Triggers, Stats, Permissions
+  - [ ] Implement collapsible sections
+    - [ ] Save collapse state to localStorage
+  - [ ] Add Quick Actions Bar
+    - [ ] Copy DDL button
+    - [ ] Export schema button
+    - [ ] Analyze table button
+    - [ ] Refresh all button
+
+### Phase 11.3 - Advanced Features (Low Priority - Optional)
+
+- [ ] **Dependencies** ⭐⭐
+  - [ ] Backend: Create API endpoint `GET /api/connections/:id/dependencies`
+    - [ ] Query views using this table
+    - [ ] Query functions/procedures referencing table
+    - [ ] Query tables with foreign keys to this table
+  - [ ] Frontend: Dependencies display component
+    - [ ] List all dependent objects
+    - [ ] Navigation to dependent objects
+
+- [ ] **Storage & Bloat Information** ⭐⭐
+  - [ ] Backend: Advanced storage queries (PostgreSQL)
+    - [ ] Dead tuples count
+    - [ ] Live tuples count
+    - [ ] Bloat percentage calculation
+    - [ ] Last vacuum/analyze timestamps
+  - [ ] Frontend: Storage info component
+    - [ ] Display bloat metrics
+    - [ ] VACUUM/ANALYZE action buttons
+    - [ ] Warning indicators for high bloat
+
+- [ ] **Partitions** ⭐⭐
+  - [ ] Backend: Partition information queries
+    - [ ] Detect if table is partitioned
+    - [ ] Get partition strategy
+    - [ ] List all partitions
+    - [ ] Get partition sizes
+  - [ ] Frontend: Partitions display component
+    - [ ] Show partition strategy and key
+    - [ ] List partitions with sizes
+    - [ ] Navigate to partition details
+
 ## Phase 10: Testing & Documentation
 
 - [ ] Write tests
