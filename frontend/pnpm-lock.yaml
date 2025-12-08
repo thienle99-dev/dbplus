@@ -14,6 +14,9 @@ importers:
       '@codemirror/lang-sql':
         specifier: ^6.5.5
         version: 6.10.0
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
       '@codemirror/state':
         specifier: ^6.5.2
         version: 6.5.2
@@ -23,6 +26,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.8
         version: 6.38.8
+      '@lezer/highlight':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@radix-ui/react-collapsible':
         specifier: ^1.0.3
         version: 1.1.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

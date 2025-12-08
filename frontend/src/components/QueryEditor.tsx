@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { light as lightTheme } from '../themes/codemirror-light';
 import { EditorView } from '@codemirror/view';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
 import api from '../services/api';
@@ -33,6 +34,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
   const [visualState, setVisualState] = useState<any>(initialMetadata || null);
   const [editorView, setEditorView] = useState<EditorView | null>(null);
+  const [hasSelection, setHasSelection] = useState(false);
   const { showToast } = useToast();
   const { theme } = useSettingsStore();
 
@@ -41,7 +43,15 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     if (theme === 'system') {
       effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return effectiveTheme === 'dark' || effectiveTheme === 'midnight' ? oneDark : undefined;
+
+    // Use custom themes for better contrast
+    const isDarkTheme = effectiveTheme === 'dark' ||
+      effectiveTheme === 'midnight' ||
+      effectiveTheme === 'soft-pink' ||
+      effectiveTheme?.startsWith('wibu') ||
+      effectiveTheme?.startsWith('gruvbox-dark');
+
+    return isDarkTheme ? oneDark : lightTheme;
   }, [theme]);
 
   // Update query when initialSql changes (e.g. loading from sidebar)
@@ -98,14 +108,22 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
   const handleExecute = useCallback(async () => {
     let sqlToRun = query;
+    let isSelection = false;
+
     if (editorView) {
       const selection = editorView.state.selection.main;
       if (!selection.empty) {
         sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
+        isSelection = true;
       }
     }
 
     if (!sqlToRun.trim()) return;
+
+    // Show toast for selection execution
+    if (isSelection) {
+      showToast('Executing selected query...', 'info');
+    }
 
     if (isDangerousQuery(sqlToRun)) {
       setPendingQuery(sqlToRun);
@@ -114,7 +132,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     }
 
     execute(sqlToRun);
-  }, [query, isDangerousQuery, execute, editorView]);
+  }, [query, isDangerousQuery, execute, editorView, showToast]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -180,10 +198,11 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           <button
             onClick={handleExecute}
             disabled={loading || !query.trim()}
-            className="flex items-center gap-1 bg-accent hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 bg-accent hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
           >
-            <Play size={16} />
-            Run
+            <Play size={16} className={loading ? 'animate-pulse' : ''} />
+            {loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}
           </button>
           <button
             onClick={() => setIsSaveModalOpen(true)}
@@ -234,7 +253,18 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
             height="300px"
             extensions={[sql(), ...(codeMirrorTheme ? [codeMirrorTheme] : [])]}
             onChange={useCallback((val: string) => setQuery(val), [])}
-            onCreateEditor={setEditorView}
+            onCreateEditor={useCallback((view: EditorView) => {
+              setEditorView(view);
+              // Track selection changes
+              view.dom.addEventListener('mouseup', () => {
+                const selection = view.state.selection.main;
+                setHasSelection(!selection.empty);
+              });
+              view.dom.addEventListener('keyup', () => {
+                const selection = view.state.selection.main;
+                setHasSelection(!selection.empty);
+              });
+            }, [])}
             className="text-base w-full"
           />
         ) : (

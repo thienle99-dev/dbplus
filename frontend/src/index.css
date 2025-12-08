@@ -171,7 +171,8 @@
   --bg-3: #d2c8b6;
   --border: rgba(0, 0, 0, 0.08);
   --text-primary: #657b83;
-  --text-secondary: #93a1a1;
+  --text-secondary: #586e75;
+  /* Darkened from #93a1a1 for better contrast (4.5:1) */
   --accent: #b58900;
   --accent-muted: rgba(181, 137, 0, 0.1);
 }
