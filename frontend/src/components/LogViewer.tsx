@@ -15,9 +15,9 @@ export const LogViewer: React.FC = () => {
     return (
         <div className="h-full flex flex-col bg-bg-0">
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-bg-1 border-b border-border">
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium text-text-secondary">
+            <div className="flex items-start flex-col px-3 py-2 bg-bg-1 border-b border-border">
+                <div className="mb-2">
+                    <span className="text-xs mb-3 font-medium text-text-secondary">
                         Network Logs ({filteredLogs.length})
                     </span>
                     <div className="flex items-center gap-1">
@@ -59,7 +59,7 @@ export const LogViewer: React.FC = () => {
                         </button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-3">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-text-secondary">Limit:</span>
                         <Select

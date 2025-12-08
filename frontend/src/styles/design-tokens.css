@@ -1,0 +1,284 @@
+/**
+ * TablePlus-Inspired Design System
+ * Clean, minimal, macOS-native aesthetic
+ */
+
+:root {
+    /* ========================================
+     COLOR TOKENS - TABLEPLUS STYLE
+     ======================================== */
+
+    /* Base Colors - Light Mode (Default) */
+    --color-bg: #FFFFFF;
+    --color-panel: #F7F7F7;
+    --color-panel-elevated: #FFFFFF;
+    --color-border: #ECECEC;
+    --color-divider: #DADADA;
+    --color-text: #2C2C2C;
+    --color-text-muted: #8E8E93;
+    --color-hover: #F5F5F5;
+    --color-active: #EBEBEB;
+
+    /* Accent Colors - TablePlus Palette */
+    --accent-yellow: #FFB300;
+    --accent-orange: #F57C00;
+    --accent-blue: #039BE5;
+    --accent-green: #43A047;
+    --accent-red: #E53935;
+
+    /* Semantic Colors */
+    --primary: var(--accent-blue);
+    --primary-hover: #0288D1;
+    --primary-active: #0277BD;
+    --danger: var(--accent-red);
+    --danger-hover: #D32F2F;
+    --success: var(--accent-green);
+    --success-hover: #388E3C;
+    --warning: var(--accent-orange);
+    --warning-hover: #E64A19;
+    --info: var(--accent-blue);
+
+    /* ========================================
+     SPACING TOKENS
+     ======================================== */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* ========================================
+     BORDER RADIUS TOKENS
+     ======================================== */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+
+    /* ========================================
+     SHADOW TOKENS - Subtle, macOS-like
+     ======================================== */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.10);
+    --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.10), 0 16px 32px rgba(0, 0, 0, 0.12);
+
+    /* ========================================
+     LAYOUT TOKENS
+     ======================================== */
+    --sidebar-width: 260px;
+    --sidebar-width-collapsed: 60px;
+    --toolbar-height: 48px;
+    --inspector-width: 280px;
+    --sql-log-height: 200px;
+
+    /* ========================================
+     TYPOGRAPHY TOKENS
+     ======================================== */
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-family-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+
+    --font-size-xs: 11px;
+    --font-size-sm: 12px;
+    --font-size-base: 13px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+
+    --line-height-tight: 1.3;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+
+    /* ========================================
+     COMPONENT-SPECIFIC TOKENS
+     ======================================== */
+
+    /* Buttons */
+    --button-height-sm: 28px;
+    --button-height-md: 32px;
+    --button-height-lg: 36px;
+    --button-padding-x: 16px;
+    --button-radius: var(--radius-md);
+
+    /* Inputs */
+    --input-height: 32px;
+    --input-padding-x: 12px;
+    --input-radius: var(--radius-md);
+    --input-border: var(--color-border);
+    --input-focus-ring: var(--primary);
+
+    /* Tables */
+    --table-row-height: 32px;
+    --table-header-height: 36px;
+    --table-cell-padding-x: 12px;
+    --table-cell-padding-y: 8px;
+    --table-stripe: transparent;
+    --table-hover: var(--color-hover);
+
+    /* Sidebar */
+    --sidebar-bg: var(--color-panel);
+    --sidebar-item-height: 28px;
+    --sidebar-item-padding: 8px 12px;
+    --sidebar-item-radius: var(--radius-sm);
+
+    /* Modal */
+    --modal-bg: var(--color-bg);
+    --modal-radius: var(--radius-md);
+    --modal-shadow: var(--shadow-xl);
+    --modal-backdrop: rgba(0, 0, 0, 0.25);
+
+    /* ========================================
+     TRANSITION TOKENS
+     ======================================== */
+    --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ========================================
+     Z-INDEX SCALE
+     ======================================== */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+}
+
+/* ========================================
+   DARK MODE TOKENS (Optional)
+   ======================================== */
+.dark {
+    --color-bg: #1E1E1E;
+    --color-panel: #252525;
+    --color-panel-elevated: #2A2A2A;
+    --color-border: #3A3A3A;
+    --color-divider: #404040;
+    --color-text: #E8E8E8;
+    --color-text-muted: #9E9E9E;
+    --color-hover: #2D2D2D;
+    --color-active: #353535;
+
+    /* Shadows in dark mode are more subtle */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.5), 0 16px 32px rgba(0, 0, 0, 0.6);
+
+    --modal-backdrop: rgba(0, 0, 0, 0.6);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Text Colors */
+.text-primary {
+    color: var(--color-text);
+}
+
+.text-muted {
+    color: var(--color-text-muted);
+}
+
+.text-accent-blue {
+    color: var(--accent-blue);
+}
+
+.text-accent-green {
+    color: var(--accent-green);
+}
+
+.text-accent-red {
+    color: var(--accent-red);
+}
+
+.text-accent-yellow {
+    color: var(--accent-yellow);
+}
+
+.text-accent-orange {
+    color: var(--accent-orange);
+}
+
+/* Background Colors */
+.bg-panel {
+    background-color: var(--color-panel);
+}
+
+.bg-elevated {
+    background-color: var(--color-panel-elevated);
+}
+
+.bg-hover {
+    background-color: var(--color-hover);
+}
+
+/* Spacing Utilities */
+.space-y-1>*+* {
+    margin-top: var(--space-1);
+}
+
+.space-y-2>*+* {
+    margin-top: var(--space-2);
+}
+
+.space-y-3>*+* {
+    margin-top: var(--space-3);
+}
+
+.space-y-4>*+* {
+    margin-top: var(--space-4);
+}
+
+.space-y-6>*+* {
+    margin-top: var(--space-6);
+}
+
+/* Border Utilities */
+.border-default {
+    border: 1px solid var(--color-border);
+}
+
+.border-divider {
+    border-color: var(--color-divider);
+}
+
+.divide-y>*+* {
+    border-top: 1px solid var(--color-divider);
+}
+
+/* Shadow Utilities */
+.shadow-sm {
+    box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+    box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Radius Utilities */
+.rounded-sm {
+    border-radius: var(--radius-sm);
+}
+
+.rounded-md {
+    border-radius: var(--radius-md);
+}
+
+.rounded-lg {
+    border-radius: var(--radius-lg);
+}

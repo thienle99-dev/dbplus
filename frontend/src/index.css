@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import TablePlus Design System */
+@import './styles/design-tokens.css';
+
 :root {
   /* === DARK MODE (Default) === */
 
