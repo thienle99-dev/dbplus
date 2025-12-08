@@ -98,7 +98,14 @@
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
-.light {
+/* Dark theme class for consistency */
+.theme-dark {
+  /* Uses default :root dark mode variables - no overrides needed */
+  color: inherit;
+}
+
+.light,
+.theme-light {
   /* === LIGHT MODE === */
 
   /* Background */

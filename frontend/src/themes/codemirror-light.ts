@@ -17,6 +17,18 @@ export const lightTheme = EditorView.theme({
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
         backgroundColor: '#FCE7F3', // Light pink selection
+        color: '#111827 !important', // Dark text - ensure visibility
+    },
+    '.cm-selectionLayer .cm-selectionBackground': {
+        backgroundColor: '#FCE7F3 !important',
+    },
+    '.cm-line ::selection': {
+        backgroundColor: '#FCE7F3',
+        color: '#111827',
+    },
+    '.cm-line.cm-activeLine ::selection': {
+        backgroundColor: '#F9A8D4', // Darker pink for active line
+        color: '#111827',
     },
     '.cm-panels': {
         backgroundColor: '#F9FAFB',
