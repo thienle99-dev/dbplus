@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import api from '../services/api';
 import { SavedQuery } from './SavedQueriesList';
 import { AddChartModalProps } from '../types';
+import Select from './ui/Select';
 
 export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId }: AddChartModalProps) {
   const { connectionId } = useParams();
@@ -64,7 +65,7 @@ export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId 
             <X size={20} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Chart Name</label>
@@ -80,33 +81,31 @@ export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId 
 
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Data Source (Saved Query)</label>
-            <select
+            <Select
               value={selectedQueryId}
-              onChange={(e) => setSelectedQueryId(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-text-primary focus:border-accent outline-none"
-              required
-            >
-              <option value="">Select a query...</option>
-              {savedQueries.map(q => (
-                <option key={q.id} value={q.id}>{q.name}</option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedQueryId(val)}
+              options={[
+                { value: '', label: 'Select a query...' },
+                ...savedQueries.map(q => ({ value: q.id, label: q.name }))
+              ]}
+              searchable
+            />
             {queriesLoading && <div className="text-xs text-text-secondary mt-1">Loading queries...</div>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">Chart Type</label>
-              <select
+              <Select
                 value={chartType}
-                onChange={(e) => setChartType(e.target.value)}
-                className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-text-primary focus:border-accent outline-none"
-              >
-                <option value="bar">Bar Chart</option>
-                <option value="line">Line Chart</option>
-                <option value="area">Area Chart</option>
-                <option value="pie">Pie Chart</option>
-              </select>
+                onChange={(val) => setChartType(val)}
+                options={[
+                  { value: 'bar', label: 'Bar Chart' },
+                  { value: 'line', label: 'Line Chart' },
+                  { value: 'area', label: 'Area Chart' },
+                  { value: 'pie', label: 'Pie Chart' },
+                ]}
+              />
             </div>
           </div>
 
@@ -132,7 +131,7 @@ export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId 
               />
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"

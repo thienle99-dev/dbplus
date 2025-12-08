@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { TableColumn, ColumnModalProps } from '../types';
+import Select from './ui/Select';
 
 export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode }: ColumnModalProps) {
     const [name, setName] = useState('');
@@ -87,22 +88,23 @@ export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode
                         <label className="block text-xs font-medium text-text-secondary mb-1">
                             Data Type <span className="text-accent">*</span>
                         </label>
-                        <select
+                        <Select
                             value={dataType}
-                            onChange={(e) => setDataType(e.target.value)}
-                            className="w-full bg-bg-0 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
-                        >
-                            <option value="text">text</option>
-                            <option value="varchar">varchar</option>
-                            <option value="integer">integer</option>
-                            <option value="boolean">boolean</option>
-                            <option value="timestamp">timestamp</option>
-                            <option value="jsonb">jsonb</option>
-                            <option value="uuid">uuid</option>
-                            <option value="float">float</option>
-                            <option value="date">date</option>
-                            <option value="bigint">bigint</option>
-                        </select>
+                            onChange={(val) => setDataType(val)}
+                            options={[
+                                { value: 'text', label: 'text' },
+                                { value: 'varchar', label: 'varchar' },
+                                { value: 'integer', label: 'integer' },
+                                { value: 'boolean', label: 'boolean' },
+                                { value: 'timestamp', label: 'timestamp' },
+                                { value: 'jsonb', label: 'jsonb' },
+                                { value: 'uuid', label: 'uuid' },
+                                { value: 'float', label: 'float' },
+                                { value: 'date', label: 'date' },
+                                { value: 'bigint', label: 'bigint' },
+                            ]}
+                            searchable
+                        />
                     </div>
 
                     <div className="flex items-center gap-2">

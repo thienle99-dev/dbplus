@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Settings as SettingsIcon, Palette, Code, Database, Info } from 'lucide-react';
 import { useSettingsStore, Theme } from '../store/settingsStore';
+import { THEME_CONFIGS, getThemeDisplayName } from '../constants/themes';
+import Select from './ui/Select';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -23,21 +25,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         { id: 'about' as TabType, label: 'About', icon: <Info size={16} /> },
     ];
 
-    const themes: { value: Theme; label: string }[] = [
-        { value: 'dark', label: 'Dark' },
-        { value: 'soft-pink', label: 'Soft Pink Premium 💖' },
-        { value: 'gruvbox-dark', label: 'Gruvbox Dark 🍂' },
-        { value: 'gruvbox-light', label: 'Gruvbox Light ☀️' },
-        { value: 'light', label: 'Light' },
-        { value: 'solar', label: 'Solarized' },
-        { value: 'midnight', label: 'Midnight' },
-        { value: 'wibu-pink', label: 'Wibu Pink 💖' },
-        { value: 'wibu-sakura', label: 'Wibu Sakura 🌸' },
-        { value: 'wibu-ocean', label: 'Wibu Ocean 🌊' },
-        { value: 'wibu-sunset', label: 'Wibu Sunset 🌅' },
-        { value: 'wibu-neon', label: 'Wibu Neon ⚡' },
-        { value: 'system', label: 'System' },
-    ];
+    // Get themes organized by category
+    const themes = Object.values(THEME_CONFIGS);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -200,17 +189,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 <div className="space-y-4">
                                     <label className="space-y-2">
                                         <div className="text-sm font-medium text-text-primary">Color Theme</div>
-                                        <select
+                                        <Select
                                             value={settings.theme}
-                                            onChange={(e) => settings.setTheme(e.target.value as Theme)}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
-                                        >
-                                            {themes.map((theme) => (
-                                                <option key={theme.value} value={theme.value}>
-                                                    {theme.label}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => settings.setTheme(val as Theme)}
+                                            options={themes.map((theme) => ({
+                                                value: theme.value,
+                                                label: getThemeDisplayName(theme.value),
+                                            }))}
+                                            searchable
+                                        />
                                     </label>
 
                                     <label className="space-y-2">

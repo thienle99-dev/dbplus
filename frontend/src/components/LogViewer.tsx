@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLogStore, LogEntry } from '../store/logStore';
 import { Trash2, ChevronRight, ChevronDown } from 'lucide-react';
+import Select from './ui/Select';
 
 export const LogViewer: React.FC = () => {
     const { logs, clearLogs, maxLogs, setMaxLogs } = useLogStore();
@@ -61,16 +62,18 @@ export const LogViewer: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-text-secondary">Limit:</span>
-                        <select
-                            value={maxLogs}
-                            onChange={(e) => setMaxLogs(Number(e.target.value))}
-                            className="text-[10px] bg-bg-2 text-text-primary border border-border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-accent"
-                        >
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                            <option value={200}>200</option>
-                            <option value={500}>500</option>
-                        </select>
+                        <Select
+                            value={String(maxLogs)}
+                            onChange={(val) => setMaxLogs(Number(val))}
+                            options={[
+                                { value: '50', label: '50' },
+                                { value: '100', label: '100' },
+                                { value: '200', label: '200' },
+                                { value: '500', label: '500' },
+                            ]}
+                            size="sm"
+                            className="w-20"
+                        />
                     </div>
                     <button
                         onClick={clearLogs}

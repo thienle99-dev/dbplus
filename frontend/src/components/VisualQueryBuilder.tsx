@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import Select from './ui/Select';
 
 interface Column {
   name: string;
@@ -140,21 +141,20 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
       {/* Table Selection */}
       <div>
         <label className="block text-xs font-medium text-text-secondary mb-1">Table</label>
-        <select
+        <Select
           value={selectedTable}
-          onChange={(e) => {
-            setSelectedTable(e.target.value);
+          onChange={(val) => {
+            setSelectedTable(val);
             setSelectedColumns([]);
             setFilters([]);
             setSorts([]);
           }}
-          className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent outline-none"
-        >
-          <option value="">Select a table...</option>
-          {tables.map(t => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'Select a table...' },
+            ...tables.map(t => ({ value: t, label: t }))
+          ]}
+          searchable
+        />
       </div>
 
       {selectedTable && (
@@ -192,27 +192,29 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
             <div className="flex flex-col gap-2">
               {filters.map(filter => (
                 <div key={filter.id} className="flex gap-2 items-center">
-                  <select
+                  <Select
                     value={filter.column}
-                    onChange={(e) => updateFilter(filter.id, 'column', e.target.value)}
-                    className="bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                  >
-                    {columns.map(col => <option key={col.name} value={col.name}>{col.name}</option>)}
-                  </select>
-                  <select
+                    onChange={(val) => updateFilter(filter.id, 'column', val)}
+                    options={columns.map(col => ({ value: col.name, label: col.name }))}
+                    size="sm"
+                    className="flex-1"
+                  />
+                  <Select
                     value={filter.operator}
-                    onChange={(e) => updateFilter(filter.id, 'operator', e.target.value)}
-                    className="bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none w-20"
-                  >
-                    <option value="=">=</option>
-                    <option value=">">&gt;</option>
-                    <option value="<">&lt;</option>
-                    <option value=">=">&gt;=</option>
-                    <option value="<=">&lt;=</option>
-                    <option value="!=">!=</option>
-                    <option value="LIKE">LIKE</option>
-                    <option value="ILIKE">ILIKE</option>
-                  </select>
+                    onChange={(val) => updateFilter(filter.id, 'operator', val)}
+                    options={[
+                      { value: '=', label: '=' },
+                      { value: '>', label: '>' },
+                      { value: '<', label: '<' },
+                      { value: '>=', label: '>=' },
+                      { value: '<=', label: '<=' },
+                      { value: '!=', label: '!=' },
+                      { value: 'LIKE', label: 'LIKE' },
+                      { value: 'ILIKE', label: 'ILIKE' },
+                    ]}
+                    size="sm"
+                    className="w-24"
+                  />
                   <input
                     type="text"
                     value={filter.value}
@@ -239,21 +241,23 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
             <div className="flex flex-col gap-2">
               {sorts.map(sort => (
                 <div key={sort.id} className="flex gap-2 items-center">
-                  <select
+                  <Select
                     value={sort.column}
-                    onChange={(e) => updateSort(sort.id, 'column', e.target.value)}
-                    className="bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                  >
-                    {columns.map(col => <option key={col.name} value={col.name}>{col.name}</option>)}
-                  </select>
-                  <select
+                    onChange={(val) => updateSort(sort.id, 'column', val)}
+                    options={columns.map(col => ({ value: col.name, label: col.name }))}
+                    size="sm"
+                    className="flex-1"
+                  />
+                  <Select
                     value={sort.direction}
-                    onChange={(e) => updateSort(sort.id, 'direction', e.target.value as 'ASC' | 'DESC')}
-                    className="bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none w-24"
-                  >
-                    <option value="ASC">ASC</option>
-                    <option value="DESC">DESC</option>
-                  </select>
+                    onChange={(val) => updateSort(sort.id, 'direction', val as 'ASC' | 'DESC')}
+                    options={[
+                      { value: 'ASC', label: 'ASC ↑' },
+                      { value: 'DESC', label: 'DESC ↓' },
+                    ]}
+                    size="sm"
+                    className="w-28"
+                  />
                   <button onClick={() => removeSort(sort.id)} className="text-text-secondary hover:text-error">
                     <Trash2 size={14} />
                   </button>

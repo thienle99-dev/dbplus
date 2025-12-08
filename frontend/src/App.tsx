@@ -38,6 +38,7 @@ const WorkspacePage = () => (
 
 import { useEffect } from 'react';
 import { useSettingsStore } from './store/settingsStore';
+import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
 
 // ... other imports ...
 
@@ -45,28 +46,18 @@ function App() {
   const { theme } = useSettingsStore();
 
   useEffect(() => {
-    // Remove all theme classes
-    document.body.classList.remove(
-      'theme-dark',
-      'theme-soft-pink',
-      'theme-light',
-      'theme-solar',
-      'theme-midnight',
-      'theme-gruvbox-dark',
-      'theme-gruvbox-light',
-      'theme-wibu-pink',
-      'theme-wibu-sakura',
-      'theme-wibu-ocean',
-      'theme-wibu-sunset',
-      'theme-wibu-neon'
-    );
+    // Remove all theme classes using constant
+    document.body.classList.remove(...ALL_THEME_CLASS_NAMES);
 
     // Apply selected theme
     if (theme === 'system') {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.body.classList.add(systemIsDark ? 'theme-dark' : 'theme-light');
     } else {
-      document.body.classList.add(`theme-${theme}`);
+      const themeClass = getThemeClassName(theme);
+      if (themeClass) {
+        document.body.classList.add(themeClass);
+      }
     }
   }, [theme]);
 

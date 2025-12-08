@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { TableColumn, IndexInfo } from '../../types';
+import Select from '../ui/Select';
 
 interface IndexesSectionProps {
   schema: string;
@@ -216,17 +217,18 @@ export default function IndexesSection({
 
             <div>
               <label className="text-[10px] md:text-xs text-text-secondary block mb-1">Index Algorithm</label>
-              <select
+              <Select
                 value={newIndexAlgorithm}
-                onChange={(e) => setNewIndexAlgorithm(e.target.value)}
-                className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary focus:border-accent focus:outline-none"
-              >
-                <option value="BTREE">BTREE</option>
-                <option value="HASH">HASH</option>
-                <option value="GIST">GIST</option>
-                <option value="GIN">GIN</option>
-                <option value="BRIN">BRIN</option>
-              </select>
+                onChange={(val) => setNewIndexAlgorithm(val)}
+                options={[
+                  { value: 'BTREE', label: 'BTREE' },
+                  { value: 'HASH', label: 'HASH' },
+                  { value: 'GIST', label: 'GIST' },
+                  { value: 'GIN', label: 'GIN' },
+                  { value: 'BRIN', label: 'BRIN' },
+                ]}
+                size="sm"
+              />
             </div>
 
             <div>
