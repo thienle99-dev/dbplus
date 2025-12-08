@@ -3,19 +3,91 @@
 @tailwind utilities;
 
 :root {
-  /* Default (Dark) */
-  --bg-0: #0f1115;
-  --bg-1: #161a1f;
-  --bg-2: #1d232a;
-  --bg-3: #2a323c;
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --accent: #4f83ff;
-  --accent-muted: rgba(79, 131, 255, 0.15);
-  --error: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
+  /* === DARK MODE (Default) === */
+
+  /* Background */
+  --color-bg-default: #0A0E14;
+  --color-bg-panel: #111827;
+  --color-bg-hover: #1F2937;
+  --color-bg-active: #374151;
+  --color-bg-elevated: #1F2937;
+  --color-bg-sunken: #000000;
+
+  /* Surface */
+  --color-surface-raised: #1F2937;
+  --color-surface-sunken: #0A0E14;
+  --color-surface-overlay: rgba(17, 24, 39, 0.95);
+
+  /* Text */
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-text-disabled: #4B5563;
+  --color-text-accent: #F472B6;
+  --color-text-inverse: #111827;
+
+  /* Border */
+  --color-border-default: #1F2937;
+  --color-border-light: #374151;
+  --color-border-strong: #4B5563;
+  --color-border-subtle: rgba(31, 41, 55, 0.5);
+  --color-border-focus: #EC4899;
+
+  /* Primary */
+  --color-primary-default: #EC4899;
+  --color-primary-hover: #F472B6;
+  --color-primary-active: #DB2777;
+  --color-primary-subtle: rgba(236, 72, 153, 0.1);
+  --color-primary-transparent: rgba(236, 72, 153, 0.15);
+  --color-primary-muted: #831843;
+
+  /* Semantic */
+  --color-success: #22C55E;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+  --color-warning: #F59E0B;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-error: #EF4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+
+  /* Special */
+  --color-accent-glow: rgba(236, 72, 153, 0.3);
+  --color-focus-ring: rgba(236, 72, 153, 0.5);
+  --color-selection-bg: rgba(236, 72, 153, 0.2);
+  --color-selection-text: #FDF2F8;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  --gradient-subtle: linear-gradient(180deg, rgba(236, 72, 153, 0.05) 0%, transparent 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(236, 72, 153, 0.3);
+
+  /* Code Syntax */
+  --code-keyword: #F472B6;
+  --code-string: #4ADE80;
+  --code-number: #FBBF24;
+  --code-comment: #6B7280;
+  --code-type: #F9A8D4;
+  --code-function: #EC4899;
+  --code-variable: #D1D5DB;
+
+  /* Legacy support - map old variables to new system */
+  --bg-0: var(--color-bg-default);
+  --bg-1: var(--color-bg-panel);
+  --bg-2: var(--color-bg-hover);
+  --bg-3: var(--color-bg-active);
+  --border: var(--color-border-default);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --accent: var(--color-primary-default);
+  --accent-muted: var(--color-primary-subtle);
+  --error: var(--color-error);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
 
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -23,6 +95,60 @@
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
+.light {
+  /* === LIGHT MODE === */
+
+  /* Background */
+  --color-bg-default: #FFFFFF;
+  --color-bg-panel: #F9FAFB;
+  --color-bg-hover: #F3F4F6;
+  --color-bg-active: #E5E7EB;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-sunken: #F3F4F6;
+
+  /* Surface */
+  --color-surface-raised: #FFFFFF;
+  --color-surface-sunken: #F3F4F6;
+  --color-surface-overlay: rgba(255, 255, 255, 0.95);
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-disabled: #9CA3AF;
+  --color-text-accent: #DB2777;
+  --color-text-inverse: #F9FAFB;
+
+  /* Border */
+  --color-border-default: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  --color-border-strong: #D1D5DB;
+  --color-border-subtle: rgba(229, 231, 235, 0.5);
+  --color-border-focus: #EC4899;
+
+  /* Primary */
+  --color-primary-default: #EC4899;
+  --color-primary-hover: #DB2777;
+  --color-primary-active: #BE185D;
+  --color-primary-subtle: rgba(236, 72, 153, 0.08);
+  --color-primary-transparent: rgba(236, 72, 153, 0.12);
+  --color-primary-muted: #FCE7F3;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(236, 72, 153, 0.2);
+
+  /* Legacy support */
+  --bg-0: var(--color-bg-default);
+  --bg-1: var(--color-bg-panel);
+  --bg-2: var(--color-bg-hover);
+  --bg-3: var(--color-bg-active);
+}
+
+/* Keep existing theme classes for backward compatibility */
 .theme-light {
   --bg-0: #ffffff;
   --bg-1: #f3f4f6;
@@ -31,8 +157,8 @@
   --border: rgba(0, 0, 0, 0.1);
   --text-primary: #111827;
   --text-secondary: #4b5563;
-  --accent: #2563eb;
-  --accent-muted: rgba(37, 99, 235, 0.1);
+  --accent: #EC4899;
+  --accent-muted: rgba(236, 72, 153, 0.1);
 }
 
 .theme-solar {
@@ -59,12 +185,131 @@
   --accent-muted: rgba(56, 189, 248, 0.15);
 }
 
+/* Soft Pink Premium - Default Design System Theme */
+.theme-soft-pink {
+  /* Uses the new design system variables */
+  --bg-0: var(--color-bg-default);
+  --bg-1: var(--color-bg-panel);
+  --bg-2: var(--color-bg-hover);
+  --bg-3: var(--color-bg-active);
+  --border: var(--color-border-default);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --accent: var(--color-primary-default);
+  --accent-muted: var(--color-primary-subtle);
+}
+
+/* Wibu Pink - Classic Kawaii/Magical Girl */
+.theme-wibu-pink {
+  --bg-0: #1a0d1f;
+  --bg-1: #2d1b3d;
+  --bg-2: #3d2550;
+  --bg-3: #4d2f63;
+  --border: rgba(255, 105, 180, 0.2);
+  --text-primary: #ffd6f0;
+  --text-secondary: #d4a5d4;
+  --accent: #ff69b4;
+  --accent-muted: rgba(255, 105, 180, 0.2);
+  --error: #ff6b9d;
+  --success: #98fb98;
+  --warning: #ffd700;
+}
+
+/* Wibu Sakura - Cherry Blossom Spring */
+.theme-wibu-sakura {
+  --bg-0: #2a1a1f;
+  --bg-1: #3d2a30;
+  --bg-2: #4d3540;
+  --bg-3: #5d4050;
+  --border: rgba(255, 182, 193, 0.25);
+  --text-primary: #ffe4e9;
+  --text-secondary: #ffb6c1;
+  --accent: #ff9baf;
+  --accent-muted: rgba(255, 155, 175, 0.2);
+  --error: #ff6b8a;
+  --success: #b4e7ce;
+  --warning: #ffc8a2;
+}
+
+/* Wibu Ocean - Deep Sea/Blue Anime */
+.theme-wibu-ocean {
+  --bg-0: #0a1628;
+  --bg-1: #152238;
+  --bg-2: #1f2e48;
+  --bg-3: #2a3a58;
+  --border: rgba(100, 200, 255, 0.2);
+  --text-primary: #d4f1ff;
+  --text-secondary: #8ec5fc;
+  --accent: #4fc3f7;
+  --accent-muted: rgba(79, 195, 247, 0.2);
+  --error: #ff6b9d;
+  --success: #69f0ae;
+  --warning: #ffb74d;
+}
+
+/* Wibu Sunset - Warm Orange/Pink Gradient */
+.theme-wibu-sunset {
+  --bg-0: #1f1419;
+  --bg-1: #2f1f29;
+  --bg-2: #3f2a39;
+  --bg-3: #4f3549;
+  --border: rgba(255, 140, 105, 0.25);
+  --text-primary: #ffe5d9;
+  --text-secondary: #ffb8a3;
+  --accent: #ff8c69;
+  --accent-muted: rgba(255, 140, 105, 0.2);
+  --error: #ff6b6b;
+  --success: #95e1d3;
+  --warning: #ffd93d;
+}
+
+/* Wibu Neon - Cyberpunk/Vaporwave */
+.theme-wibu-neon {
+  --bg-0: #0d0221;
+  --bg-1: #1a0b2e;
+  --bg-2: #27143c;
+  --bg-3: #341d4a;
+  --border: rgba(0, 255, 255, 0.3);
+  --text-primary: #e0f7fa;
+  --text-secondary: #b2ebf2;
+  --accent: #00ffff;
+  --accent-muted: rgba(0, 255, 255, 0.2);
+  --error: #ff0080;
+  --success: #00ff9f;
+  --warning: #ffea00;
+}
+
 body {
   background-color: var(--bg-0);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-selection-bg);
+  color: var(--color-selection-text);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-default);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-muted);
 }
 
 @keyframes slideDown {

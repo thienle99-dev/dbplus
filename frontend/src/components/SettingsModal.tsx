@@ -25,9 +25,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     const themes: { value: Theme; label: string }[] = [
         { value: 'dark', label: 'Dark' },
+        { value: 'soft-pink', label: 'Soft Pink Premium 💖' },
         { value: 'light', label: 'Light' },
         { value: 'solar', label: 'Solarized' },
         { value: 'midnight', label: 'Midnight' },
+        { value: 'wibu-pink', label: 'Wibu Pink 💖' },
+        { value: 'wibu-sakura', label: 'Wibu Sakura 🌸' },
+        { value: 'wibu-ocean', label: 'Wibu Ocean 🌊' },
+        { value: 'wibu-sunset', label: 'Wibu Sunset 🌅' },
+        { value: 'wibu-neon', label: 'Wibu Neon ⚡' },
         { value: 'system', label: 'System' },
     ];
 

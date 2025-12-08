@@ -4,7 +4,7 @@ import { Search, Database, FileText, Clock, Settings, LogOut, Plus } from 'lucid
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
-import { SettingsModal } from './settings/SettingsModal';
+import SettingsModal from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
 
 export default function Sidebar() {

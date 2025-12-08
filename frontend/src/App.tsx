@@ -45,16 +45,26 @@ function App() {
   const { theme } = useSettingsStore();
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('theme-light', 'theme-solar', 'theme-midnight');
+    // Remove all theme classes
+    document.body.classList.remove(
+      'theme-dark',
+      'theme-soft-pink',
+      'theme-light',
+      'theme-solar',
+      'theme-midnight',
+      'theme-wibu-pink',
+      'theme-wibu-sakura',
+      'theme-wibu-ocean',
+      'theme-wibu-sunset',
+      'theme-wibu-neon'
+    );
 
+    // Apply selected theme
     if (theme === 'system') {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (!systemIsDark) {
-        root.classList.add('theme-light');
-      }
-    } else if (theme !== 'dark') {
-      root.classList.add(`theme-${theme}`);
+      document.body.classList.add(systemIsDark ? 'theme-dark' : 'theme-light');
+    } else {
+      document.body.classList.add(`theme-${theme}`);
     }
   }, [theme]);
 
