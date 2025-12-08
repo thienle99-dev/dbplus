@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Theme = 'dark' | 'soft-pink' | 'light' | 'solar' | 'midnight' | 'wibu-pink' | 'wibu-sakura' | 'wibu-ocean' | 'wibu-sunset' | 'wibu-neon' | 'system';
+export type Theme = 'dark' | 'soft-pink' | 'light' | 'solar' | 'midnight' | 'gruvbox-dark' | 'gruvbox-light' | 'wibu-pink' | 'wibu-sakura' | 'wibu-ocean' | 'wibu-sunset' | 'wibu-neon' | 'system';
 
 export interface AppSettings {
     // General

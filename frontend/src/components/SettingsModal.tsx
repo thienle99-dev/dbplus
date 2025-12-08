@@ -26,6 +26,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const themes: { value: Theme; label: string }[] = [
         { value: 'dark', label: 'Dark' },
         { value: 'soft-pink', label: 'Soft Pink Premium 💖' },
+        { value: 'gruvbox-dark', label: 'Gruvbox Dark 🍂' },
+        { value: 'gruvbox-light', label: 'Gruvbox Light ☀️' },
         { value: 'light', label: 'Light' },
         { value: 'solar', label: 'Solarized' },
         { value: 'midnight', label: 'Midnight' },

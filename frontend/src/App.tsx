@@ -52,6 +52,8 @@ function App() {
       'theme-light',
       'theme-solar',
       'theme-midnight',
+      'theme-gruvbox-dark',
+      'theme-gruvbox-light',
       'theme-wibu-pink',
       'theme-wibu-sakura',
       'theme-wibu-ocean',
