@@ -1,6 +1,6 @@
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { TableStats, TableStatisticsProps } from '../types';
+import { TableStatisticsProps } from '../types';
 
 function formatBytes(bytes: number | null): string {
     if (bytes === null || bytes === undefined) return 'N/A';
@@ -15,6 +15,8 @@ function formatBytes(bytes: number | null): string {
 
 function formatNumber(num: number | null): string {
     if (num === null || num === undefined) return 'N/A';
+    if (num === -1) return 'Loading...'; // -1 indicates loading or unavailable
+    if (num < 0) return 'N/A'; // Other negative values
     return num.toLocaleString();
 }
 
