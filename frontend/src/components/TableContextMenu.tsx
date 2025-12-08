@@ -50,7 +50,10 @@ export default function TableContextMenu({
     onTogglePin,
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
+    const submenuRef = useRef<HTMLDivElement>(null);
     const [submenuOpen, setSubmenuOpen] = useState<string | null>(null);
+    const [submenuPosition, setSubmenuPosition] = useState<{ top: number; left: number } | null>(null);
+    const hoverTimeoutRef = useRef<number | null>(null);
     const navigate = useNavigate();
     const { showToast } = useToast();
 
@@ -63,14 +66,22 @@ export default function TableContextMenu({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const clickedInMenu = menuRef.current?.contains(target);
+            const clickedInSubmenu = submenuRef.current?.contains(target);
+
+            if (!clickedInMenu && !clickedInSubmenu) {
                 onClose();
             }
         };
 
         const handleEscape = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                onClose();
+                if (submenuOpen) {
+                    setSubmenuOpen(null);
+                } else {
+                    onClose();
+                }
             }
         };
 
@@ -80,8 +91,11 @@ export default function TableContextMenu({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleEscape);
+            if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+            }
         };
-    }, [onClose]);
+    }, [onClose, submenuOpen]);
 
     // Adjust position to keep menu in viewport
     useEffect(() => {
@@ -120,7 +134,6 @@ export default function TableContextMenu({
     const handleOpenStructure = () => {
         if (tabContext) {
             const tabId = tabContext.openTableInTab(schema, table, false);
-            // Switch to structure tab - this would need to be implemented in TableDataView
             window.dispatchEvent(new CustomEvent('switch-table-tab', { detail: { tabId, tab: 'structure' } }));
         } else {
             navigate(`/workspace/${connectionId}/query`, {
@@ -148,16 +161,8 @@ export default function TableContextMenu({
         onClose();
     };
 
-    const handleCopyFullName = () => {
-        navigator.clipboard.writeText(`"${schema}"."${table}"`);
-        showToast('Full table name copied to clipboard', 'success');
-        onClose();
-    };
-
     const handleCopyCreateTable = async () => {
         try {
-            // This would need a backend endpoint to generate CREATE TABLE statement
-            // For now, just copy a basic template
             const createStatement = `-- CREATE TABLE statement for ${schema}.${table}\n-- (Full DDL generation requires backend support)`;
             navigator.clipboard.writeText(createStatement);
             showToast('CREATE TABLE statement copied', 'success');
@@ -197,7 +202,6 @@ export default function TableContextMenu({
 
     const handleTruncate = () => {
         if (confirm(`Are you sure you want to truncate table "${table}"? This will delete all rows and cannot be undone.`)) {
-            // Execute truncate - would need backend support
             showToast('Truncate functionality coming soon', 'info');
         }
         onClose();
@@ -206,7 +210,6 @@ export default function TableContextMenu({
     const handleDelete = () => {
         const userInput = prompt(`To delete table "${table}", please type the table name to confirm:`);
         if (userInput === table) {
-            // Execute drop table - would need backend support
             showToast('Delete functionality coming soon', 'info');
         } else if (userInput !== null) {
             showToast('Table name did not match', 'error');
@@ -249,18 +252,18 @@ export default function TableContextMenu({
             label: 'Export',
             icon: <FileDown size={14} />,
             submenu: [
-                { label: 'Export as CSV', icon: <FileDown size={14} />, onClick: () => showToast('Export CSV coming soon', 'info') },
-                { label: 'Export as JSON', icon: <FileDown size={14} />, onClick: () => showToast('Export JSON coming soon', 'info') },
-                { label: 'Export as SQL', icon: <FileDown size={14} />, onClick: () => showToast('Export SQL coming soon', 'info') },
+                { label: 'Export as CSV', icon: <FileDown size={14} />, onClick: () => { showToast('Export CSV coming soon', 'info'); onClose(); } },
+                { label: 'Export as JSON', icon: <FileDown size={14} />, onClick: () => { showToast('Export JSON coming soon', 'info'); onClose(); } },
+                { label: 'Export as SQL', icon: <FileDown size={14} />, onClick: () => { showToast('Export SQL coming soon', 'info'); onClose(); } },
             ],
         },
         {
             label: 'Import',
             icon: <FileUp size={14} />,
             submenu: [
-                { label: 'Import from CSV', icon: <FileUp size={14} />, onClick: () => showToast('Import CSV coming soon', 'info') },
-                { label: 'Import from JSON', icon: <FileUp size={14} />, onClick: () => showToast('Import JSON coming soon', 'info') },
-                { label: 'Import from SQL', icon: <FileUp size={14} />, onClick: () => showToast('Import SQL coming soon', 'info') },
+                { label: 'Import from CSV', icon: <FileUp size={14} />, onClick: () => { showToast('Import CSV coming soon', 'info'); onClose(); } },
+                { label: 'Import from JSON', icon: <FileUp size={14} />, onClick: () => { showToast('Import JSON coming soon', 'info'); onClose(); } },
+                { label: 'Import from SQL', icon: <FileUp size={14} />, onClick: () => { showToast('Import SQL coming soon', 'info'); onClose(); } },
             ],
             divider: true,
         },
@@ -268,10 +271,10 @@ export default function TableContextMenu({
             label: 'New',
             icon: <Plus size={14} />,
             submenu: [
-                { label: 'New Column', icon: <Plus size={14} />, onClick: () => showToast('New Column coming soon', 'info') },
-                { label: 'New Index', icon: <Plus size={14} />, onClick: () => showToast('New Index coming soon', 'info') },
-                { label: 'New Trigger', icon: <Plus size={14} />, onClick: () => showToast('New Trigger coming soon', 'info') },
-                { label: 'New Constraint', icon: <Plus size={14} />, onClick: () => showToast('New Constraint coming soon', 'info') },
+                { label: 'New Column', icon: <Plus size={14} />, onClick: () => { showToast('New Column coming soon', 'info'); onClose(); } },
+                { label: 'New Index', icon: <Plus size={14} />, onClick: () => { showToast('New Index coming soon', 'info'); onClose(); } },
+                { label: 'New Trigger', icon: <Plus size={14} />, onClick: () => { showToast('New Trigger coming soon', 'info'); onClose(); } },
+                { label: 'New Constraint', icon: <Plus size={14} />, onClick: () => { showToast('New Constraint coming soon', 'info'); onClose(); } },
             ],
         },
         {
@@ -309,30 +312,53 @@ export default function TableContextMenu({
         },
     ];
 
+    const handleSubmenuHover = (item: MenuItem, event: React.MouseEvent<HTMLDivElement>) => {
+        if (!item.submenu) return;
+
+        console.log('Hovering over submenu item:', item.label);
+
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+
+        // Capture rect immediately before setTimeout
+        const rect = event.currentTarget.getBoundingClientRect();
+        const submenuTop = rect.top;
+        const submenuLeft = rect.right + 4;
+
+        hoverTimeoutRef.current = window.setTimeout(() => {
+            console.log('Opening submenu:', item.label, { top: submenuTop, left: submenuLeft });
+            setSubmenuPosition({ top: submenuTop, left: submenuLeft });
+            setSubmenuOpen(item.label);
+        }, 100);
+    };
+
     const renderMenuItem = (item: MenuItem, index: number) => {
         const hasSubmenu = item.submenu && item.submenu.length > 0;
-        const isSubmenuOpen = submenuOpen === item.label;
 
         return (
             <div key={index}>
                 <div
                     className={`
-            flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors
+            flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-all duration-150
             ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-bg-2'}
             ${item.danger ? 'text-red-500 hover:bg-red-500/10' : 'text-text-primary'}
           `}
-                    onClick={(e) => {
+                    onClick={() => {
                         if (item.disabled) return;
-                        if (hasSubmenu) {
-                            e.stopPropagation();
-                            setSubmenuOpen(isSubmenuOpen ? null : item.label);
-                        } else if (item.onClick) {
+                        if (!hasSubmenu && item.onClick) {
                             item.onClick();
                         }
                     }}
-                    onMouseEnter={() => {
+                    onMouseEnter={(e) => {
                         if (hasSubmenu) {
-                            setSubmenuOpen(item.label);
+                            handleSubmenuHover(item, e);
+                        } else {
+                            // Close submenu when hovering over non-submenu items
+                            if (hoverTimeoutRef.current) {
+                                clearTimeout(hoverTimeoutRef.current);
+                            }
+                            setSubmenuOpen(null);
                         }
                     }}
                 >
@@ -348,16 +374,59 @@ export default function TableContextMenu({
                     </div>
                 </div>
 
-                {hasSubmenu && isSubmenuOpen && (
-                    <div className="ml-2 pl-2 border-l border-border">
-                        {item.submenu!.map((subItem, subIndex) => (
+                {item.divider && <div className="h-px bg-border my-1" />}
+            </div>
+        );
+    };
+
+    return (
+        <>
+            <div
+                ref={menuRef}
+                className="fixed z-50 min-w-[220px] bg-bg-1 border border-border rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
+                style={{
+                    left: position.x,
+                    top: position.y,
+                    opacity: 1,
+                    transform: 'scale(1)',
+                }}
+            >
+                {menuItems.map((item, index) => renderMenuItem(item, index))}
+            </div>
+
+            {submenuOpen && submenuPosition && (() => {
+                console.log('Rendering submenu:', submenuOpen, submenuPosition);
+                const submenuItems = menuItems.find((item) => item.label === submenuOpen)?.submenu;
+                console.log('Submenu items:', submenuItems);
+
+                return (
+                    <div
+                        ref={submenuRef}
+                        className="fixed z-[60] min-w-[200px] bg-bg-1 border border-border rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
+                        style={{
+                            left: submenuPosition.left,
+                            top: submenuPosition.top,
+                            maxHeight: '400px',
+                            overflowY: 'auto',
+                            opacity: 1,
+                            transform: 'scale(1)',
+                        }}
+                        onMouseEnter={() => {
+                            if (hoverTimeoutRef.current) {
+                                clearTimeout(hoverTimeoutRef.current);
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            setSubmenuOpen(null);
+                        }}
+                    >
+                        {submenuItems?.map((subItem, subIndex) => (
                             <div
                                 key={subIndex}
-                                className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-bg-2 text-text-primary transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-bg-2 text-text-primary transition-colors duration-150"
                                 onClick={() => {
                                     if (subItem.onClick) {
                                         subItem.onClick();
-                                        onClose();
                                     }
                                 }}
                             >
@@ -366,20 +435,8 @@ export default function TableContextMenu({
                             </div>
                         ))}
                     </div>
-                )}
-
-                {item.divider && <div className="h-px bg-border my-1" />}
-            </div>
-        );
-    };
-
-    return (
-        <div
-            ref={menuRef}
-            className="fixed z-50 min-w-[220px] bg-bg-1 border border-border rounded-lg shadow-xl py-1"
-            style={{ left: position.x, top: position.y }}
-        >
-            {menuItems.map((item, index) => renderMenuItem(item, index))}
-        </div>
+                );
+            })()}
+        </>
     );
 }
