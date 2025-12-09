@@ -197,12 +197,12 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         confirmText="Execute"
         isDangerous={true}
       />
-      <div className="p-2 border-b border-border bg-bg-1 flex items-center gap-2 justify-between">
+      <div className="p-3 border-b border-border bg-bg-1 flex items-center gap-3 justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={handleExecute}
             disabled={loading || !query.trim()}
-            className="flex items-center gap-1 bg-accent hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 hover:scale-[1.02] active:scale-[0.98]"
             title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
           >
             <Play size={16} className={loading ? 'animate-pulse' : ''} />
@@ -211,14 +211,14 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           <button
             onClick={() => setIsSaveModalOpen(true)}
             disabled={!query.trim()}
-            className="flex items-center gap-1 hover:bg-bg-2 text-text-secondary hover:text-text-primary px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2 bg-bg-2 hover:bg-bg-3 text-text-primary px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
           >
             <Save size={16} />
             Save
           </button>
           <button
             onClick={() => setQuery('')}
-            className="flex items-center gap-1 hover:bg-bg-2 text-text-secondary hover:text-text-primary px-3 py-1.5 rounded text-sm font-medium"
+            className="flex items-center gap-2 bg-bg-2 hover:bg-bg-3 text-text-primary px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
           >
             <Eraser size={16} />
             Clear
@@ -227,22 +227,28 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
         <div className="flex items-center gap-3">
           {isDraft && (
-            <span className="text-xs text-yellow-500 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+            <span className="text-xs text-yellow-500 flex items-center gap-1.5 font-medium px-2 py-1 bg-yellow-500/10 rounded-md">
+              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
               Draft - Auto-saved
             </span>
           )}
 
-          <div className="flex bg-bg-2 rounded p-0.5">
+          <div className="flex bg-bg-2 rounded-lg p-1 border border-border">
             <button
               onClick={() => setMode('sql')}
-              className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'sql' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${mode === 'sql'
+                ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-sm'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'
+                }`}
             >
               <Code size={14} /> SQL
             </button>
             <button
               onClick={() => setMode('visual')}
-              className={`px-3 py-1 rounded text-xs font-medium flex items-center gap-1 ${mode === 'visual' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${mode === 'visual'
+                ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-sm'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'
+                }`}
             >
               <LayoutTemplate size={14} /> Visual
             </button>

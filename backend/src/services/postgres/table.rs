@@ -1,6 +1,4 @@
-use crate::services::db_driver::{
-    IndexInfo, QueryResult, TableConstraints, TableStatistics,
-};
+use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -34,7 +32,11 @@ impl TableOperations for PostgresTable {
             offset
         );
 
-        if schema.contains(';') || table.contains(';') || schema.contains(' ') || table.contains(' ') {
+        if schema.contains(';')
+            || table.contains(';')
+            || schema.contains(' ')
+            || table.contains(' ')
+        {
             tracing::error!("[PostgresTable] Invalid schema or table name detected");
             return Err(anyhow::anyhow!("Invalid schema or table name"));
         }
@@ -92,11 +94,7 @@ impl TableOperations for PostgresTable {
         })
     }
 
-    async fn get_table_constraints(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<TableConstraints> {
+    async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints> {
         tracing::info!(
             "[PostgresTable] get_table_constraints - schema: {}, table: {}",
             schema,
@@ -194,11 +192,7 @@ impl TableOperations for PostgresTable {
         })
     }
 
-    async fn get_table_statistics(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<TableStatistics> {
+    async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics> {
         tracing::info!(
             "[PostgresTable] get_table_statistics - schema: {}, table: {}",
             schema,
@@ -227,6 +221,11 @@ impl TableOperations for PostgresTable {
             let total_size: Option<i64> = row.get(1);
             let table_size: Option<i64> = row.get(2);
             let index_size: Option<i64> = row.get(3);
+
+            tracing::info!(
+                "[PostgresTable] get_table_statistics - RAW VALUES: row_count={:?}, table_size={:?}, index_size={:?}, total_size={:?}",
+                row_count, table_size, index_size, total_size
+            );
 
             let time_query = "
                 SELECT 
@@ -267,15 +266,23 @@ impl TableOperations for PostgresTable {
                 None
             };
 
-            Ok(TableStatistics {
+            let result = TableStatistics {
                 row_count,
                 table_size,
                 index_size,
                 total_size,
                 created_at: None,
                 last_modified,
-            })
+            };
+
+            tracing::info!(
+                "[PostgresTable] get_table_statistics - FINAL RESULT: {:?}",
+                result
+            );
+
+            Ok(result)
         } else {
+            tracing::warn!("[PostgresTable] get_table_statistics - Table not found in pg_class");
             Ok(TableStatistics {
                 row_count: None,
                 table_size: None,

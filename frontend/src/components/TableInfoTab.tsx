@@ -62,6 +62,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
             const response = await api.get(
                 `/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`
             );
+            console.log('[DEBUG] Table stats response:', response.data);
+            console.log('[DEBUG] row_count value:', response.data.row_count, 'type:', typeof response.data.row_count);
             setStatistics(response.data);
         } catch (err) {
             console.error('Failed to fetch statistics:', err);

@@ -182,6 +182,20 @@
   /* Darkened from #93a1a1 for better contrast (4.5:1) */
   --accent: #b58900;
   --accent-muted: rgba(181, 137, 0, 0.1);
+
+  /* === NEW DESIGN SYSTEM MAPPING === */
+  --color-bg-default: #fdf6e3;
+  --color-bg-panel: #eee8d5;
+  --color-bg-hover: #e0d7c6;
+  --color-bg-active: #d2c8b6;
+
+  --color-text-primary: #657b83;
+  --color-text-secondary: #586e75;
+  --color-text-muted: #839496;
+  --color-text-disabled: #93a1a1;
+
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.05);
 }
 
 .theme-midnight {
@@ -329,6 +343,22 @@
   --error: #cc241d;
   --success: #98971a;
   --warning: #d79921;
+
+  /* === NEW DESIGN SYSTEM MAPPING === */
+  /* This fixes white text on yellow background issue */
+  --color-bg-default: #fbf1c7;
+  --color-bg-panel: #ebdbb2;
+  --color-bg-hover: #d5c4a1;
+  --color-bg-active: #bdae93;
+
+  --color-text-primary: #282828;
+  --color-text-secondary: #3c3836;
+  --color-text-muted: #7c6f64;
+  --color-text-disabled: #928374;
+
+  --color-border-default: #a89984;
+  --color-border-light: #d5c4a1;
+  --color-border-strong: #928374;
 
   /* Gruvbox-specific colors */
   --gruv-red: #cc241d;
