@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { light as lightTheme } from '../themes/codemirror-light';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
+import { Prec } from '@codemirror/state';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
@@ -115,6 +116,10 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
       if (!selection.empty) {
         sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
         isSelection = true;
+      } else {
+        // Always get the latest content from the editor view directly
+        // This ensures shortcuts work even if 'query' state is stale in closure
+        sqlToRun = editorView.state.doc.toString();
       }
     }
 
@@ -176,6 +181,29 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  // Create a ref for handleExecute to keep the keymap extension stable
+  const handleExecuteRef = useRef(handleExecute);
+  useEffect(() => {
+    handleExecuteRef.current = handleExecute;
+  }, [handleExecute]);
+
+  // Memoize extensions to prevent reconfiguration on every render
+  const extensions = useMemo(() => [
+    sql(),
+    ...(codeMirrorTheme ? [codeMirrorTheme] : []),
+    Prec.highest(keymap.of([
+      {
+        key: "Mod-Enter",
+        run: () => {
+          console.log('[QueryEditor] Shortcut detected: Mod-Enter');
+          handleExecuteRef.current();
+          return true;
+        },
+        preventDefault: true
+      }
+    ]))
+  ], [codeMirrorTheme]);
 
   return (
     <div className="flex flex-col h-full">
@@ -261,7 +289,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           <CodeMirror
             value={query}
             height="300px"
-            extensions={[sql(), ...(codeMirrorTheme ? [codeMirrorTheme] : [])]}
+            extensions={extensions}
             onChange={useCallback((val: string) => setQuery(val), [])}
             onCreateEditor={useCallback((view: EditorView) => {
               setEditorView(view);
