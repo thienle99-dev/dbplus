@@ -57,34 +57,44 @@ impl QueryDriver for PostgresQuery {
             let mut current_row = Vec::new();
             for (i, col) in columns.iter().enumerate() {
                 let col_type = row.columns()[i].type_();
-                let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
+
+                // Check if column is NULL first
+                let is_null: bool = row.try_get::<_, Option<String>>(i).ok().flatten().is_none()
+                    && row.try_get::<_, Option<i64>>(i).ok().flatten().is_none();
+
+                let value: Value = if is_null {
+                    Value::Null
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<i64>>(i) {
                     Value::Number(v.into())
-                } else if let Ok(v) = row.try_get::<_, i64>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<i32>>(i) {
                     Value::Number(v.into())
-                } else if let Ok(v) = row.try_get::<_, i16>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<i16>>(i) {
                     Value::Number(v.into())
-                } else if let Ok(v) = row.try_get::<_, f64>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<f64>>(i) {
                     Value::Number(
                         serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
                     )
-                } else if let Ok(v) = row.try_get::<_, f32>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<f32>>(i) {
                     Value::Number(
                         serde_json::Number::from_f64(v as f64)
                             .unwrap_or(serde_json::Number::from(0)),
                     )
-                } else if let Ok(v) = row.try_get::<_, Uuid>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<Uuid>>(i) {
                     Value::String(v.to_string())
-                } else if let Ok(v) = row.try_get::<_, NaiveDateTime>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<NaiveDateTime>>(i) {
                     Value::String(v.to_string())
-                } else if let Ok(v) = row.try_get::<_, NaiveDate>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<NaiveDate>>(i) {
                     Value::String(v.to_string())
-                } else if let Ok(v) = row.try_get::<_, DateTime<Utc>>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<DateTime<Utc>>>(i) {
                     Value::String(v.to_string())
-                } else if let Ok(v) = row.try_get::<_, DateTime<Local>>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<DateTime<Local>>>(i) {
                     Value::String(v.to_string())
-                } else if let Ok(v) = row.try_get::<_, String>(i) {
+                } else if let Ok(v) = row.try_get::<_, Value>(i) {
+                    // Handle JSONB/JSON types
+                    v
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<String>>(i) {
                     Value::String(v)
-                } else if let Ok(v) = row.try_get::<_, bool>(i) {
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<bool>>(i) {
                     Value::Bool(v)
                 } else {
                     eprintln!("[QUERY DEBUG] Column '{}' (index {}) with type '{}' failed all type conversions", 
@@ -132,34 +142,45 @@ impl QueryDriver for PostgresQuery {
                 let mut current_row = Vec::new();
                 for (i, col) in columns.iter().enumerate() {
                     let col_type = row.columns()[i].type_();
-                    let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
+
+                    // Check if column is NULL first
+                    let is_null: bool =
+                        row.try_get::<_, Option<String>>(i).ok().flatten().is_none()
+                            && row.try_get::<_, Option<i64>>(i).ok().flatten().is_none();
+
+                    let value: Value = if is_null {
+                        Value::Null
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<i64>>(i) {
                         Value::Number(v.into())
-                    } else if let Ok(v) = row.try_get::<_, i64>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<i32>>(i) {
                         Value::Number(v.into())
-                    } else if let Ok(v) = row.try_get::<_, i16>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<i16>>(i) {
                         Value::Number(v.into())
-                    } else if let Ok(v) = row.try_get::<_, f64>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<f64>>(i) {
                         Value::Number(
                             serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
                         )
-                    } else if let Ok(v) = row.try_get::<_, f32>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<f32>>(i) {
                         Value::Number(
                             serde_json::Number::from_f64(v as f64)
                                 .unwrap_or(serde_json::Number::from(0)),
                         )
-                    } else if let Ok(v) = row.try_get::<_, Uuid>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<Uuid>>(i) {
                         Value::String(v.to_string())
-                    } else if let Ok(v) = row.try_get::<_, NaiveDateTime>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<NaiveDateTime>>(i) {
                         Value::String(v.to_string())
-                    } else if let Ok(v) = row.try_get::<_, NaiveDate>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<NaiveDate>>(i) {
                         Value::String(v.to_string())
-                    } else if let Ok(v) = row.try_get::<_, DateTime<Utc>>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<DateTime<Utc>>>(i) {
                         Value::String(v.to_string())
-                    } else if let Ok(v) = row.try_get::<_, DateTime<Local>>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<DateTime<Local>>>(i) {
                         Value::String(v.to_string())
-                    } else if let Ok(v) = row.try_get::<_, String>(i) {
+                    } else if let Ok(v) = row.try_get::<_, Value>(i) {
+                        // Handle JSONB/JSON types
+                        v
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<String>>(i) {
                         Value::String(v)
-                    } else if let Ok(v) = row.try_get::<_, bool>(i) {
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<bool>>(i) {
                         Value::Bool(v)
                     } else {
                         eprintln!("[EXECUTE_QUERY DEBUG] Column '{}' (index {}) with type '{}' failed all type conversions", 
