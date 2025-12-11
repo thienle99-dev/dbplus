@@ -9,4 +9,5 @@ export interface Tab {
   isDraft?: boolean;
   savedQueryId?: string;
   lastModified?: number;
+  isDirty?: boolean;
 }

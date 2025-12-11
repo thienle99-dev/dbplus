@@ -18,7 +18,7 @@ export default function SavedQueriesList({
   embedded = false,
   searchTerm = ''
 }: {
-  onSelectQuery: (sql: string, metadata?: Record<string, any>, name?: string) => void;
+  onSelectQuery: (sql: string, metadata?: Record<string, any>, name?: string, id?: string) => void;
   embedded?: boolean;
   searchTerm?: string;
 }) {
@@ -105,7 +105,7 @@ export default function SavedQueriesList({
               <div
                 key={query.id}
                 className="p-3 hover:bg-bg-2 cursor-pointer group transition-colors"
-                onClick={() => onSelectQuery(query.sql, query.metadata || undefined, query.name)}
+                onClick={() => onSelectQuery(query.sql, query.metadata || undefined, query.name, query.id)}
               >
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium text-text-primary text-sm truncate pr-2">{query.name}</h3>

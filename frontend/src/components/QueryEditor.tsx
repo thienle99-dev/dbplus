@@ -28,10 +28,13 @@ interface QueryEditorProps {
   initialMetadata?: Record<string, any>;
   isActive?: boolean;
   isDraft?: boolean;
+  savedQueryId?: string;
+  queryName?: string;
   onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
+  onSaveSuccess?: () => void;
 }
 
-export default function QueryEditor({ initialSql, initialMetadata, isActive, isDraft, onQueryChange }: QueryEditorProps) {
+export default function QueryEditor({ initialSql, initialMetadata, isActive, isDraft, savedQueryId, queryName, onQueryChange, onSaveSuccess }: QueryEditorProps) {
   const { connectionId } = useParams();
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
@@ -70,16 +73,16 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     }
   }, [initialSql, initialMetadata]);
 
-  // Debounced auto-save for drafts
+  // Debounced auto-save for drafts and saved queries
   useEffect(() => {
-    if (!isDraft || !onQueryChange) return;
+    if ((!isDraft && !savedQueryId) || !onQueryChange) return;
 
     const timeoutId = setTimeout(() => {
       onQueryChange(query, visualState);
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [query, visualState, isDraft, onQueryChange]);
+  }, [query, visualState, isDraft, savedQueryId, onQueryChange]);
 
   const [result, setResult] = useState<QueryResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -191,6 +194,22 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     execute(sqlToRun);
   }, [query, isDangerousQuery, execute, editorView, showToast]);
 
+  const handleQuickSave = async () => {
+    if (!savedQueryId || !connectionId) return;
+
+    try {
+      await api.put(`/api/connections/${connectionId}/saved-queries/${savedQueryId}`, {
+        sql: query,
+        metadata: visualState
+      });
+      showToast('Query saved successfully', 'success');
+      if (onSaveSuccess) onSaveSuccess();
+    } catch (err: unknown) {
+      console.error('Failed to save query:', err);
+      showToast('Failed to save query', 'error');
+    }
+  };
+
   useEffect(() => {
     if (!isActive) return;
 
@@ -201,13 +220,19 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        if (query.trim()) setIsSaveModalOpen(true);
+        if (query.trim()) {
+          if (savedQueryId) {
+            handleQuickSave();
+          } else {
+            setIsSaveModalOpen(true);
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, handleExecute, query]);
+  }, [isActive, handleExecute, query, savedQueryId]);
 
 
 
@@ -292,12 +317,19 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
             {loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}
           </button>
           <button
-            onClick={() => setIsSaveModalOpen(true)}
+            onClick={() => {
+              if (savedQueryId) {
+                handleQuickSave();
+              } else {
+                setIsSaveModalOpen(true);
+              }
+            }}
             disabled={!query.trim()}
             className="flex items-center gap-2 bg-bg-2 hover:bg-bg-3 text-text-primary px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            title={savedQueryId ? `Save changes to "${queryName}" (Cmd/Ctrl+S)` : "Save as new query (Cmd/Ctrl+S)"}
           >
             <Save size={16} />
-            Save
+            {savedQueryId ? 'Save' : 'Save As'}
           </button>
           <button
             onClick={() => setQuery('')}

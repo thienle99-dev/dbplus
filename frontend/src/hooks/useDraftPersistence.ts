@@ -6,6 +6,8 @@ export interface DraftQuery {
     sql: string;
     metadata?: Record<string, any>;
     lastModified: number;
+    savedQueryId?: string;
+    type?: 'query' | 'table';
 }
 
 const STORAGE_PREFIX = 'dbplus_drafts_';

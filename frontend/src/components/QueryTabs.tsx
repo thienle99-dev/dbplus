@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, X, FileCode, BookMarked, History, Database } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import QueryEditor from './QueryEditor';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
@@ -13,6 +13,7 @@ import { Tab } from '../types';
 export default function QueryTabs() {
   const { connectionId } = useParams<{ connectionId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(connectionId || '');
 
   const [tabs, setTabs] = useState<Tab[]>([]);
@@ -28,10 +29,12 @@ export default function QueryTabs() {
       const draftTabs: Tab[] = drafts.map(draft => ({
         id: draft.id,
         title: draft.title,
-        type: 'query',
+        type: draft.type || 'query',
         sql: draft.sql,
         metadata: draft.metadata,
         isDraft: true,
+        savedQueryId: draft.savedQueryId,
+        isDirty: !!draft.savedQueryId,
         lastModified: draft.lastModified,
       }));
       setTabs(draftTabs);
@@ -114,6 +117,7 @@ export default function QueryTabs() {
   }, [activeTabId]);
 
   // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
+  // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   useEffect(() => {
     const state = location.state as any;
 
@@ -130,29 +134,67 @@ export default function QueryTabs() {
       };
       setTabs(prev => [...prev, tableTab]);
       setActiveTabId(tableTab.id);
-      // Clear the state
-      window.history.replaceState({}, document.title);
+
+      // Clear the state properly using navigate
+      navigate(location.pathname, { replace: true, state: {} });
     }
 
     // Handle loading a query (from Saved Queries or History in Sidebar)
     if (state?.sql) {
-      const { sql, metadata, name } = state;
+      const { sql, metadata, name, id } = state;
 
-      // Update the active tab with the loaded SQL
-      // If no active tab (shouldn't happen), we might need to create one, but let's assume activeTabId is valid
-      setTabs(prev => prev.map(t =>
-        t.id === activeTabId ? {
-          ...t,
-          sql,
-          metadata,
-          title: name || t.title
-        } : t
-      ));
+      // Check if tab with this savedQueryId already exists
+      const existingTab = id ? tabs.find(t => t.savedQueryId === id) : undefined;
 
-      // Clear the state
-      window.history.replaceState({}, document.title);
+      if (existingTab) {
+        // Switch to existing tab and update content
+        setActiveTabId(existingTab.id);
+        setTabs(prev => prev.map(t =>
+          t.id === existingTab.id ? {
+            ...t,
+            sql,
+            metadata,
+            title: name || t.title
+          } : t
+        ));
+      } else {
+        // Check if active tab is a clean draft
+        const activeTab = tabs.find(t => t.id === activeTabId);
+        const isCleanDraft = activeTab && activeTab.isDraft && (!activeTab.sql || activeTab.sql.trim() === '');
+
+        if (isCleanDraft) {
+          // Reuse active empty draft tab
+          setTabs(prev => prev.map(t =>
+            t.id === activeTabId ? {
+              ...t,
+              sql,
+              metadata,
+              title: name || t.title,
+              savedQueryId: id,
+              isDraft: false
+            } : t
+          ));
+        } else {
+          // Create new tab
+          const newTab: Tab = {
+            id: Math.random().toString(36).substr(2, 9),
+            title: name || 'Saved Query',
+            type: 'query',
+            sql,
+            metadata,
+            savedQueryId: id,
+            lastModified: Date.now(),
+            isDraft: false,
+          };
+          setTabs(prev => [...prev, newTab]);
+          setActiveTabId(newTab.id);
+        }
+      }
+
+      // Clear the state properly using navigate
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, activeTabId]);
+  }, [location.state, activeTabId, tabs, navigate, location.pathname]);
 
   const handleLoadQuery = useCallback((sql: string, metadata?: Record<string, any>) => {
     // Update current tab's SQL and metadata using functional setState
@@ -163,15 +205,19 @@ export default function QueryTabs() {
   const handleQueryChange = useCallback((tabId: string, sql: string, metadata?: Record<string, any>) => {
     setTabs(prev => prev.map(t => {
       if (t.id === tabId) {
-        const updated = { ...t, sql, metadata, lastModified: Date.now() };
+        // Mark as dirty when modified
+        const updated = { ...t, sql, metadata, lastModified: Date.now(), isDirty: true };
+
         // Auto-save draft to localStorage
-        if (updated.isDraft) {
+        if (updated.isDraft || updated.savedQueryId) {
           saveDraft({
             id: updated.id,
             title: updated.title,
-            sql: sql || '',
-            metadata,
-            lastModified: updated.lastModified || Date.now(),
+            type: updated.type,
+            sql: updated.sql,
+            metadata: updated.metadata,
+            savedQueryId: updated.savedQueryId,
+            lastModified: updated.lastModified
           });
         }
         return updated;
@@ -179,6 +225,15 @@ export default function QueryTabs() {
       return t;
     }));
   }, [saveDraft]);
+
+  const handleSaveSuccess = useCallback((tabId: string) => {
+    setTabs(prev => prev.map(t =>
+      t.id === tabId ? { ...t, isDirty: false, isDraft: false } : t
+    ));
+    // Optional: decide if we keep the draft in local storage or clear it.
+    // Usually purely saved queries don't need drafts unless modified again.
+    // For now, we can leave it or clear it. Let's not delete distinctively.
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -256,8 +311,8 @@ export default function QueryTabs() {
                   <FileCode size={14} className={activeTabId === tab.id ? "text-accent" : ""} />
                 )}
                 <span className="truncate flex-1">{tab.title}</span>
-                {tab.isDraft && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" title="Draft - Auto-saved" />
+                {(tab.isDraft || tab.isDirty) && (
+                  <span className="w-2 h-2 rounded-full bg-yellow-500" title="Unsaved changes" />
                 )}
                 <button
                   onClick={(e) => closeTab(tab.id, e)}
@@ -297,7 +352,10 @@ export default function QueryTabs() {
                     initialMetadata={tab.metadata}
                     isActive={activeTabId === tab.id}
                     isDraft={tab.isDraft}
+                    savedQueryId={tab.savedQueryId}
+                    queryName={tab.title}
                     onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
+                    onSaveSuccess={() => handleSaveSuccess(tab.id)}
                   />
                 )}
               </div>
