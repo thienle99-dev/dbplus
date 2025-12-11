@@ -2,8 +2,10 @@ use crate::services::db_driver::QueryResult;
 use crate::services::driver::{ConnectionDriver, QueryDriver};
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
 use serde_json::Value;
+use uuid::Uuid;
 
 pub struct PostgresQuery {
     pool: Pool,
@@ -56,6 +58,29 @@ impl QueryDriver for PostgresQuery {
             for (i, _) in columns.iter().enumerate() {
                 let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
                     Value::Number(v.into())
+                } else if let Ok(v) = row.try_get::<_, i64>(i) {
+                    Value::Number(v.into())
+                } else if let Ok(v) = row.try_get::<_, i16>(i) {
+                    Value::Number(v.into())
+                } else if let Ok(v) = row.try_get::<_, f64>(i) {
+                    Value::Number(
+                        serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
+                    )
+                } else if let Ok(v) = row.try_get::<_, f32>(i) {
+                    Value::Number(
+                        serde_json::Number::from_f64(v as f64)
+                            .unwrap_or(serde_json::Number::from(0)),
+                    )
+                } else if let Ok(v) = row.try_get::<_, Uuid>(i) {
+                    Value::String(v.to_string())
+                } else if let Ok(v) = row.try_get::<_, NaiveDateTime>(i) {
+                    Value::String(v.to_string())
+                } else if let Ok(v) = row.try_get::<_, NaiveDate>(i) {
+                    Value::String(v.to_string())
+                } else if let Ok(v) = row.try_get::<_, DateTime<Utc>>(i) {
+                    Value::String(v.to_string())
+                } else if let Ok(v) = row.try_get::<_, DateTime<Local>>(i) {
+                    Value::String(v.to_string())
                 } else if let Ok(v) = row.try_get::<_, String>(i) {
                     Value::String(v)
                 } else if let Ok(v) = row.try_get::<_, bool>(i) {
@@ -131,5 +156,4 @@ impl QueryDriver for PostgresQuery {
             })
         }
     }
-
 }

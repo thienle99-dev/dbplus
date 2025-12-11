@@ -1,23 +1,23 @@
+mod column;
 mod connection;
+mod function;
 mod query;
 mod schema;
 mod table;
-mod column;
 mod view;
-mod function;
 
+pub use column::SQLiteColumn;
 pub use connection::SQLiteConnection;
+pub use function::SQLiteFunction;
 pub use query::SQLiteQuery;
 pub use schema::SQLiteSchema;
 pub use table::SQLiteTable;
-pub use column::SQLiteColumn;
 pub use view::SQLiteView;
-pub use function::SQLiteFunction;
 
-use super::db_driver::{DatabaseDriver, QueryResult};
+use super::db_driver::QueryResult;
 use super::driver::{
-    ConnectionDriver, QueryDriver, SchemaIntrospection, TableOperations,
-    ColumnManagement, ViewOperations, FunctionOperations,
+    ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
+    TableOperations, ViewOperations,
 };
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
@@ -37,7 +37,7 @@ impl SQLiteDriver {
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         let conn = SQLiteConnection::new(connection, password).await?;
         let pool = conn.pool().clone();
-        
+
         Ok(Self {
             connection: conn,
             query: SQLiteQuery::new(pool.clone()),
@@ -52,7 +52,7 @@ impl SQLiteDriver {
     pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         let conn = SQLiteConnection::new_for_test(connection, password).await?;
         let pool = conn.pool().clone();
-        
+
         Ok(Self {
             connection: conn,
             query: SQLiteQuery::new(pool.clone()),
@@ -119,7 +119,9 @@ impl TableOperations for SQLiteDriver {
         limit: i64,
         offset: i64,
     ) -> Result<QueryResult> {
-        self.table.get_table_data(schema, table, limit, offset).await
+        self.table
+            .get_table_data(schema, table, limit, offset)
+            .await
     }
 
     async fn get_table_constraints(
@@ -165,7 +167,9 @@ impl ColumnManagement for SQLiteDriver {
         column_name: &str,
         new_def: &super::db_driver::ColumnDefinition,
     ) -> Result<()> {
-        self.column.alter_column(schema, table, column_name, new_def).await
+        self.column
+            .alter_column(schema, table, column_name, new_def)
+            .await
     }
 
     async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
@@ -190,10 +194,7 @@ impl ViewOperations for SQLiteDriver {
 
 #[async_trait]
 impl FunctionOperations for SQLiteDriver {
-    async fn list_functions(
-        &self,
-        schema: &str,
-    ) -> Result<Vec<super::db_driver::FunctionInfo>> {
+    async fn list_functions(&self, schema: &str) -> Result<Vec<super::db_driver::FunctionInfo>> {
         self.function.list_functions(schema).await
     }
 
@@ -202,6 +203,8 @@ impl FunctionOperations for SQLiteDriver {
         schema: &str,
         function_name: &str,
     ) -> Result<super::db_driver::FunctionInfo> {
-        self.function.get_function_definition(schema, function_name).await
+        self.function
+            .get_function_definition(schema, function_name)
+            .await
     }
 }

@@ -1,23 +1,23 @@
+mod column;
 mod connection;
+mod function;
 mod query;
 mod schema;
 mod table;
-mod column;
 mod view;
-mod function;
 
+pub use column::PostgresColumn;
 pub use connection::PostgresConnection;
+pub use function::PostgresFunction;
 pub use query::PostgresQuery;
 pub use schema::PostgresSchema;
 pub use table::PostgresTable;
-pub use column::PostgresColumn;
 pub use view::PostgresView;
-pub use function::PostgresFunction;
 
-use super::db_driver::{DatabaseDriver, QueryResult};
+use super::db_driver::QueryResult;
 use super::driver::{
-    ConnectionDriver, QueryDriver, SchemaIntrospection, TableOperations,
-    ColumnManagement, ViewOperations, FunctionOperations,
+    ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
+    TableOperations, ViewOperations,
 };
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
@@ -37,7 +37,7 @@ impl PostgresDriver {
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         let conn = PostgresConnection::new(connection, password).await?;
         let pool = conn.pool().clone();
-        
+
         Ok(Self {
             connection: conn,
             query: PostgresQuery::new(pool.clone()),
@@ -52,7 +52,7 @@ impl PostgresDriver {
     pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         let conn = PostgresConnection::new_for_test(connection, password).await?;
         let pool = conn.pool().clone();
-        
+
         Ok(Self {
             connection: conn,
             query: PostgresQuery::new(pool.clone()),
@@ -126,7 +126,9 @@ impl TableOperations for PostgresDriver {
         limit: i64,
         offset: i64,
     ) -> Result<QueryResult> {
-        self.table.get_table_data(schema, table, limit, offset).await
+        self.table
+            .get_table_data(schema, table, limit, offset)
+            .await
     }
 
     async fn get_table_constraints(
@@ -172,7 +174,9 @@ impl ColumnManagement for PostgresDriver {
         column_name: &str,
         new_def: &super::db_driver::ColumnDefinition,
     ) -> Result<()> {
-        self.column.alter_column(schema, table, column_name, new_def).await
+        self.column
+            .alter_column(schema, table, column_name, new_def)
+            .await
     }
 
     async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
@@ -197,10 +201,7 @@ impl ViewOperations for PostgresDriver {
 
 #[async_trait]
 impl FunctionOperations for PostgresDriver {
-    async fn list_functions(
-        &self,
-        schema: &str,
-    ) -> Result<Vec<super::db_driver::FunctionInfo>> {
+    async fn list_functions(&self, schema: &str) -> Result<Vec<super::db_driver::FunctionInfo>> {
         self.function.list_functions(schema).await
     }
 
@@ -209,7 +210,8 @@ impl FunctionOperations for PostgresDriver {
         schema: &str,
         function_name: &str,
     ) -> Result<super::db_driver::FunctionInfo> {
-        self.function.get_function_definition(schema, function_name).await
+        self.function
+            .get_function_definition(schema, function_name)
+            .await
     }
 }
-

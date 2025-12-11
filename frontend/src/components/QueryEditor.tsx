@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { light as lightTheme } from '../themes/codemirror-light';
+import { transparentTheme } from '../themes/codemirror-dynamic';
 import { EditorView, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
@@ -157,6 +158,8 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive, handleExecute, query]);
 
+
+
   const columns = result?.columns.map((col, index) => {
     const helper = createColumnHelper<unknown[]>();
     return helper.accessor((row) => row[index], {
@@ -192,6 +195,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const extensions = useMemo(() => [
     sql(),
     ...(codeMirrorTheme ? [codeMirrorTheme] : []),
+    transparentTheme, // Apply dynamic background override
     Prec.highest(keymap.of([
       {
         key: "Mod-Enter",
@@ -255,9 +259,9 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
         <div className="flex items-center gap-3">
           {isDraft && (
-            <span className="text-xs text-yellow-500 flex items-center gap-1.5 font-medium px-2 py-1 bg-yellow-500/10 rounded-md">
-              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-              Draft - Auto-saved
+            <span className="text-xs text-yellow-500 flex items-center gap-1.5 font-medium px-2 py-1 bg-yellow-500/10 rounded-md" title="Query is auto-saved locally">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+              Draft
             </span>
           )}
 
