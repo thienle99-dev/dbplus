@@ -1,34 +1,133 @@
-import React, { useMemo } from 'react';
-import { QueryResult } from '../../types';
+import React, { useMemo, useState, useCallback } from 'react';
+import { QueryResult, ColumnMetadata } from '../../types';
 import { getCoreRowModel, useReactTable, flexRender, createColumnHelper } from '@tanstack/react-table';
+import { EditableCell } from './EditableCell';
+import api from '../../services/api';
 
 interface QueryResultsProps {
     result: QueryResult | null;
     loading: boolean;
     error: string | null;
+    onRefresh?: () => void;
+    connectionId: string;
 }
 
-export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error }) => {
+
+
+export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, onRefresh, connectionId }) => {
+    const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
+    const [saving, setSaving] = useState(false);
+
+    const hasEditableColumns = useMemo(() => {
+        return result?.column_metadata?.some(c => c.is_editable) ?? false;
+    }, [result]);
+
+    const handleCellSave = useCallback((rowIndex: number, colName: string, value: any) => {
+        setEdits(prev => ({
+            ...prev,
+            [rowIndex]: {
+                ...(prev[rowIndex] || {}),
+                [colName]: value
+            }
+        }));
+    }, []);
+
+    const handleSaveChanges = async () => {
+        if (!result || !result.column_metadata) return;
+
+        setSaving(true);
+        try {
+            // Group edits by table if needed, but for now typical query is single table
+            // We need to find the PK for the edited rows.
+
+            // Assume single table context for current row
+            const tableMeta = result.column_metadata.find(c => c.table_name);
+            if (!tableMeta || !tableMeta.table_name) {
+                console.error("No table metadata found, cannot save");
+                return;
+            }
+
+            const pkCols = result.column_metadata.filter(c => c.is_primary_key);
+            if (pkCols.length === 0) {
+                alert("Cannot save changes: No primary key found for this table.");
+                return;
+            }
+
+            const updates = Object.entries(edits).map(([rowIndexStr, rowUpdates]) => {
+                const rowIndex = parseInt(rowIndexStr);
+                const originalRow = result.rows[rowIndex];
+
+                const primaryKey: Record<string, any> = {};
+                pkCols.forEach(pk => {
+                    const colIndex = result.columns.indexOf(pk.column_name);
+                    if (colIndex !== -1) {
+                        primaryKey[pk.column_name] = originalRow[colIndex];
+                    }
+                });
+
+                return {
+                    schema: tableMeta.schema_name || 'public',
+                    table: tableMeta.table_name!,
+                    primary_key: primaryKey,
+                    updates: rowUpdates
+                };
+            });
+
+            // Better: Promise.all
+            await Promise.all(updates.map(u => api.patch(`/api/connections/${connectionId}/query-results`, u)));
+
+            setEdits({});
+            if (onRefresh) onRefresh();
+
+        } catch (err) {
+            console.error("Failed to save changes", err);
+            alert("Failed to save changes. Check console for details.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDiscardChanges = () => {
+        setEdits({});
+    };
+
     const columns = useMemo(() => {
         return result?.columns.map((col, index) => {
             const helper = createColumnHelper<unknown[]>();
+            const metadata = result.column_metadata ? result.column_metadata[index] : null;
+            const isEditable = metadata?.is_editable ?? false;
+
             return helper.accessor((row) => row[index], {
                 id: col,
-                header: col,
+                header: () => (
+                    <div className="flex items-center gap-1">
+                        {metadata?.is_primary_key && <span title="Primary Key" className="text-yellow-500">🔑</span>}
+                        {col}
+                    </div>
+                ),
                 cell: (info) => {
-                    const val = info.getValue();
-                    if (val === null) return (
-                        <span className="italic font-semibold" style={{ color: 'var(--color-text-muted)', opacity: 0.8 }}>
-                            null
-                        </span>
+                    const rowIndex = info.row.index;
+                    const val = edits[rowIndex]?.[col] !== undefined ? edits[rowIndex][col] : info.getValue();
+
+                    // Determine type from value or metadata? 
+                    // For now simple inference
+                    let type: 'string' | 'number' | 'boolean' | 'null' = 'string';
+                    if (val === null) type = 'null';
+                    else if (typeof val === 'number') type = 'number';
+                    else if (typeof val === 'boolean') type = 'boolean';
+
+                    return (
+                        <EditableCell
+                            value={val}
+                            onSave={(newVal) => handleCellSave(rowIndex, col, newVal)}
+                            type={type as any}
+                            isEditable={isEditable}
+                        />
                     );
-                    if (typeof val === 'boolean') return val ? 'true' : 'false';
-                    if (typeof val === 'object') return JSON.stringify(val);
-                    return String(val);
                 }
             });
         }) || [];
-    }, [result]);
+    }, [result, edits, handleCellSave]);
 
     const tableInstance = useReactTable({
         data: result?.rows || [],
@@ -36,24 +135,55 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         getCoreRowModel: getCoreRowModel(),
     });
 
+    const pendingEditsCount = Object.keys(edits).length;
+
     return (
-        <div className="flex-1 overflow-auto bg-bg-0">
+        <div className="flex-1 overflow-auto bg-bg-0 flex flex-col">
             {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
             {error && <div className="p-4 text-error font-mono text-sm whitespace-pre-wrap">{error}</div>}
 
             {result && (
                 <div className="flex flex-col h-full">
                     <div className="p-2 bg-bg-2 text-xs border-b border-border flex items-center justify-between">
-                        <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                            {result.affected_rows > 0
-                                ? `Affected rows: ${result.affected_rows}`
-                                : `${result.rows.length} rows returned`}
-                        </span>
-                        {result.rows.length > 0 && (
-                            <span className="bg-accent/20 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: 'var(--color-primary-default)' }}>
-                                {result.rows.length} {result.rows.length === 1 ? 'row' : 'rows'}
+                        <div className="flex items-center gap-4">
+                            <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                                {result.affected_rows > 0
+                                    ? `Affected rows: ${result.affected_rows}`
+                                    : `${result.rows.length} rows returned`}
                             </span>
-                        )}
+                            {hasEditableColumns && (
+                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                    Double-click cells to edit
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {pendingEditsCount > 0 && (
+                                <>
+                                    <span className="text-primary-default font-bold">{pendingEditsCount} modified rows</span>
+                                    <button
+                                        onClick={handleDiscardChanges}
+                                        className="px-2 py-1 text-text-secondary hover:text-text-primary text-xs"
+                                        disabled={saving}
+                                    >
+                                        Discard
+                                    </button>
+                                    <button
+                                        onClick={handleSaveChanges}
+                                        className="px-3 py-1 bg-primary-default text-text-inverse rounded hover:bg-primary-hover text-xs font-medium flex items-center gap-1"
+                                        disabled={saving}
+                                    >
+                                        {saving ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </>
+                            )}
+                            {result.rows.length > 0 && (
+                                <span className="bg-accent/20 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: 'var(--color-primary-default)' }}>
+                                    {result.rows.length} {result.rows.length === 1 ? 'row' : 'rows'}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {result.columns.length > 0 && (
@@ -96,7 +226,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                                 {row.getVisibleCells().map((cell) => (
                                                     <td
                                                         key={cell.id}
-                                                        className="border-b border-r border-border px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-xs font-mono text-xs"
+                                                        className="border-b border-r border-border min-w-[100px] max-w-xs font-mono text-xs p-0"
                                                         style={{ color: 'var(--color-text-primary)' }}
                                                     >
                                                         {flexRender(
@@ -117,3 +247,4 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         </div>
     );
 };
+

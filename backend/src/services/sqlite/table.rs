@@ -1,11 +1,9 @@
-use crate::services::db_driver::{
-    IndexInfo, QueryResult, TableConstraints, TableStatistics,
-};
+use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
-use sqlx::{sqlite::SqlitePool, Row};
 use serde_json::Value;
+use sqlx::{sqlite::SqlitePool, Row};
 
 pub struct SQLiteTable {
     pool: SqlitePool,
@@ -39,13 +37,11 @@ impl TableOperations for SQLiteTable {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
+                column_metadata: None,
             });
         }
 
-        let query = format!(
-            "SELECT * FROM \"{}\" LIMIT ? OFFSET ?",
-            table
-        );
+        let query = format!("SELECT * FROM \"{}\" LIMIT ? OFFSET ?", table);
 
         let rows = sqlx::query(&query)
             .bind(limit)
@@ -58,13 +54,12 @@ impl TableOperations for SQLiteTable {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
+                column_metadata: None,
             });
         }
 
         let query_columns = format!("PRAGMA table_info(\"{}\")", table);
-        let column_info = sqlx::query(&query_columns)
-            .fetch_all(&self.pool)
-            .await?;
+        let column_info = sqlx::query(&query_columns).fetch_all(&self.pool).await?;
         let columns: Vec<String> = column_info
             .iter()
             .map(|row| {
@@ -102,14 +97,11 @@ impl TableOperations for SQLiteTable {
             columns,
             rows: result_rows,
             affected_rows: 0,
+            column_metadata: None,
         })
     }
 
-    async fn get_table_constraints(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<TableConstraints> {
+    async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints> {
         tracing::info!(
             "[SQLiteTable] get_table_constraints - schema: {}, table: {}",
             schema,
@@ -126,9 +118,7 @@ impl TableOperations for SQLiteTable {
 
         let mut foreign_keys = Vec::new();
         let fk_query = format!("PRAGMA foreign_key_list(\"{}\")", table);
-        let fk_rows = sqlx::query(&fk_query)
-            .fetch_all(&self.pool)
-            .await?;
+        let fk_rows = sqlx::query(&fk_query).fetch_all(&self.pool).await?;
 
         for row in fk_rows {
             let id: i32 = row.get(0);
@@ -148,22 +138,16 @@ impl TableOperations for SQLiteTable {
 
         let mut unique_constraints = Vec::new();
         let index_query = format!("PRAGMA index_list(\"{}\")", table);
-        let index_rows = sqlx::query(&index_query)
-            .fetch_all(&self.pool)
-            .await?;
+        let index_rows = sqlx::query(&index_query).fetch_all(&self.pool).await?;
 
         for row in index_rows {
             let is_unique: i32 = row.get(1);
             if is_unique == 1 {
                 let index_name: String = row.get(0);
                 let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
-                let info_rows = sqlx::query(&info_query)
-                    .fetch_all(&self.pool)
-                    .await?;
-                let columns: Vec<String> = info_rows
-                    .iter()
-                    .map(|r| r.get::<String, _>(2))
-                    .collect();
+                let info_rows = sqlx::query(&info_query).fetch_all(&self.pool).await?;
+                let columns: Vec<String> =
+                    info_rows.iter().map(|r| r.get::<String, _>(2)).collect();
                 if !columns.is_empty() {
                     unique_constraints.push(crate::services::db_driver::UniqueConstraint {
                         constraint_name: index_name,
@@ -180,11 +164,7 @@ impl TableOperations for SQLiteTable {
         })
     }
 
-    async fn get_table_statistics(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<TableStatistics> {
+    async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics> {
         tracing::info!(
             "[SQLiteTable] get_table_statistics - schema: {}, table: {}",
             schema,
@@ -203,21 +183,15 @@ impl TableOperations for SQLiteTable {
         }
 
         let count_query = format!("SELECT COUNT(*) FROM \"{}\"", table);
-        let count_row = sqlx::query(&count_query)
-            .fetch_one(&self.pool)
-            .await?;
+        let count_row = sqlx::query(&count_query).fetch_one(&self.pool).await?;
         let row_count: i64 = count_row.get(0);
 
         let page_size_query = "PRAGMA page_size";
-        let page_size_row = sqlx::query(page_size_query)
-            .fetch_one(&self.pool)
-            .await?;
+        let page_size_row = sqlx::query(page_size_query).fetch_one(&self.pool).await?;
         let page_size: i64 = page_size_row.get(0);
 
         let page_count_query = format!("PRAGMA page_count");
-        let page_count_row = sqlx::query(&page_count_query)
-            .fetch_one(&self.pool)
-            .await?;
+        let page_count_row = sqlx::query(&page_count_query).fetch_one(&self.pool).await?;
         let page_count: i64 = page_count_row.get(0);
 
         let total_size = Some(page_size * page_count);
@@ -232,11 +206,7 @@ impl TableOperations for SQLiteTable {
         })
     }
 
-    async fn get_table_indexes(
-        &self,
-        schema: &str,
-        table: &str,
-    ) -> Result<Vec<IndexInfo>> {
+    async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>> {
         tracing::info!(
             "[SQLiteTable] get_table_indexes - schema: {}, table: {}",
             schema,
@@ -248,9 +218,7 @@ impl TableOperations for SQLiteTable {
         }
 
         let index_query = format!("PRAGMA index_list(\"{}\")", table);
-        let index_rows = sqlx::query(&index_query)
-            .fetch_all(&self.pool)
-            .await?;
+        let index_rows = sqlx::query(&index_query).fetch_all(&self.pool).await?;
 
         let mut indexes = Vec::new();
         for row in index_rows {
@@ -260,13 +228,8 @@ impl TableOperations for SQLiteTable {
             let is_pk = origin == "pk";
 
             let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
-            let info_rows = sqlx::query(&info_query)
-                .fetch_all(&self.pool)
-                .await?;
-            let columns: Vec<String> = info_rows
-                .iter()
-                .map(|r| r.get::<String, _>(2))
-                .collect();
+            let info_rows = sqlx::query(&info_query).fetch_all(&self.pool).await?;
+            let columns: Vec<String> = info_rows.iter().map(|r| r.get::<String, _>(2)).collect();
 
             indexes.push(IndexInfo {
                 name: index_name,

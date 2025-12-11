@@ -1,4 +1,4 @@
-use crate::services::db_driver::QueryResult;
+use crate::services::db_driver::{ColumnMetadata, QueryResult};
 use crate::services::driver::{ConnectionDriver, QueryDriver};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -14,6 +14,77 @@ pub struct PostgresQuery {
 impl PostgresQuery {
     pub fn new(pool: Pool) -> Self {
         Self { pool }
+    }
+
+    async fn resolve_metadata(
+        client: &deadpool_postgres::Client,
+        columns: &[tokio_postgres::Column],
+    ) -> Result<Option<Vec<ColumnMetadata>>> {
+        let mut table_oids: Vec<u32> = columns.iter().filter_map(|c| c.table_oid()).collect();
+
+        if table_oids.is_empty() {
+            return Ok(None);
+        }
+
+        table_oids.sort();
+        table_oids.dedup();
+
+        let metadata_query = "
+            SELECT 
+                c.oid, 
+                n.nspname, 
+                c.relname,
+                ARRAY(
+                    SELECT a.attname 
+                    FROM pg_index i
+                    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                    WHERE i.indrelid = c.oid AND i.indisprimary
+                ) as pk_cols
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.oid = ANY($1)
+        ";
+
+        let rows = client.query(metadata_query, &[&table_oids]).await?;
+
+        let mut lookup = std::collections::HashMap::new();
+        for row in rows {
+            let oid: u32 = row.get("oid");
+            let schema: String = row.get("nspname");
+            let table: String = row.get("relname");
+            let pk_cols: Vec<String> = row.get("pk_cols");
+            lookup.insert(oid, (schema, table, pk_cols));
+        }
+
+        let mut metadata = Vec::new();
+        for col in columns {
+            if let Some(oid) = col.table_oid() {
+                if let Some((schema, table, pks)) = lookup.get(&oid) {
+                    let col_name = col.name().to_string();
+                    let is_primary_key = pks.contains(&col_name);
+
+                    metadata.push(ColumnMetadata {
+                        table_name: Some(table.clone()),
+                        column_name: col_name,
+                        is_primary_key,
+                        is_editable: true, // Generally valid if we have table info, refinement possible later
+                        schema_name: Some(schema.clone()),
+                    });
+                    continue;
+                }
+            }
+
+            // Fallback for expression columns or failed lookup
+            metadata.push(ColumnMetadata {
+                table_name: None,
+                column_name: col.name().to_string(),
+                is_primary_key: false,
+                is_editable: false,
+                schema_name: None,
+            });
+        }
+
+        Ok(Some(metadata))
     }
 }
 
@@ -43,6 +114,7 @@ impl QueryDriver for PostgresQuery {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
+                column_metadata: None,
             });
         }
 
@@ -53,7 +125,7 @@ impl QueryDriver for PostgresQuery {
             .collect();
 
         let mut result_rows = Vec::new();
-        for row in rows {
+        for row in &rows {
             let mut current_row = Vec::new();
             for (i, col) in columns.iter().enumerate() {
                 let col_type = row.columns()[i].type_();
@@ -106,10 +178,15 @@ impl QueryDriver for PostgresQuery {
             result_rows.push(current_row);
         }
 
+        let column_metadata = Self::resolve_metadata(&client, rows[0].columns())
+            .await
+            .unwrap_or(None);
+
         Ok(QueryResult {
             columns,
             rows: result_rows,
             affected_rows: 0,
+            column_metadata,
         })
     }
 
@@ -128,6 +205,7 @@ impl QueryDriver for PostgresQuery {
                     columns: vec![],
                     rows: vec![],
                     affected_rows: 0,
+                    column_metadata: None,
                 });
             }
 
@@ -138,7 +216,7 @@ impl QueryDriver for PostgresQuery {
                 .collect();
 
             let mut result_rows = Vec::new();
-            for row in rows {
+            for row in &rows {
                 let mut current_row = Vec::new();
                 for (i, col) in columns.iter().enumerate() {
                     let col_type = row.columns()[i].type_();
@@ -192,10 +270,15 @@ impl QueryDriver for PostgresQuery {
                 result_rows.push(current_row);
             }
 
+            let column_metadata = Self::resolve_metadata(&client, rows[0].columns())
+                .await
+                .unwrap_or(None);
+
             Ok(QueryResult {
                 columns,
                 rows: result_rows,
                 affected_rows: 0,
+                column_metadata,
             })
         } else {
             let affected = client.execute(&statement, &[]).await?;
@@ -203,6 +286,7 @@ impl QueryDriver for PostgresQuery {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: affected,
+                column_metadata: None,
             })
         }
     }

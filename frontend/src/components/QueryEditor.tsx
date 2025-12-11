@@ -323,6 +323,7 @@ export default function QueryEditor({
         result={result}
         loading={loading}
         error={error}
+        connectionId={connectionId || ''}
       />
     </div>
   );

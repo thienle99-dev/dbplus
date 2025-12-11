@@ -1,5 +1,5 @@
 use axum::{
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use migration::{Migrator, MigratorTrait};
@@ -54,6 +54,10 @@ async fn main() {
         .route(
             "/api/snippets/:id",
             put(handlers::snippet::update_snippet).delete(handlers::snippet::delete_snippet),
+        )
+        .route(
+            "/api/connections/:id/query-results",
+            patch(handlers::result_edit::update_result_row),
         )
         .route(
             "/api/connections",

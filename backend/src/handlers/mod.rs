@@ -3,6 +3,7 @@ pub mod dashboard;
 pub mod database;
 pub mod history;
 pub mod query;
+pub mod result_edit;
 pub mod saved_query;
 pub mod schema;
 pub mod snippet;

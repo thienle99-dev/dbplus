@@ -54,6 +54,7 @@ impl TableOperations for PostgresTable {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
+                column_metadata: None,
             });
         }
 
@@ -91,6 +92,7 @@ impl TableOperations for PostgresTable {
             columns,
             rows: result_rows,
             affected_rows: 0,
+            column_metadata: None,
         })
     }
 

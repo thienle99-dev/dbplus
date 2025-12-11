@@ -1,7 +1,16 @@
+export interface ColumnMetadata {
+  table_name: string | null;
+  column_name: string;
+  is_primary_key: boolean;
+  is_editable: boolean;
+  schema_name: string | null;
+}
+
 export interface QueryResult {
   columns: string[];
-  rows: unknown[][];
+  rows: any[][];
   affected_rows: number;
+  column_metadata?: ColumnMetadata[];
 }
 
 export type EditState = Record<string, Record<number, unknown>>;

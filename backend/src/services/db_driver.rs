@@ -26,10 +26,20 @@ pub struct TableMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ColumnMetadata {
+    pub table_name: Option<String>,
+    pub column_name: String,
+    pub is_primary_key: bool,
+    pub is_editable: bool,
+    pub schema_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResult {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<Value>>,
     pub affected_rows: u64,
+    pub column_metadata: Option<Vec<ColumnMetadata>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -2,8 +2,8 @@ use crate::services::db_driver::QueryResult;
 use crate::services::driver::{ConnectionDriver, QueryDriver};
 use anyhow::Result;
 use async_trait::async_trait;
-use sqlx::{sqlite::SqlitePool, Row};
 use serde_json::Value;
+use sqlx::{sqlite::SqlitePool, Row};
 
 pub struct SQLiteQuery {
     pool: SqlitePool,
@@ -18,9 +18,7 @@ impl SQLiteQuery {
 #[async_trait]
 impl ConnectionDriver for SQLiteQuery {
     async fn test_connection(&self) -> Result<()> {
-        sqlx::query("SELECT 1")
-            .execute(&self.pool)
-            .await?;
+        sqlx::query("SELECT 1").execute(&self.pool).await?;
         Ok(())
     }
 }
@@ -28,29 +26,26 @@ impl ConnectionDriver for SQLiteQuery {
 #[async_trait]
 impl QueryDriver for SQLiteQuery {
     async fn execute(&self, query: &str) -> Result<u64> {
-        let result = sqlx::query(query)
-            .execute(&self.pool)
-            .await?;
+        let result = sqlx::query(query).execute(&self.pool).await?;
         Ok(result.rows_affected())
     }
 
     async fn query(&self, query: &str) -> Result<QueryResult> {
-        let query_result = sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?;
+        let query_result = sqlx::query(query).fetch_all(&self.pool).await?;
 
         if query_result.is_empty() {
             return Ok(QueryResult {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
+                column_metadata: None,
             });
         }
 
         let first_row = &query_result[0];
         let column_count = first_row.len();
         let mut columns = Vec::new();
-        
+
         for i in 0..column_count {
             columns.push(format!("column_{}", i));
         }
@@ -83,6 +78,7 @@ impl QueryDriver for SQLiteQuery {
             columns,
             rows: result_rows,
             affected_rows: 0,
+            column_metadata: None,
         })
     }
 
@@ -98,6 +94,7 @@ impl QueryDriver for SQLiteQuery {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: affected,
+                column_metadata: None,
             })
         }
     }
