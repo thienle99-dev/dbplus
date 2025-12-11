@@ -46,6 +46,15 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         .route("/", get(handler))
+        // Snippet routes
+        .route(
+            "/api/snippets",
+            get(handlers::snippet::list_snippets).post(handlers::snippet::create_snippet),
+        )
+        .route(
+            "/api/snippets/:id",
+            put(handlers::snippet::update_snippet).delete(handlers::snippet::delete_snippet),
+        )
         .route(
             "/api/connections",
             get(handlers::connection::list_connections)

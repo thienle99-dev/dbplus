@@ -5,4 +5,5 @@ pub mod history;
 pub mod query;
 pub mod saved_query;
 pub mod schema;
+pub mod snippet;
 pub mod table_info;

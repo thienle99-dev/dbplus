@@ -1,10 +1,12 @@
 import React from 'react';
-import { Play, Save, Eraser } from 'lucide-react';
+import { Play, Save, Eraser, Book } from 'lucide-react';
+
 
 interface QueryToolbarProps {
     onExecute: () => void;
     onSave: () => void;
     onClear: () => void;
+    onOpenSnippets: () => void;
     loading: boolean;
     queryTrimmed: string;
     hasSelection: boolean;
@@ -17,6 +19,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     onExecute,
     onSave,
     onClear,
+    onOpenSnippets,
     loading,
     queryTrimmed,
     hasSelection,
@@ -56,6 +59,17 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 >
                     <Eraser size={14} />
                     <span>Clear</span>
+                </button>
+
+                <div className="w-px h-4 bg-border mx-1" />
+
+                <button
+                    onClick={onOpenSnippets}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-accent hover:bg-bg-2 transition-all duration-200"
+                    title="Open Snippet Library"
+                >
+                    <Book size={14} />
+                    <span>Snippets</span>
                 </button>
             </div>
 

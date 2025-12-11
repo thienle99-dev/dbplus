@@ -15,7 +15,8 @@ import {
   QueryResults,
   QueryStatusBar,
   useQueryCompletion,
-  useQueryExecution
+  useQueryExecution,
+  SnippetLibrary
 } from './query-editor';
 
 interface QueryEditorProps {
@@ -53,6 +54,7 @@ export default function QueryEditor({
   // Modals state
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isSnippetLibraryOpen, setIsSnippetLibraryOpen] = useState(false);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
   // Custom Hooks
@@ -129,6 +131,12 @@ export default function QueryEditor({
     }
   };
 
+  const handleInsertSnippet = (sql: string) => {
+    setQuery(sql);
+    setIsSnippetLibraryOpen(false);
+    showToast('Snippet inserted', 'success');
+  };
+
   // Handle "Expand Star"
   const handleExpandStar = useCallback(() => {
     if (!editorView || !schemaCompletion) return;
@@ -198,10 +206,6 @@ export default function QueryEditor({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Keep window listeners as fallback/global shortcuts
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        // Only trigger if we are NOT in the editor (CodeMirror handles it via keymap)
-        // But verifying if CodeMirror is focused is hard here without ref check on activeElement
-        // Actually, if CM handles it with preventDefault, this might not fire if bubble is stopped
-        // Let's safe guard:
         if (!editorView?.hasFocus) {
           e.preventDefault();
           handleExecuteRequest();
@@ -232,11 +236,6 @@ export default function QueryEditor({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive, handleExecuteRequest, query, savedQueryId, handleFormat, handleExpandStar, editorView]);
 
-
-  // Quick Save Implementation (Inline for now to match logic)
-  // I need to add `api` import to make this work.
-  // I'll assume users will add it or I'll add it in this replacement.
-
   return (
     <div className="flex flex-col h-full">
       <SaveQueryModal
@@ -258,6 +257,12 @@ export default function QueryEditor({
         isDangerous={true}
       />
 
+      <SnippetLibrary
+        isOpen={isSnippetLibraryOpen}
+        onClose={() => setIsSnippetLibraryOpen(false)}
+        onInsert={handleInsertSnippet}
+      />
+
       <QueryToolbar
         onExecute={handleExecuteRequest}
         onSave={() => {
@@ -268,6 +273,7 @@ export default function QueryEditor({
           }
         }}
         onClear={() => setQuery('')}
+        onOpenSnippets={() => setIsSnippetLibraryOpen(true)}
         loading={loading}
         queryTrimmed={query.trim()}
         hasSelection={hasSelection}

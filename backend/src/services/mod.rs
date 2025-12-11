@@ -7,7 +7,5 @@ pub mod history_service;
 pub mod postgres;
 pub mod postgres_driver;
 pub mod saved_query_service;
+pub mod snippet_service;
 pub mod sqlite;
-
-pub use postgres::PostgresDriver;
-pub use sqlite::SQLiteDriver;
