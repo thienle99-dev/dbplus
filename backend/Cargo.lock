@@ -713,6 +713,7 @@ dependencies = [
  "deadpool-postgres",
  "dotenvy",
  "migration",
+ "postgres-types",
  "regex",
  "reqwest",
  "ring",
