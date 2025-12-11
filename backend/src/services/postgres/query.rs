@@ -4,6 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
+use rust_decimal::Decimal;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -142,6 +143,9 @@ impl QueryDriver for PostgresQuery {
                     Value::Number(v.into())
                 } else if let Ok(Some(v)) = row.try_get::<_, Option<i16>>(i) {
                     Value::Number(v.into())
+                } else if let Ok(Some(v)) = row.try_get::<_, Option<Decimal>>(i) {
+                    // Handle NUMERIC/DECIMAL/MONEY types
+                    Value::String(v.to_string())
                 } else if let Ok(Some(v)) = row.try_get::<_, Option<f64>>(i) {
                     Value::Number(
                         serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
@@ -234,6 +238,9 @@ impl QueryDriver for PostgresQuery {
                         Value::Number(v.into())
                     } else if let Ok(Some(v)) = row.try_get::<_, Option<i16>>(i) {
                         Value::Number(v.into())
+                    } else if let Ok(Some(v)) = row.try_get::<_, Option<Decimal>>(i) {
+                        // Handle NUMERIC/DECIMAL/MONEY types
+                        Value::String(v.to_string())
                     } else if let Ok(Some(v)) = row.try_get::<_, Option<f64>>(i) {
                         Value::Number(
                             serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
