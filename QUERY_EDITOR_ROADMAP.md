@@ -14,26 +14,26 @@
 
 #### 1.1 Query History 📜
 **Goal**: Track and re-run previous queries
-- [ ] Backend: Create `query_history` table
-- [ ] Backend: API endpoints for history CRUD
-- [ ] Frontend: History sidebar/panel
+- [x] Backend: Create `query_history` table
+- [x] Backend: API endpoints for history CRUD
+- [x] Frontend: History sidebar/panel
 - [ ] Frontend: Search/filter history
-- [ ] Frontend: Click to load query
+- [x] Frontend: Click to load query
 - [ ] Frontend: Delete history entries
-- [ ] Auto-save executed queries (success + error)
-- [ ] Timestamp and execution time tracking
+- [x] Auto-save executed queries (success + error)
+- [x] Timestamp and execution time tracking
 
 **Estimated**: 1-2 days
 
 #### 1.2 Multiple Query Tabs 📑
 **Goal**: Work with multiple queries simultaneously
-- [ ] Frontend: Tab component for query editor
-- [ ] Frontend: Add/close tabs
-- [ ] Frontend: Switch between tabs
-- [ ] Frontend: Auto-save per tab
-- [ ] Frontend: Tab rename
-- [ ] LocalStorage persistence
-- [ ] Unsaved changes indicator
+- [x] Frontend: Tab component for query editor
+- [x] Frontend: Add/close tabs
+- [x] Frontend: Switch between tabs
+- [x] Frontend: Auto-save per tab
+- [x] Frontend: Tab rename
+- [x] LocalStorage persistence
+- [x] Unsaved changes indicator
 
 **Estimated**: 2-3 days
 
@@ -143,9 +143,9 @@
 
 #### 3.3 Query Bookmarks ⭐
 **Goal**: Save and organize favorite queries
-- [ ] Backend: `query_bookmarks` table
-- [ ] Backend: CRUD APIs
-- [ ] Frontend: Bookmarks sidebar
+- [x] Backend: `query_bookmarks` table
+- [x] Backend: CRUD APIs
+- [x] Frontend: Bookmarks sidebar
 - [ ] Frontend: Folder organization
 - [ ] Frontend: Tags/labels
 - [ ] Frontend: Search bookmarks

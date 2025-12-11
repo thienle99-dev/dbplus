@@ -9,15 +9,20 @@ import TableDataView from './TableDataView';
 import { useDraftPersistence } from '../hooks/useDraftPersistence';
 import { TabProvider } from '../context/TabContext';
 import { Tab } from '../types';
+import api from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 export default function QueryTabs() {
   const { connectionId } = useParams<{ connectionId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(connectionId || '');
+  const { showToast } = useToast();
 
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeTabId, setActiveTabId] = useState('');
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
   const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
 
   // Load drafts on mount
@@ -235,6 +240,53 @@ export default function QueryTabs() {
     // For now, we can leave it or clear it. Let's not delete distinctively.
   }, []);
 
+  const handleRenameTab = async (tabId: string, newTitle: string) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab || !newTitle.trim() || newTitle === tab.title) {
+      setEditingTabId(null);
+      return;
+    }
+
+    const title = newTitle.trim();
+
+    // If it's a saved query, update via API
+    if (tab.savedQueryId && connectionId) {
+      try {
+        await api.put(`/api/connections/${connectionId}/saved-queries/${tab.savedQueryId}`, {
+          name: title
+        });
+        showToast('Query renamed successfully', 'success');
+      } catch (err) {
+        console.error('Failed to rename query:', err);
+        showToast('Failed to rename query', 'error');
+        setEditingTabId(null);
+        return;
+      }
+    }
+
+    // Update local state
+    setTabs(prev => prev.map(t => {
+      if (t.id === tabId) {
+        const updated = { ...t, title };
+        // Update draft storage
+        if (updated.isDraft || updated.savedQueryId) {
+          saveDraft({
+            id: updated.id,
+            title: updated.title,
+            type: updated.type,
+            sql: updated.sql || '',
+            metadata: updated.metadata,
+            savedQueryId: updated.savedQueryId,
+            lastModified: updated.lastModified || Date.now()
+          });
+        }
+        return updated;
+      }
+      return t;
+    }));
+    setEditingTabId(null);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 't') {
@@ -310,7 +362,35 @@ export default function QueryTabs() {
                 ) : (
                   <FileCode size={14} className={activeTabId === tab.id ? "text-accent" : ""} />
                 )}
-                <span className="truncate flex-1">{tab.title}</span>
+
+                {editingTabId === tab.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onBlur={() => handleRenameTab(tab.id, editTitle)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameTab(tab.id, editTitle);
+                      if (e.key === 'Escape') setEditingTabId(null);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 bg-bg-2 text-text-primary px-1 py-0.5 rounded outline-none min-w-[50px] h-5 text-sm"
+                  />
+                ) : (
+                  <span
+                    className="truncate flex-1"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setEditingTabId(tab.id);
+                      setEditTitle(tab.title);
+                    }}
+                    title="Double click to rename"
+                  >
+                    {tab.title}
+                  </span>
+                )}
+
                 {(tab.isDraft || tab.isDirty) && (
                   <span className="w-2 h-2 rounded-full bg-yellow-500" title="Unsaved changes" />
                 )}
