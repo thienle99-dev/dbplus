@@ -716,6 +716,7 @@ dependencies = [
  "regex",
  "reqwest",
  "ring",
+ "rust_decimal",
  "sea-orm",
  "serde",
  "serde_json",
