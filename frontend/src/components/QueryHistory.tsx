@@ -36,7 +36,8 @@ export default function QueryHistory({
     setLoading(true);
     try {
       const response = await api.get(`/api/connections/${connectionId}/history`);
-      setHistory(response.data);
+      // Backend returns { history: [...] }
+      setHistory(response.data.history || response.data);
     } catch (err: unknown) {
       console.error('Failed to fetch history:', err);
     } finally {

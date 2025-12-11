@@ -102,7 +102,9 @@ async fn main() {
         // History routes
         .route(
             "/api/connections/:id/history",
-            get(handlers::history::list_history).delete(handlers::history::clear_history),
+            get(handlers::history::get_history)
+                .post(handlers::history::add_history)
+                .delete(handlers::history::clear_history),
         )
         // Dashboard routes
         .route(

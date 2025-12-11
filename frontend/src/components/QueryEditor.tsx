@@ -8,6 +8,7 @@ import { EditorView, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
 import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
 import api from '../services/api';
+import { historyApi } from '../services/historyApi';
 import { useParams } from 'react-router-dom';
 import {
   useReactTable,
@@ -39,6 +40,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const [hasSelection, setHasSelection] = useState(false);
   const { showToast } = useToast();
   const { theme } = useSettingsStore();
+  const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
 
   const codeMirrorTheme = useMemo(() => {
     let effectiveTheme = theme;
@@ -90,19 +92,65 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
   const execute = useCallback(async (queryOverride?: string) => {
     const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
+    const startTime = Date.now();
+
     setLoading(true);
     setError(null);
     setResult(null);
+
     try {
       const response = await api.post(`/api/connections/${connectionId}/execute`, { query: sqlToExecute });
+      const executionTime = Date.now() - startTime;
+
       setResult(response.data);
+
+      // Save to history (success) - prevent duplicates
+      if (connectionId) {
+        const now = Date.now();
+        const lastSave = lastHistorySave.current;
+
+        // Only save if this is a different query or more than 2 seconds have passed
+        if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
+          lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
+
+          historyApi.addHistory(connectionId, {
+            sql: sqlToExecute,
+            row_count: response.data.rows?.length || response.data.affected_rows || 0,
+            execution_time: executionTime,
+            success: true,
+            error_message: null,
+          }).catch(err => console.error('Failed to save history:', err));
+        }
+      }
+
       if (response.data.affected_rows > 0) {
         showToast(`Query executed successfully. ${response.data.affected_rows} rows affected.`, 'success');
       }
     } catch (err: unknown) {
+      const executionTime = Date.now() - startTime;
       const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to execute query';
+
       setError(errorMessage);
       showToast('Query execution failed', 'error');
+
+      // Save to history (error) - prevent duplicates
+      if (connectionId) {
+        const now = Date.now();
+        const lastSave = lastHistorySave.current;
+
+        // Only save if this is a different query or more than 2 seconds have passed
+        if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
+          lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
+
+          historyApi.addHistory(connectionId, {
+            sql: sqlToExecute,
+            row_count: null,
+            execution_time: executionTime,
+            success: false,
+            error_message: errorMessage,
+          }).catch(err => console.error('Failed to save history:', err));
+        }
+      }
     } finally {
       setLoading(false);
     }
