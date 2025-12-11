@@ -165,7 +165,7 @@ impl TableOperations for PostgresTable {
         let unique_query = "
             SELECT 
                 tc.constraint_name,
-                array_agg(kcu.column_name ORDER BY kcu.ordinal_position) AS columns
+                array_agg(kcu.column_name::text ORDER BY kcu.ordinal_position) AS columns
             FROM information_schema.table_constraints tc
             JOIN information_schema.key_column_usage kcu
                 ON tc.constraint_name = kcu.constraint_name
@@ -181,7 +181,7 @@ impl TableOperations for PostgresTable {
             .iter()
             .map(|row| super::super::db_driver::UniqueConstraint {
                 constraint_name: row.get(0),
-                columns: row.get(1),
+                columns: row.get::<_, Option<Vec<String>>>(1).unwrap_or_default(),
             })
             .collect();
 

@@ -1,26 +1,22 @@
-import { EditorState, Prec } from '@codemirror/state';
-import { snippetCompletion, completeFromList, CompletionContext } from '@codemirror/autocomplete';
-import { sql } from '@codemirror/lang-sql';
 import { EditorView, keymap } from '@codemirror/view';
+import { Prec } from '@codemirror/state';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+
 import { useSettingsStore } from '../store/settingsStore';
 import { useToast } from '../context/ToastContext';
-import { connectionApi } from '../services/connectionApi';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { getCoreRowModel, useReactTable, flexRender, createColumnHelper } from '@tanstack/react-table';
-import { light as lightTheme } from '../themes/codemirror-light';
-import { transparentTheme, autocompleteTheme } from '../themes/codemirror-dynamic';
-import { foldGutter } from '@codemirror/language';
-import { Play, Save, Eraser, Code, LayoutTemplate, AlignLeft } from 'lucide-react';
-import { format as formatSql } from 'sql-formatter';
-import { QueryResult, ForeignKey } from '../types';
-import api from '../services/api';
-import { historyApi } from '../services/historyApi';
-import CodeMirror from '@uiw/react-codemirror';
 import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
+import api from '../services/api';
+import {
+  QueryToolbar,
+  QueryResults,
+  QueryStatusBar,
+  useQueryCompletion,
+  useQueryExecution
+} from './query-editor';
 
 interface QueryEditorProps {
   initialSql?: string;
@@ -33,254 +29,62 @@ interface QueryEditorProps {
   onSaveSuccess?: () => void;
 }
 
-// ... existing imports ...
-
-// Define SQL Snippets
-const sqlSnippets = [
-  snippetCompletion("SELECT * FROM ${}", {
-    label: "sfw",
-    detail: "SELECT * FROM table",
-    type: "keyword"
-  }),
-  snippetCompletion("SELECT ${column} FROM ${table}", {
-    label: "sel",
-    detail: "SELECT col FROM table",
-    type: "keyword"
-  }),
-  snippetCompletion("INSERT INTO ${table} (${columns}) VALUES (${values});", {
-    label: "ins",
-    detail: "INSERT INTO ...",
-    type: "keyword"
-  }),
-  snippetCompletion("UPDATE ${table} SET ${col} = ${val} WHERE ${condition};", {
-    label: "upd",
-    detail: "UPDATE ...",
-    type: "keyword"
-  }),
-  snippetCompletion("DELETE FROM ${table} WHERE ${condition};", {
-    label: "del",
-    detail: "DELETE ...",
-    type: "keyword"
-  }),
-  snippetCompletion("JOIN ${table} ON ${t1}.${col} = ${table}.${col}", {
-    label: "join",
-    detail: "JOIN ... ON ...",
-    type: "keyword"
-  }),
-  snippetCompletion("LEFT JOIN ${table} ON ${t1}.${col} = ${table}.${col}", {
-    label: "ljoin",
-    detail: "LEFT JOIN ...",
-    type: "keyword"
-  }),
-  snippetCompletion("COUNT(*)", {
-    label: "count",
-    detail: "COUNT(*)",
-    type: "function"
-  }),
-  snippetCompletion("ORDER BY ${col} DESC", {
-    label: "ord",
-    detail: "ORDER BY ...",
-    type: "keyword"
-  }),
-  snippetCompletion("GROUP BY ${col}", {
-    label: "grp",
-    detail: "GROUP BY ...",
-    type: "keyword"
-  }),
-];
-
-export default function QueryEditor({ initialSql, initialMetadata, isActive, isDraft, savedQueryId, queryName, onQueryChange, onSaveSuccess }: QueryEditorProps) {
+export default function QueryEditor({
+  initialSql,
+  initialMetadata,
+  isActive,
+  isDraft,
+  savedQueryId,
+  queryName,
+  onQueryChange,
+  onSaveSuccess
+}: QueryEditorProps) {
   const { connectionId } = useParams();
+  const { showToast } = useToast();
+  const { theme } = useSettingsStore();
+
+  // State
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
   const [visualState, setVisualState] = useState<any>(initialMetadata || null);
   const [editorView, setEditorView] = useState<EditorView | null>(null);
   const [hasSelection, setHasSelection] = useState(false);
-  const { showToast } = useToast();
-  const { theme, formatKeywordCase } = useSettingsStore();
-  const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
-  const [schemaCompletion, setSchemaCompletion] = useState<Record<string, any> | undefined>(undefined);
-  const [foreignKeys, setForeignKeys] = useState<Record<string, ForeignKey[]>>({});
 
-  // Fetch schema metadata for autocomplete
-  useEffect(() => {
-    if (!connectionId) return;
-    const fetchMeta = async () => {
-      let schemas: string[] = [];
-      try {
-        schemas = await connectionApi.getSchemas(connectionId);
-      } catch (e) {
-        console.warn('Failed to fetch schemas, falling back to defaults', e);
-      }
+  // Modals state
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
-      if (schemas.length === 0) {
-        schemas = ['public', 'main'];
-      }
+  // Custom Hooks
+  const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
+  const { execute, handleFormat, result, loading, error, setResult } = useQueryExecution(query, setQuery);
 
-      const schemaConfig: Record<string, any> = {};
-
-      const fkMap: Record<string, ForeignKey[]> = {};
-
-      await Promise.all(schemas.map(async (schemaName) => {
-        try {
-          const meta = await connectionApi.getSchemaMetadata(connectionId, schemaName);
-          if (meta && meta.length > 0) {
-            meta.forEach(m => {
-              // 1. Unqualified match (users -> [cols])
-              if (!schemaConfig[m.table_name]) {
-                schemaConfig[m.table_name] = m.columns;
-              }
-              // 2. Qualified match (public.users -> [cols])
-              schemaConfig[`${schemaName}.${m.table_name}`] = m.columns;
-            });
-
-            // Fetch constraints for tables
-            await Promise.all(meta.map(async (m) => {
-              try {
-                const constraints = await connectionApi.getTableConstraints(connectionId, schemaName, m.table_name);
-                if (constraints.foreign_keys && constraints.foreign_keys.length > 0) {
-                  // Normalize foreign keys to include schema if missing in response (backend usually provides it but safe to ensure)
-                  const fks = constraints.foreign_keys;
-                  if (!fkMap[m.table_name]) {
-                    fkMap[m.table_name] = fks;
-                  }
-                  fkMap[`${schemaName}.${m.table_name}`] = fks;
-                }
-              } catch (e) {
-                // Ignore failure for specific table
-              }
-            }));
-          }
-        } catch (e) {
-          // Ignore failures for individual schemas
-        }
-      }));
-
-      setForeignKeys(fkMap);
-
-      setSchemaCompletion(schemaConfig);
-    };
-    fetchMeta();
-  }, [connectionId]);
-
-  const codeMirrorTheme = useMemo(() => {
-    let effectiveTheme = theme;
-    if (theme === 'system') {
-      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
-    // Use custom themes for better contrast
-    const isDarkTheme = effectiveTheme === 'dark' ||
-      effectiveTheme === 'midnight' ||
-      effectiveTheme === 'soft-pink' ||
-      effectiveTheme?.startsWith('wibu') ||
-      effectiveTheme?.startsWith('gruvbox-dark');
-
-    return isDarkTheme ? oneDark : lightTheme;
-  }, [theme]);
-
-  // Update query when initialSql changes (e.g. loading from sidebar)
+  // Update query when initialSql changes
   useEffect(() => {
     if (initialSql !== undefined) setQuery(initialSql);
     if (initialMetadata) {
       setVisualState(initialMetadata);
       setMode('visual');
     } else if (initialSql !== undefined) {
-      // If no metadata, switch to SQL mode
       setMode('sql');
     }
   }, [initialSql, initialMetadata]);
 
-  // Debounced auto-save for drafts and saved queries
+  // Debounced auto-save
   useEffect(() => {
     if ((!isDraft && !savedQueryId) || !onQueryChange) return;
-
     const timeoutId = setTimeout(() => {
       onQueryChange(query, visualState);
-    }, 500); // 500ms debounce
-
+    }, 500);
     return () => clearTimeout(timeoutId);
   }, [query, visualState, isDraft, savedQueryId, onQueryChange]);
-
-  const [result, setResult] = useState<QueryResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
-  const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
   const isDangerousQuery = useCallback((sql: string) => {
     const dangerousKeywords = /\b(DROP|DELETE|TRUNCATE|UPDATE|ALTER)\b/i;
     return dangerousKeywords.test(sql);
   }, []);
 
-  const execute = useCallback(async (queryOverride?: string) => {
-    const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
-    const startTime = Date.now();
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await api.post(`/api/connections/${connectionId}/execute`, { query: sqlToExecute });
-      const executionTime = Date.now() - startTime;
-
-      setResult(response.data);
-
-      // Save to history (success) - prevent duplicates
-      if (connectionId) {
-        const now = Date.now();
-        const lastSave = lastHistorySave.current;
-
-        // Only save if this is a different query or more than 2 seconds have passed
-        if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
-          lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
-
-          historyApi.addHistory(connectionId, {
-            sql: sqlToExecute,
-            row_count: response.data.rows?.length || response.data.affected_rows || 0,
-            execution_time: executionTime,
-            success: true,
-            error_message: null,
-          }).catch(err => console.error('Failed to save history:', err));
-        }
-      }
-
-      if (response.data.affected_rows > 0) {
-        showToast(`Query executed successfully. ${response.data.affected_rows} rows affected.`, 'success');
-      }
-    } catch (err: unknown) {
-      const executionTime = Date.now() - startTime;
-      const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to execute query';
-
-      setError(errorMessage);
-      showToast('Query execution failed', 'error');
-
-      // Save to history (error) - prevent duplicates
-      if (connectionId) {
-        const now = Date.now();
-        const lastSave = lastHistorySave.current;
-
-        // Only save if this is a different query or more than 2 seconds have passed
-        if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
-          lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
-
-          historyApi.addHistory(connectionId, {
-            sql: sqlToExecute,
-            row_count: null,
-            execution_time: executionTime,
-            success: false,
-            error_message: errorMessage,
-          }).catch(err => console.error('Failed to save history:', err));
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [connectionId, query, showToast]);
-
-  const handleExecute = useCallback(async () => {
+  const handleExecuteRequest = useCallback(async () => {
     let sqlToRun = query;
     let isSelection = false;
 
@@ -290,15 +94,12 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
         isSelection = true;
       } else {
-        // Always get the latest content from the editor view directly
-        // This ensures shortcuts work even if 'query' state is stale in closure
         sqlToRun = editorView.state.doc.toString();
       }
     }
 
     if (!sqlToRun.trim()) return;
 
-    // Show toast for selection execution
     if (isSelection) {
       showToast('Executing selected query...', 'info');
     }
@@ -328,25 +129,83 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     }
   };
 
-  const handleFormat = useCallback(() => {
-    if (!query.trim()) return;
-    try {
-      const formatted = formatSql(query, { language: 'postgresql', keywordCase: formatKeywordCase });
-      setQuery(formatted);
-      showToast('Query formatted', 'info');
-    } catch (err) {
-      console.error('Formatting failed:', err);
-      showToast('Formatting failed', 'error');
-    }
-  }, [query, showToast, formatKeywordCase]);
+  // Handle "Expand Star"
+  const handleExpandStar = useCallback(() => {
+    if (!editorView || !schemaCompletion) return;
+    const state = editorView.state;
+    const doc = state.doc.toString();
+    const selection = state.selection.main;
+    const cursor = selection.head;
 
+    const range = 50;
+    const start = Math.max(0, cursor - range);
+    const end = Math.min(doc.length, cursor + range);
+    const textAround = doc.slice(start, end);
+
+    if (!textAround.includes('*')) {
+      showToast("Cursor must be near a '*' to expand", "info");
+      return;
+    }
+
+    const fromMatch = doc.match(/from\s+([a-zA-Z0-9_.]+)/i);
+    if (fromMatch && fromMatch[1]) {
+      const tableName = fromMatch[1];
+      const columns = schemaCompletion[tableName];
+
+      if (columns && columns.length > 0) {
+        const starIndexRelative = textAround.indexOf('*');
+        if (starIndexRelative !== -1) {
+          const starPos = start + starIndexRelative;
+          const columnString = columns.join(', ');
+          editorView.dispatch({
+            changes: { from: starPos, to: starPos + 1, insert: columnString }
+          });
+          showToast(`Expanded * for table '${tableName}'`, "success");
+        }
+      } else {
+        showToast(`Could not find columns for table '${tableName}'`, "error");
+      }
+    } else {
+      showToast("Could not detect table name in FROM clause", "error");
+    }
+  }, [editorView, schemaCompletion, showToast]);
+
+  const allExtensions = useMemo(() => [
+    ...extensions,
+    Prec.highest(keymap.of([
+      {
+        key: "Mod-Enter",
+        run: () => {
+          handleExecuteRequest();
+          return true;
+        },
+        preventDefault: true
+      },
+      {
+        key: "Mod-i",
+        run: () => {
+          handleExpandStar();
+          return true;
+        },
+        preventDefault: true
+      }
+    ]))
+  ], [extensions, handleExecuteRequest, handleExpandStar]);
+
+  // Shortcuts
   useEffect(() => {
     if (!isActive) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Keep window listeners as fallback/global shortcuts
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleExecute();
+        // Only trigger if we are NOT in the editor (CodeMirror handles it via keymap)
+        // But verifying if CodeMirror is focused is hard here without ref check on activeElement
+        // Actually, if CM handles it with preventDefault, this might not fire if bubble is stopped
+        // Let's safe guard:
+        if (!editorView?.hasFocus) {
+          e.preventDefault();
+          handleExecuteRequest();
+        }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
@@ -362,261 +221,21 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         e.preventDefault();
         handleFormat();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+        if (!editorView?.hasFocus) {
+          e.preventDefault();
+          handleExpandStar();
+        }
+      }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, handleExecute, query, savedQueryId, handleFormat]);
+  }, [isActive, handleExecuteRequest, query, savedQueryId, handleFormat, handleExpandStar, editorView]);
 
 
-
-  const columns = result?.columns.map((col, index) => {
-    const helper = createColumnHelper<unknown[]>();
-    return helper.accessor((row) => row[index], {
-      id: col,
-      header: col,
-      cell: (info) => {
-        const val = info.getValue();
-        if (val === null) return (
-          <span className="italic font-semibold" style={{ color: 'var(--color-text-muted)', opacity: 0.8 }}>
-            null
-          </span>
-        );
-        if (typeof val === 'boolean') return val ? 'true' : 'false';
-        if (typeof val === 'object') return JSON.stringify(val);
-        return String(val);
-      }
-    });
-  }) || [];
-
-  const tableInstance = useReactTable({
-    data: result?.rows || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  // Create a ref for handleExecute to keep the keymap extension stable
-  const handleExecuteRef = useRef(handleExecute);
-  useEffect(() => {
-    handleExecuteRef.current = handleExecute;
-  }, [handleExecute]);
-
-  // Handle "Expand Star" (Basic implementation)
-  const handleExpandStar = useCallback(() => {
-    if (!editorView || !schemaCompletion) return;
-
-    const state = editorView.state;
-    const doc = state.doc.toString();
-    const selection = state.selection.main;
-    const cursor = selection.head;
-
-    // Very basic heuristic: Look for "FROM <table_name>" after the cursor or "SELECT * FROM <table_name>" around it
-    // improved: find the nearest "FROM" keyword after the *. 
-    // This is a naive regex approach. A real parser would be better but expensive.
-
-    // Check if we are near a '*'
-    const range = 50; // chars to look around
-    const start = Math.max(0, cursor - range);
-    const end = Math.min(doc.length, cursor + range);
-    const textAround = doc.slice(start, end);
-
-    if (!textAround.includes('*')) {
-      showToast("Cursor must be near a '*' to expand", "info");
-      return;
-    }
-
-    // Try to find table name in the whole query (simplified)
-    // Assuming structure: SELECT * FROM [schema.]table ...
-    const query = doc; // Simplification: use full doc for now
-    const fromMatch = query.match(/from\s+([a-zA-Z0-9_.]+)/i);
-
-    if (fromMatch && fromMatch[1]) {
-      const tableName = fromMatch[1];
-      const columns = schemaCompletion[tableName];
-
-      if (columns && columns.length > 0) {
-        // Replace * with columns
-        // We need to find the specific * we are expanding. 
-        // Let's assume the one near the cursor.
-
-        // Find relative position of * in textAround
-        const starIndexRelative = textAround.indexOf('*');
-        if (starIndexRelative !== -1) {
-          const starPos = start + starIndexRelative;
-
-          // Construct replacement
-          const columnString = columns.join(', ');
-
-          editorView.dispatch({
-            changes: { from: starPos, to: starPos + 1, insert: columnString }
-          });
-          showToast(`Expanded * for table '${tableName}'`, "success");
-        }
-      } else {
-        // Try schema.table match
-        // If tableName doesn't match directly, maybe it's schema.table 
-        // schemaCompletion keys include partials if we flattened it correctly?
-        // We flattened as name and schema.name.
-        showToast(`Could not find columns for table '${tableName}'`, "error");
-      }
-    } else {
-      showToast("Could not detect table name in FROM clause", "error");
-    }
-  }, [editorView, schemaCompletion, showToast]);
-
-  const handleExpandStarRef = useRef(handleExpandStar);
-  useEffect(() => {
-    handleExpandStarRef.current = handleExpandStar;
-  }, [handleExpandStar]);
-
-  const getTablesInQuery = useCallback((doc: string, currentPos: number) => {
-    const tables: { name: string; alias?: string }[] = [];
-    const tableRegex = /\b(?:FROM|JOIN)\s+([a-zA-Z0-9_.]+)(?:\s+(?:AS\s+)?([a-zA-Z0-9_]+))?/gi;
-    let match;
-    while ((match = tableRegex.exec(doc)) !== null) {
-      if (match.index < currentPos) {
-        tables.push({ name: match[1], alias: match[2] });
-      }
-    }
-    return tables;
-  }, []);
-
-  const joinCompletionSource = useCallback((context: CompletionContext) => {
-    // Check if we are typing after a JOIN keyword
-    const word = context.matchBefore(/JOIN\s+\w*/i);
-    const afterJoinSpace = context.matchBefore(/JOIN\s+/i);
-
-    if (!word && !afterJoinSpace) return null;
-
-    const wordText = word ? word.text : '';
-
-    const doc = context.state.doc.toString();
-    const tablesInQuery = getTablesInQuery(doc, context.pos);
-
-    if (tablesInQuery.length === 0) return null;
-
-    // 2. Find suggestions based on relationships
-    const options: any[] = [];
-    const seen = new Set<string>();
-
-    tablesInQuery.forEach(({ name: sourceTable, alias: sourceAlias }) => {
-      // Check outgoing FKs (sourceTable -> target)
-      const outgoing = foreignKeys[sourceTable] || [];
-      outgoing.forEach(fk => {
-        const targetTable = fk.foreign_table;
-        const label = targetTable;
-        const sourceRef = sourceAlias || sourceTable;
-        const apply = `${targetTable} ON ${sourceRef}.${fk.column_name} = ${targetTable}.${fk.foreign_column}`;
-
-        if (!seen.has(apply)) {
-          seen.add(apply);
-          options.push({
-            label: label,
-            detail: `ON ${sourceRef}.${fk.column_name} = ${fk.foreign_column}`,
-            apply: apply, // Full completion
-            type: 'class'
-          });
-        }
-      });
-
-      // Check incoming FKs (target -> sourceTable)
-      Object.entries(foreignKeys).forEach(([tableName, fks]) => {
-        fks.forEach(fk => {
-          if (fk.foreign_table === sourceTable) {
-            const targetTable = tableName;
-            const sourceRef = sourceAlias || sourceTable;
-            const apply = `${targetTable} ON ${targetTable}.${fk.column_name} = ${sourceRef}.${fk.foreign_column}`;
-            if (!seen.has(apply)) {
-              seen.add(apply);
-              options.push({
-                label: targetTable,
-                detail: `(<-) ON ... = ${sourceRef}.${fk.foreign_column}`,
-                apply: apply,
-                type: 'class'
-              });
-            }
-          }
-        });
-      });
-    });
-
-    return {
-      from: word ? word.from + (wordText.match(/JOIN\s+/i)?.[0].length || 0) : context.pos,
-      options
-    };
-
-  }, [foreignKeys, getTablesInQuery]);
-
-  const aliasCompletionSource = useCallback((context: CompletionContext) => {
-    // Check if we are typing after a dot
-    const word = context.matchBefore(/([a-zA-Z0-9_]+)\.\w*/); // Matches "alias.col"
-    if (!word) return null;
-
-    const match = word.text.match(/^([a-zA-Z0-9_]+)\./);
-    if (!match) return null;
-
-    const alias = match[1];
-
-    const doc = context.state.doc.toString();
-    const tables = getTablesInQuery(doc, context.pos);
-
-    // Find the table for this alias
-    const tableInfo = tables.find(t => t.alias === alias || t.name === alias);
-
-    if (!tableInfo) return null;
-
-    // Look up columns
-    const columns = schemaCompletion?.[tableInfo.name];
-    if (!columns) return null;
-
-    const options = columns.map((col: string) => ({
-      label: col,
-      type: 'property'
-    }));
-
-    return {
-      from: word.from + alias.length + 1, // Start after dot
-      options
-    };
-  }, [schemaCompletion, getTablesInQuery]);
-
-
-  // Memoize extensions to prevent reconfiguration on every render
-  const extensions = useMemo(() => [
-    sql({ schema: schemaCompletion }),
-    foldGutter(),
-    ...(codeMirrorTheme ? [codeMirrorTheme] : []),
-    transparentTheme, // Apply dynamic background override
-    autocompleteTheme, // Apply custom autocomplete styling
-    // Register snippet completion source
-    // Register snippet completion source
-    EditorState.languageData.of(() => [{
-      autocomplete: completeFromList(sqlSnippets)
-    }, {
-      autocomplete: joinCompletionSource
-    }, {
-      autocomplete: aliasCompletionSource
-    }]),
-    Prec.highest(keymap.of([
-      {
-        key: "Mod-Enter",
-        run: () => {
-          console.log('[QueryEditor] Shortcut detected: Mod-Enter');
-          handleExecuteRef.current();
-          return true;
-        },
-        preventDefault: true
-      },
-      {
-        key: "Mod-i",
-        run: () => {
-          handleExpandStarRef.current();
-          return true;
-        },
-        preventDefault: true
-      }
-    ]))
-  ], [codeMirrorTheme, schemaCompletion]);
+  // Quick Save Implementation (Inline for now to match logic)
+  // I need to add `api` import to make this work.
+  // I'll assume users will add it or I'll add it in this replacement.
 
   return (
     <div className="flex flex-col h-full">
@@ -634,59 +253,28 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           setIsConfirmationOpen(false);
         }}
         title="Dangerous Query Detected"
-        message="This query contains keywords that may modify or delete data (DROP, DELETE, TRUNCATE, UPDATE, ALTER). Are you sure you want to execute it?"
+        message="This query contains keywords that may modify or delete data. Are you sure?"
         confirmText="Execute"
         isDangerous={true}
       />
-      <div className="h-10 px-3 border-b border-border bg-bg-0/50 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExecute}
-            disabled={loading || !query.trim()}
-            className="group relative flex items-center gap-1.5 bg-gradient-to-b from-pink-500 to-pink-600 hover:from-pink-400 hover:to-pink-500 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-md shadow-pink-500/20 hover:shadow-pink-500/40 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
-            title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
-          >
-            <Play size={13} className={`fill-current ${loading ? 'animate-pulse' : ''}`} />
-            <span>{loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}</span>
-            <div className="absolute inset-0 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
 
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <button
-            onClick={() => {
-              if (savedQueryId) {
-                handleQuickSave();
-              } else {
-                setIsSaveModalOpen(true);
-              }
-            }}
-            disabled={!query.trim()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-2 disabled:opacity-50 transition-all duration-200"
-            title={savedQueryId ? `Save changes to "${queryName}" (Cmd/Ctrl+S)` : "Save as new query (Cmd/Ctrl+S)"}
-          >
-            <Save size={14} />
-            <span>{savedQueryId ? 'Save' : 'Save As'}</span>
-          </button>
-
-          <button
-            onClick={() => setQuery('')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-error hover:bg-error/10 transition-all duration-200"
-          >
-            <Eraser size={14} />
-            <span>Clear</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isDraft && (
-            <span className="text-[10px] uppercase tracking-wider text-yellow-500 flex items-center gap-1 font-bold px-1.5 py-0.5 bg-yellow-500/10 rounded-sm select-none" title="Query is auto-saved locally">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-              Draft
-            </span>
-          )}
-        </div>
-      </div>
+      <QueryToolbar
+        onExecute={handleExecuteRequest}
+        onSave={() => {
+          if (savedQueryId) {
+            handleQuickSave();
+          } else {
+            setIsSaveModalOpen(true);
+          }
+        }}
+        onClear={() => setQuery('')}
+        loading={loading}
+        queryTrimmed={query.trim()}
+        hasSelection={hasSelection}
+        savedQueryId={savedQueryId}
+        queryName={queryName}
+        isDraft={isDraft}
+      />
 
       <div className="h-[300px] border-b border-border flex flex-col">
         <div className="flex-1 overflow-hidden flex relative">
@@ -694,11 +282,10 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
             <CodeMirror
               value={query}
               height="100%"
-              extensions={extensions}
+              extensions={allExtensions}
               onChange={useCallback((val: string) => setQuery(val), [])}
               onCreateEditor={useCallback((view: EditorView) => {
                 setEditorView(view);
-                // Track selection changes
                 view.dom.addEventListener('mouseup', () => {
                   const selection = view.state.selection.main;
                   setHasSelection(!selection.empty);
@@ -718,112 +305,19 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           )}
         </div>
 
-        {/* Bottom Toolbar / Status Bar */}
-        <div className="h-8 border-t border-border bg-bg-1 flex items-center px-3 justify-between select-none">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleFormat}
-              disabled={!query.trim()}
-              className="p-1.5 hover:bg-bg-3 rounded-md text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
-              title="Format SQL (Cmd+K)"
-            >
-              <AlignLeft size={14} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setMode('sql')}
-              className={`p-1.5 rounded-md transition-colors ${mode === 'sql' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
-              title="SQL View"
-            >
-              <Code size={14} />
-            </button>
-            <button
-              onClick={() => setMode('visual')}
-              className={`p-1.5 rounded-md transition-colors ${mode === 'visual' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
-              title="Visual Builder"
-            >
-              <LayoutTemplate size={14} />
-            </button>
-          </div>
-        </div>
+        <QueryStatusBar
+          mode={mode}
+          setMode={setMode}
+          onFormat={handleFormat}
+          queryTrimmed={query.trim()}
+        />
       </div>
 
-      <div className="flex-1 overflow-auto bg-bg-0">
-        {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
-        {error && <div className="p-4 text-error font-mono text-sm whitespace-pre-wrap">{error}</div>}
-
-        {result && (
-          <div className="flex flex-col h-full">
-            <div className="p-2 bg-bg-2 text-xs border-b border-border flex items-center justify-between">
-              <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                {result.affected_rows > 0
-                  ? `Affected rows: ${result.affected_rows}`
-                  : `${result.rows.length} rows returned`}
-              </span>
-              {result.rows.length > 0 && (
-                <span className="bg-accent/20 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: 'var(--color-primary-default)' }}>
-                  {result.rows.length} {result.rows.length === 1 ? 'row' : 'rows'}
-                </span>
-              )}
-            </div>
-
-            {result.columns.length > 0 && (
-              <div className="flex-1 overflow-auto">
-                {result.rows.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-text-secondary">
-                    <div className="text-4xl mb-2">📊</div>
-                    <div className="text-sm">Query executed successfully</div>
-                    <div className="text-xs mt-1">No rows returned</div>
-                  </div>
-                ) : (
-                  <table className="w-full border-collapse text-sm">
-                    <thead className="bg-bg-1 sticky top-0 z-10">
-                      {tableInstance.getHeaderGroups().map((headerGroup) => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <th
-                              key={header.id}
-                              className="border-b border-r border-border px-4 py-2 text-left min-w-[100px]"
-                              style={{
-                                color: 'var(--color-text-primary)',
-                                fontWeight: '600',
-                                fontSize: '0.75rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
-                              }}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
-                    <tbody>
-                      {tableInstance.getRowModel().rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-bg-1/50">
-                          {row.getVisibleCells().map((cell) => (
-                            <td
-                              key={cell.id}
-                              className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div >
+      <QueryResults
+        result={result}
+        loading={loading}
+        error={error}
+      />
+    </div>
   );
 }
