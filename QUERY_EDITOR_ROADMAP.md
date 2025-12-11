@@ -174,14 +174,15 @@
 ### Backend Type Support (URGENT)
 - [x] Add rust_decimal for NUMERIC/DECIMAL
 - [x] Enable tokio-postgres features
-- [ ] Test all type conversions
+- [x] Fix NUMERIC(12,2) parsing (NULL detection issue)
+- [ ] Test all type conversions comprehensively
 - [ ] Remove debug logs after verification
 - [ ] Add comprehensive type tests
 
 ### Performance Optimization
 - [ ] Query result streaming for large datasets
 - [ ] Virtual scrolling for result table
-- [ ] Debounce auto-save
+- [x] Debounce auto-save
 - [ ] Optimize re-renders
 
 ### Code Quality

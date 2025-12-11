@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, X, FileCode, BookMarked, History, Database } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
@@ -24,6 +24,9 @@ export default function QueryTabs() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
+
+  // Debounce timers for auto-save (one per tab)
+  const saveTimersRef = useRef<Map<string, number>>(new Map());
 
   // Load drafts on mount
   useEffect(() => {
@@ -208,27 +211,42 @@ export default function QueryTabs() {
 
   // Handle query changes from editor (for auto-save)
   const handleQueryChange = useCallback((tabId: string, sql: string, metadata?: Record<string, any>) => {
+    // Update state immediately for UI responsiveness
     setTabs(prev => prev.map(t => {
       if (t.id === tabId) {
-        // Mark as dirty when modified
-        const updated = { ...t, sql, metadata, lastModified: Date.now(), isDirty: true };
-
-        // Auto-save draft to localStorage
-        if (updated.isDraft || updated.savedQueryId) {
-          saveDraft({
-            id: updated.id,
-            title: updated.title,
-            type: updated.type,
-            sql: updated.sql,
-            metadata: updated.metadata,
-            savedQueryId: updated.savedQueryId,
-            lastModified: updated.lastModified
-          });
-        }
-        return updated;
+        return { ...t, sql, metadata, lastModified: Date.now(), isDirty: true };
       }
       return t;
     }));
+
+    // Debounce the localStorage write to reduce I/O operations
+    // Clear existing timer for this tab
+    const existingTimer = saveTimersRef.current.get(tabId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set new timer to save after 1 second of inactivity
+    const newTimer = setTimeout(() => {
+      setTabs(currentTabs => {
+        const tab = currentTabs.find(t => t.id === tabId);
+        if (tab && (tab.isDraft || tab.savedQueryId)) {
+          saveDraft({
+            id: tab.id,
+            title: tab.title,
+            type: tab.type,
+            sql: tab.sql || '',
+            metadata: tab.metadata,
+            savedQueryId: tab.savedQueryId,
+            lastModified: tab.lastModified || Date.now()
+          });
+        }
+        return currentTabs;
+      });
+      saveTimersRef.current.delete(tabId);
+    }, 1000);
+
+    saveTimersRef.current.set(tabId, newTimer);
   }, [saveDraft]);
 
   const handleSaveSuccess = useCallback((tabId: string) => {
@@ -302,6 +320,14 @@ export default function QueryTabs() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [addTab, closeTab, activeTabId]);
+
+  // Cleanup: clear all debounce timers on unmount
+  useEffect(() => {
+    return () => {
+      saveTimersRef.current.forEach(timer => clearTimeout(timer));
+      saveTimersRef.current.clear();
+    };
+  }, []);
 
   return (
     <TabProvider openTableInTab={openTableInTab}>
