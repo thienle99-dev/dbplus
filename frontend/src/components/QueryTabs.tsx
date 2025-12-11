@@ -136,12 +136,17 @@ export default function QueryTabs() {
 
     // Handle loading a query (from Saved Queries or History in Sidebar)
     if (state?.sql) {
-      const { sql, metadata } = state;
+      const { sql, metadata, name } = state;
 
       // Update the active tab with the loaded SQL
       // If no active tab (shouldn't happen), we might need to create one, but let's assume activeTabId is valid
       setTabs(prev => prev.map(t =>
-        t.id === activeTabId ? { ...t, sql, metadata } : t
+        t.id === activeTabId ? {
+          ...t,
+          sql,
+          metadata,
+          title: name || t.title
+        } : t
       ));
 
       // Clear the state

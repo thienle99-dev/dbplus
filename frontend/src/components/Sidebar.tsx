@@ -29,8 +29,8 @@ export default function Sidebar() {
   }, []);
 
   // Mock handler for selecting a query from history/saved
-  const handleSelectQuery = (sql: string, metadata?: Record<string, any>) => {
-    navigate(`/workspace/${connectionId}/query`, { state: { sql, metadata } });
+  const handleSelectQuery = (sql: string, metadata?: Record<string, any>, name?: string) => {
+    navigate(`/workspace/${connectionId}/query`, { state: { sql, metadata, name } });
   };
 
   return (
