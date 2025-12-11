@@ -59,9 +59,19 @@ export const connectionApi = {
         return response.data;
     },
 
-    // Get all databases
     getDatabases: async (id: string): Promise<string[]> => {
         const response = await api.get(`/api/connections/${id}/databases`);
+        return response.data;
+    },
+
+    // Get all schemas
+    getSchemas: async (id: string): Promise<string[]> => {
+        const response = await api.get(`/api/connections/${id}/schemas`);
+        return response.data;
+    },
+
+    getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {
+        const response = await api.get(`/api/connections/${id}/schema-metadata`, { params: { schema } });
         return response.data;
     },
 };

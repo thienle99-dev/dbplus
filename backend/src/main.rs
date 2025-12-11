@@ -70,6 +70,10 @@ async fn main() {
             get(handlers::schema::list_schemas),
         )
         .route(
+            "/api/connections/:id/schema-metadata",
+            get(handlers::schema::list_schema_metadata),
+        )
+        .route(
             "/api/connections/:id/tables",
             get(handlers::schema::list_tables),
         )

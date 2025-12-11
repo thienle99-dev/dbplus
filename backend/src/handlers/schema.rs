@@ -44,6 +44,35 @@ pub async fn list_schemas(
     }
 }
 
+pub async fn list_schema_metadata(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /schema/metadata - connection_id: {}, schema: {}",
+        connection_id,
+        params.schema
+    );
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service
+        .get_schema_metadata(connection_id, &params.schema)
+        .await
+    {
+        Ok(metadata) => {
+            tracing::info!(
+                "[API] GET /schema/metadata - SUCCESS - found {} tables",
+                metadata.len()
+            );
+            (StatusCode::OK, Json(metadata)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /schema/metadata - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
 pub async fn list_tables(
     State(db): State<DatabaseConnection>,
     Path(connection_id): Path<Uuid>,
@@ -299,10 +328,7 @@ pub async fn list_views(
     let service = ConnectionService::new(db).expect("Failed to create service");
     match service.list_views(connection_id, &params.schema).await {
         Ok(views) => {
-            tracing::info!(
-                "[API] GET /views - SUCCESS - found {} views",
-                views.len()
-            );
+            tracing::info!("[API] GET /views - SUCCESS - found {} views", views.len());
             (StatusCode::OK, Json(views)).into_response()
         }
         Err(e) => {

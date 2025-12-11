@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableColumn {
     pub name: String,
@@ -18,6 +17,12 @@ pub struct TableInfo {
     pub schema: String,
     pub name: String,
     pub table_type: String, // "BASE TABLE" or "VIEW"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableMetadata {
+    pub table_name: String,
+    pub columns: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,21 +112,21 @@ pub struct FunctionInfo {
 }
 
 use crate::services::driver::{
-    ConnectionDriver, QueryDriver, SchemaIntrospection, TableOperations,
-    ColumnManagement, ViewOperations, FunctionOperations, NoSQLOperations,
+    ColumnManagement, ConnectionDriver, FunctionOperations, NoSQLOperations, QueryDriver,
+    SchemaIntrospection, TableOperations, ViewOperations,
 };
 
 #[async_trait]
-pub trait DatabaseDriver: 
-    ConnectionDriver 
-    + QueryDriver 
-    + SchemaIntrospection 
-    + TableOperations 
-    + ColumnManagement 
-    + ViewOperations 
-    + FunctionOperations 
-    + Send 
-    + Sync 
+pub trait DatabaseDriver:
+    ConnectionDriver
+    + QueryDriver
+    + SchemaIntrospection
+    + TableOperations
+    + ColumnManagement
+    + ViewOperations
+    + FunctionOperations
+    + Send
+    + Sync
 {
     async fn execute(&self, query: &str) -> Result<u64>;
     async fn query(&self, query: &str) -> Result<QueryResult>;
@@ -130,6 +135,7 @@ pub trait DatabaseDriver:
     async fn get_schemas(&self) -> Result<Vec<String>>;
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>>;
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>>;
+    async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>>;
     async fn get_table_data(
         &self,
         schema: &str,
@@ -141,12 +147,7 @@ pub trait DatabaseDriver:
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
-    async fn add_column(
-        &self,
-        schema: &str,
-        table: &str,
-        column: &ColumnDefinition,
-    ) -> Result<()>;
+    async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
         schema: &str,
@@ -166,17 +167,17 @@ pub trait DatabaseDriver:
 }
 
 #[async_trait]
-impl<T> DatabaseDriver for T 
-where 
-    T: ConnectionDriver 
-        + QueryDriver 
-        + SchemaIntrospection 
-        + TableOperations 
-        + ColumnManagement 
-        + ViewOperations 
-        + FunctionOperations 
-        + Send 
-        + Sync
+impl<T> DatabaseDriver for T
+where
+    T: ConnectionDriver
+        + QueryDriver
+        + SchemaIntrospection
+        + TableOperations
+        + ColumnManagement
+        + ViewOperations
+        + FunctionOperations
+        + Send
+        + Sync,
 {
     async fn execute(&self, query: &str) -> Result<u64> {
         <Self as QueryDriver>::execute(self, query).await
@@ -206,6 +207,10 @@ where
         <Self as SchemaIntrospection>::get_columns(self, schema, table).await
     }
 
+    async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>> {
+        <Self as SchemaIntrospection>::get_schema_metadata(self, schema).await
+    }
+
     async fn get_table_data(
         &self,
         schema: &str,
@@ -232,12 +237,7 @@ where
         <Self as TableOperations>::get_table_indexes(self, schema, table).await
     }
 
-    async fn add_column(
-        &self,
-        schema: &str,
-        table: &str,
-        column: &ColumnDefinition,
-    ) -> Result<()> {
+    async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {
         <Self as ColumnManagement>::add_column(self, schema, table, column).await
     }
 
@@ -276,27 +276,12 @@ where
     }
 }
 
-pub trait SQLDatabaseDriver: DatabaseDriver {
-}
+pub trait SQLDatabaseDriver: DatabaseDriver {}
 
-impl<T> SQLDatabaseDriver for T 
-where 
-    T: DatabaseDriver
-{
-}
+impl<T> SQLDatabaseDriver for T where T: DatabaseDriver {}
 
 #[async_trait]
-pub trait NoSQLDatabaseDriver: 
-    ConnectionDriver 
-    + NoSQLOperations 
-    + Send 
-    + Sync 
-{
-}
+pub trait NoSQLDatabaseDriver: ConnectionDriver + NoSQLOperations + Send + Sync {}
 
 #[async_trait]
-impl<T> NoSQLDatabaseDriver for T 
-where 
-    T: ConnectionDriver + NoSQLOperations + Send + Sync
-{
-}
+impl<T> NoSQLDatabaseDriver for T where T: ConnectionDriver + NoSQLOperations + Send + Sync {}

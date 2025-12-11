@@ -66,13 +66,13 @@
 
 #### 2.1 Auto-complete 🔮
 **Goal**: Intelligent code completion
-- [ ] Backend: API to get table/column metadata
-- [ ] Frontend: Integrate CodeMirror autocomplete
-- [ ] Table name suggestions
-- [ ] Column name suggestions (context-aware)
-- [ ] SQL keyword completion
-- [ ] Function completion
-- [ ] Fuzzy matching
+- [x] Backend: API to get table/column metadata
+- [x] Frontend: Integrate CodeMirror autocomplete
+- [x] Table name suggestions
+- [x] Column name suggestions (context-aware)
+- [x] SQL keyword completion
+- [x] Function completion
+- [x] Fuzzy matching
 
 **Estimated**: 3-4 days
 

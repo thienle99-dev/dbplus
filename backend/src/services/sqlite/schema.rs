@@ -1,4 +1,4 @@
-use crate::services::db_driver::{TableColumn, TableInfo};
+use crate::services::db_driver::{TableColumn, TableInfo, TableMetadata};
 use crate::services::driver::SchemaIntrospection;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -31,9 +31,7 @@ impl SchemaIntrospection for SQLiteSchema {
             return Ok(vec![]);
         };
 
-        let rows = sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?;
+        let rows = sqlx::query(query).fetch_all(&self.pool).await?;
 
         Ok(rows
             .iter()
@@ -61,15 +59,11 @@ impl SchemaIntrospection for SQLiteSchema {
         }
 
         let query = format!("PRAGMA table_info(\"{}\")", table);
-        let rows = sqlx::query(&query)
-            .fetch_all(&self.pool)
-            .await?;
+        let rows = sqlx::query(&query).fetch_all(&self.pool).await?;
 
         let mut pk_columns = std::collections::HashSet::new();
         let pk_query = format!("PRAGMA table_info(\"{}\")", table);
-        let pk_rows = sqlx::query(&pk_query)
-            .fetch_all(&self.pool)
-            .await?;
+        let pk_rows = sqlx::query(&pk_query).fetch_all(&self.pool).await?;
         for row in pk_rows {
             let pk: i32 = row.get(5);
             if pk > 0 {
@@ -104,5 +98,30 @@ impl SchemaIntrospection for SQLiteSchema {
         );
 
         Ok(columns)
+    }
+
+    async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>> {
+        if schema != "main" && !schema.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let tables_query = "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name";
+        let rows = sqlx::query(tables_query).fetch_all(&self.pool).await?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            let table_name: String = row.get(0);
+            let col_query = format!("PRAGMA table_info(\"{}\")", table_name);
+            // It's safe to use format! here because table_name comes from sqlite_master
+            // But quoting is good practice.
+            let col_rows = sqlx::query(&col_query).fetch_all(&self.pool).await?;
+            let columns: Vec<String> = col_rows.iter().map(|r| r.get(1)).collect();
+
+            result.push(TableMetadata {
+                table_name,
+                columns,
+            });
+        }
+        Ok(result)
     }
 }

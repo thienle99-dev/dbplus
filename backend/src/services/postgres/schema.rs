@@ -1,4 +1,4 @@
-use crate::services::db_driver::{TableColumn, TableInfo};
+use crate::services::db_driver::{TableColumn, TableInfo, TableMetadata};
 use crate::services::driver::SchemaIntrospection;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -117,5 +117,38 @@ impl SchemaIntrospection for PostgresSchema {
         );
 
         Ok(columns)
+    }
+    async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>> {
+        let client = self.pool.get().await?;
+        // Get all columns for all tables in schema
+        let rows = client
+            .query(
+                "SELECT table_name, column_name 
+                 FROM information_schema.columns 
+                 WHERE table_schema = $1 
+                 ORDER BY table_name, ordinal_position",
+                &[&schema],
+            )
+            .await?;
+
+        let mut result: Vec<TableMetadata> = Vec::new();
+        for row in rows {
+            let table_name: String = row.get(0);
+            let column_name: String = row.get(1);
+
+            if result
+                .last()
+                .map(|t| t.table_name != table_name)
+                .unwrap_or(true)
+            {
+                result.push(TableMetadata {
+                    table_name: table_name.clone(),
+                    columns: Vec::new(),
+                });
+            }
+            result.last_mut().unwrap().columns.push(column_name);
+        }
+
+        Ok(result)
     }
 }

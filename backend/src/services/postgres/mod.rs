@@ -115,6 +115,13 @@ impl SchemaIntrospection for PostgresDriver {
     ) -> Result<Vec<super::db_driver::TableColumn>> {
         self.schema.get_columns(schema, table).await
     }
+
+    async fn get_schema_metadata(
+        &self,
+        schema: &str,
+    ) -> Result<Vec<super::db_driver::TableMetadata>> {
+        self.schema.get_schema_metadata(schema).await
+    }
 }
 
 #[async_trait]

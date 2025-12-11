@@ -11,6 +11,7 @@ import { Play, Save, Eraser, Code, LayoutTemplate, AlignLeft } from 'lucide-reac
 import { format as formatSql } from 'sql-formatter';
 import api from '../services/api';
 import { historyApi } from '../services/historyApi';
+import { connectionApi } from '../services/connectionApi';
 import { useParams } from 'react-router-dom';
 import {
   useReactTable,
@@ -46,6 +47,52 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const { showToast } = useToast();
   const { theme, formatKeywordCase } = useSettingsStore();
   const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
+  const [schemaCompletion, setSchemaCompletion] = useState<Record<string, any> | undefined>(undefined);
+
+  // Fetch schema metadata for autocomplete
+  useEffect(() => {
+    if (!connectionId) return;
+    const fetchMeta = async () => {
+      let schemas: string[] = [];
+      try {
+        schemas = await connectionApi.getSchemas(connectionId);
+      } catch (e) {
+        console.warn('Failed to fetch schemas, falling back to defaults', e);
+      }
+
+      if (schemas.length === 0) {
+        schemas = ['public', 'main'];
+      }
+
+      const schemaConfig: Record<string, any> = {};
+
+      await Promise.all(schemas.map(async (schemaName) => {
+        try {
+          const meta = await connectionApi.getSchemaMetadata(connectionId, schemaName);
+          if (meta && meta.length > 0) {
+            const tableMap: Record<string, string[]> = {};
+
+            meta.forEach(m => {
+              tableMap[m.table_name] = m.columns;
+              // Also add to top-level for convenience (matches if user types just table name)
+              // Only add if not present to avoid overwriting (though order is roughly random with Promise.all)
+              if (!schemaConfig[m.table_name]) {
+                schemaConfig[m.table_name] = m.columns;
+              }
+            });
+
+            // Add schema-scoped completion
+            schemaConfig[schemaName] = tableMap;
+          }
+        } catch (e) {
+          // Ignore failures for individual schemas
+        }
+      }));
+
+      setSchemaCompletion(schemaConfig);
+    };
+    fetchMeta();
+  }, [connectionId]);
 
   const codeMirrorTheme = useMemo(() => {
     let effectiveTheme = theme;
@@ -287,7 +334,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
   // Memoize extensions to prevent reconfiguration on every render
   const extensions = useMemo(() => [
-    sql(),
+    sql({ schema: schemaCompletion }),
     foldGutter(),
     ...(codeMirrorTheme ? [codeMirrorTheme] : []),
     transparentTheme, // Apply dynamic background override
@@ -302,7 +349,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         preventDefault: true
       }
     ]))
-  ], [codeMirrorTheme]);
+  ], [codeMirrorTheme, schemaCompletion]);
 
   return (
     <div className="flex flex-col h-full">
