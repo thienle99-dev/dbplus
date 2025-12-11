@@ -91,8 +91,52 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         setEdits({});
     };
 
+    const handleDeleteRow = async (rowIndex: number) => {
+        if (!result || !result.column_metadata) return;
+
+        // Confirm deletion
+        if (!window.confirm("Are you sure you want to delete this row? This action cannot be undone.")) {
+            return;
+        }
+
+        const tableMeta = result.column_metadata.find(c => c.table_name);
+        if (!tableMeta || !tableMeta.table_name) {
+            console.error("No table metadata found, cannot delete");
+            return;
+        }
+
+        const pkCols = result.column_metadata.filter(c => c.is_primary_key);
+        if (pkCols.length === 0) {
+            alert("Cannot delete row: No primary key found for this table.");
+            return;
+        }
+
+        const originalRow = result.rows[rowIndex];
+        const primaryKey: Record<string, any> = {};
+        pkCols.forEach(pk => {
+            const colIndex = result.columns.indexOf(pk.column_name);
+            if (colIndex !== -1) {
+                primaryKey[pk.column_name] = originalRow[colIndex];
+            }
+        });
+
+        const deleteRequest = {
+            schema: tableMeta.schema_name || 'public',
+            table: tableMeta.table_name!,
+            primary_key: primaryKey,
+        };
+
+        try {
+            await api.delete(`/api/connections/${connectionId}/query-results`, { data: deleteRequest });
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error("Failed to delete row", err);
+            alert("Failed to delete row. Check console for details.");
+        }
+    };
+
     const columns = useMemo(() => {
-        return result?.columns.map((col, index) => {
+        const baseColumns = (result?.columns.map((col, index) => {
             const helper = createColumnHelper<unknown[]>();
             const metadata = result.column_metadata ? result.column_metadata[index] : null;
             const isEditable = metadata?.is_editable ?? false;
@@ -126,8 +170,29 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                     );
                 }
             });
-        }) || [];
-    }, [result, edits, handleCellSave]);
+        }) || []) as any[];
+
+        // Add Delete Action Column if editable
+        if (hasEditableColumns) {
+            const helper = createColumnHelper<unknown[]>();
+            baseColumns.push(helper.display({
+                id: 'actions',
+                header: () => <div className="w-8"></div>,
+                cell: (info) => (
+                    <button
+                        onClick={() => handleDeleteRow(info.row.index)}
+                        className="text-text-secondary hover:text-error opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                        title="Delete Row"
+                    >
+                        🗑️
+                    </button>
+                ),
+                size: 40,
+            }));
+        }
+
+        return baseColumns;
+    }, [result, edits, handleCellSave, hasEditableColumns]);
 
     const tableInstance = useReactTable({
         data: result?.rows || [],
