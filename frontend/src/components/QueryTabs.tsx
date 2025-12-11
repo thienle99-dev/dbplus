@@ -72,7 +72,7 @@ export default function QueryTabs() {
     e?.stopPropagation();
     setTabs(prev => {
       if (prev.length === 1) return prev;
-      
+
       // Delete draft from localStorage if it's a draft
       const tabToClose = prev.find(t => t.id === id);
       if (tabToClose?.isDraft && connectionId) {
@@ -113,9 +113,11 @@ export default function QueryTabs() {
     }
   }, [activeTabId]);
 
-  // Auto-open table from navigation state (when clicking from SchemaTree)
+  // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   useEffect(() => {
     const state = location.state as any;
+
+    // Handle opening a table
     if (state?.openTable) {
       const { schema, table } = state.openTable;
       const tableTab: Tab = {
@@ -128,15 +130,29 @@ export default function QueryTabs() {
       };
       setTabs(prev => [...prev, tableTab]);
       setActiveTabId(tableTab.id);
-      // Clear the state to prevent re-opening on refresh
+      // Clear the state
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
 
-  const handleLoadQuery = (sql: string, metadata?: Record<string, any>) => {
-    // Update current tab's SQL and metadata
-    setTabs(tabs.map(t => t.id === activeTabId ? { ...t, sql, metadata } : t));
-  };
+    // Handle loading a query (from Saved Queries or History in Sidebar)
+    if (state?.sql) {
+      const { sql, metadata } = state;
+
+      // Update the active tab with the loaded SQL
+      // If no active tab (shouldn't happen), we might need to create one, but let's assume activeTabId is valid
+      setTabs(prev => prev.map(t =>
+        t.id === activeTabId ? { ...t, sql, metadata } : t
+      ));
+
+      // Clear the state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, activeTabId]);
+
+  const handleLoadQuery = useCallback((sql: string, metadata?: Record<string, any>) => {
+    // Update current tab's SQL and metadata using functional setState
+    setTabs(prevTabs => prevTabs.map(t => t.id === activeTabId ? { ...t, sql, metadata } : t));
+  }, [activeTabId]);
 
   // Handle query changes from editor (for auto-save)
   const handleQueryChange = useCallback((tabId: string, sql: string, metadata?: Record<string, any>) => {

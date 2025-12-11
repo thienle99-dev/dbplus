@@ -31,6 +31,8 @@ export default function SavedQueriesList({
   // Use either global search term (if embedded) or local search
   const activeSearch = embedded ? searchTerm : localSearch;
 
+
+
   useEffect(() => {
     if (connectionId) {
       fetchQueries();
@@ -135,6 +137,6 @@ export default function SavedQueriesList({
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

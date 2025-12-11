@@ -60,10 +60,13 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
   // Update query when initialSql changes (e.g. loading from sidebar)
   useEffect(() => {
-    if (initialSql) setQuery(initialSql);
+    if (initialSql !== undefined) setQuery(initialSql);
     if (initialMetadata) {
       setVisualState(initialMetadata);
       setMode('visual');
+    } else if (initialSql !== undefined) {
+      // If no metadata, switch to SQL mode
+      setMode('sql');
     }
   }, [initialSql, initialMetadata]);
 
