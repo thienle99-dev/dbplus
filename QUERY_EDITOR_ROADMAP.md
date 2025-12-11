@@ -51,12 +51,12 @@
 
 #### 1.4 Query Formatting ✨
 **Goal**: Auto-format and beautify SQL
-- [ ] Frontend: Integrate SQL formatter library (sql-formatter)
-- [ ] Keyboard shortcut (Cmd+K)
-- [ ] Format button in toolbar
-- [ ] Preserve comments
-- [ ] Configurable formatting options
-- [ ] Code folding support
+- [x] Frontend: Integrate SQL formatter library (sql-formatter)
+- [x] Keyboard shortcut (Cmd+K)
+- [x] Format button in toolbar
+- [x] Preserve comments
+- [x] Configurable formatting options
+- [x] Code folding support
 
 **Estimated**: 1 day
 

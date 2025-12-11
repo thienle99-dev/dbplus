@@ -178,6 +178,19 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             className="w-4 h-4 accent-accent"
                                         />
                                     </label>
+
+                                    <label className="space-y-2">
+                                        <div className="text-sm font-medium text-text-primary">SQL Keyword Case</div>
+                                        <Select
+                                            value={settings.formatKeywordCase}
+                                            onChange={(val) => settings.updateSettings({ formatKeywordCase: val as any })}
+                                            options={[
+                                                { value: 'preserve', label: 'Preserve' },
+                                                { value: 'upper', label: 'Uppercase' },
+                                                { value: 'lower', label: 'Lowercase' },
+                                            ]}
+                                        />
+                                    </label>
                                 </div>
                             </div>
                         )}

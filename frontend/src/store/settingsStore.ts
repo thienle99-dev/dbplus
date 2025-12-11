@@ -24,6 +24,9 @@ export interface AppSettings {
     defaultLimit: number;
     queryTimeout: number;
 
+    // Formatting
+    formatKeywordCase: 'upper' | 'lower' | 'preserve';
+
     // Table
     defaultPageSize: number;
     showNullAsText: boolean;
@@ -57,6 +60,9 @@ const defaultSettings: AppSettings = {
     // Query
     defaultLimit: 1000,
     queryTimeout: 30000,
+
+    // Formatting
+    formatKeywordCase: 'upper',
 
     // Table
     defaultPageSize: 50,

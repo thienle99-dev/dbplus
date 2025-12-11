@@ -4,9 +4,11 @@ import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { light as lightTheme } from '../themes/codemirror-light';
 import { transparentTheme } from '../themes/codemirror-dynamic';
+import { foldGutter } from '@codemirror/language';
 import { EditorView, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
-import { Play, Save, Eraser, Code, LayoutTemplate } from 'lucide-react';
+import { Play, Save, Eraser, Code, LayoutTemplate, AlignLeft } from 'lucide-react';
+import { format as formatSql } from 'sql-formatter';
 import api from '../services/api';
 import { historyApi } from '../services/historyApi';
 import { useParams } from 'react-router-dom';
@@ -42,7 +44,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const [editorView, setEditorView] = useState<EditorView | null>(null);
   const [hasSelection, setHasSelection] = useState(false);
   const { showToast } = useToast();
-  const { theme } = useSettingsStore();
+  const { theme, formatKeywordCase } = useSettingsStore();
   const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
 
   const codeMirrorTheme = useMemo(() => {
@@ -210,6 +212,18 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     }
   };
 
+  const handleFormat = useCallback(() => {
+    if (!query.trim()) return;
+    try {
+      const formatted = formatSql(query, { language: 'postgresql', keywordCase: formatKeywordCase });
+      setQuery(formatted);
+      showToast('Query formatted', 'info');
+    } catch (err) {
+      console.error('Formatting failed:', err);
+      showToast('Formatting failed', 'error');
+    }
+  }, [query, showToast, formatKeywordCase]);
+
   useEffect(() => {
     if (!isActive) return;
 
@@ -228,11 +242,15 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
           }
         }
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        handleFormat();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, handleExecute, query, savedQueryId]);
+  }, [isActive, handleExecute, query, savedQueryId, handleFormat]);
 
 
 
@@ -270,6 +288,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   // Memoize extensions to prevent reconfiguration on every render
   const extensions = useMemo(() => [
     sql(),
+    foldGutter(),
     ...(codeMirrorTheme ? [codeMirrorTheme] : []),
     transparentTheme, // Apply dynamic background override
     Prec.highest(keymap.of([
@@ -305,17 +324,21 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         confirmText="Execute"
         isDangerous={true}
       />
-      <div className="p-3 border-b border-border bg-bg-1 flex items-center gap-3 justify-between">
+      <div className="h-10 px-3 border-b border-border bg-bg-0/50 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-2">
           <button
             onClick={handleExecute}
             disabled={loading || !query.trim()}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative flex items-center gap-1.5 bg-gradient-to-b from-pink-500 to-pink-600 hover:from-pink-400 hover:to-pink-500 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-md shadow-pink-500/20 hover:shadow-pink-500/40 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
             title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
           >
-            <Play size={16} className={loading ? 'animate-pulse' : ''} />
-            {loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}
+            <Play size={13} className={`fill-current ${loading ? 'animate-pulse' : ''}`} />
+            <span>{loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}</span>
+            <div className="absolute inset-0 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
           <button
             onClick={() => {
               if (savedQueryId) {
@@ -325,79 +348,92 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
               }
             }}
             disabled={!query.trim()}
-            className="flex items-center gap-2 bg-bg-2 hover:bg-bg-3 text-text-primary px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-2 disabled:opacity-50 transition-all duration-200"
             title={savedQueryId ? `Save changes to "${queryName}" (Cmd/Ctrl+S)` : "Save as new query (Cmd/Ctrl+S)"}
           >
-            <Save size={16} />
-            {savedQueryId ? 'Save' : 'Save As'}
+            <Save size={14} />
+            <span>{savedQueryId ? 'Save' : 'Save As'}</span>
           </button>
+
           <button
             onClick={() => setQuery('')}
-            className="flex items-center gap-2 bg-bg-2 hover:bg-bg-3 text-text-primary px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-error hover:bg-error/10 transition-all duration-200"
           >
-            <Eraser size={16} />
-            Clear
+            <Eraser size={14} />
+            <span>Clear</span>
           </button>
         </div>
 
         <div className="flex items-center gap-3">
           {isDraft && (
-            <span className="text-xs text-yellow-500 flex items-center gap-1.5 font-medium px-2 py-1 bg-yellow-500/10 rounded-md" title="Query is auto-saved locally">
+            <span className="text-[10px] uppercase tracking-wider text-yellow-500 flex items-center gap-1 font-bold px-1.5 py-0.5 bg-yellow-500/10 rounded-sm select-none" title="Query is auto-saved locally">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
               Draft
             </span>
           )}
-
-          <div className="flex bg-bg-2 rounded-lg p-1 border border-border">
-            <button
-              onClick={() => setMode('sql')}
-              className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${mode === 'sql'
-                ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'
-                }`}
-            >
-              <Code size={14} /> SQL
-            </button>
-            <button
-              onClick={() => setMode('visual')}
-              className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${mode === 'visual'
-                ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'
-                }`}
-            >
-              <LayoutTemplate size={14} /> Visual
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="h-[300px] border-b border-border overflow-hidden flex">
-        {mode === 'sql' ? (
-          <CodeMirror
-            value={query}
-            height="300px"
-            extensions={extensions}
-            onChange={useCallback((val: string) => setQuery(val), [])}
-            onCreateEditor={useCallback((view: EditorView) => {
-              setEditorView(view);
-              // Track selection changes
-              view.dom.addEventListener('mouseup', () => {
-                const selection = view.state.selection.main;
-                setHasSelection(!selection.empty);
-              });
-              view.dom.addEventListener('keyup', () => {
-                const selection = view.state.selection.main;
-                setHasSelection(!selection.empty);
-              });
-            }, [])}
-            className="text-base w-full"
-          />
-        ) : (
-          <VisualQueryBuilder
-            onSqlChange={setQuery}
-            initialState={visualState}
-          />
-        )}
+      <div className="h-[300px] border-b border-border flex flex-col">
+        <div className="flex-1 overflow-hidden flex relative">
+          {mode === 'sql' ? (
+            <CodeMirror
+              value={query}
+              height="100%"
+              extensions={extensions}
+              onChange={useCallback((val: string) => setQuery(val), [])}
+              onCreateEditor={useCallback((view: EditorView) => {
+                setEditorView(view);
+                // Track selection changes
+                view.dom.addEventListener('mouseup', () => {
+                  const selection = view.state.selection.main;
+                  setHasSelection(!selection.empty);
+                });
+                view.dom.addEventListener('keyup', () => {
+                  const selection = view.state.selection.main;
+                  setHasSelection(!selection.empty);
+                });
+              }, [])}
+              className="text-base w-full h-full"
+            />
+          ) : (
+            <VisualQueryBuilder
+              onSqlChange={setQuery}
+              initialState={visualState}
+            />
+          )}
+        </div>
+
+        {/* Bottom Toolbar / Status Bar */}
+        <div className="h-8 border-t border-border bg-bg-1 flex items-center px-3 justify-between select-none">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleFormat}
+              disabled={!query.trim()}
+              className="p-1.5 hover:bg-bg-3 rounded-md text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+              title="Format SQL (Cmd+K)"
+            >
+              <AlignLeft size={14} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setMode('sql')}
+              className={`p-1.5 rounded-md transition-colors ${mode === 'sql' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
+              title="SQL View"
+            >
+              <Code size={14} />
+            </button>
+            <button
+              onClick={() => setMode('visual')}
+              className={`p-1.5 rounded-md transition-colors ${mode === 'visual' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
+              title="Visual Builder"
+            >
+              <LayoutTemplate size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto bg-bg-0">
