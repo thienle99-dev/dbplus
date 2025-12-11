@@ -102,13 +102,13 @@
 
 #### 2.4 Row Editing ✏️
 **Goal**: Edit query results inline
-- [ ] Frontend: Editable table cells
-- [ ] Frontend: Track changes
-- [ ] Frontend: Save changes button
-- [ ] Backend: Generate UPDATE statements
-- [ ] Backend: Execute updates
-- [ ] Validation before save
-- [ ] Bulk edit support
+- [x] Frontend: Editable table cells
+- [x] Frontend: Track changes
+- [x] Frontend: Save changes button
+- [x] Backend: Generate UPDATE statements
+- [x] Backend: Execute updates
+- [x] Validation before save
+- [x] Bulk edit support
 - [ ] Delete rows from results
 
 **Estimated**: 4-5 days

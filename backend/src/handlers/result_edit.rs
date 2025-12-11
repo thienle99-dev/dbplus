@@ -44,7 +44,7 @@ pub async fn update_result_row(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
-    let placeholder = match connection_model.db_type.as_str() {
+    let _placeholder = match connection_model.db_type.as_str() {
         "postgres" => "$",
         _ => "?",
     };
