@@ -1,30 +1,26 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
+import { EditorState, Prec } from '@codemirror/state';
+import { snippetCompletion, completeFromList } from '@codemirror/autocomplete';
 import { sql } from '@codemirror/lang-sql';
+import { EditorView, keymap } from '@codemirror/view';
+import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSettingsStore } from '../store/settingsStore';
+import { useToast } from '../context/ToastContext';
+import { connectionApi } from '../services/connectionApi';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { getCoreRowModel, useReactTable, flexRender, createColumnHelper } from '@tanstack/react-table';
 import { light as lightTheme } from '../themes/codemirror-light';
 import { transparentTheme, autocompleteTheme } from '../themes/codemirror-dynamic';
 import { foldGutter } from '@codemirror/language';
-import { EditorView, keymap } from '@codemirror/view';
-import { Prec } from '@codemirror/state';
 import { Play, Save, Eraser, Code, LayoutTemplate, AlignLeft } from 'lucide-react';
 import { format as formatSql } from 'sql-formatter';
+import { QueryResult } from '../types';
 import api from '../services/api';
 import { historyApi } from '../services/historyApi';
-import { connectionApi } from '../services/connectionApi';
-import { useParams } from 'react-router-dom';
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  createColumnHelper,
-} from '@tanstack/react-table';
+import CodeMirror from '@uiw/react-codemirror';
 import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
-import { useToast } from '../context/ToastContext';
-import { useSettingsStore } from '../store/settingsStore';
-import { QueryResult } from '../types';
 
 interface QueryEditorProps {
   initialSql?: string;
@@ -36,6 +32,62 @@ interface QueryEditorProps {
   onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
   onSaveSuccess?: () => void;
 }
+
+// ... existing imports ...
+
+// Define SQL Snippets
+const sqlSnippets = [
+  snippetCompletion("SELECT * FROM ${}", {
+    label: "sfw",
+    detail: "SELECT * FROM table",
+    type: "keyword"
+  }),
+  snippetCompletion("SELECT ${column} FROM ${table}", {
+    label: "sel",
+    detail: "SELECT col FROM table",
+    type: "keyword"
+  }),
+  snippetCompletion("INSERT INTO ${table} (${columns}) VALUES (${values});", {
+    label: "ins",
+    detail: "INSERT INTO ...",
+    type: "keyword"
+  }),
+  snippetCompletion("UPDATE ${table} SET ${col} = ${val} WHERE ${condition};", {
+    label: "upd",
+    detail: "UPDATE ...",
+    type: "keyword"
+  }),
+  snippetCompletion("DELETE FROM ${table} WHERE ${condition};", {
+    label: "del",
+    detail: "DELETE ...",
+    type: "keyword"
+  }),
+  snippetCompletion("JOIN ${table} ON ${t1}.${col} = ${table}.${col}", {
+    label: "join",
+    detail: "JOIN ... ON ...",
+    type: "keyword"
+  }),
+  snippetCompletion("LEFT JOIN ${table} ON ${t1}.${col} = ${table}.${col}", {
+    label: "ljoin",
+    detail: "LEFT JOIN ...",
+    type: "keyword"
+  }),
+  snippetCompletion("COUNT(*)", {
+    label: "count",
+    detail: "COUNT(*)",
+    type: "function"
+  }),
+  snippetCompletion("ORDER BY ${col} DESC", {
+    label: "ord",
+    detail: "ORDER BY ...",
+    type: "keyword"
+  }),
+  snippetCompletion("GROUP BY ${col}", {
+    label: "grp",
+    detail: "GROUP BY ...",
+    type: "keyword"
+  }),
+];
 
 export default function QueryEditor({ initialSql, initialMetadata, isActive, isDraft, savedQueryId, queryName, onQueryChange, onSaveSuccess }: QueryEditorProps) {
   const { connectionId } = useParams();
@@ -70,19 +122,21 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
         try {
           const meta = await connectionApi.getSchemaMetadata(connectionId, schemaName);
           if (meta && meta.length > 0) {
-            const tableMap: Record<string, string[]> = {};
-
             meta.forEach(m => {
-              tableMap[m.table_name] = m.columns;
-              // Also add to top-level for convenience (matches if user types just table name)
-              // Only add if not present to avoid overwriting (though order is roughly random with Promise.all)
+              // 1. Unqualified match (users -> [cols])
               if (!schemaConfig[m.table_name]) {
                 schemaConfig[m.table_name] = m.columns;
               }
+              // 2. Qualified match (public.users -> [cols])
+              schemaConfig[`${schemaName}.${m.table_name}`] = m.columns;
             });
 
-            // Add schema-scoped completion
-            schemaConfig[schemaName] = tableMap;
+            // 3. Register table names themselves under the schema for completion?
+            // lang-sql handles schema.tablename completion if we provide the map correctly?
+            // Actually config is Table -> Columns.
+            // If we want 'public.' to autocomplete tables, we might need a separate source or rely on 
+            // lang-sql's handling of dot notation if keys are flat.
+            // Flat keys 'schema.table' helps when typing 'schema.table.' to get columns.
           }
         } catch (e) {
           // Ignore failures for individual schemas
@@ -332,6 +386,74 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     handleExecuteRef.current = handleExecute;
   }, [handleExecute]);
 
+  // Handle "Expand Star" (Basic implementation)
+  const handleExpandStar = useCallback(() => {
+    if (!editorView || !schemaCompletion) return;
+
+    const state = editorView.state;
+    const doc = state.doc.toString();
+    const selection = state.selection.main;
+    const cursor = selection.head;
+
+    // Very basic heuristic: Look for "FROM <table_name>" after the cursor or "SELECT * FROM <table_name>" around it
+    // improved: find the nearest "FROM" keyword after the *. 
+    // This is a naive regex approach. A real parser would be better but expensive.
+
+    // Check if we are near a '*'
+    const range = 50; // chars to look around
+    const start = Math.max(0, cursor - range);
+    const end = Math.min(doc.length, cursor + range);
+    const textAround = doc.slice(start, end);
+
+    if (!textAround.includes('*')) {
+      showToast("Cursor must be near a '*' to expand", "info");
+      return;
+    }
+
+    // Try to find table name in the whole query (simplified)
+    // Assuming structure: SELECT * FROM [schema.]table ...
+    const query = doc; // Simplification: use full doc for now
+    const fromMatch = query.match(/from\s+([a-zA-Z0-9_.]+)/i);
+
+    if (fromMatch && fromMatch[1]) {
+      const tableName = fromMatch[1];
+      const columns = schemaCompletion[tableName];
+
+      if (columns && columns.length > 0) {
+        // Replace * with columns
+        // We need to find the specific * we are expanding. 
+        // Let's assume the one near the cursor.
+
+        // Find relative position of * in textAround
+        const starIndexRelative = textAround.indexOf('*');
+        if (starIndexRelative !== -1) {
+          const starPos = start + starIndexRelative;
+
+          // Construct replacement
+          const columnString = columns.join(', ');
+
+          editorView.dispatch({
+            changes: { from: starPos, to: starPos + 1, insert: columnString }
+          });
+          showToast(`Expanded * for table '${tableName}'`, "success");
+        }
+      } else {
+        // Try schema.table match
+        // If tableName doesn't match directly, maybe it's schema.table 
+        // schemaCompletion keys include partials if we flattened it correctly?
+        // We flattened as name and schema.name.
+        showToast(`Could not find columns for table '${tableName}'`, "error");
+      }
+    } else {
+      showToast("Could not detect table name in FROM clause", "error");
+    }
+  }, [editorView, schemaCompletion, showToast]);
+
+  const handleExpandStarRef = useRef(handleExpandStar);
+  useEffect(() => {
+    handleExpandStarRef.current = handleExpandStar;
+  }, [handleExpandStar]);
+
   // Memoize extensions to prevent reconfiguration on every render
   const extensions = useMemo(() => [
     sql({ schema: schemaCompletion }),
@@ -339,12 +461,25 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     ...(codeMirrorTheme ? [codeMirrorTheme] : []),
     transparentTheme, // Apply dynamic background override
     autocompleteTheme, // Apply custom autocomplete styling
+    // Register snippet completion source
+    // Register snippet completion source
+    EditorState.languageData.of(() => [{
+      autocomplete: completeFromList(sqlSnippets)
+    }]),
     Prec.highest(keymap.of([
       {
         key: "Mod-Enter",
         run: () => {
           console.log('[QueryEditor] Shortcut detected: Mod-Enter');
           handleExecuteRef.current();
+          return true;
+        },
+        preventDefault: true
+      },
+      {
+        key: "Mod-i",
+        run: () => {
+          handleExpandStarRef.current();
           return true;
         },
         preventDefault: true
