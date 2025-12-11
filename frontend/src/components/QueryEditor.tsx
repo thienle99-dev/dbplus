@@ -1,5 +1,5 @@
 import { EditorState, Prec } from '@codemirror/state';
-import { snippetCompletion, completeFromList } from '@codemirror/autocomplete';
+import { snippetCompletion, completeFromList, CompletionContext } from '@codemirror/autocomplete';
 import { sql } from '@codemirror/lang-sql';
 import { EditorView, keymap } from '@codemirror/view';
 import { useParams } from 'react-router-dom';
@@ -14,7 +14,7 @@ import { transparentTheme, autocompleteTheme } from '../themes/codemirror-dynami
 import { foldGutter } from '@codemirror/language';
 import { Play, Save, Eraser, Code, LayoutTemplate, AlignLeft } from 'lucide-react';
 import { format as formatSql } from 'sql-formatter';
-import { QueryResult } from '../types';
+import { QueryResult, ForeignKey } from '../types';
 import api from '../services/api';
 import { historyApi } from '../services/historyApi';
 import CodeMirror from '@uiw/react-codemirror';
@@ -100,6 +100,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
   const { theme, formatKeywordCase } = useSettingsStore();
   const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
   const [schemaCompletion, setSchemaCompletion] = useState<Record<string, any> | undefined>(undefined);
+  const [foreignKeys, setForeignKeys] = useState<Record<string, ForeignKey[]>>({});
 
   // Fetch schema metadata for autocomplete
   useEffect(() => {
@@ -118,6 +119,8 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
 
       const schemaConfig: Record<string, any> = {};
 
+      const fkMap: Record<string, ForeignKey[]> = {};
+
       await Promise.all(schemas.map(async (schemaName) => {
         try {
           const meta = await connectionApi.getSchemaMetadata(connectionId, schemaName);
@@ -131,17 +134,29 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
               schemaConfig[`${schemaName}.${m.table_name}`] = m.columns;
             });
 
-            // 3. Register table names themselves under the schema for completion?
-            // lang-sql handles schema.tablename completion if we provide the map correctly?
-            // Actually config is Table -> Columns.
-            // If we want 'public.' to autocomplete tables, we might need a separate source or rely on 
-            // lang-sql's handling of dot notation if keys are flat.
-            // Flat keys 'schema.table' helps when typing 'schema.table.' to get columns.
+            // Fetch constraints for tables
+            await Promise.all(meta.map(async (m) => {
+              try {
+                const constraints = await connectionApi.getTableConstraints(connectionId, schemaName, m.table_name);
+                if (constraints.foreign_keys && constraints.foreign_keys.length > 0) {
+                  // Normalize foreign keys to include schema if missing in response (backend usually provides it but safe to ensure)
+                  const fks = constraints.foreign_keys;
+                  if (!fkMap[m.table_name]) {
+                    fkMap[m.table_name] = fks;
+                  }
+                  fkMap[`${schemaName}.${m.table_name}`] = fks;
+                }
+              } catch (e) {
+                // Ignore failure for specific table
+              }
+            }));
           }
         } catch (e) {
           // Ignore failures for individual schemas
         }
       }));
+
+      setForeignKeys(fkMap);
 
       setSchemaCompletion(schemaConfig);
     };
@@ -454,6 +469,118 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     handleExpandStarRef.current = handleExpandStar;
   }, [handleExpandStar]);
 
+  const getTablesInQuery = useCallback((doc: string, currentPos: number) => {
+    const tables: { name: string; alias?: string }[] = [];
+    const tableRegex = /\b(?:FROM|JOIN)\s+([a-zA-Z0-9_.]+)(?:\s+(?:AS\s+)?([a-zA-Z0-9_]+))?/gi;
+    let match;
+    while ((match = tableRegex.exec(doc)) !== null) {
+      if (match.index < currentPos) {
+        tables.push({ name: match[1], alias: match[2] });
+      }
+    }
+    return tables;
+  }, []);
+
+  const joinCompletionSource = useCallback((context: CompletionContext) => {
+    // Check if we are typing after a JOIN keyword
+    const word = context.matchBefore(/JOIN\s+\w*/i);
+    const afterJoinSpace = context.matchBefore(/JOIN\s+/i);
+
+    if (!word && !afterJoinSpace) return null;
+
+    const wordText = word ? word.text : '';
+
+    const doc = context.state.doc.toString();
+    const tablesInQuery = getTablesInQuery(doc, context.pos);
+
+    if (tablesInQuery.length === 0) return null;
+
+    // 2. Find suggestions based on relationships
+    const options: any[] = [];
+    const seen = new Set<string>();
+
+    tablesInQuery.forEach(({ name: sourceTable, alias: sourceAlias }) => {
+      // Check outgoing FKs (sourceTable -> target)
+      const outgoing = foreignKeys[sourceTable] || [];
+      outgoing.forEach(fk => {
+        const targetTable = fk.foreign_table;
+        const label = targetTable;
+        const sourceRef = sourceAlias || sourceTable;
+        const apply = `${targetTable} ON ${sourceRef}.${fk.column_name} = ${targetTable}.${fk.foreign_column}`;
+
+        if (!seen.has(apply)) {
+          seen.add(apply);
+          options.push({
+            label: label,
+            detail: `ON ${sourceRef}.${fk.column_name} = ${fk.foreign_column}`,
+            apply: apply, // Full completion
+            type: 'class'
+          });
+        }
+      });
+
+      // Check incoming FKs (target -> sourceTable)
+      Object.entries(foreignKeys).forEach(([tableName, fks]) => {
+        fks.forEach(fk => {
+          if (fk.foreign_table === sourceTable) {
+            const targetTable = tableName;
+            const sourceRef = sourceAlias || sourceTable;
+            const apply = `${targetTable} ON ${targetTable}.${fk.column_name} = ${sourceRef}.${fk.foreign_column}`;
+            if (!seen.has(apply)) {
+              seen.add(apply);
+              options.push({
+                label: targetTable,
+                detail: `(<-) ON ... = ${sourceRef}.${fk.foreign_column}`,
+                apply: apply,
+                type: 'class'
+              });
+            }
+          }
+        });
+      });
+    });
+
+    return {
+      from: word ? word.from + (wordText.match(/JOIN\s+/i)?.[0].length || 0) : context.pos,
+      options
+    };
+
+  }, [foreignKeys, getTablesInQuery]);
+
+  const aliasCompletionSource = useCallback((context: CompletionContext) => {
+    // Check if we are typing after a dot
+    const word = context.matchBefore(/([a-zA-Z0-9_]+)\.\w*/); // Matches "alias.col"
+    if (!word) return null;
+
+    const match = word.text.match(/^([a-zA-Z0-9_]+)\./);
+    if (!match) return null;
+
+    const alias = match[1];
+
+    const doc = context.state.doc.toString();
+    const tables = getTablesInQuery(doc, context.pos);
+
+    // Find the table for this alias
+    const tableInfo = tables.find(t => t.alias === alias || t.name === alias);
+
+    if (!tableInfo) return null;
+
+    // Look up columns
+    const columns = schemaCompletion?.[tableInfo.name];
+    if (!columns) return null;
+
+    const options = columns.map((col: string) => ({
+      label: col,
+      type: 'property'
+    }));
+
+    return {
+      from: word.from + alias.length + 1, // Start after dot
+      options
+    };
+  }, [schemaCompletion, getTablesInQuery]);
+
+
   // Memoize extensions to prevent reconfiguration on every render
   const extensions = useMemo(() => [
     sql({ schema: schemaCompletion }),
@@ -465,6 +592,10 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     // Register snippet completion source
     EditorState.languageData.of(() => [{
       autocomplete: completeFromList(sqlSnippets)
+    }, {
+      autocomplete: joinCompletionSource
+    }, {
+      autocomplete: aliasCompletionSource
     }]),
     Prec.highest(keymap.of([
       {

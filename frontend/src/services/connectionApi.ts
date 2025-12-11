@@ -74,4 +74,10 @@ export const connectionApi = {
         const response = await api.get(`/api/connections/${id}/schema-metadata`, { params: { schema } });
         return response.data;
     },
+    // Get table constraints (FKs, etc.)
+    getTableConstraints: async (id: string, schema: string, table: string): Promise<any> => {
+        // Use 'any' or import TableConstraints from types
+        const response = await api.get(`/api/connections/${id}/constraints`, { params: { schema, table } });
+        return response.data;
+    },
 };
