@@ -55,7 +55,8 @@ impl QueryDriver for PostgresQuery {
         let mut result_rows = Vec::new();
         for row in rows {
             let mut current_row = Vec::new();
-            for (i, _) in columns.iter().enumerate() {
+            for (i, col) in columns.iter().enumerate() {
+                let col_type = row.columns()[i].type_();
                 let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
                     Value::Number(v.into())
                 } else if let Ok(v) = row.try_get::<_, i64>(i) {
@@ -86,6 +87,8 @@ impl QueryDriver for PostgresQuery {
                 } else if let Ok(v) = row.try_get::<_, bool>(i) {
                     Value::Bool(v)
                 } else {
+                    eprintln!("[QUERY DEBUG] Column '{}' (index {}) with type '{}' failed all type conversions", 
+                        col, i, col_type.name());
                     Value::Null
                 };
                 current_row.push(value);
@@ -127,14 +130,40 @@ impl QueryDriver for PostgresQuery {
             let mut result_rows = Vec::new();
             for row in rows {
                 let mut current_row = Vec::new();
-                for (i, _) in columns.iter().enumerate() {
+                for (i, col) in columns.iter().enumerate() {
+                    let col_type = row.columns()[i].type_();
                     let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
                         Value::Number(v.into())
+                    } else if let Ok(v) = row.try_get::<_, i64>(i) {
+                        Value::Number(v.into())
+                    } else if let Ok(v) = row.try_get::<_, i16>(i) {
+                        Value::Number(v.into())
+                    } else if let Ok(v) = row.try_get::<_, f64>(i) {
+                        Value::Number(
+                            serde_json::Number::from_f64(v).unwrap_or(serde_json::Number::from(0)),
+                        )
+                    } else if let Ok(v) = row.try_get::<_, f32>(i) {
+                        Value::Number(
+                            serde_json::Number::from_f64(v as f64)
+                                .unwrap_or(serde_json::Number::from(0)),
+                        )
+                    } else if let Ok(v) = row.try_get::<_, Uuid>(i) {
+                        Value::String(v.to_string())
+                    } else if let Ok(v) = row.try_get::<_, NaiveDateTime>(i) {
+                        Value::String(v.to_string())
+                    } else if let Ok(v) = row.try_get::<_, NaiveDate>(i) {
+                        Value::String(v.to_string())
+                    } else if let Ok(v) = row.try_get::<_, DateTime<Utc>>(i) {
+                        Value::String(v.to_string())
+                    } else if let Ok(v) = row.try_get::<_, DateTime<Local>>(i) {
+                        Value::String(v.to_string())
                     } else if let Ok(v) = row.try_get::<_, String>(i) {
                         Value::String(v)
                     } else if let Ok(v) = row.try_get::<_, bool>(i) {
                         Value::Bool(v)
                     } else {
+                        eprintln!("[EXECUTE_QUERY DEBUG] Column '{}' (index {}) with type '{}' failed all type conversions", 
+                        col, i, col_type.name());
                         Value::Null
                     };
                     current_row.push(value);
