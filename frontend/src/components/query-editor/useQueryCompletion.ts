@@ -235,6 +235,46 @@ export function useQueryCompletion({ connectionId, theme }: UseQueryCompletionPr
         };
     }, [schemaCompletion, getTablesInQuery]);
 
+    const columnCompletionSource = useCallback((context: CompletionContext) => {
+        // Trigger only if we are matched a word (not dot)
+        // and NOT after a dot (which is handled by aliasCompletionSource)
+        const word = context.matchBefore(/\w*/);
+        if (!word || (word.from > 0 && context.state.sliceDoc(word.from - 1, word.from) === '.')) {
+            return null;
+        }
+
+        const doc = context.state.doc.toString();
+        const tables = getTablesInQuery(doc, context.pos);
+
+        if (tables.length === 0) return null;
+
+        const options: any[] = [];
+        const seen = new Set<string>();
+
+        // Collect columns from all tables in the query
+        tables.forEach(t => {
+            const cols = schemaCompletion?.[t.name] || [];
+            cols.forEach((col: string) => {
+                if (!seen.has(col)) {
+                    seen.add(col);
+                    options.push({
+                        label: col,
+                        type: 'property',
+                        detail: t.alias || t.name, // Show source table
+                        boost: 1 // Boost rank
+                    });
+                }
+            });
+        });
+
+        if (options.length === 0) return null;
+
+        return {
+            from: word.from,
+            options
+        };
+    }, [schemaCompletion, getTablesInQuery]);
+
     const codeMirrorTheme = useMemo(() => {
         let effectiveTheme = theme;
         if (theme === 'system') {
@@ -261,8 +301,10 @@ export function useQueryCompletion({ connectionId, theme }: UseQueryCompletionPr
             autocomplete: joinCompletionSource
         }, {
             autocomplete: aliasCompletionSource
+        }, {
+            autocomplete: columnCompletionSource
         }])
-    ], [codeMirrorTheme, schemaCompletion, joinCompletionSource, aliasCompletionSource]);
+    ], [codeMirrorTheme, schemaCompletion, joinCompletionSource, aliasCompletionSource, columnCompletionSource]);
 
     return {
         extensions,
