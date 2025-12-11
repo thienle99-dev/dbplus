@@ -3,7 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { light as lightTheme } from '../themes/codemirror-light';
-import { transparentTheme } from '../themes/codemirror-dynamic';
+import { transparentTheme, autocompleteTheme } from '../themes/codemirror-dynamic';
 import { foldGutter } from '@codemirror/language';
 import { EditorView, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
@@ -338,6 +338,7 @@ export default function QueryEditor({ initialSql, initialMetadata, isActive, isD
     foldGutter(),
     ...(codeMirrorTheme ? [codeMirrorTheme] : []),
     transparentTheme, // Apply dynamic background override
+    autocompleteTheme, // Apply custom autocomplete styling
     Prec.highest(keymap.of([
       {
         key: "Mod-Enter",
