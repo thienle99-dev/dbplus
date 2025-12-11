@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { QueryResult, ColumnMetadata } from '../../types';
-import { getCoreRowModel, useReactTable, flexRender, createColumnHelper } from '@tanstack/react-table';
+import { getCoreRowModel, useReactTable, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { EditableCell } from './EditableCell';
 import api from '../../services/api';
 
@@ -17,6 +17,7 @@ interface QueryResultsProps {
 export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, onRefresh, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const [saving, setSaving] = useState(false);
+    const [sorting, setSorting] = React.useState<SortingState>([]);
 
     const hasEditableColumns = useMemo(() => {
         return result?.column_metadata?.some(c => c.is_editable) ?? false;
@@ -135,6 +136,64 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         }
     };
 
+    // Export functions
+    const handleExportCSV = () => {
+        if (!result || result.rows.length === 0) return;
+
+        // Header
+        const header = result.columns.join(',');
+
+        // Rows
+        const rows = result.rows.map(row => {
+            return row.map(cell => {
+                if (cell === null) return '';
+                if (typeof cell === 'string') {
+                    // Escape quotes and wrap in quotes if contains comma
+                    const escaped = cell.replace(/"/g, '""');
+                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                        return `"${escaped}"`;
+                    }
+                    return cell;
+                }
+                return String(cell);
+            }).join(',');
+        }).join('\n');
+
+        const csvContent = `${header}\n${rows}`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `query_results_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportJSON = () => {
+        if (!result || result.rows.length === 0) return;
+
+        const data = result.rows.map(row => {
+            const obj: Record<string, any> = {};
+            result.columns.forEach((col, i) => {
+                obj[col] = row[i];
+            });
+            return obj;
+        });
+
+        const jsonContent = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `query_results_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const columns = useMemo(() => {
         const baseColumns = (result?.columns.map((col, index) => {
             const helper = createColumnHelper<unknown[]>();
@@ -188,6 +247,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                     </button>
                 ),
                 size: 40,
+                enableSorting: false,
+                enableResizing: false,
             }));
         }
 
@@ -198,6 +259,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         data: result?.rows || [],
         columns,
         getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        columnResizeMode: 'onChange',
+        state: {
+            sorting,
+        },
+        onSortingChange: setSorting,
     });
 
     const pendingEditsCount = Object.keys(edits).length;
@@ -224,6 +291,27 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {/* Export Buttons */}
+                            {result.rows.length > 0 && (
+                                <div className="flex items-center border-r border-border pr-2 mr-2 gap-1">
+                                    <button
+                                        onClick={handleExportCSV}
+                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+                                        title="Export as CSV"
+                                    >
+                                        📄 CSV
+                                    </button>
+                                    <button
+                                        onClick={handleExportJSON}
+                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+                                        title="Export as JSON"
+                                    >
+                                        {/* JSON Icon or just text */}
+                                        📦 JSON
+                                    </button>
+                                </div>
+                            )}
+
                             {pendingEditsCount > 0 && (
                                 <>
                                     <span className="text-primary-default font-bold">{pendingEditsCount} modified rows</span>
@@ -260,15 +348,16 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                     <div className="text-xs mt-1">No rows returned</div>
                                 </div>
                             ) : (
-                                <table className="w-full border-collapse text-sm">
+                                <table className="w-full border-collapse text-sm" style={{ width: tableInstance.getTotalSize() }}>
                                     <thead className="bg-bg-1 sticky top-0 z-10">
                                         {tableInstance.getHeaderGroups().map((headerGroup) => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map((header) => (
                                                     <th
                                                         key={header.id}
-                                                        className="border-b border-r border-border px-4 py-2 text-left min-w-[100px]"
+                                                        className="border-b border-r border-border px-4 py-2 text-left relative group select-none"
                                                         style={{
+                                                            width: header.getSize(),
                                                             color: 'var(--color-text-primary)',
                                                             fontWeight: '600',
                                                             fontSize: '0.75rem',
@@ -276,10 +365,25 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                                             letterSpacing: '0.05em'
                                                         }}
                                                     >
-                                                        {flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
+                                                        <div
+                                                            className={`flex items-center gap-1 cursor-pointer ${header.column.getCanSort() ? 'hover:text-primary-default' : ''}`}
+                                                            onClick={header.column.getToggleSortingHandler()}
+                                                        >
+                                                            {flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                            {{
+                                                                asc: ' 🔼',
+                                                                desc: ' 🔽',
+                                                            }[header.column.getIsSorted() as string] ?? null}
+                                                        </div>
+                                                        <div
+                                                            onMouseDown={header.getResizeHandler()}
+                                                            onTouchStart={header.getResizeHandler()}
+                                                            className={`absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary-default ${header.column.getIsResizing() ? 'bg-primary-default' : 'bg-transparent'
+                                                                }`}
+                                                        />
                                                     </th>
                                                 ))}
                                             </tr>
@@ -291,8 +395,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                                 {row.getVisibleCells().map((cell) => (
                                                     <td
                                                         key={cell.id}
-                                                        className="border-b border-r border-border min-w-[100px] max-w-xs font-mono text-xs p-0"
-                                                        style={{ color: 'var(--color-text-primary)' }}
+                                                        className="border-b border-r border-border font-mono text-xs p-0 overflow-hidden text-ellipsis whitespace-nowrap"
+                                                        style={{
+                                                            width: cell.column.getSize(),
+                                                            maxWidth: cell.column.getSize(),
+                                                            color: 'var(--color-text-primary)'
+                                                        }}
                                                     >
                                                         {flexRender(
                                                             cell.column.columnDef.cell,
