@@ -155,17 +155,18 @@
 
 #### 3.4 Advanced Keyboard Shortcuts ⌨️
 **Goal**: Power user productivity
-- [ ] Cmd+K: Format query
-- [ ] Cmd+/: Comment/uncomment
-- [ ] Cmd+D: Duplicate line
-- [ ] Cmd+Shift+E: Execute selection
-- [ ] Cmd+L: Select line
-- [ ] Cmd+Shift+K: Delete line
-- [ ] Cmd+]: Indent
-- [ ] Cmd+[: Outdent
-- [ ] Customizable shortcuts
+- [x] Cmd+K: Format query (already implemented)
+- [x] Cmd+/: Comment/uncomment
+- [x] Cmd+D: Duplicate line
+- [x] Cmd+Shift+E: Execute selection
+- [x] Cmd+L: Select line
+- [x] Cmd+Shift+K: Delete line
+- [x] Cmd+]: Indent
+- [x] Cmd+[: Outdent
+- [ ] Customizable shortcuts (future enhancement)
 
 **Estimated**: 1-2 days
+**Status**: ✅ Complete
 
 ---
 

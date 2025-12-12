@@ -65,6 +65,7 @@ logs/
 
 # Tauri
 frontend/src-tauri/WixTools/
+frontend/src-tauri/binaries/
 frontend/src-tauri/resources/dbplus-backend
 frontend/src-tauri/gen/
 
