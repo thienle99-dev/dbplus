@@ -124,6 +124,14 @@ async fn main() {
                 .post(handlers::history::add_history)
                 .delete(handlers::history::clear_history),
         )
+        .route(
+            "/api/connections/:id/history/:entry_id",
+            delete(handlers::history::delete_history_entry),
+        )
+        .route(
+            "/api/connections/:id/history/delete",
+            post(handlers::history::delete_history_entries),
+        )
         // Dashboard routes
         .route(
             "/api/connections/:id/dashboards",

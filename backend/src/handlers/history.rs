@@ -56,6 +56,42 @@ pub async fn clear_history(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// DELETE /api/connections/:id/history/:entry_id
+pub async fn delete_history_entry(
+    State(db): State<DatabaseConnection>,
+    Path((connection_id, entry_id)): Path<(Uuid, Uuid)>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let service = HistoryService::new(db);
+
+    service
+        .delete_entry(connection_id, entry_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteHistoryEntriesRequest {
+    pub ids: Vec<Uuid>,
+}
+
+/// POST /api/connections/:id/history/delete
+pub async fn delete_history_entries(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Json(payload): Json<DeleteHistoryEntriesRequest>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let service = HistoryService::new(db);
+
+    service
+        .delete_entries(connection_id, payload.ids)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 #[derive(Debug, Deserialize)]
 pub struct AddHistoryRequest {
     pub sql: String,

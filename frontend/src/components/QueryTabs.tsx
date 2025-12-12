@@ -79,28 +79,93 @@ export default function QueryTabs() {
     setActiveTabId(newId);
   }, []);
 
-  const closeTab = useCallback((id: string, e?: React.MouseEvent) => {
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, tabId: string } | null>(null);
+
+  const handleContextMenu = (e: React.MouseEvent, tabId: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, tabId });
+  };
+
+  // Close Context Menu on click outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
+  const closeTab = useCallback((id: string, e?: React.MouseEvent, force = false) => {
     e?.stopPropagation();
     setTabs(prev => {
-      if (prev.length === 1) return prev;
+      if (prev.length === 1 && !force) return prev; // Don't close last tab unless forced/clearing all replacement logic elsewhere
 
-      // Delete draft from localStorage if it's a draft
       const tabToClose = prev.find(t => t.id === id);
-      if (tabToClose?.isDraft && connectionId) {
+
+      // If force or not dirty, we can close. 
+      // If dirty and not force, we usually keep it (handled by UI confirmation separately if needed, 
+      // but current logic assumes auto-save handles draft, so "Close" is safe to just close view.
+      // "Force Close" usually implies "Delete Draft" too if we wanted to revert changes).
+
+      if (tabToClose?.isDraft && connectionId && force) {
         deleteDraft(id);
       }
 
       const newTabs = prev.filter(t => t.id !== id);
+
+      // If we closed the active tab
       if (activeTabId === id) {
         const closedIndex = prev.findIndex(t => t.id === id);
+        // Try to go to right, else left
         const newActiveTab = newTabs[closedIndex] || newTabs[closedIndex - 1] || newTabs[0];
         if (newActiveTab) {
           setActiveTabId(newActiveTab.id);
+        } else if (newTabs.length === 0) {
+          // If we closed the last tab (force close all), create a new default one
+          const newId = Math.random().toString(36).substr(2, 9);
+          const initialTab: Tab = {
+            id: newId,
+            title: 'Draft Query 1',
+            type: 'query',
+            isDraft: true,
+            lastModified: Date.now(),
+          };
+          // Use setTimeout to avoid state update conflict during render cycle if called from effect
+          setTimeout(() => {
+            setTabs([initialTab]);
+            setActiveTabId(newId);
+          }, 0);
+          return []; // Temporary empty
         }
       }
       return newTabs;
     });
   }, [activeTabId, connectionId, deleteDraft]);
+
+  const handleCloseOthers = () => {
+    if (!contextMenu) return;
+    const itemsToKeep = tabs.filter(t => t.id === contextMenu.tabId);
+    setTabs(itemsToKeep);
+    setActiveTabId(contextMenu.tabId);
+  };
+
+  const handleCloseAll = () => {
+    // Re-initialize with one empty tab
+    const newId = Math.random().toString(36).substr(2, 9);
+    const initialTab: Tab = {
+      id: newId,
+      title: 'Draft Query 1',
+      type: 'query',
+      isDraft: true,
+      lastModified: Date.now(),
+    };
+    setTabs([initialTab]);
+    setActiveTabId(newId);
+  };
+
+  const handleForceClose = () => {
+    if (!contextMenu) return;
+    closeTab(contextMenu.tabId, undefined, true);
+  };
 
   const openTableInTab = useCallback((schema: string, table: string, newTab = true) => {
     if (newTab) {
@@ -124,7 +189,6 @@ export default function QueryTabs() {
     }
   }, [activeTabId]);
 
-  // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   useEffect(() => {
     const state = location.state as any;
@@ -253,9 +317,6 @@ export default function QueryTabs() {
     setTabs(prev => prev.map(t =>
       t.id === tabId ? { ...t, isDirty: false, isDraft: false } : t
     ));
-    // Optional: decide if we keep the draft in local storage or clear it.
-    // Usually purely saved queries don't need drafts unless modified again.
-    // For now, we can leave it or clear it. Let's not delete distinctively.
   }, []);
 
   const handleRenameTab = async (tabId: string, newTitle: string) => {
@@ -329,6 +390,7 @@ export default function QueryTabs() {
     };
   }, []);
 
+
   return (
     <TabProvider openTableInTab={openTableInTab}>
       <div className="flex h-full bg-bg-0">
@@ -370,14 +432,15 @@ export default function QueryTabs() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           <div className="flex items-center bg-bg-1 border-b border-border overflow-x-auto">
             {tabs.map(tab => (
               <div
                 key={tab.id}
                 onClick={() => setActiveTabId(tab.id)}
+                onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 className={clsx(
-                  "group flex items-center gap-2 px-4 py-2 text-sm border-r border-border cursor-pointer min-w-[120px] max-w-[200px]",
+                  "group flex items-center gap-2 px-4 py-2 text-sm border-r border-border cursor-pointer min-w-[120px] max-w-[200px] select-none",
                   activeTabId === tab.id
                     ? "bg-bg-0 text-text-primary border-t-2 border-t-accent"
                     : "bg-bg-1 text-text-secondary hover:bg-bg-2 hover:text-text-primary"
@@ -411,7 +474,7 @@ export default function QueryTabs() {
                       setEditingTabId(tab.id);
                       setEditTitle(tab.title);
                     }}
-                    title="Double click to rename"
+                    title="Double click to rename (Right-click for options)"
                   >
                     {tab.title}
                   </span>
@@ -467,6 +530,40 @@ export default function QueryTabs() {
               </div>
             ))}
           </div>
+
+          {/* Context Menu */}
+          {contextMenu && (
+            <div
+              className="fixed bg-bg-1 border border-border shadow-lg rounded py-1 z-50 w-48"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+            >
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={() => { closeTab(contextMenu.tabId); setContextMenu(null); }}
+              >
+                Close Tab
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={handleForceClose}
+              >
+                Force Close (Discard)
+              </button>
+              <div className="border-t border-border my-1" />
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={handleCloseOthers}
+              >
+                Close Other Tabs
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={handleCloseAll}
+              >
+                Close All Tabs
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </TabProvider>

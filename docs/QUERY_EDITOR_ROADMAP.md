@@ -19,7 +19,7 @@
 - [x] Frontend: History sidebar/panel
 - [ ] Frontend: Search/filter history
 - [x] Frontend: Click to load query
-- [ ] Frontend: Delete history entries
+- [x] Frontend: Delete history entries
 - [x] Auto-save executed queries (success + error)
 - [x] Timestamp and execution time tracking
 

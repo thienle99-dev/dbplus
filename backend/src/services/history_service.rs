@@ -1,7 +1,7 @@
+use crate::models::entities::query_history;
+use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;
-use chrono::Utc;
-use crate::models::entities::query_history;
 
 pub struct HistoryService {
     db: DatabaseConnection,
@@ -35,7 +35,11 @@ impl HistoryService {
         entry.insert(&self.db).await
     }
 
-    pub async fn get_history(&self, connection_id: Uuid, limit: u64) -> Result<Vec<query_history::Model>, DbErr> {
+    pub async fn get_history(
+        &self,
+        connection_id: Uuid,
+        limit: u64,
+    ) -> Result<Vec<query_history::Model>, DbErr> {
         query_history::Entity::find()
             .filter(query_history::Column::ConnectionId.eq(connection_id))
             .order_by_desc(query_history::Column::ExecutedAt)
@@ -47,6 +51,28 @@ impl HistoryService {
     pub async fn clear_history(&self, connection_id: Uuid) -> Result<(), DbErr> {
         query_history::Entity::delete_many()
             .filter(query_history::Column::ConnectionId.eq(connection_id))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_entry(&self, connection_id: Uuid, entry_id: Uuid) -> Result<(), DbErr> {
+        query_history::Entity::delete_many()
+            .filter(query_history::Column::ConnectionId.eq(connection_id))
+            .filter(query_history::Column::Id.eq(entry_id))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_entries(
+        &self,
+        connection_id: Uuid,
+        entry_ids: Vec<Uuid>,
+    ) -> Result<(), DbErr> {
+        query_history::Entity::delete_many()
+            .filter(query_history::Column::ConnectionId.eq(connection_id))
+            .filter(query_history::Column::Id.is_in(entry_ids))
             .exec(&self.db)
             .await?;
         Ok(())
