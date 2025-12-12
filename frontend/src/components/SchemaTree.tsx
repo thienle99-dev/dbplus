@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Database, Table, Pin } from 'lucide-react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTabContext } from '../context/TabContext';
+import { useToast } from '../context/ToastContext';
 import { TableInfo } from '../types';
 import TableContextMenu from './TableContextMenu';
 import { usePinnedTables } from '../hooks/usePinnedTables';
 import { useSchemas, useTables } from '../hooks/useDatabase';
+import { connectionApi } from '../services/connectionApi';
+import CreateDatabaseModal from './connections/CreateDatabaseModal';
 
 interface SchemaNodeProps {
   schemaName: string;
@@ -17,6 +21,8 @@ interface SchemaNodeProps {
 
 function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: SchemaNodeProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [contextMenu, setContextMenu] = useState<{
     table: string;
     position: { x: number; y: number };
@@ -94,6 +100,27 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
     });
   };
 
+  const handleDropSchema = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmName = prompt(`To drop schema "${schemaName}", type its name to confirm:`);
+    if (confirmName !== schemaName) {
+      if (confirmName !== null) showToast('Schema name did not match', 'error');
+      return;
+    }
+
+    try {
+      await connectionApi.dropSchema(connectionId, schemaName);
+      await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+      await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+      showToast(`Schema '${schemaName}' dropped`, 'success');
+    } catch (err: any) {
+      console.error('Failed to drop schema', err);
+      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to drop schema', 'error');
+    }
+  };
+
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <Collapsible.Trigger className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors">
@@ -101,7 +128,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
           <ChevronRight size={12} className="text-text-secondary" />
         </div>
         <Database size={14} className="text-accent/80" />
-        <span className="truncate font-medium">{schemaName}</span>
+        <span className="truncate font-medium flex-1">{schemaName}</span>
+        <button
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
+          title="Drop schema"
+          onClick={handleDropSchema}
+        >
+          <Trash2 size={14} />
+        </button>
       </Collapsible.Trigger>
 
       <Collapsible.Content className="pl-3 ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
@@ -148,11 +182,53 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
 export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
   const { connectionId } = useParams();
   const { data: schemas = [], isLoading: loading } = useSchemas(connectionId);
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const [createDbOpen, setCreateDbOpen] = useState(false);
 
   if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
 
+  const handleOpenCreateDatabase = () => {
+    if (!connectionId) return;
+    setCreateDbOpen(true);
+  };
+
+  const handleCreateSchema = async () => {
+    if (!connectionId) return;
+    const name = (prompt('Schema name to create:') || '').trim();
+    if (!name) return;
+
+    try {
+      const result = await connectionApi.createSchema(connectionId, name);
+      await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+      showToast(result.message || `Schema '${name}' created`, result.success ? 'success' : 'error');
+    } catch (err: any) {
+      console.error('Failed to create schema', err);
+      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create schema', 'error');
+    }
+  };
+
   return (
     <div className="flex flex-col pb-4">
+      <div className="px-3 py-2 flex items-center justify-between">
+        <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">Schemas</div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleOpenCreateDatabase}
+            className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+            title="Create database"
+          >
+            <Database size={14} />
+          </button>
+          <button
+            onClick={handleCreateSchema}
+            className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+            title="Create schema"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+      </div>
       {schemas.map((schema) => (
         <SchemaNode
           key={schema}
@@ -161,6 +237,17 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
           searchTerm={searchTerm}
         />
       ))}
+
+      {connectionId && (
+        <CreateDatabaseModal
+          open={createDbOpen}
+          onOpenChange={setCreateDbOpen}
+          connectionId={connectionId}
+          onCreated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+          }}
+        />
+      )}
     </div>
   );
 }

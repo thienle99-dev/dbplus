@@ -22,3 +22,25 @@ export interface DatabaseType {
   color: string;
   isAvailable: boolean;
 }
+
+export interface CreateDatabaseOptions {
+  owner?: string;
+  template?: string;
+  encoding?: string;
+  lcCollate?: string;
+  lcCtype?: string;
+  tablespace?: string;
+  allowConnections?: boolean;
+  connectionLimit?: number;
+  isTemplate?: boolean;
+}
+
+export interface CreateDatabaseRequest {
+  name: string;
+  options?: CreateDatabaseOptions;
+}
+
+export interface DatabaseManagementResponse {
+  success: boolean;
+  message: string;
+}

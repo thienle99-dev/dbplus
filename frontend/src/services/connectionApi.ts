@@ -1,5 +1,5 @@
 import api from './api';
-import { Connection } from '../types';
+import { Connection, CreateDatabaseRequest, DatabaseManagementResponse } from '../types';
 
 export interface CreateConnectionRequest {
     name: string;
@@ -64,10 +64,33 @@ export const connectionApi = {
         return response.data;
     },
 
+    createDatabase: async (
+        id: string,
+        request: string | CreateDatabaseRequest
+    ): Promise<DatabaseManagementResponse> => {
+        const payload: CreateDatabaseRequest =
+            typeof request === 'string' ? { name: request } : request;
+        const response = await api.post(`/api/connections/${id}/databases`, payload);
+        return response.data;
+    },
+
+    dropDatabase: async (id: string, name: string): Promise<void> => {
+        await api.delete(`/api/connections/${id}/databases/${encodeURIComponent(name)}`);
+    },
+
     // Get all schemas
     getSchemas: async (id: string): Promise<string[]> => {
         const response = await api.get(`/api/connections/${id}/schemas`);
         return response.data;
+    },
+
+    createSchema: async (id: string, name: string): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post(`/api/connections/${id}/schemas`, { name });
+        return response.data;
+    },
+
+    dropSchema: async (id: string, name: string): Promise<void> => {
+        await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`);
     },
 
     getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {

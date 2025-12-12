@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Search, Database, ArrowRight } from 'lucide-react';
+import { Search, Database, ArrowRight, Plus } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { connectionApi } from '../services/connectionApi';
+import { useToast } from '../context/ToastContext';
+import CreateDatabaseModal from './connections/CreateDatabaseModal';
 
 interface CommandPaletteProps {
     isOpen: boolean;
@@ -14,19 +16,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     const [databases, setDatabases] = useState<string[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [createDbOpen, setCreateDbOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { showToast } = useToast();
+
+    const refreshDatabases = async (id: string) => {
+        setIsLoading(true);
+        try {
+            const dbs = await connectionApi.getDatabases(id);
+            setDatabases(dbs);
+            setSelectedIndex(0);
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to load databases', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Fetch databases when opening
     useEffect(() => {
         if (isOpen && connectionId) {
-            setIsLoading(true);
-            connectionApi.getDatabases(connectionId)
-                .then(dbs => {
-                    setDatabases(dbs);
-                    setSelectedIndex(0);
-                })
-                .catch(console.error)
-                .finally(() => setIsLoading(false));
+            void refreshDatabases(connectionId);
 
             // Focus input
             setTimeout(() => inputRef.current?.focus(), 50);
@@ -69,6 +80,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         // For now, allow the user to see it works
         alert(`Switching to database: ${db} (Not implemented yet)`);
         onClose();
+    };
+
+    const handleOpenCreateDatabase = () => {
+        if (!connectionId) return;
+        setCreateDbOpen(true);
     };
 
     if (!isOpen) return null;
@@ -123,14 +139,40 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                     )}
                 </div>
 
-                {/* Footer Hint */}
-                {filteredDatabases.length > 0 && (
-                    <div className="px-4 py-2 bg-bg-2 border-t border-border text-xs text-text-secondary flex justify-between">
-                        <span>Use <kbd className="font-mono">↑↓</kbd> to navigate</span>
-                        <span><kbd className="font-mono">↵</kbd> to select</span>
-                    </div>
-                )}
+                {/* Footer */}
+                <div className="px-4 py-2 bg-bg-2 border-t border-border text-xs text-text-secondary flex items-center justify-between gap-3">
+                    <button
+                        onClick={handleOpenCreateDatabase}
+                        disabled={!connectionId}
+                        className="inline-flex items-center gap-2 px-2 py-1 rounded text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Create database"
+                    >
+                        <Plus size={14} />
+                        <span>Create database…</span>
+                    </button>
+                    {filteredDatabases.length > 0 ? (
+                        <div className="flex items-center justify-end gap-4">
+                            <span>Use <kbd className="font-mono">↑↓</kbd> to navigate</span>
+                            <span><kbd className="font-mono">↵</kbd> to select</span>
+                        </div>
+                    ) : (
+                        <span />
+                    )}
+                </div>
             </div>
+
+            {connectionId && (
+                <CreateDatabaseModal
+                    open={createDbOpen}
+                    onOpenChange={setCreateDbOpen}
+                    connectionId={connectionId}
+                    onCreated={async () => {
+                        setSearchTerm('');
+                        await refreshDatabases(connectionId);
+                        showToast('Database list refreshed', 'info');
+                    }}
+                />
+            )}
         </div>
     );
 };

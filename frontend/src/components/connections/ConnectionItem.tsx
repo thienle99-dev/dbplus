@@ -4,6 +4,8 @@ import { ContextMenu, ContextMenuItem, ContextMenuSeparator, ContextMenuLabel } 
 
 import { useConnectionStore } from '../../store/connectionStore';
 import { connectionApi } from '../../services/connectionApi';
+import { useToast } from '../../context/ToastContext';
+import CreateDatabaseModal from './CreateDatabaseModal';
 
 interface ConnectionItemProps {
     connection: Connection;
@@ -23,6 +25,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     const { deleteConnection, createConnection, connections, setSortOption } = useConnectionStore();
     const isLocal = connection.host === 'localhost' || connection.host === '127.0.0.1';
     const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
+    const { showToast } = useToast();
 
     // UI State
     const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | null>(null);
@@ -32,21 +35,27 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     const [isExpanded, setIsExpanded] = React.useState(false);
     const [databases, setDatabases] = React.useState<string[]>([]);
     const [isLoadingDbs, setIsLoadingDbs] = React.useState(false);
+    const [createDbOpen, setCreateDbOpen] = React.useState(false);
+
+    const refreshDatabases = async () => {
+        setIsLoadingDbs(true);
+        try {
+            const dbs = await connectionApi.getDatabases(connection.id);
+            setDatabases(dbs);
+        } catch (err) {
+            console.error("Failed to load databases", err);
+            showToast('Failed to load databases', 'error');
+        } finally {
+            setIsLoadingDbs(false);
+        }
+    };
 
     // Lazy load databases on expand
     const handleToggleExpand = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (!isExpanded && databases.length === 0) {
-            setIsLoadingDbs(true);
-            try {
-                const dbs = await connectionApi.getDatabases(connection.id);
-                setDatabases(dbs);
-            } catch (err) {
-                console.error("Failed to load databases", err);
-            } finally {
-                setIsLoadingDbs(false);
-            }
+            await refreshDatabases();
         }
         setIsExpanded(!isExpanded);
     };
@@ -99,6 +108,62 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     const handleImportClick = () => {
         fileInputRef.current?.click();
         setMenuPosition(null);
+    };
+
+    const handleOpenCreateDatabase = async () => {
+        if (connection.type !== 'postgres') {
+            showToast('Create database is currently supported for Postgres only', 'info');
+            setMenuPosition(null);
+            return;
+        }
+        setCreateDbOpen(true);
+        setMenuPosition(null);
+    };
+
+    const handleDropDatabase = async (dbName: string) => {
+        if (connection.type !== 'postgres') {
+            showToast('Drop database is currently supported for Postgres only', 'info');
+            return;
+        }
+
+        const confirmName = prompt(`To drop database "${dbName}", type its name to confirm:`);
+        if (confirmName !== dbName) {
+            if (confirmName !== null) showToast('Database name did not match', 'error');
+            return;
+        }
+
+        try {
+            await connectionApi.dropDatabase(connection.id, dbName);
+            showToast(`Database '${dbName}' dropped`, 'success');
+            await refreshDatabases();
+        } catch (err: any) {
+            console.error('Failed to drop database', err);
+            showToast(err?.response?.data?.message || err?.response?.data || 'Failed to drop database', 'error');
+        }
+    };
+
+    const handleCreateSchema = async () => {
+        if (connection.type !== 'postgres') {
+            showToast('Create schema is currently supported for Postgres only', 'info');
+            setMenuPosition(null);
+            return;
+        }
+
+        const name = (prompt(`Schema name to create (in database "${connection.database}"):`) || '').trim();
+        if (!name) {
+            setMenuPosition(null);
+            return;
+        }
+
+        try {
+            const result = await connectionApi.createSchema(connection.id, name);
+            showToast(result.message || `Schema '${name}' created`, result.success ? 'success' : 'error');
+        } catch (err: any) {
+            console.error('Failed to create schema', err);
+            showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create schema', 'error');
+        } finally {
+            setMenuPosition(null);
+        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,11 +236,40 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                         ) : databases.length > 0 ? (
                             <div className="flex flex-col">
                                 {databases.map(db => (
-                                    <div key={db} className="flex items-center gap-2 py-1 px-2 hover:bg-white/5 rounded text-xs text-gray-300">
+                                    <div
+                                        key={db}
+                                        className="flex items-center gap-2 py-1 px-2 hover:bg-white/5 rounded text-xs text-gray-300 group"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
-                                        {db}
+                                        <span className="flex-1 truncate">{db}</span>
+                                        {connection.type === 'postgres' && (
+                                            <button
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400"
+                                                title="Drop database"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    void handleDropDatabase(db);
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
+                                {connection.type === 'postgres' && (
+                                    <button
+                                        className="mt-1 py-1 px-2 text-left text-xs text-blue-400 hover:text-blue-300 hover:bg-white/5 rounded transition-colors"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            void handleOpenCreateDatabase();
+                                        }}
+                                    >
+                                        + Create database…
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="py-1 px-2 text-xs text-gray-500 italic">No databases found</div>
@@ -204,7 +298,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                     <ContextMenuSeparator />
 
-                    <ContextMenuItem hasSubmenu>New</ContextMenuItem>
+                    <ContextMenuItem onClick={handleOpenCreateDatabase}>Create database...</ContextMenuItem>
+                    <ContextMenuItem onClick={handleCreateSchema}>Create schema...</ContextMenuItem>
                     <ContextMenuItem onClick={() => { onEdit?.(connection); setMenuPosition(null); }}>Edit...</ContextMenuItem>
                     <ContextMenuItem onClick={handleDuplicate}>Duplicate</ContextMenuItem>
 
@@ -229,6 +324,15 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     <ContextMenuItem danger onClick={handleDelete}>Delete</ContextMenuItem>
                 </ContextMenu>
             )}
+
+            <CreateDatabaseModal
+                open={createDbOpen}
+                onOpenChange={setCreateDbOpen}
+                connectionId={connection.id}
+                onCreated={async () => {
+                    await refreshDatabases();
+                }}
+            />
         </>
     );
 };

@@ -239,14 +239,126 @@ fn quote_postgres_ident(name: &str) -> Result<String> {
     Ok(format!("\"{}\"", trimmed.replace("\"", "\"\"")))
 }
 
+fn quote_postgres_string_literal(value: &str) -> Result<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Err(anyhow::anyhow!("Value cannot be empty"));
+    }
+    if trimmed.contains('\0') {
+        return Err(anyhow::anyhow!("Value cannot contain NUL character"));
+    }
+    Ok(format!("'{}'", trimmed.replace("'", "''")))
+}
+
+impl PostgresDriver {
+    pub async fn create_database_with_options(
+        &self,
+        name: &str,
+        options: Option<crate::handlers::database::CreateDatabaseOptions>,
+    ) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+
+        let db_ident = quote_postgres_ident(name)?;
+        let mut sql = format!("CREATE DATABASE {}", db_ident);
+
+        if let Some(options) = options {
+            let mut parts: Vec<String> = Vec::new();
+
+            if let Some(owner) = options.owner.as_deref().map(str::trim).filter(|s| !s.is_empty())
+            {
+                parts.push(format!("OWNER = {}", quote_postgres_ident(owner)?));
+            }
+
+            if let Some(template) = options
+                .template
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                parts.push(format!("TEMPLATE = {}", quote_postgres_ident(template)?));
+            }
+
+            if let Some(encoding) = options
+                .encoding
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                parts.push(format!(
+                    "ENCODING = {}",
+                    quote_postgres_string_literal(encoding)?
+                ));
+            }
+
+            if let Some(lc_collate) = options
+                .lc_collate
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                parts.push(format!(
+                    "LC_COLLATE = {}",
+                    quote_postgres_string_literal(lc_collate)?
+                ));
+            }
+
+            if let Some(lc_ctype) = options
+                .lc_ctype
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                parts.push(format!(
+                    "LC_CTYPE = {}",
+                    quote_postgres_string_literal(lc_ctype)?
+                ));
+            }
+
+            if let Some(tablespace) = options
+                .tablespace
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                parts.push(format!(
+                    "TABLESPACE = {}",
+                    quote_postgres_ident(tablespace)?
+                ));
+            }
+
+            if let Some(allow) = options.allow_connections {
+                parts.push(format!(
+                    "ALLOW_CONNECTIONS = {}",
+                    if allow { "true" } else { "false" }
+                ));
+            }
+
+            if let Some(limit) = options.connection_limit {
+                parts.push(format!("CONNECTION LIMIT = {}", limit));
+            }
+
+            if let Some(is_template) = options.is_template {
+                parts.push(format!(
+                    "IS_TEMPLATE = {}",
+                    if is_template { "true" } else { "false" }
+                ));
+            }
+
+            if !parts.is_empty() {
+                sql.push_str(" WITH ");
+                sql.push_str(&parts.join(" "));
+            }
+        }
+
+        client.execute(&sql, &[]).await?;
+        Ok(())
+    }
+}
+
 #[async_trait]
 impl DatabaseManagementDriver for PostgresDriver {
     async fn create_database(&self, name: &str) -> Result<()> {
-        let client = self.connection.pool().get().await?;
-        let ident = quote_postgres_ident(name)?;
-        let sql = format!("CREATE DATABASE {}", ident);
-        client.execute(&sql, &[]).await?;
-        Ok(())
+        self.create_database_with_options(name, None).await
     }
 
     async fn drop_database(&self, name: &str) -> Result<()> {

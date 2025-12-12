@@ -24,6 +24,26 @@ pub async fn list_databases(
 #[derive(Deserialize)]
 pub struct CreateDatabaseRequest {
     pub name: String,
+    #[serde(default)]
+    pub options: Option<CreateDatabaseOptions>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct CreateDatabaseOptions {
+    pub owner: Option<String>,
+    pub template: Option<String>,
+    pub encoding: Option<String>,
+    #[serde(rename = "lcCollate")]
+    pub lc_collate: Option<String>,
+    #[serde(rename = "lcCtype")]
+    pub lc_ctype: Option<String>,
+    pub tablespace: Option<String>,
+    #[serde(rename = "allowConnections")]
+    pub allow_connections: Option<bool>,
+    #[serde(rename = "connectionLimit")]
+    pub connection_limit: Option<i32>,
+    #[serde(rename = "isTemplate")]
+    pub is_template: Option<bool>,
 }
 
 #[derive(serde::Serialize)]
@@ -60,7 +80,7 @@ pub async fn create_database(
     }
 
     let service = ConnectionService::new(db).expect("Failed to create service");
-    match service.create_database(id, name).await {
+    match service.create_database(id, name, payload.options).await {
         Ok(_) => (
             StatusCode::CREATED,
             Json(DatabaseManagementResponse {

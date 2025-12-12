@@ -81,7 +81,12 @@ impl ConnectionService {
         }
     }
 
-    pub async fn create_database(&self, connection_id: Uuid, name: &str) -> Result<()> {
+    pub async fn create_database(
+        &self,
+        connection_id: Uuid,
+        name: &str,
+        options: Option<crate::handlers::database::CreateDatabaseOptions>,
+    ) -> Result<()> {
         let connection = self
             .get_connection_by_id(connection_id)
             .await?
@@ -89,13 +94,12 @@ impl ConnectionService {
 
         let password = self.encryption.decrypt(&connection.password)?;
 
-        use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new_for_test(&connection, &password).await?;
-                driver.create_database(name).await
+                driver.create_database_with_options(name, options).await
             }
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support creating separate databases via this API"
