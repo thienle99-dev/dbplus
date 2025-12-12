@@ -1,5 +1,12 @@
 import { EditorView, keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
+import {
+  indentMore,
+  indentLess,
+  deleteLine,
+  selectLine,
+  toggleComment
+} from '@codemirror/commands';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
@@ -115,6 +122,28 @@ export default function QueryEditor({
     execute(sqlToRun);
   }, [query, isDangerousQuery, execute, editorView, showToast]);
 
+  const handleExecuteSelection = useCallback(() => {
+    if (!editorView) return false;
+
+    const selection = editorView.state.selection.main;
+    if (selection.empty) {
+      showToast('No text selected', 'info');
+      return false;
+    }
+
+    const sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
+    if (sqlToRun.trim()) {
+      if (isDangerousQuery(sqlToRun)) {
+        setPendingQuery(sqlToRun);
+        setIsConfirmationOpen(true);
+      } else {
+        execute(sqlToRun);
+      }
+      return true;
+    }
+    return false;
+  }, [editorView, execute, showToast, isDangerousQuery]);
+
   const handleQuickSave = async () => {
     if (!savedQueryId || !connectionId) return;
 
@@ -181,6 +210,7 @@ export default function QueryEditor({
   const allExtensions = useMemo(() => [
     ...extensions,
     Prec.highest(keymap.of([
+      // Execute query
       {
         key: "Mod-Enter",
         run: () => {
@@ -189,6 +219,7 @@ export default function QueryEditor({
         },
         preventDefault: true
       },
+      // Expand star
       {
         key: "Mod-i",
         run: () => {
@@ -196,9 +227,63 @@ export default function QueryEditor({
           return true;
         },
         preventDefault: true
+      },
+      // NEW: Comment/uncomment
+      {
+        key: "Mod-/",
+        run: toggleComment,
+        preventDefault: true
+      },
+      // NEW: Duplicate line
+      {
+        key: "Mod-d",
+        run: (view) => {
+          const { state } = view;
+          const line = state.doc.lineAt(state.selection.main.head);
+          const lineText = line.text;
+          view.dispatch({
+            changes: { from: line.to, insert: '\n' + lineText },
+            selection: { anchor: line.to + 1 }
+          });
+          return true;
+        },
+        preventDefault: true
+      },
+      // NEW: Execute selection
+      {
+        key: "Mod-Shift-e",
+        run: () => {
+          handleExecuteSelection();
+          return true;
+        },
+        preventDefault: true
+      },
+      // NEW: Select line
+      {
+        key: "Mod-l",
+        run: selectLine,
+        preventDefault: true
+      },
+      // NEW: Delete line
+      {
+        key: "Mod-Shift-k",
+        run: deleteLine,
+        preventDefault: true
+      },
+      // NEW: Indent
+      {
+        key: "Mod-]",
+        run: indentMore,
+        preventDefault: true
+      },
+      // NEW: Outdent
+      {
+        key: "Mod-[",
+        run: indentLess,
+        preventDefault: true
       }
     ]))
-  ], [extensions, handleExecuteRequest, handleExpandStar]);
+  ], [extensions, handleExecuteRequest, handleExpandStar, handleExecuteSelection]);
 
   // Shortcuts
   useEffect(() => {
