@@ -17,7 +17,7 @@ import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
 import ExecutionPlanView from './ExecutionPlanView';
-import api from '../services/api';
+import { useExplainQuery, useUpdateSavedQuery } from '../hooks/useQuery';
 import {
   QueryToolbar,
   QueryResults,
@@ -68,6 +68,8 @@ export default function QueryEditor({
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
   const { execute, handleFormat, result, loading, error } = useQueryExecution(query, setQuery);
+  const explainQuery = useExplainQuery(connectionId);
+  const updateSavedQuery = useUpdateSavedQuery(connectionId);
 
   // Update query when initialSql changes
   useEffect(() => {
@@ -91,8 +93,6 @@ export default function QueryEditor({
 
   // Explain State
   const [executionPlan, setExecutionPlan] = useState<any>(null);
-  const [explaining, setExplaining] = useState(false);
-  const [explainError, setExplainError] = useState<string | null>(null);
   const [bottomTab, setBottomTab] = useState<'results' | 'plan'>('results');
 
   const handleExplain = useCallback(async (analyze: boolean = false) => {
@@ -106,24 +106,22 @@ export default function QueryEditor({
 
     if (!sqlToRun.trim() || !connectionId) return;
 
-    setExplaining(true);
-    setExplainError(null);
+    // setExplaining(true); // Handled by mutation status
+    // setExplainError(null);
     setExecutionPlan(null);
     setBottomTab('plan'); // Switch to plan tab
 
     try {
-      const response = await api.post(`/api/connections/${connectionId}/explain`, {
-        sql: sqlToRun,
+      const data = await explainQuery.mutateAsync({
+        query: sqlToRun,
         analyze
       });
-      setExecutionPlan(response.data.plan);
+      setExecutionPlan(data.plan);
     } catch (err: any) {
       console.error('Explain error:', err);
-      setExplainError(err.message || 'Failed to explain query');
-    } finally {
-      setExplaining(false);
+      // setExplainError handled by mutation
     }
-  }, [query, editorView, connectionId]);
+  }, [query, editorView, connectionId, explainQuery]);
 
   const isDangerousQuery = useCallback((sql: string) => {
     const dangerousKeywords = /\b(DROP|DELETE|TRUNCATE|UPDATE|ALTER)\b/i;
@@ -187,7 +185,8 @@ export default function QueryEditor({
     if (!savedQueryId || !connectionId) return;
 
     try {
-      await api.put(`/api/connections/${connectionId}/saved-queries/${savedQueryId}`, {
+      await updateSavedQuery.mutateAsync({
+        id: savedQueryId,
         sql: query,
         metadata: visualState
       });
@@ -409,7 +408,7 @@ export default function QueryEditor({
         }}
         onClear={() => setQuery('')}
         onOpenSnippets={() => setIsSnippetLibraryOpen(true)}
-        loading={loading || explaining}
+        loading={loading || explainQuery.isPending}
         queryTrimmed={query.trim()}
         hasSelection={hasSelection}
         savedQueryId={savedQueryId}
@@ -488,8 +487,8 @@ export default function QueryEditor({
           <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>
             <ExecutionPlanView
               plan={executionPlan}
-              loading={explaining}
-              error={explainError}
+              loading={explainQuery.isPending}
+              error={explainQuery.error ? explainQuery.error.message : null}
             />
           </div>
         </div>

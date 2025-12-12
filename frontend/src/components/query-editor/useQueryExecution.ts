@@ -4,16 +4,16 @@ import { format as formatSql } from 'sql-formatter';
 import { useToast } from '../../context/ToastContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { historyApi } from '../../services/historyApi';
-import api from '../../services/api';
+import { useExecuteQuery } from '../../hooks/useQuery';
 import { QueryResult } from '../../types';
 
 export function useQueryExecution(query: string, setQuery: (q: string) => void) {
     const { connectionId } = useParams();
     const { showToast } = useToast();
     const { formatKeywordCase } = useSettingsStore();
+    const executeMutation = useExecuteQuery(connectionId);
 
     const [result, setResult] = useState<QueryResult | null>(null);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
 
@@ -21,28 +21,25 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
         const startTime = Date.now();
 
-        setLoading(true);
-        setError(null);
         setResult(null);
+        setError(null);
 
         try {
-            const response = await api.post(`/api/connections/${connectionId}/execute`, { query: sqlToExecute });
+            const data = await executeMutation.mutateAsync({ query: sqlToExecute });
             const executionTime = Date.now() - startTime;
 
-            setResult(response.data);
+            setResult(data);
 
-            // Save to history (success) - prevent duplicates
+            // Save to history (success)
             if (connectionId) {
                 const now = Date.now();
                 const lastSave = lastHistorySave.current;
 
-                // Only save if this is a different query or more than 2 seconds have passed
                 if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
                     lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
-
                     historyApi.addHistory(connectionId, {
                         sql: sqlToExecute,
-                        row_count: response.data.rows?.length || response.data.affected_rows || 0,
+                        row_count: data.rows?.length || data.affected_rows || 0,
                         execution_time: executionTime,
                         success: true,
                         error_message: null,
@@ -50,25 +47,23 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                 }
             }
 
-            if (response.data.affected_rows > 0) {
-                showToast(`Query executed successfully. ${response.data.affected_rows} rows affected.`, 'success');
+            if (data.affected_rows > 0) {
+                showToast(`Query executed successfully. ${data.affected_rows} rows affected.`, 'success');
             }
-        } catch (err: unknown) {
+        } catch (err: any) {
             const executionTime = Date.now() - startTime;
-            const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to execute query';
+            const errorMessage = err.response?.data?.message || err.message || 'Failed to execute query';
 
             setError(errorMessage);
             showToast('Query execution failed', 'error');
 
-            // Save to history (error) - prevent duplicates
+            // Save to history (error)
             if (connectionId) {
                 const now = Date.now();
                 const lastSave = lastHistorySave.current;
 
-                // Only save if this is a different query or more than 2 seconds have passed
                 if (!lastSave || lastSave.sql !== sqlToExecute || (now - lastSave.timestamp) > 2000) {
                     lastHistorySave.current = { sql: sqlToExecute, timestamp: now };
-
                     historyApi.addHistory(connectionId, {
                         sql: sqlToExecute,
                         row_count: null,
@@ -78,10 +73,8 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     }).catch(err => console.error('Failed to save history:', err));
                 }
             }
-        } finally {
-            setLoading(false);
         }
-    }, [connectionId, query, showToast]);
+    }, [connectionId, query, showToast, executeMutation]);
 
     const handleFormat = useCallback(() => {
         if (!query.trim()) return;
@@ -99,8 +92,8 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         execute,
         handleFormat,
         result,
-        loading,
+        loading: executeMutation.isPending,
         error,
-        setResult // Exported if needed to clear results manually
+        setResult
     };
 }

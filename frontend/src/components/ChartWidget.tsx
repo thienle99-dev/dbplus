@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Trash2, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
 import api from '../services/api';
+import { useSavedQueries } from '../hooks/useQuery';
 
 interface ChartConfig {
   xAxis?: string;
@@ -31,67 +33,47 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 export default function ChartWidget({ chart, onDelete }: ChartWidgetProps) {
   const { connectionId } = useParams();
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // First fetch the saved query to get the SQL
-      // Actually, we can just execute the saved query directly if we had an endpoint for it.
-      // But currently we only have execute_query which takes SQL.
-      // So we need to fetch the saved query first.
-      // Optimization: Backend could have an endpoint to execute saved query by ID.
-      // For now, let's fetch the saved query details.
-      
-      // Wait, we don't have an endpoint to get a single saved query by ID efficiently without listing all?
-      // We do: GET /api/connections/:id/saved-queries returns all.
-      // We should probably add GET /api/connections/:id/saved-queries/:query_id
-      // But for now, let's assume we have the saved_query_id and we need to fetch it.
-      // Actually, let's just use the list endpoint and find it, or add a specific endpoint.
-      // Adding a specific endpoint is better but for speed let's just use the list for now or assume we passed the SQL?
-      // No, chart only has saved_query_id.
-      
-      // Let's assume we can fetch the query. 
-      // Actually, the `list_saved_queries` returns all, we can filter.
-      const queriesRes = await api.get(`/api/connections/${connectionId}/saved-queries`);
-      const savedQuery = queriesRes.data.find((q: { id: string }) => q.id === chart.saved_query_id);
-      
-      if (!savedQuery) {
-        throw new Error('Saved query not found');
-      }
+  // 1. Get saved queries to find the SQL
+  const { data: savedQueries } = useSavedQueries(connectionId);
+  const savedQuery = savedQueries?.find(q => q.id === chart.saved_query_id);
 
-      const resultRes = await api.post(`/api/connections/${connectionId}/execute`, { query: savedQuery.sql });
-      
+  // 2. Fetch chart data using the SQL
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['chartData', connectionId, chart.id, savedQuery?.id],
+    queryFn: async () => {
+      if (!savedQuery) throw new Error("Saved query not found");
+
+      const { data: resultData } = await api.post(`/api/connections/${connectionId}/execute`, { query: savedQuery.sql });
+
       // Transform rows array to object array for Recharts
-      const columns = resultRes.data.columns;
-      const rows = resultRes.data.rows;
-      const transformedData = rows.map((row: unknown[]) => {
+      const columns = resultData.columns;
+      const rows = resultData.rows;
+      return rows.map((row: unknown[]) => {
         const obj: Record<string, any> = {};
         columns.forEach((col: string, i: number) => {
           obj[col] = row[i];
         });
         return obj;
       });
-      
-      setData(transformedData);
-    } catch (err: unknown) {
-      console.error('Failed to fetch chart data:', err);
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    enabled: !!connectionId && !!savedQuery,
+    refetchOnWindowFocus: false, // Don't refetch automatically for charts
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [chart.saved_query_id, connectionId]);
+  // Extract error message string
+  const error = queryError instanceof Error ? queryError.message : (queryError ? String(queryError) : null);
 
   const renderChart = () => {
+    if (!data) return null;
+
     const { type, config } = chart;
-    const { xAxis, yAxis } = config; // Simplified config structure
+    const { xAxis, yAxis } = config;
 
     // Default keys if not specified
     const xKey = xAxis || (data.length > 0 ? Object.keys(data[0])[0] : '');
@@ -170,7 +152,7 @@ export default function ChartWidget({ chart, onDelete }: ChartWidgetProps) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium text-text-primary">{chart.name}</h3>
         <div className="flex items-center gap-2">
-          <button onClick={fetchData} className="text-text-secondary hover:text-text-primary p-1">
+          <button onClick={() => refetch()} className="text-text-secondary hover:text-text-primary p-1">
             <RefreshCw size={14} />
           </button>
           <button onClick={() => onDelete(chart.id)} className="text-text-secondary hover:text-error p-1">
@@ -178,13 +160,13 @@ export default function ChartWidget({ chart, onDelete }: ChartWidgetProps) {
           </button>
         </div>
       </div>
-      
+
       <div className="flex-1 min-h-0">
         {loading ? (
           <div className="h-full flex items-center justify-center text-text-secondary">Loading data...</div>
         ) : error ? (
           <div className="h-full flex items-center justify-center text-error">{error}</div>
-        ) : data.length === 0 ? (
+        ) : !data || data.length === 0 ? (
           <div className="h-full flex items-center justify-center text-text-secondary">No data available</div>
         ) : (
           renderChart()

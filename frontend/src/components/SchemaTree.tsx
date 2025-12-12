@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, Database, Table, Pin } from 'lucide-react';
-import api from '../services/api';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useTabContext } from '../context/TabContext';
 import { TableInfo } from '../types';
 import TableContextMenu from './TableContextMenu';
 import { usePinnedTables } from '../hooks/usePinnedTables';
+import { useSchemas, useTables } from '../hooks/useDatabase';
 
 interface SchemaNodeProps {
   schemaName: string;
@@ -17,8 +17,6 @@ interface SchemaNodeProps {
 
 function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: SchemaNodeProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
-  const [tables, setTables] = useState<TableInfo[]>([]);
-  const [loading, setLoading] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     table: string;
     position: { x: number; y: number };
@@ -26,6 +24,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   const navigate = useNavigate();
   const location = useLocation();
   const { isPinned, togglePin } = usePinnedTables(connectionId);
+
+  // Conditionally fetch tables when open or searching
+  const { data: tables = [], isLoading: loading } = useTables(
+    connectionId,
+    // If open or has search term, fetch the schema tables. Otherwise skip.
+    (isOpen || !!searchTerm) ? schemaName : undefined
+  );
 
   // Try to get tab context - it's only available when inside QueryTabs
   let tabContext;
@@ -40,23 +45,9 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   const isQueryRoute = location.pathname.includes('/query');
   const shouldUseTabs = isQueryRoute && tabContext;
 
-  // Fetch tables when expanded
-  const fetchTables = async () => {
-    if (tables.length > 0) return;
-    setLoading(true);
-    try {
-      const response = await api.get(`/api/connections/${connectionId}/tables?schema=${schemaName}`);
-      setTables(response.data);
-    } catch (error) {
-      console.error(`Failed to fetch tables for schema ${schemaName}:`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // If search term is present, we might want to auto-expand or filter
   // For now, let's just use it to filter visible tables if we have them
-  const filteredTables = tables.filter(t =>
+  const filteredTables = (tables as any[]).map(t => typeof t === 'string' ? { name: t } : t).filter(t =>
     !searchTerm || t.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -76,7 +67,6 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   useEffect(() => {
     if (searchTerm && filteredTables.length > 0 && !isOpen) {
       setIsOpen(true);
-      if (tables.length === 0) fetchTables(); // Force fetch if not loaded
     }
   }, [searchTerm, filteredTables.length]);
 
@@ -105,10 +95,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   };
 
   return (
-    <Collapsible.Root open={isOpen} onOpenChange={(open) => {
-      setIsOpen(open);
-      if (open) fetchTables();
-    }}>
+    <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <Collapsible.Trigger className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors">
         <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={12} className="text-text-secondary" />
@@ -160,25 +147,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
 
 export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
   const { connectionId } = useParams();
-  const [schemas, setSchemas] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (connectionId) {
-      fetchSchemas();
-    }
-  }, [connectionId]);
-
-  const fetchSchemas = async () => {
-    try {
-      const response = await api.get(`/api/connections/${connectionId}/schemas`);
-      setSchemas(response.data);
-    } catch (error) {
-      console.error('Failed to fetch schemas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: schemas = [], isLoading: loading } = useSchemas(connectionId);
 
   if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
 

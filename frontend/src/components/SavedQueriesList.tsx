@@ -1,17 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Trash2, Plus, Search } from 'lucide-react';
-import api from '../services/api';
-
-export interface SavedQuery {
-  id: string;
-  name: string;
-  description: string | null;
-  sql: string;
-  tags: string[] | null;
-  metadata: Record<string, any> | null;
-  updated_at: string;
-}
+import { useSavedQueries, useDeleteSavedQuery } from '../hooks/useQuery';
 
 export default function SavedQueriesList({
   onSelectQuery,
@@ -24,38 +14,21 @@ export default function SavedQueriesList({
 }) {
   const { connectionId } = useParams();
   const navigate = useNavigate();
-  const [queries, setQueries] = useState<SavedQuery[]>([]);
-  const [loading, setLoading] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
+
+  // Custom Hooks
+  const { data: queries = [], isLoading: loading } = useSavedQueries(connectionId);
+  const deleteSavedQuery = useDeleteSavedQuery(connectionId);
 
   // Use either global search term (if embedded) or local search
   const activeSearch = embedded ? searchTerm : localSearch;
-
-  useEffect(() => {
-    if (connectionId) {
-      fetchQueries();
-    }
-  }, [connectionId]);
-
-  const fetchQueries = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get(`/api/connections/${connectionId}/saved-queries`);
-      setQueries(response.data);
-    } catch (err: unknown) {
-      console.error('Failed to fetch saved queries:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this saved query?')) return;
 
     try {
-      await api.delete(`/api/connections/${connectionId}/saved-queries/${id}`);
-      setQueries(queries.filter(q => q.id !== id));
+      await deleteSavedQuery.mutateAsync(id);
     } catch (err: unknown) {
       alert('Failed to delete query');
     }

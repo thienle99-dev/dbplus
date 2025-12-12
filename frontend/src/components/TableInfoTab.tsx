@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../services/api';
 import { Info, Database } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConstraintsSection from './ConstraintsSection';
@@ -11,115 +9,50 @@ import IndexesSection from './table-info/IndexesSection';
 import TableMetadata from './table-info/TableMetadata';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import {
-    TableColumn,
     IndexInfo,
-    TableConstraints,
-    TableStats,
     TableInfoTabProps
 } from '../types';
-
+import {
+    useColumns,
+    useIndexes,
+    useConstraints,
+    useTableStats
+} from '../hooks/useDatabase';
 
 export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
     const params = useParams();
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
     const connectionId = params.connectionId;
-    const [indexes, setIndexes] = useState<IndexInfo[]>([]);
-    const [columns, setColumns] = useState<TableColumn[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [constraints, setConstraints] = useState<TableConstraints | null>(null);
-    const [statistics, setStatistics] = useState<TableStats | null>(null);
-    const [loadingStatistics, setLoadingStatistics] = useState(false);
     const { showToast } = useToast();
 
-    const fetchIndexes = async () => {
-        try {
-            const response = await api.get(
-                `/api/connections/${connectionId}/indexes?schema=${schema}&table=${table}`
-            );
-            setIndexes(response.data);
-        } catch (err) {
-            console.error('Failed to fetch indexes:', err);
-            setIndexes([]);
-        }
-    };
+    // Data Fetching Hooks
+    const columnsQuery = useColumns(connectionId, schema, table);
+    const indexesQuery = useIndexes(connectionId, schema, table);
+    const constraintsQuery = useConstraints(connectionId, schema, table);
+    const statsQuery = useTableStats(connectionId, schema, table);
 
-    const fetchConstraints = async () => {
-        try {
-            const response = await api.get(
-                `/api/connections/${connectionId}/constraints?schema=${schema}&table=${table}`
-            );
-            setConstraints(response.data);
-        } catch (err) {
-            console.error('Failed to fetch constraints:', err);
-            setConstraints({ foreign_keys: [], check_constraints: [], unique_constraints: [] });
-        }
-    };
+    const isLoading = columnsQuery.isLoading || indexesQuery.isLoading || constraintsQuery.isLoading || statsQuery.isLoading;
 
-    const fetchStatistics = async () => {
-        setLoadingStatistics(true);
-        try {
-            const response = await api.get(
-                `/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`
-            );
-            console.log('[DEBUG] Table stats response:', response.data);
-            console.log('[DEBUG] row_count value:', response.data.row_count, 'type:', typeof response.data.row_count);
-            setStatistics(response.data);
-        } catch (err) {
-            console.error('Failed to fetch statistics:', err);
-            setStatistics({
-                row_count: null,
-                table_size: null,
-                index_size: null,
-                total_size: null,
-                created_at: null,
-                last_modified: null,
-            });
-        } finally {
-            setLoadingStatistics(false);
-        }
-    };
-
-    const fetchTableInfo = async () => {
-        setLoading(true);
-        try {
-            // Fetch columns for SQL definition
-            const response = await api.get(
-                `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
-            );
-
-            const fetchedColumns = response.data;
-            setColumns(fetchedColumns);
-
-            // Fetch indexes from backend (replaced client-side inference)
-            fetchIndexes();
-
-            // Fetch constraints
-            fetchConstraints();
-
-            // Fetch statistics
-            fetchStatistics();
-        } catch (err) {
-            console.error('Failed to fetch table info:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!connectionId || !schema || !table) return;
-        fetchTableInfo();
-    }, [connectionId, schema, table]);
+    const columns = columnsQuery.data || [];
+    const indexes = indexesQuery.data || [];
+    const constraints = constraintsQuery.data || null;
+    const statistics = statsQuery.data || null;
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
-
-    const handleIndexCreated = (newIndex: IndexInfo) => {
-        setIndexes([...indexes, newIndex]);
-        fetchIndexes();
+    const handleIndexCreated = () => {
+        indexesQuery.refetch();
     };
 
-    if (loading) {
+    const handleRefreshAll = () => {
+        columnsQuery.refetch();
+        indexesQuery.refetch();
+        constraintsQuery.refetch();
+        statsQuery.refetch();
+    };
+
+    if (isLoading && !columns.length) { // Show loading only if no data at all
         return <div className="p-8 text-text-secondary">Loading table info...</div>;
     }
 
@@ -167,7 +100,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             columns={columns}
                             foreignKeys={constraints.foreign_keys}
                             indexes={indexes}
-                            onRefresh={fetchTableInfo}
+                            onRefresh={handleRefreshAll}
                         />
                     </div>
                 )}
@@ -189,21 +122,10 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                         <TableStatistics
                             statistics={statistics}
                             onRefresh={async () => {
-                                setLoadingStatistics(true);
-                                try {
-                                    const response = await api.get(
-                                        `/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`
-                                    );
-                                    setStatistics(response.data);
-                                    showToast('Statistics refreshed', 'success');
-                                } catch (err) {
-                                    console.error('Failed to refresh statistics:', err);
-                                    showToast('Failed to refresh statistics', 'error');
-                                } finally {
-                                    setLoadingStatistics(false);
-                                }
+                                await statsQuery.refetch();
+                                showToast('Statistics refreshed', 'success');
                             }}
-                            loading={loadingStatistics}
+                            loading={statsQuery.isFetching}
                         />
                     </div>
                 )}

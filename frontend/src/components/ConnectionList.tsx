@@ -1,51 +1,30 @@
-import { useEffect, useState } from 'react';
-import { Plus, Database, Trash } from 'lucide-react';
-import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-
-interface Connection {
-  id: string;
-  name: string;
-  db_type: string;
-  host: string;
-  database: string;
-  last_used?: string;
-}
+import { Plus, Database, Trash } from 'lucide-react';
+import { useConnections, useDeleteConnection } from '../hooks/useConnections';
+import { useState } from 'react';
 
 import ConnectionForm from './ConnectionForm';
 
 export default function ConnectionList() {
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: connections = [], isLoading: loading, error } = useConnections();
+  const deleteConnection = useDeleteConnection();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchConnections();
-  }, []);
-
-  const fetchConnections = async () => {
-    try {
-      const response = await api.get('/api/connections');
-      setConnections(response.data);
-    } catch (error) {
-      console.error('Failed to fetch connections:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this connection?')) {
       try {
-        await api.delete(`/api/connections/${id}`);
-        fetchConnections();
+        await deleteConnection.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete connection:', error);
       }
     }
   };
+
+  if (error) {
+    return <div className="p-8 text-center text-error">Failed to load connections</div>;
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -54,7 +33,7 @@ export default function ConnectionList() {
           <h1 className="text-2xl font-semibold text-text-primary">Connections</h1>
           <p className="text-text-secondary mt-1">Manage your database connections</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsFormOpen(true)}
           className="flex items-center gap-2 bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors font-medium"
         >
@@ -70,7 +49,7 @@ export default function ConnectionList() {
           <Database size={48} className="mx-auto text-text-secondary mb-4 opacity-50" />
           <h3 className="text-lg font-medium text-text-primary mb-2">No connections yet</h3>
           <p className="text-text-secondary mb-6">Create your first database connection to get started</p>
-          <button 
+          <button
             onClick={() => setIsFormOpen(true)}
             className="bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors font-medium"
           >
@@ -98,10 +77,10 @@ export default function ConnectionList() {
                   </button>
                 </div>
               </div>
-              
+
               <h3 className="font-medium text-text-primary mb-1">{conn.name}</h3>
               <div className="text-sm text-text-secondary flex flex-col gap-0.5">
-                <span>{conn.db_type} • {conn.host}</span>
+                <span>{conn.type} • {conn.host}</span>
                 <span>{conn.database}</span>
               </div>
             </div>
@@ -109,10 +88,10 @@ export default function ConnectionList() {
         </div>
       )}
 
-      <ConnectionForm 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
-        onSuccess={fetchConnections} 
+      <ConnectionForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={() => {/* Query invalidation handles refresh */ }}
       />
     </div>
   );

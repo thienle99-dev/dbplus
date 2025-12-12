@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { QueryResult } from '../../types';
 import { getCoreRowModel, useReactTable, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { EditableCell } from './EditableCell';
-import api from '../../services/api';
+import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 
 interface QueryResultsProps {
     result: QueryResult | null;
@@ -12,12 +12,16 @@ interface QueryResultsProps {
     connectionId: string;
 }
 
-
-
 export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, onRefresh, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
-    const [saving, setSaving] = useState(false);
     const [sorting, setSorting] = React.useState<SortingState>([]);
+
+    // Custom Hooks
+    const updateQueryResult = useUpdateQueryResult(connectionId);
+    const deleteQueryResult = useDeleteQueryResult(connectionId);
+
+    // Check if saving is in progress
+    const saving = updateQueryResult.isPending || deleteQueryResult.isPending;
 
     const hasEditableColumns = useMemo(() => {
         return result?.column_metadata?.some(c => c.is_editable) ?? false;
@@ -36,7 +40,6 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
     const handleSaveChanges = async () => {
         if (!result || !result.column_metadata) return;
 
-        setSaving(true);
         try {
             // Group edits by table if needed, but for now typical query is single table
             // We need to find the PK for the edited rows.
@@ -75,7 +78,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
             });
 
             // Better: Promise.all
-            await Promise.all(updates.map(u => api.patch(`/api/connections/${connectionId}/query-results`, u)));
+            await Promise.all(updates.map(u => updateQueryResult.mutateAsync(u)));
 
             setEdits({});
             if (onRefresh) onRefresh();
@@ -83,8 +86,6 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         } catch (err) {
             console.error("Failed to save changes", err);
             alert("Failed to save changes. Check console for details.");
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -128,7 +129,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         };
 
         try {
-            await api.delete(`/api/connections/${connectionId}/query-results`, { data: deleteRequest });
+            await deleteQueryResult.mutateAsync(deleteRequest);
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to delete row", err);
@@ -420,4 +421,3 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         </div>
     );
 };
-

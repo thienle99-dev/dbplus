@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Save, X, Plus, Info, Trash2, Code, Edit2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useSelectedRow } from '../context/SelectedRowContext';
 import { useTablePage } from '../context/TablePageContext';
-import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { LogViewer } from './LogViewer';
-import { TableColumn, QueryResult } from '../types';
+import { useColumns, useTableData } from '../hooks/useDatabase';
+import { useExecuteQuery } from '../hooks/useQuery';
+import { useQueryClient } from '@tanstack/react-query';
 
 type EditState = Record<number, Record<string, unknown>>;
 
@@ -21,95 +22,28 @@ export default function RightSidebar() {
   const { selectedRows: _selectedRows, toggleRowSelection: _toggleRowSelection, selectedRow, setSelectedRow, editingRowIndex, setEditingRowIndex } = useSelectedRow();
   const { connectionId, schema, table } = useParams();
   const { currentPage, pageSize } = useTablePage();
-  const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
-  const [data, setData] = useState<QueryResult | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const effectiveSchema = schema || selectedRow?.schema;
+  const effectiveTable = table || selectedRow?.table;
+  const offset = currentPage * pageSize;
+
+  const { data: columnsInfo = [] } = useColumns(connectionId, effectiveSchema, effectiveTable);
+  const { data, isLoading: loading } = useTableData(connectionId, effectiveSchema, effectiveTable, pageSize, offset);
+
+  const executeQuery = useExecuteQuery(connectionId);
+  const queryClient = useQueryClient();
+
   const [editingValues, setEditingValues] = useState<EditState>({});
-  const [saving, setSaving] = useState(false);
   const [showNewRow, setShowNewRow] = useState(false);
   const [newRowValues, setNewRowValues] = useState<Record<string, unknown>>({});
   const { showToast } = useToast();
-  const fetchingRef = useRef(false);
-  const fetchingColumnsRef = useRef(false);
-  const columnsCacheKeyRef = useRef<string>('');
   const [activeTab, setActiveTab] = useState<'details' | 'logs'>('details');
 
-  const fetchColumns = useCallback(async () => {
-    const effectiveSchema = schema || selectedRow?.schema;
-    const effectiveTable = table || selectedRow?.table;
-
-    if (!connectionId || !effectiveSchema || !effectiveTable || fetchingColumnsRef.current) return;
-    const cacheKey = `${connectionId}-${effectiveSchema}-${effectiveTable}`;
-    if (columnsCacheKeyRef.current === cacheKey) {
-      return;
-    }
-    fetchingColumnsRef.current = true;
-    columnsCacheKeyRef.current = cacheKey;
-    try {
-      const response = await api.get(
-        `/api/connections/${connectionId}/columns?schema=${effectiveSchema}&table=${effectiveTable}`
-      );
-      setColumnsInfo(response.data);
-    } catch (err) {
-      console.error('Failed to fetch columns:', err);
-      columnsCacheKeyRef.current = '';
-    } finally {
-      fetchingColumnsRef.current = false;
-    }
-  }, [connectionId, schema, table, selectedRow?.schema, selectedRow?.table]);
-
-  const fetchData = useCallback(async () => {
-    if (!connectionId || !schema || !table || fetchingRef.current) return;
-    fetchingRef.current = true;
-    try {
-      setLoading(true);
-      const offset = currentPage * pageSize;
-      const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`
-      );
-      setData(response.data);
-      setEditingValues({});
-      setEditingRowIndex(null);
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
-  }, [connectionId, schema, table, currentPage, pageSize]);
-
+  // Clear editing state when data changes (e.g. pagination)
   useEffect(() => {
-    const cacheKey = `${connectionId}-${schema}-${table}`;
-    if (columnsCacheKeyRef.current !== cacheKey) {
-      columnsCacheKeyRef.current = '';
-      setColumnsInfo([]);
-    }
-  }, [connectionId, schema, table]);
-
-  useEffect(() => {
-    // Get schema and table from URL params or selectedRow
-    const effectiveSchema = schema || selectedRow?.schema;
-    const effectiveTable = table || selectedRow?.table;
-
-    if (connectionId && effectiveSchema && effectiveTable) {
-      fetchColumns();
-      fetchData();
-    } else {
-      setColumnsInfo([]);
-      setData(null);
-      columnsCacheKeyRef.current = '';
-    }
-  }, [connectionId, schema, table, selectedRow?.schema, selectedRow?.table, currentPage, pageSize]);
-
-  useEffect(() => {
-    const handleRefresh = () => {
-      if (connectionId && schema && table) {
-        fetchData();
-      }
-    };
-    window.addEventListener('refresh-table-data', handleRefresh);
-    return () => window.removeEventListener('refresh-table-data', handleRefresh);
-  }, [connectionId, schema, table, currentPage, pageSize]);
+    setEditingValues({});
+    setEditingRowIndex(null);
+  }, [data]);
 
   useEffect(() => {
     sidebarWidthRef.current = sidebarWidth;
@@ -143,14 +77,6 @@ export default function RightSidebar() {
     }
   }, [isResizing]);
 
-  /*
-  const _getDisplayColumns = () => {
-    if (!columnsInfo.length || !data) return [];
-    // Show all columns for detailed view
-    return data.columns;
-  };
-  */
-
   const getRowPK = (rowIndex: number) => {
     if (!data || rowIndex < 0 || rowIndex >= data.rows.length) return null;
     const row = data.rows[rowIndex];
@@ -169,17 +95,6 @@ export default function RightSidebar() {
     });
     return pk;
   };
-
-  /*
-  const _handleRowClick = (_rowIndex: number) => {
-    if (!data) return;
-    setSelectedRow({
-      rowIndex: _rowIndex,
-      rowData: data.rows[_rowIndex],
-      columns: data.columns,
-    });
-  };
-  */
 
   const handleEdit = (rowIndex: number) => {
     if (!data) return;
@@ -215,13 +130,13 @@ export default function RightSidebar() {
     setNewRowValues(prev => ({
       ...prev,
       [columnName]: value,
+
     }));
   };
 
   const handleSave = async (rowIndex: number) => {
-    if (!connectionId || !schema || !table || !data) return;
+    if (!connectionId || !effectiveSchema || !effectiveTable || !data) return;
 
-    setSaving(true);
     try {
       const pk = getRowPK(rowIndex);
       if (!pk) {
@@ -255,8 +170,8 @@ export default function RightSidebar() {
         return `"${col}" = ${escapedVal}`;
       });
 
-      const query = `UPDATE "${schema}"."${table}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`;
-      await api.post(`/api/connections/${connectionId}/execute`, { query });
+      const query = `UPDATE "${effectiveSchema}"."${effectiveTable}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`;
+      await executeQuery.mutateAsync({ query });
       showToast('Record updated successfully', 'success');
       setEditingRowIndex(null);
       setEditingValues(prev => {
@@ -264,17 +179,16 @@ export default function RightSidebar() {
         delete newValues[rowIndex];
         return newValues;
       });
-      window.dispatchEvent(new Event('refresh-table-data'));
+      // Invalidate query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['tableData', connectionId, effectiveSchema, effectiveTable] });
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to save record';
       showToast(errorMessage, 'error');
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleDelete = async (rowIndex: number) => {
-    if (!connectionId || !schema || !table || !data) return;
+    if (!connectionId || !effectiveSchema || !effectiveTable || !data) return;
 
     const pk = getRowPK(rowIndex);
     if (!pk) {
@@ -284,27 +198,24 @@ export default function RightSidebar() {
 
     if (!confirm('Are you sure you want to delete this record?')) return;
 
-    setSaving(true);
     try {
       const whereClauses = Object.entries(pk).map(([col, val]) => {
         const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
         return `"${col}" = ${escapedVal}`;
       });
 
-      const query = `DELETE FROM "${schema}"."${table}" WHERE ${whereClauses.join(' AND ')};`;
-      await api.post(`/api/connections/${connectionId}/execute`, { query });
+      const query = `DELETE FROM "${effectiveSchema}"."${effectiveTable}" WHERE ${whereClauses.join(' AND ')};`;
+      await executeQuery.mutateAsync({ query });
       showToast('Record deleted successfully', 'success');
-      window.dispatchEvent(new Event('refresh-table-data'));
+      queryClient.invalidateQueries({ queryKey: ['tableData', connectionId, effectiveSchema, effectiveTable] });
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to delete record';
       showToast(errorMessage, 'error');
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleCreateNew = async () => {
-    if (!connectionId || !schema || !table) return;
+    if (!connectionId || !effectiveSchema || !effectiveTable) return;
 
     const columns = columnsInfo
       .filter(col => newRowValues[col.name] !== undefined && newRowValues[col.name] !== null && newRowValues[col.name] !== '')
@@ -316,7 +227,6 @@ export default function RightSidebar() {
       return;
     }
 
-    setSaving(true);
     try {
       const valueStrings = values.map(val => {
         if (val === null || val === undefined || val === '') return 'NULL';
@@ -326,21 +236,17 @@ export default function RightSidebar() {
         return val;
       });
 
-      const query = `INSERT INTO "${schema}"."${table}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${valueStrings.join(', ')});`;
-      await api.post(`/api/connections/${connectionId}/execute`, { query });
+      const query = `INSERT INTO "${effectiveSchema}"."${effectiveTable}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${valueStrings.join(', ')});`;
+      await executeQuery.mutateAsync({ query });
       showToast('Record created successfully', 'success');
       setShowNewRow(false);
       setNewRowValues({});
-      window.dispatchEvent(new Event('refresh-table-data'));
+      queryClient.invalidateQueries({ queryKey: ['tableData', connectionId, effectiveSchema, effectiveTable] });
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to create record';
       showToast(errorMessage, 'error');
-    } finally {
-      setSaving(false);
     }
   };
-
-
 
   if (!isOpen) {
     return (
@@ -422,7 +328,7 @@ export default function RightSidebar() {
                       <>
                         <button
                           onClick={() => handleSave(selectedRow.rowIndex)}
-                          disabled={saving}
+                          disabled={executeQuery.isPending}
                           className="p-0.5 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
                           title="Save changes"
                         >
@@ -430,7 +336,7 @@ export default function RightSidebar() {
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          disabled={saving}
+                          disabled={executeQuery.isPending}
                           className="p-0.5 text-text-secondary hover:bg-bg-2 rounded disabled:opacity-50"
                           title="Cancel editing"
                         >
@@ -448,7 +354,7 @@ export default function RightSidebar() {
                         </button>
                         <button
                           onClick={() => handleDelete(selectedRow.rowIndex)}
-                          disabled={saving}
+                          disabled={executeQuery.isPending}
                           className="p-0.5 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
                           title="Delete row"
                         >
@@ -558,7 +464,7 @@ export default function RightSidebar() {
                     <div className="flex gap-1 pt-1">
                       <button
                         onClick={handleCreateNew}
-                        disabled={saving}
+                        disabled={executeQuery.isPending}
                         className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-[10px] font-medium disabled:opacity-50"
                       >
                         <Save size={11} />
