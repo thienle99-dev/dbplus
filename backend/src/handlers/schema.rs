@@ -23,6 +23,17 @@ pub struct ColumnParams {
     table: String,
 }
 
+#[derive(Deserialize)]
+pub struct CreateSchemaRequest {
+    pub name: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct SchemaManagementResponse {
+    pub success: bool,
+    pub message: String,
+}
+
 pub async fn list_schemas(
     State(db): State<DatabaseConnection>,
     Path(connection_id): Path<Uuid>,
@@ -41,6 +52,70 @@ pub async fn list_schemas(
             tracing::error!("[API] GET /schemas - ERROR: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
+    }
+}
+
+pub async fn create_schema(
+    State(db): State<DatabaseConnection>,
+    Path(connection_id): Path<Uuid>,
+    Json(payload): Json<CreateSchemaRequest>,
+) -> impl IntoResponse {
+    let name = payload.name.trim();
+    if name.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(SchemaManagementResponse {
+                success: false,
+                message: "Schema name cannot be empty".to_string(),
+            }),
+        )
+            .into_response();
+    }
+    if name.len() > 63 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(SchemaManagementResponse {
+                success: false,
+                message: "Schema name is too long (max 63 chars)".to_string(),
+            }),
+        )
+            .into_response();
+    }
+
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service.create_schema(connection_id, name).await {
+        Ok(_) => (
+            StatusCode::CREATED,
+            Json(SchemaManagementResponse {
+                success: true,
+                message: format!("Schema '{}' created", name),
+            }),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(SchemaManagementResponse {
+                success: false,
+                message: e.to_string(),
+            }),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn drop_schema(
+    State(db): State<DatabaseConnection>,
+    Path((connection_id, name)): Path<(Uuid, String)>,
+) -> impl IntoResponse {
+    let name = name.trim().to_string();
+    if name.is_empty() {
+        return (StatusCode::BAD_REQUEST, "Schema name cannot be empty").into_response();
+    }
+
+    let service = ConnectionService::new(db).expect("Failed to create service");
+    match service.drop_schema(connection_id, &name).await {
+        Ok(_) => (StatusCode::NO_CONTENT, ()).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
     }
 }
 

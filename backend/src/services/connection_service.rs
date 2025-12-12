@@ -81,6 +81,56 @@ impl ConnectionService {
         }
     }
 
+    pub async fn create_database(&self, connection_id: Uuid, name: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new_for_test(&connection, &password).await?;
+                driver.create_database(name).await
+            }
+            "sqlite" => Err(anyhow::anyhow!(
+                "SQLite does not support creating separate databases via this API"
+            )),
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for create_database"
+            )),
+        }
+    }
+
+    pub async fn drop_database(&self, connection_id: Uuid, name: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new_for_test(&connection, &password).await?;
+                driver.drop_database(name).await
+            }
+            "sqlite" => Err(anyhow::anyhow!(
+                "SQLite does not support dropping databases via this API"
+            )),
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for drop_database"
+            )),
+        }
+    }
+
     pub async fn get_schemas(&self, connection_id: Uuid) -> Result<Vec<String>> {
         let connection = self
             .get_connection_by_id(connection_id)
@@ -103,6 +153,56 @@ impl ConnectionService {
                 driver.get_schemas().await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn create_schema(&self, connection_id: Uuid, name: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.create_schema(name).await
+            }
+            "sqlite" => Err(anyhow::anyhow!(
+                "SQLite does not support schemas via this API"
+            )),
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for create_schema"
+            )),
+        }
+    }
+
+    pub async fn drop_schema(&self, connection_id: Uuid, name: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.drop_schema(name).await
+            }
+            "sqlite" => Err(anyhow::anyhow!(
+                "SQLite does not support schemas via this API"
+            )),
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for drop_schema"
+            )),
         }
     }
 

@@ -39,9 +39,37 @@ Body: Same as Create Connection (without saving).
 
 ## Schema & Data
 
+### List Databases
+`GET /api/connections/:id/databases`
+Returns a list of database names.
+
+### Create Database (Postgres)
+`POST /api/connections/:id/databases`
+Body:
+```json
+{
+  "name": "my_new_db"
+}
+```
+
+### Drop Database (Postgres)
+`DELETE /api/connections/:id/databases/:name`
+
 ### Get Schemas
 `GET /api/connections/:id/schemas`
 Returns a list of schema names.
+
+### Create Schema (Postgres)
+`POST /api/connections/:id/schemas`
+Body:
+```json
+{
+  "name": "my_new_schema"
+}
+```
+
+### Drop Schema (Postgres)
+`DELETE /api/connections/:id/schemas/:name`
 
 ### Get Tables
 `GET /api/connections/:id/tables?schema=public`

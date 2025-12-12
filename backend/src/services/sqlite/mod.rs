@@ -19,6 +19,7 @@ use super::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
     TableOperations, ViewOperations,
 };
+use crate::services::driver::extension::DatabaseManagementDriver;
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -200,6 +201,29 @@ impl ViewOperations for SQLiteDriver {
         view_name: &str,
     ) -> Result<super::db_driver::ViewInfo> {
         self.view.get_view_definition(schema, view_name).await
+    }
+}
+
+#[async_trait]
+impl DatabaseManagementDriver for SQLiteDriver {
+    async fn create_database(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "SQLite does not support creating separate databases via this API"
+        ))
+    }
+
+    async fn drop_database(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "SQLite does not support dropping databases via this API"
+        ))
+    }
+
+    async fn create_schema(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!("SQLite does not support schemas via this API"))
+    }
+
+    async fn drop_schema(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!("SQLite does not support schemas via this API"))
     }
 }
 

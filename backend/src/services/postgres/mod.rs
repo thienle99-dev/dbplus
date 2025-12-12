@@ -19,6 +19,7 @@ use super::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
     TableOperations, ViewOperations,
 };
+use crate::services::driver::extension::DatabaseManagementDriver;
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -224,5 +225,63 @@ impl FunctionOperations for PostgresDriver {
         self.function
             .get_function_definition(schema, function_name)
             .await
+    }
+}
+
+fn quote_postgres_ident(name: &str) -> Result<String> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err(anyhow::anyhow!("Name cannot be empty"));
+    }
+    if trimmed.contains('\0') {
+        return Err(anyhow::anyhow!("Name cannot contain NUL character"));
+    }
+    Ok(format!("\"{}\"", trimmed.replace("\"", "\"\"")))
+}
+
+#[async_trait]
+impl DatabaseManagementDriver for PostgresDriver {
+    async fn create_database(&self, name: &str) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let sql = format!("CREATE DATABASE {}", ident);
+        client.execute(&sql, &[]).await?;
+        Ok(())
+    }
+
+    async fn drop_database(&self, name: &str) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let sql = format!("DROP DATABASE {}", ident);
+        client.execute(&sql, &[]).await.map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to drop database '{}': {}. Close active connections to that database and try again.",
+                name.trim(),
+                e
+            )
+        })?;
+        Ok(())
+    }
+
+    async fn create_schema(&self, name: &str) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let sql = format!("CREATE SCHEMA {}", ident);
+        client.execute(&sql, &[]).await?;
+        Ok(())
+    }
+
+    async fn drop_schema(&self, name: &str) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let sql = format!("DROP SCHEMA {}", ident);
+        client.execute(&sql, &[]).await.map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to drop schema '{}': {}. Ensure the schema is empty (or drop objects first) and try again.",
+                name.trim(),
+                e
+            )
+        })?;
+        Ok(())
     }
 }

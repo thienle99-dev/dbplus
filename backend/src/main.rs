@@ -77,11 +77,19 @@ async fn main() {
         )
         .route(
             "/api/connections/:id/databases",
-            get(handlers::database::list_databases),
+            get(handlers::database::list_databases).post(handlers::database::create_database),
+        )
+        .route(
+            "/api/connections/:id/databases/:name",
+            delete(handlers::database::drop_database),
         )
         .route(
             "/api/connections/:id/schemas",
-            get(handlers::schema::list_schemas),
+            get(handlers::schema::list_schemas).post(handlers::schema::create_schema),
+        )
+        .route(
+            "/api/connections/:id/schemas/:name",
+            delete(handlers::schema::drop_schema),
         )
         .route(
             "/api/connections/:id/schema-metadata",
