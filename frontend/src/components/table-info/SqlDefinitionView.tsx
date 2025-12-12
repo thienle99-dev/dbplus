@@ -18,11 +18,11 @@ interface SqlDefinitionViewProps {
 }
 
 export default function SqlDefinitionView({
-  schema,
-  table,
-  columns,
-  indexes,
-  constraints,
+  schema: _schema,
+  table: _table,
+  columns: _columns,
+  indexes: _indexes,
+  constraints: _constraints,
   sqlDefinition,
 }: SqlDefinitionViewProps) {
   const { showToast } = useToast();

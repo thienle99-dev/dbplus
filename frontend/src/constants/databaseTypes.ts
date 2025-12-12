@@ -1,4 +1,4 @@
-import { DatabaseType } from '../types/connections';
+import { DatabaseType } from '../types/database';
 
 export const DATABASE_TYPES: DatabaseType[] = [
   { id: 'postgres', name: 'PostgreSQL', abbreviation: 'Pg', color: 'bg-blue-600', isAvailable: true },

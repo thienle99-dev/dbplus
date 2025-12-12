@@ -7,7 +7,7 @@ interface EditableCellProps {
     isEditable: boolean;
 }
 
-export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, type, isEditable }) => {
+export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEditable }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);

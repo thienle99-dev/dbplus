@@ -438,4 +438,21 @@ impl QueryDriver for PostgresQuery {
             })
         }
     }
+
+    async fn explain(&self, query: &str, analyze: bool) -> Result<Value> {
+        let client = self.pool.get().await?;
+        let explain_query = if analyze {
+            format!("EXPLAIN (ANALYZE, FORMAT JSON) {}", query)
+        } else {
+            format!("EXPLAIN (FORMAT JSON) {}", query)
+        };
+        let rows = client.query(explain_query.as_str(), &[]).await?;
+
+        if !rows.is_empty() {
+            let plan_json: Value = rows[0].get(0);
+            Ok(plan_json)
+        } else {
+            Ok(Value::Null)
+        }
+    }
 }

@@ -1,6 +1,7 @@
 pub mod connection;
 pub mod dashboard;
 pub mod database;
+pub mod explain;
 pub mod history;
 pub mod query;
 pub mod result_edit;

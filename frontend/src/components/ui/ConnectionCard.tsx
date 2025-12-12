@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import { Database, ChevronRight } from 'lucide-react';
 
 export interface ConnectionCardProps {

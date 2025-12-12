@@ -98,4 +98,22 @@ impl QueryDriver for SQLiteQuery {
             })
         }
     }
+
+    async fn explain(&self, query: &str, _analyze: bool) -> Result<Value> {
+        let explain_query = format!("EXPLAIN QUERY PLAN {}", query);
+        let result = self.query(&explain_query).await?;
+
+        let mut plan = Vec::new();
+        for row in result.rows {
+            let mut node = serde_json::Map::new();
+            for (i, col) in result.columns.iter().enumerate() {
+                if let Some(val) = row.get(i) {
+                    node.insert(col.clone(), val.clone());
+                }
+            }
+            plan.push(Value::Object(node));
+        }
+
+        Ok(Value::Array(plan))
+    }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import { TableColumn, ColumnModalProps } from '../types';
+import { ColumnModalProps } from '../types';
 import Select from './ui/Select';
 
 export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode }: ColumnModalProps) {

@@ -85,6 +85,10 @@ impl QueryDriver for SQLiteDriver {
     async fn execute_query(&self, query: &str) -> Result<QueryResult> {
         self.query.execute_query(query).await
     }
+
+    async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {
+        self.query.explain(query, analyze).await
+    }
 }
 
 #[async_trait]

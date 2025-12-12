@@ -118,7 +118,8 @@ export function BottomPanel({ }: BottomPanelProps) {
 }
 
 // Structure Tab Component
-function StructureTab({ connectionId, schema, table }: { connectionId?: string; schema?: string; table?: string }) {
+/*
+function _StructureTab({ connectionId, schema, table }: { connectionId?: string; schema?: string; table?: string }) {
     return (
         <div className="p-2" key={connectionId}>
             <div className="text-xs text-text-secondary mb-2">
@@ -130,3 +131,4 @@ function StructureTab({ connectionId, schema, table }: { connectionId?: string; 
         </div>
     );
 }
+*/

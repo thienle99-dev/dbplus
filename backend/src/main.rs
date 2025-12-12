@@ -108,6 +108,10 @@ async fn main() {
             post(handlers::query::execute_query),
         )
         .route(
+            "/api/connections/:id/explain",
+            post(handlers::explain::explain_query),
+        )
+        .route(
             "/api/connections/:id/saved-queries",
             get(handlers::saved_query::list_saved_queries)
                 .post(handlers::saved_query::create_saved_query),

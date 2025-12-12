@@ -100,7 +100,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         try {
             const newConnection = await connectionApi.create({
                 name: connectionData.name,
-                type: connectionData.type,
+                type: connectionData.type as any,
                 host: connectionData.host,
                 port: connectionData.port,
                 database: connectionData.database,
@@ -138,7 +138,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         try {
             const result = await connectionApi.testDetails({
                 name: connectionData.name,
-                type: connectionData.type,
+                type: connectionData.type as any,
                 host: connectionData.host,
                 port: connectionData.port,
                 database: connectionData.database,

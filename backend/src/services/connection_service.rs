@@ -625,4 +625,34 @@ impl ConnectionService {
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
+
+    pub async fn explain_query(
+        &self,
+        connection_id: Uuid,
+        query: &str,
+        analyze: bool,
+    ) -> Result<serde_json::Value> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        use crate::services::sqlite::SQLiteDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.explain(query, analyze).await
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&connection, &password).await?;
+                driver.explain(query, analyze).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
 }

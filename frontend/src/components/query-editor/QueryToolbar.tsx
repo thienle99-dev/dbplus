@@ -1,9 +1,11 @@
 import React from 'react';
-import { Play, Save, Eraser, Book } from 'lucide-react';
+import { Play, Save, Eraser, Book, ChevronDown } from 'lucide-react';
 
 
 interface QueryToolbarProps {
     onExecute: () => void;
+    onExplain: () => void;
+    onExplainAnalyze: () => void;
     onSave: () => void;
     onClear: () => void;
     onOpenSnippets: () => void;
@@ -17,6 +19,8 @@ interface QueryToolbarProps {
 
 export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     onExecute,
+    onExplain,
+    onExplainAnalyze,
     onSave,
     onClear,
     onOpenSnippets,
@@ -27,6 +31,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     queryName,
     isDraft
 }) => {
+    const [isExplainMenuOpen, setIsExplainMenuOpen] = React.useState(false);
     return (
         <div className="h-10 px-3 border-b border-border bg-bg-0/50 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
             <div className="flex items-center gap-2">
@@ -40,6 +45,55 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     <span>{loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}</span>
                     <div className="absolute inset-0 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
+
+                <div className="relative">
+                    <div className="flex rounded-md shadow-sm">
+                        <button
+                            onClick={onExplain}
+                            disabled={loading || !queryTrimmed}
+                            className="group relative flex items-center gap-1.5 bg-bg-2 hover:bg-bg-3 border border-r-0 border-border text-text-primary px-3 py-1.5 rounded-l-md text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+                            title="Explain query execution plan (Cmd/Ctrl+E)"
+                        >
+                            <div className="text-[10px] font-mono border border-text-secondary/50 text-text-secondary rounded px-0.5">EX</div>
+                            <span>Explain</span>
+                        </button>
+                        <button
+                            disabled={loading || !queryTrimmed}
+                            className="group relative flex items-center bg-bg-2 hover:bg-bg-3 border border-l-0 border-border text-text-primary px-1.5 py-1.5 rounded-r-md text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                            title="More explain options"
+                            onClick={() => setIsExplainMenuOpen(!isExplainMenuOpen)}
+                        >
+                            <ChevronDown size={14} />
+                        </button>
+                    </div>
+
+                    {isExplainMenuOpen && (
+                        <>
+                            <div className="fixed inset-0 z-30" onClick={() => setIsExplainMenuOpen(false)} />
+                            <div className="absolute top-full left-0 mt-1 w-40 bg-bg-1 border border-border rounded-md shadow-lg z-40 py-1">
+                                <button
+                                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
+                                    onClick={() => {
+                                        onExplain();
+                                        setIsExplainMenuOpen(false);
+                                    }}
+                                >
+                                    <span>Explain</span>
+                                </button>
+                                <button
+                                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
+                                    onClick={() => {
+                                        onExplainAnalyze();
+                                        setIsExplainMenuOpen(false);
+                                    }}
+                                    title="Run Explain Analyze (Cmd/Ctrl+Shift+E)"
+                                >
+                                    <span>Explain Analyze</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 <div className="w-px h-4 bg-border mx-1" />
 

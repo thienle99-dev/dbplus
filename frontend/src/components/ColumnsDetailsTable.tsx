@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Edit2, Trash2 } from 'lucide-react';
-import { TableColumn, ForeignKey } from '../types';
+import { TableColumn } from '../types';
 import ColumnModal from './ColumnModal';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';

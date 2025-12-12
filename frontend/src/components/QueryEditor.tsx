@@ -16,6 +16,7 @@ import { useToast } from '../context/ToastContext';
 import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
 import VisualQueryBuilder from './VisualQueryBuilder';
+import ExecutionPlanView from './ExecutionPlanView';
 import api from '../services/api';
 import {
   QueryToolbar,
@@ -66,7 +67,7 @@ export default function QueryEditor({
 
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
-  const { execute, handleFormat, result, loading, error, setResult } = useQueryExecution(query, setQuery);
+  const { execute, handleFormat, result, loading, error } = useQueryExecution(query, setQuery);
 
   // Update query when initialSql changes
   useEffect(() => {
@@ -87,6 +88,42 @@ export default function QueryEditor({
     }, 500);
     return () => clearTimeout(timeoutId);
   }, [query, visualState, isDraft, savedQueryId, onQueryChange]);
+
+  // Explain State
+  const [executionPlan, setExecutionPlan] = useState<any>(null);
+  const [explaining, setExplaining] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
+  const [bottomTab, setBottomTab] = useState<'results' | 'plan'>('results');
+
+  const handleExplain = useCallback(async (analyze: boolean = false) => {
+    let sqlToRun = query;
+    if (editorView) {
+      const selection = editorView.state.selection.main;
+      if (!selection.empty) {
+        sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
+      }
+    }
+
+    if (!sqlToRun.trim() || !connectionId) return;
+
+    setExplaining(true);
+    setExplainError(null);
+    setExecutionPlan(null);
+    setBottomTab('plan'); // Switch to plan tab
+
+    try {
+      const response = await api.post(`/api/connections/${connectionId}/explain`, {
+        sql: sqlToRun,
+        analyze
+      });
+      setExecutionPlan(response.data.plan);
+    } catch (err: any) {
+      console.error('Explain error:', err);
+      setExplainError(err.message || 'Failed to explain query');
+    } finally {
+      setExplaining(false);
+    }
+  }, [query, editorView, connectionId]);
 
   const isDangerousQuery = useCallback((sql: string) => {
     const dangerousKeywords = /\b(DROP|DELETE|TRUNCATE|UPDATE|ALTER)\b/i;
@@ -119,6 +156,7 @@ export default function QueryEditor({
       return;
     }
 
+    setBottomTab('results'); // Switch to results on execute
     execute(sqlToRun);
   }, [query, isDangerousQuery, execute, editorView, showToast]);
 
@@ -137,6 +175,7 @@ export default function QueryEditor({
         setPendingQuery(sqlToRun);
         setIsConfirmationOpen(true);
       } else {
+        setBottomTab('results'); // Switch to results on execute
         execute(sqlToRun);
       }
       return true;
@@ -219,6 +258,15 @@ export default function QueryEditor({
         },
         preventDefault: true
       },
+      // Explain query
+      {
+        key: "Mod-e",
+        run: () => {
+          handleExplain(false);
+          return true;
+        },
+        preventDefault: true
+      },
       // Expand star
       {
         key: "Mod-i",
@@ -249,11 +297,11 @@ export default function QueryEditor({
         },
         preventDefault: true
       },
-      // NEW: Execute selection
+      // Explain Analyze
       {
         key: "Mod-Shift-e",
         run: () => {
-          handleExecuteSelection();
+          handleExplain(true);
           return true;
         },
         preventDefault: true
@@ -283,7 +331,7 @@ export default function QueryEditor({
         preventDefault: true
       }
     ]))
-  ], [extensions, handleExecuteRequest, handleExpandStar, handleExecuteSelection]);
+  ], [extensions, handleExecuteRequest, handleExpandStar, handleExecuteSelection, handleExplain]);
 
   // Shortcuts
   useEffect(() => {
@@ -350,6 +398,8 @@ export default function QueryEditor({
 
       <QueryToolbar
         onExecute={handleExecuteRequest}
+        onExplain={() => handleExplain(false)}
+        onExplainAnalyze={() => handleExplain(true)}
         onSave={() => {
           if (savedQueryId) {
             handleQuickSave();
@@ -359,7 +409,7 @@ export default function QueryEditor({
         }}
         onClear={() => setQuery('')}
         onOpenSnippets={() => setIsSnippetLibraryOpen(true)}
-        loading={loading}
+        loading={loading || explaining}
         queryTrimmed={query.trim()}
         hasSelection={hasSelection}
         savedQueryId={savedQueryId}
@@ -367,7 +417,7 @@ export default function QueryEditor({
         isDraft={isDraft}
       />
 
-      <div className="h-[300px] border-b border-border flex flex-col">
+      <div className="h-[300px] border-b border-border flex flex-col shrink-0">
         <div className="flex-1 overflow-hidden flex relative">
           {mode === 'sql' ? (
             <CodeMirror
@@ -404,12 +454,46 @@ export default function QueryEditor({
         />
       </div>
 
-      <QueryResults
-        result={result}
-        loading={loading}
-        error={error}
-        connectionId={connectionId || ''}
-      />
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center border-b border-border bg-bg-1">
+          <button
+            onClick={() => setBottomTab('results')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'results'
+              ? 'border-accent text-text-primary bg-bg-2'
+              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+              }`}
+          >
+            Results
+          </button>
+          <button
+            onClick={() => setBottomTab('plan')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'plan'
+              ? 'border-accent text-text-primary bg-bg-2'
+              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+              }`}
+          >
+            Execution Plan
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-hidden relative">
+          <div className={`absolute inset-0 flex flex-col ${bottomTab === 'results' ? 'z-10' : 'z-0 invisible'}`}>
+            <QueryResults
+              result={result}
+              loading={loading}
+              error={error}
+              connectionId={connectionId || ''}
+            />
+          </div>
+          <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>
+            <ExecutionPlanView
+              plan={executionPlan}
+              loading={explaining}
+              error={explainError}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,11 +1,4 @@
-export interface DatabaseType {
-  id: string;
-  name: string;
-  abbreviation: string;
-  color: string;
-  isAvailable: boolean;
-}
-
+// DatabaseType removed to avoid conflict with database.ts
 export interface DatabaseSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;

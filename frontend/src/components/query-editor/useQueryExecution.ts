@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { format as formatSql } from 'sql-formatter';
 import { useToast } from '../../context/ToastContext';

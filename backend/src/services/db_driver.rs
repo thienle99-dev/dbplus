@@ -174,6 +174,7 @@ pub trait DatabaseDriver:
         schema: &str,
         function_name: &str,
     ) -> Result<FunctionInfo>;
+    async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value>;
 }
 
 #[async_trait]
@@ -283,6 +284,10 @@ where
         function_name: &str,
     ) -> Result<FunctionInfo> {
         <Self as FunctionOperations>::get_function_definition(self, schema, function_name).await
+    }
+
+    async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {
+        <Self as QueryDriver>::explain(self, query, analyze).await
     }
 }
 

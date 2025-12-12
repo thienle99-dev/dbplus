@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { QueryResult, ColumnMetadata } from '../../types';
+import { QueryResult } from '../../types';
 import { getCoreRowModel, useReactTable, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { EditableCell } from './EditableCell';
 import api from '../../services/api';

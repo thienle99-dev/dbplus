@@ -6,8 +6,8 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { Save, X, RefreshCw, Plus } from 'lucide-react';
-import api from '../../services/api';
-import { useToast } from '../../context/ToastContext';
+// import api from '../../services/api';
+// import { useToast } from '../../context/ToastContext';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState } from '../../types';
@@ -34,11 +34,11 @@ interface TableDataTabProps {
 }
 
 export default function TableDataTab({
-  connectionId,
+  // connectionId,
   schema,
   table,
   data,
-  columnsInfo,
+  columnsInfo: _columnsInfo,
   edits,
   isAddingRow,
   newRowData,
@@ -54,22 +54,11 @@ export default function TableDataTab({
   onRefresh,
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
-  const { showToast } = useToast();
+  // const { showToast } = useToast();
   const { setSelectedRow } = useSelectedRow();
 
-  const getRowPK = (row: unknown[]) => {
-    const pkIndices = columnsInfo
-      .map((col, idx) => col.is_primary_key ? idx : -1)
-      .filter(idx => idx !== -1);
 
-    if (pkIndices.length === 0) return null;
 
-    const pk: Record<string, any> = {};
-    pkIndices.forEach(idx => {
-      pk[columnsInfo[idx].name] = row[idx];
-    });
-    return pk;
-  };
 
   const columns = useMemo(() => {
     if (!data?.columns) return [];

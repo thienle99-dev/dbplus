@@ -18,7 +18,7 @@ export default function RightSidebar() {
   });
   const [isResizing, setIsResizing] = useState(false);
   const sidebarWidthRef = useRef(sidebarWidth);
-  const { selectedRows, toggleRowSelection, selectedRow, setSelectedRow, editingRowIndex, setEditingRowIndex } = useSelectedRow();
+  const { selectedRows: _selectedRows, toggleRowSelection: _toggleRowSelection, selectedRow, setSelectedRow, editingRowIndex, setEditingRowIndex } = useSelectedRow();
   const { connectionId, schema, table } = useParams();
   const { currentPage, pageSize } = useTablePage();
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
@@ -143,11 +143,13 @@ export default function RightSidebar() {
     }
   }, [isResizing]);
 
-  const getDisplayColumns = () => {
+  /*
+  const _getDisplayColumns = () => {
     if (!columnsInfo.length || !data) return [];
     // Show all columns for detailed view
     return data.columns;
   };
+  */
 
   const getRowPK = (rowIndex: number) => {
     if (!data || rowIndex < 0 || rowIndex >= data.rows.length) return null;
@@ -168,14 +170,16 @@ export default function RightSidebar() {
     return pk;
   };
 
-  const handleRowClick = (rowIndex: number) => {
+  /*
+  const _handleRowClick = (_rowIndex: number) => {
     if (!data) return;
     setSelectedRow({
-      rowIndex,
-      rowData: data.rows[rowIndex],
+      rowIndex: _rowIndex,
+      rowData: data.rows[_rowIndex],
       columns: data.columns,
     });
   };
+  */
 
   const handleEdit = (rowIndex: number) => {
     if (!data) return;
@@ -336,9 +340,7 @@ export default function RightSidebar() {
     }
   };
 
-  const displayColumns = getDisplayColumns();
-  const isRowSelected = (rowIndex: number) => selectedRow?.rowIndex === rowIndex;
-  const isRowEditing = (rowIndex: number) => editingRowIndex === rowIndex;
+
 
   if (!isOpen) {
     return (

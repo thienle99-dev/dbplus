@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Button,
     Input,
@@ -85,7 +85,7 @@ export default function DesignSystemShowcase() {
                             label="Database Name"
                             placeholder="Enter database name..."
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
                         />
 
                         <Input

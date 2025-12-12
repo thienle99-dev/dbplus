@@ -19,7 +19,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
+  const { currentPage: page, pageSize } = useTablePage();
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
