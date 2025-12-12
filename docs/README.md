@@ -5,7 +5,14 @@ This folder contains implementation documentation and guides for the dbplus proj
 ## Contents
 
 - **keyboard-shortcuts.md** - Guide for advanced keyboard shortcuts in the query editor
-- **QUERY_EDITOR_ROADMAP.md** - Feature roadmap for query editor enhancements (in project root)
+- **QUERY_EDITOR_ROADMAP.md** - Feature roadmap for query editor enhancements
+- **API.md** - API documentation
+- **DESIGN_SYSTEM.md** - UI Design System documentation
+- **DESIGN_SYSTEM_GRUVBOX.md** - Gruvbox theme documentation
+- **POSTGRES_TYPE_FIX.md** - Documentation on Postgres numeric type fix
+- **git-push-fix.md** - Git push troubleshooting guide
+- **task.md** - Project tasks
+- **Other implementation plans and fix logs**
 
 ## Recent Implementations
 
