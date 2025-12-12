@@ -1,6 +1,7 @@
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -18,6 +19,7 @@ pub struct TableParams {
 // Get table constraints (foreign keys, check constraints, unique constraints)
 pub async fn get_table_constraints(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
 ) -> impl IntoResponse {
@@ -28,7 +30,9 @@ pub async fn get_table_constraints(
         params.table
     );
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_table_constraints(connection_id, &params.schema, &params.table)
         .await
@@ -52,6 +56,7 @@ pub async fn get_table_constraints(
 // Get table statistics (row count, sizes, timestamps)
 pub async fn get_table_statistics(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
 ) -> impl IntoResponse {
@@ -62,7 +67,9 @@ pub async fn get_table_statistics(
         params.table
     );
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_table_statistics(connection_id, &params.schema, &params.table)
         .await
@@ -85,6 +92,7 @@ pub async fn get_table_statistics(
 // Get table indexes
 pub async fn get_table_indexes(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
 ) -> impl IntoResponse {
@@ -95,7 +103,9 @@ pub async fn get_table_indexes(
         params.table
     );
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_table_indexes(connection_id, &params.schema, &params.table)
         .await

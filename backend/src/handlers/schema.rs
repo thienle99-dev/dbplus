@@ -1,6 +1,7 @@
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -36,10 +37,13 @@ pub struct SchemaManagementResponse {
 
 pub async fn list_schemas(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
 ) -> impl IntoResponse {
     tracing::info!("[API] GET /schemas - connection_id: {}", connection_id);
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.get_schemas(connection_id).await {
         Ok(schemas) => {
             tracing::info!(
@@ -57,6 +61,7 @@ pub async fn list_schemas(
 
 pub async fn create_schema(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateSchemaRequest>,
 ) -> impl IntoResponse {
@@ -82,7 +87,9 @@ pub async fn create_schema(
             .into_response();
     }
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.create_schema(connection_id, name).await {
         Ok(_) => (
             StatusCode::CREATED,
@@ -105,6 +112,7 @@ pub async fn create_schema(
 
 pub async fn drop_schema(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path((connection_id, name)): Path<(Uuid, String)>,
 ) -> impl IntoResponse {
     let name = name.trim().to_string();
@@ -112,7 +120,9 @@ pub async fn drop_schema(
         return (StatusCode::BAD_REQUEST, "Schema name cannot be empty").into_response();
     }
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.drop_schema(connection_id, &name).await {
         Ok(_) => (StatusCode::NO_CONTENT, ()).into_response(),
         Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
@@ -121,6 +131,7 @@ pub async fn drop_schema(
 
 pub async fn list_schema_metadata(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
 ) -> impl IntoResponse {
@@ -129,7 +140,9 @@ pub async fn list_schema_metadata(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_schema_metadata(connection_id, &params.schema)
         .await
@@ -150,6 +163,7 @@ pub async fn list_schema_metadata(
 
 pub async fn list_tables(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
 ) -> impl IntoResponse {
@@ -158,7 +172,9 @@ pub async fn list_tables(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.get_tables(connection_id, &params.schema).await {
         Ok(tables) => {
             tracing::info!(
@@ -176,6 +192,7 @@ pub async fn list_tables(
 
 pub async fn list_columns(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ColumnParams>,
 ) -> impl IntoResponse {
@@ -185,7 +202,9 @@ pub async fn list_columns(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_columns(connection_id, &params.schema, &params.table)
         .await
@@ -214,6 +233,7 @@ pub struct TableDataParams {
 
 pub async fn get_table_data(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableDataParams>,
 ) -> impl IntoResponse {
@@ -228,7 +248,9 @@ pub async fn get_table_data(
         offset
     );
 
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
 
     match service
         .get_table_data(connection_id, &params.schema, &params.table, limit, offset)
@@ -258,6 +280,7 @@ pub struct AddColumnParams {
 
 pub async fn add_column(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<AddColumnParams>,
     Json(column_def): Json<ColumnDefinition>,
@@ -269,7 +292,9 @@ pub async fn add_column(
         params.table,
         column_def.name
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .add_column(connection_id, &params.schema, &params.table, &column_def)
         .await
@@ -300,6 +325,7 @@ pub struct AlterColumnParams {
 
 pub async fn alter_column(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path((connection_id, column_name)): Path<(Uuid, String)>,
     Query(params): Query<AlterColumnParams>,
     Json(column_def): Json<ColumnDefinition>,
@@ -311,7 +337,9 @@ pub async fn alter_column(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .alter_column(
             connection_id,
@@ -344,6 +372,7 @@ pub async fn alter_column(
 
 pub async fn drop_column(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path((connection_id, column_name)): Path<(Uuid, String)>,
     Query(params): Query<ColumnParams>,
 ) -> impl IntoResponse {
@@ -354,7 +383,9 @@ pub async fn drop_column(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .drop_column(connection_id, &params.schema, &params.table, &column_name)
         .await
@@ -392,6 +423,7 @@ pub struct ViewDefinitionParams {
 
 pub async fn list_views(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ViewParams>,
 ) -> impl IntoResponse {
@@ -400,7 +432,9 @@ pub async fn list_views(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.list_views(connection_id, &params.schema).await {
         Ok(views) => {
             tracing::info!("[API] GET /views - SUCCESS - found {} views", views.len());
@@ -415,6 +449,7 @@ pub async fn list_views(
 
 pub async fn get_view_definition(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ViewDefinitionParams>,
 ) -> impl IntoResponse {
@@ -424,7 +459,9 @@ pub async fn get_view_definition(
         params.schema,
         params.view
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_view_definition(connection_id, &params.schema, &params.view)
         .await
@@ -453,6 +490,7 @@ pub struct FunctionDefinitionParams {
 
 pub async fn list_functions(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<FunctionParams>,
 ) -> impl IntoResponse {
@@ -461,7 +499,9 @@ pub async fn list_functions(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service.list_functions(connection_id, &params.schema).await {
         Ok(functions) => {
             tracing::info!(
@@ -479,6 +519,7 @@ pub async fn list_functions(
 
 pub async fn get_function_definition(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<FunctionDefinitionParams>,
 ) -> impl IntoResponse {
@@ -488,7 +529,9 @@ pub async fn get_function_definition(
         params.schema,
         params.function
     );
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     match service
         .get_function_definition(connection_id, &params.schema, &params.function)
         .await

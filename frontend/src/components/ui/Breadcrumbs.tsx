@@ -1,13 +1,20 @@
 import { useLocation, useParams, Link } from 'react-router-dom';
 import { ChevronRight, Home, Database } from 'lucide-react';
 import { useConnectionStore } from '../../store/connectionStore';
+import { useWorkspaceTabsStore } from '../../store/workspaceTabsStore';
 
 export default function Breadcrumbs() {
     const { connectionId, schema, table } = useParams();
     const location = useLocation();
     const { connections } = useConnectionStore();
+    const { tabs, activeTabId } = useWorkspaceTabsStore();
 
     const connection = connections.find(c => c.id === connectionId);
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    const displayedDatabase =
+        activeTab && activeTab.connectionId === connectionId && activeTab.database
+            ? activeTab.database
+            : connection?.database;
     const isQueryPage = location.pathname.includes('/query');
     const isDashboardPage = location.pathname.includes('/dashboards');
 
@@ -27,7 +34,7 @@ export default function Breadcrumbs() {
                 </span>
                 <span className="font-medium">{connection.name}</span>
                 <span className="text-border">|</span>
-                <span className="text-xs">{connection.database}</span>
+                <span className="text-xs">{displayedDatabase}</span>
             </div>
 
             {isQueryPage && (

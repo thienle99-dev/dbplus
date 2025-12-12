@@ -9,13 +9,33 @@ use uuid::Uuid;
 pub struct ConnectionService {
     db: DatabaseConnection,
     encryption: EncryptionService,
+    database_override: Option<String>,
 }
 
 impl ConnectionService {
     /// Creates a new instance of ConnectionService with encryption support.
     pub fn new(db: DatabaseConnection) -> Result<Self> {
         let encryption = EncryptionService::new()?;
-        Ok(Self { db, encryption })
+        Ok(Self {
+            db,
+            encryption,
+            database_override: None,
+        })
+    }
+
+    pub fn with_database_override(mut self, database: Option<String>) -> Self {
+        self.database_override = database;
+        self
+    }
+
+    fn apply_database_override(&self, mut connection: connection::Model) -> connection::Model {
+        if let Some(db) = &self.database_override {
+            let db = db.trim();
+            if !db.is_empty() {
+                connection.database = db.to_string();
+            }
+        }
+        connection
     }
 
     /// Retrieves all connections from the database.
@@ -142,6 +162,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -167,6 +188,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -192,6 +214,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -221,6 +244,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -251,6 +275,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -280,6 +305,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -312,6 +338,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -341,6 +368,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -393,6 +421,22 @@ impl ConnectionService {
             .map_err(|e| anyhow::anyhow!(e))
     }
 
+    pub async fn update_connection_database(&self, id: Uuid, database: String) -> Result<connection::Model> {
+        let mut active_model: connection::ActiveModel = Connection::find_by_id(id)
+            .one(&self.db)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?
+            .into();
+
+        active_model.database = Set(database);
+        active_model.updated_at = Set(Utc::now().into());
+
+        active_model
+            .update(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))
+    }
+
     pub async fn delete_connection(&self, id: Uuid) -> Result<DeleteResult, DbErr> {
         Connection::delete_by_id(id).exec(&self.db).await
     }
@@ -433,6 +477,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -463,6 +508,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -493,6 +539,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -523,6 +570,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -552,6 +600,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -584,6 +633,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -610,6 +660,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -637,6 +688,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -663,6 +715,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -690,6 +743,7 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
@@ -712,6 +766,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -742,6 +797,7 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;

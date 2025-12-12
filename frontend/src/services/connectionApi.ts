@@ -41,6 +41,11 @@ export const connectionApi = {
         return response.data;
     },
 
+    switchDatabase: async (id: string, database: string): Promise<Connection> => {
+        const response = await api.patch(`/api/connections/${id}/database`, { database });
+        return response.data;
+    },
+
     // Delete connection
     delete: async (id: string): Promise<void> => {
         await api.delete(`/api/connections/${id}`);

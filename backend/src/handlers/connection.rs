@@ -27,6 +27,11 @@ pub struct CreateConnectionRequest {
     pub ssl_cert: Option<String>,
 }
 
+#[derive(Deserialize)]
+pub struct SwitchDatabaseRequest {
+    pub database: String,
+}
+
 // List all connections
 pub async fn list_connections(State(db): State<DatabaseConnection>) -> impl IntoResponse {
     let service = match ConnectionService::new(db) {
@@ -148,6 +153,37 @@ pub async fn update_connection(
     };
 
     match service.update_connection(id, model).await {
+        Ok(connection) => (StatusCode::OK, Json(connection)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+// Switch database for a saved connection (without changing other fields)
+pub async fn switch_database(
+    State(db): State<DatabaseConnection>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<SwitchDatabaseRequest>,
+) -> impl IntoResponse {
+    let database = payload.database.trim().to_string();
+    if database.is_empty() {
+        return (StatusCode::BAD_REQUEST, "Database cannot be empty").into_response();
+    }
+    if database.len() > 63 {
+        return (StatusCode::BAD_REQUEST, "Database name is too long (max 63 chars)").into_response();
+    }
+
+    let service = match ConnectionService::new(db) {
+        Ok(service) => service,
+        Err(e) => {
+            tracing::error!("Failed to create ConnectionService: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to initialize service: {}", e)
+            ).into_response();
+        }
+    };
+
+    match service.update_connection_database(id, database).await {
         Ok(connection) => (StatusCode::OK, Json(connection)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }

@@ -1,19 +1,46 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Database, FileText, Clock, Settings, LogOut, Plus } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
 import SettingsModal from './SettingsModal';
 import { CommandPalette } from './CommandPalette';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
+import { useConnectionStore } from '../store/connectionStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { connectionId } = useParams();
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'items' | 'queries' | 'history'>('items');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const { tabs, activeTabId, ensureTabForRoute, setActiveTab: setActiveWorkspaceTab, closeTab, setTabLastPath } = useWorkspaceTabsStore();
+  const { connections, fetchConnections } = useConnectionStore();
+
+  useEffect(() => {
+    if (connections.length === 0) {
+      void fetchConnections();
+    }
+  }, [connections.length, fetchConnections]);
+
+  const connectionById = useMemo(() => {
+    const map = new Map<string, { name: string; database: string; type: string }>();
+    for (const c of connections) map.set(c.id, { name: c.name, database: c.database, type: c.type });
+    return map;
+  }, [connections]);
+
+  useEffect(() => {
+    if (!connectionId) return;
+    const defaultDb = connectionById.get(connectionId)?.database;
+    const path = location.pathname + location.search;
+    const id = ensureTabForRoute(connectionId, defaultDb, path);
+    setTabLastPath(id, path);
+  }, [connectionId, connectionById, ensureTabForRoute, location.pathname, location.search, setTabLastPath]);
 
   // Global Cmd+K listener
   useEffect(() => {
@@ -34,8 +61,70 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-bg-1 pb-[30px] border-r border-border flex flex-col h-screen flex-shrink-0">
+    <div className="w-64 bg-bg-1 pb-[30px] border-r border-border flex h-screen flex-shrink-0">
+      {/* Vertical Workspace Tabs Rail */}
+      <div className="w-[60px] border-r border-border bg-bg-1 flex flex-col">
+        <div className="flex-1 overflow-y-auto py-2 px-1 space-y-1">
+          {tabs.map((t) => {
+            const meta = connectionById.get(t.connectionId);
+            const label = meta ? `${meta.name}${t.database ? ` · ${t.database}` : ''}` : t.connectionId;
+            const isActive = t.id === activeTabId;
+            const tabText = (t.database || meta?.database || '').trim();
+            const badge = tabText ? tabText.slice(0, 2).toUpperCase() : 'DB';
+            return (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setActiveWorkspaceTab(t.id);
+                  navigate(t.lastPath || `/workspace/${t.connectionId}/query`);
+                  void Promise.all([
+                    queryClient.invalidateQueries({ queryKey: ['schemas', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['tables', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['columns', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['tableData', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['indexes', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['constraints', t.connectionId] }),
+                    queryClient.invalidateQueries({ queryKey: ['tableStats', t.connectionId] }),
+                  ]);
+                }}
+                className={`group relative w-full h-10 rounded border flex items-center justify-center text-[10px] font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-bg-2 border-accent text-text-primary'
+                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                }`}
+                title={label}
+              >
+                <span className="select-none">{badge}</span>
+                <span
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeTab(t.id);
+                  }}
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-bg-2 border border-border text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center leading-none"
+                  aria-label="Close tab"
+                  title="Close"
+                >
+                  ×
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
+        <div className="p-1 border-t border-border">
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="w-full h-10 rounded border border-border bg-bg-0 text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors text-sm"
+            title="Open connection/database (Cmd+K)"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* Main Sidebar Content */}
+      <div className="flex-1 flex flex-col min-w-0">
       {/* Search Header */}
       <div className="p-3 border-b border-border space-y-3">
         {/* Global Search Input */}
@@ -150,6 +239,7 @@ export default function Sidebar() {
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
       />
+      </div>
     </div>
   );
 }

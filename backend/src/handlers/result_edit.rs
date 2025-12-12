@@ -1,6 +1,7 @@
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, State},
+    http::HeaderMap,
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -27,6 +28,7 @@ pub struct DeleteRowRequest {
 
 pub async fn update_result_row(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<UpdateRowRequest>,
 ) -> impl IntoResponse {
@@ -41,7 +43,7 @@ pub async fn update_result_row(
 
     // Use ConnectionService
     let service = match ConnectionService::new(db.clone()) {
-        Ok(s) => s,
+        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(&headers)),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
@@ -117,6 +119,7 @@ fn escape_value(v: &Value) -> String {
 
 pub async fn delete_result_row(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<DeleteRowRequest>,
 ) -> impl IntoResponse {
@@ -127,7 +130,7 @@ pub async fn delete_result_row(
 
     // Use ConnectionService
     let service = match ConnectionService::new(db.clone()) {
-        Ok(s) => s,
+        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(&headers)),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 

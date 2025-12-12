@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useLogStore } from '../store/logStore';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 
 // Create axios instance
 // Use runtime check: if running on port 1420, we're in dev mode (Vite)
@@ -18,6 +19,14 @@ const api = axios.create({
 // Add interceptors for logging
 api.interceptors.request.use(
   (config) => {
+    const databaseOverride = useWorkspaceTabsStore.getState().activeDatabase();
+    if (databaseOverride) {
+      config.headers = config.headers ?? {};
+      (config.headers as any)['x-dbplus-database'] = databaseOverride;
+    } else if (config.headers && (config.headers as any)['x-dbplus-database']) {
+      delete (config.headers as any)['x-dbplus-database'];
+    }
+
     useLogStore.getState().addLog({
       type: 'request',
       method: config.method?.toUpperCase(),

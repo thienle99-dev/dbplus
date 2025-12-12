@@ -1,5 +1,6 @@
 use axum::{
     extract::{Path, State},
+    http::HeaderMap,
     http::StatusCode,
     Json,
 };
@@ -22,11 +23,13 @@ pub struct ExplainResponse {
 
 pub async fn explain_query(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<String>,
     Json(payload): Json<ExplainRequest>,
 ) -> Result<Json<ExplainResponse>, (StatusCode, String)> {
     let service = ConnectionService::new(db)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
     let connection_uuid = uuid::Uuid::parse_str(&connection_id)
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 

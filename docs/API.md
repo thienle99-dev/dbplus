@@ -30,6 +30,15 @@ Body:
 `PUT /api/connections/:id`
 Body: Same as Create Connection.
 
+### Switch Database (for a saved connection)
+`PATCH /api/connections/:id/database`
+Body:
+```json
+{
+  "database": "postgres"
+}
+```
+
 ### Delete Connection
 `DELETE /api/connections/:id`
 
@@ -38,6 +47,10 @@ Body: Same as Create Connection.
 Body: Same as Create Connection (without saving).
 
 ## Schema & Data
+
+### Database Override (Header)
+All connection-scoped endpoints support an optional header to run against a specific database:
+`x-dbplus-database: my_database`
 
 ### List Databases
 `GET /api/connections/:id/databases`

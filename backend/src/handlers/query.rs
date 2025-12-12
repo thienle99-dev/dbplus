@@ -1,6 +1,7 @@
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Json, Path, State},
+    http::HeaderMap,
     http::StatusCode,
     response::IntoResponse,
 };
@@ -15,10 +16,13 @@ pub struct ExecuteQueryParams {
 
 pub async fn execute_query(
     State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<ExecuteQueryParams>,
 ) -> impl IntoResponse {
-    let service = ConnectionService::new(db).expect("Failed to create service");
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
 
     match service.execute_query(connection_id, &payload.query).await {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),

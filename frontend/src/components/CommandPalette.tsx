@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Search, Database, ArrowRight, Plus } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { connectionApi } from '../services/connectionApi';
 import { useToast } from '../context/ToastContext';
 import CreateDatabaseModal from './connections/CreateDatabaseModal';
+import { useQueryClient } from '@tanstack/react-query';
+import { useConnectionStore } from '../store/connectionStore';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 
 interface CommandPaletteProps {
     isOpen: boolean;
@@ -11,6 +14,7 @@ interface CommandPaletteProps {
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
+    const navigate = useNavigate();
     const { connectionId } = useParams();
     const [searchTerm, setSearchTerm] = useState('');
     const [databases, setDatabases] = useState<string[]>([]);
@@ -19,6 +23,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     const [createDbOpen, setCreateDbOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
+    const queryClient = useQueryClient();
+    const { connections, fetchConnections } = useConnectionStore();
+    const { openTab, setTabLastPath } = useWorkspaceTabsStore();
 
     const refreshDatabases = async (id: string) => {
         setIsLoading(true);
@@ -44,10 +51,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         }
     }, [isOpen, connectionId]);
 
+    useEffect(() => {
+        if (isOpen && connections.length === 0) {
+            void fetchConnections();
+        }
+    }, [isOpen, connections.length, fetchConnections]);
+
     // Filter items
-    const filteredDatabases = databases.filter(db =>
-        db.toLowerCase().includes(searchTerm.toLowerCase())
+    const lowered = searchTerm.toLowerCase();
+    const filteredConnections = connections.filter((c) =>
+        `${c.name} ${c.host} ${c.database}`.toLowerCase().includes(lowered)
     );
+    const filteredDatabases = databases.filter((db) => db.toLowerCase().includes(lowered));
 
     // Keyboard navigation
     useEffect(() => {
@@ -76,9 +91,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     }, [isOpen, filteredDatabases, selectedIndex]);
 
     const handleSelect = (db: string) => {
-        // TODO: Implement actual database switching logic
-        // For now, allow the user to see it works
-        alert(`Switching to database: ${db} (Not implemented yet)`);
+        if (!connectionId) return;
+        const tabId = openTab(connectionId, db);
+        setTabLastPath(tabId, `/workspace/${connectionId}/query`);
+        void Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['tables', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['columns', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['tableData', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['indexes', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['constraints', connectionId] }),
+            queryClient.invalidateQueries({ queryKey: ['tableStats', connectionId] }),
+        ]);
+        showToast(`Opened database '${db}'`, 'success');
+        onClose();
+    };
+
+    const handleSelectConnection = (connectionIdToOpen: string) => {
+        const conn = connections.find((c) => c.id === connectionIdToOpen);
+        const tabId = openTab(connectionIdToOpen, conn?.database);
+        setTabLastPath(tabId, `/workspace/${connectionIdToOpen}/query`);
+        navigate(`/workspace/${connectionIdToOpen}/query`);
         onClose();
     };
 
@@ -115,27 +148,56 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                 <div className="max-h-[400px] overflow-y-auto p-2">
                     {isLoading ? (
                         <div className="text-center py-8 text-text-secondary">Loading databases...</div>
-                    ) : filteredDatabases.length > 0 ? (
-                        <div className="space-y-1">
-                            <div className="px-2 py-1 text-xs font-semibold text-text-secondary uppercase">Databases</div>
-                            {filteredDatabases.map((db, index) => (
-                                <button
-                                    key={db}
-                                    onClick={() => handleSelect(db)}
-                                    className={`w-full flex items-center justify-between px-3 py-2 rounded text-left transition-colors ${index === selectedIndex ? 'bg-accent text-white' : 'text-text-primary hover:bg-bg-2'
-                                        }`}
-                                    onMouseEnter={() => setSelectedIndex(index)}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Database size={16} className={index === selectedIndex ? 'text-white' : 'text-text-secondary'} />
-                                        <span>{db}</span>
-                                    </div>
-                                    {index === selectedIndex && <ArrowRight size={14} />}
-                                </button>
-                            ))}
-                        </div>
                     ) : (
-                        <div className="text-center py-8 text-text-secondary">No databases found</div>
+                        <div className="space-y-2">
+                            {filteredConnections.length > 0 && (
+                                <div className="space-y-1">
+                                    <div className="px-2 py-1 text-xs font-semibold text-text-secondary uppercase">Connections</div>
+                                    {filteredConnections.map((c) => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => handleSelectConnection(c.id)}
+                                            className="w-full flex items-center justify-between px-3 py-2 rounded text-left transition-colors text-text-primary hover:bg-bg-2"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-1 rounded">
+                                                    {c.type}
+                                                </span>
+                                                <span className="truncate">{c.name}</span>
+                                                <span className="text-text-secondary">·</span>
+                                                <span className="truncate text-text-secondary">{c.database}</span>
+                                            </div>
+                                            <ArrowRight size={14} className="text-text-secondary" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {connectionId && (
+                                <div className="space-y-1">
+                                    <div className="px-2 py-1 text-xs font-semibold text-text-secondary uppercase">Databases</div>
+                                    {filteredDatabases.length > 0 ? (
+                                        filteredDatabases.map((db, index) => (
+                                            <button
+                                                key={db}
+                                                onClick={() => handleSelect(db)}
+                                                className={`w-full flex items-center justify-between px-3 py-2 rounded text-left transition-colors ${index === selectedIndex ? 'bg-accent text-white' : 'text-text-primary hover:bg-bg-2'
+                                                    }`}
+                                                onMouseEnter={() => setSelectedIndex(index)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Database size={16} className={index === selectedIndex ? 'text-white' : 'text-text-secondary'} />
+                                                    <span>{db}</span>
+                                                </div>
+                                                {index === selectedIndex && <ArrowRight size={14} />}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-6 text-text-secondary">No databases found</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 
