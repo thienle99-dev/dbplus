@@ -1,8 +1,29 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { QueryResult } from '../../types';
-import { getCoreRowModel, useReactTable, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
+import {
+    getCoreRowModel,
+    useReactTable,
+    flexRender,
+    createColumnHelper,
+    getSortedRowModel,
+    SortingState,
+    RowSelectionState,
+} from '@tanstack/react-table';
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
+import { useToast } from '../../context/ToastContext';
+import {
+    buildExportFilename,
+    copyToClipboard,
+    DEFAULT_CSV_OPTIONS,
+    downloadTextFile,
+    EXCEL_CSV_OPTIONS,
+    toDelimitedText,
+    toExcelHtmlTable,
+    toInsertStatements,
+    toJsonObjects,
+    toJsonRows,
+} from '../../utils/queryResultExport';
 
 interface QueryResultsProps {
     result: QueryResult | null;
@@ -15,6 +36,10 @@ interface QueryResultsProps {
 export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, onRefresh, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+    const { showToast } = useToast();
 
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
@@ -137,100 +162,97 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         }
     };
 
-    // Export functions
-    const handleExportCSV = () => {
-        if (!result || result.rows.length === 0) return;
-
-        // Header
-        const header = result.columns.join(',');
-
-        // Rows
-        const rows = result.rows.map(row => {
-            return row.map(cell => {
-                if (cell === null) return '';
-                if (typeof cell === 'string') {
-                    // Escape quotes and wrap in quotes if contains comma
-                    const escaped = cell.replace(/"/g, '""');
-                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
-                        return `"${escaped}"`;
-                    }
-                    return cell;
-                }
-                return String(cell);
-            }).join(',');
-        }).join('\n');
-
-        const csvContent = `${header}\n${rows}`;
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `query_results_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const handleExportJSON = () => {
-        if (!result || result.rows.length === 0) return;
-
-        const data = result.rows.map(row => {
-            const obj: Record<string, any> = {};
-            result.columns.forEach((col, i) => {
-                obj[col] = row[i];
-            });
-            return obj;
-        });
-
-        const jsonContent = JSON.stringify(data, null, 2);
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `query_results_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    useEffect(() => {
+        if (!exportMenuOpen) return;
+        const onDocMouseDown = (e: MouseEvent) => {
+            if (!exportMenuRef.current) return;
+            if (!exportMenuRef.current.contains(e.target as Node)) setExportMenuOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setExportMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown);
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [exportMenuOpen]);
 
     const columns = useMemo(() => {
-        const baseColumns = (result?.columns.map((col, index) => {
-            const helper = createColumnHelper<unknown[]>();
-            const metadata = result.column_metadata ? result.column_metadata[index] : null;
-            const isEditable = metadata?.is_editable ?? false;
-
-            return helper.accessor((row) => row[index], {
-                id: col,
-                header: () => (
-                    <div className="flex items-center gap-1">
-                        {metadata?.is_primary_key && <span title="Primary Key" className="text-yellow-500">🔑</span>}
-                        {col}
-                    </div>
+        const helper = createColumnHelper<unknown[]>();
+        const baseColumns: any[] = [
+            helper.display({
+                id: '__select__',
+                header: ({ table }) => (
+                    <input
+                        type="checkbox"
+                        className="accent-[var(--color-primary-default)]"
+                        checked={table.getIsAllRowsSelected()}
+                        ref={(el) => {
+                            if (!el) return;
+                            el.indeterminate = table.getIsSomeRowsSelected();
+                        }}
+                        onChange={table.getToggleAllRowsSelectedHandler()}
+                        aria-label="Select all rows"
+                    />
                 ),
-                cell: (info) => {
-                    const rowIndex = info.row.index;
-                    const val = edits[rowIndex]?.[col] !== undefined ? edits[rowIndex][col] : info.getValue();
+                cell: ({ row }) => (
+                    <input
+                        type="checkbox"
+                        className="accent-[var(--color-primary-default)]"
+                        checked={row.getIsSelected()}
+                        disabled={!row.getCanSelect()}
+                        onChange={row.getToggleSelectedHandler()}
+                        aria-label="Select row"
+                    />
+                ),
+                size: 36,
+                enableSorting: false,
+                enableResizing: false,
+            }),
+        ];
 
-                    // Determine type from value or metadata? 
-                    // For now simple inference
-                    let type: 'string' | 'number' | 'boolean' | 'null' = 'string';
-                    if (val === null) type = 'null';
-                    else if (typeof val === 'number') type = 'number';
-                    else if (typeof val === 'boolean') type = 'boolean';
+        if (result?.columns?.length) {
+            baseColumns.push(
+                ...result.columns.map((col, index) => {
+                    const metadata = result.column_metadata ? result.column_metadata[index] : null;
+                    const isEditable = metadata?.is_editable ?? false;
 
-                    return (
-                        <EditableCell
-                            value={val}
-                            onSave={(newVal) => handleCellSave(rowIndex, col, newVal)}
-                            type={type as any}
-                            isEditable={isEditable}
-                        />
-                    );
-                }
-            });
-        }) || []) as any[];
+                    return helper.accessor((row) => row[index], {
+                        id: col,
+                        header: () => (
+                            <div className="flex items-center gap-1">
+                                {metadata?.is_primary_key && (
+                                    <span title="Primary Key" className="text-yellow-500">
+                                        🔑
+                                    </span>
+                                )}
+                                {col}
+                            </div>
+                        ),
+                        cell: (info) => {
+                            const rowIndex = info.row.index;
+                            const val = edits[rowIndex]?.[col] !== undefined ? edits[rowIndex][col] : info.getValue();
+
+                            let type: 'string' | 'number' | 'boolean' | 'null' = 'string';
+                            if (val === null) type = 'null';
+                            else if (typeof val === 'number') type = 'number';
+                            else if (typeof val === 'boolean') type = 'boolean';
+
+                            return (
+                                <EditableCell
+                                    value={val}
+                                    onSave={(newVal) => handleCellSave(rowIndex, col, newVal)}
+                                    type={type as any}
+                                    isEditable={isEditable}
+                                />
+                            );
+                        },
+                    });
+                })
+            );
+        }
 
         // Add Delete Action Column if editable
         if (hasEditableColumns) {
@@ -264,11 +286,144 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         columnResizeMode: 'onChange',
         state: {
             sorting,
+            rowSelection,
         },
         onSortingChange: setSorting,
+        onRowSelectionChange: setRowSelection,
+        enableRowSelection: true,
     });
 
     const pendingEditsCount = Object.keys(edits).length;
+    const selectedCount = useMemo(() => Object.keys(rowSelection).length, [rowSelection]);
+
+    const getExportRows = useCallback(() => {
+        if (!result) return [];
+        const selected = tableInstance.getSelectedRowModel().rows;
+        const source = selected.length > 0 ? selected : tableInstance.getRowModel().rows;
+        const colIndexByName = new Map<string, number>(result.columns.map((c, i) => [c, i]));
+
+        return source.map((r) => {
+            const original = (r.original || []) as any[];
+            const values = [...original];
+            const rowEdits = edits[r.index];
+            if (rowEdits) {
+                for (const [colName, newVal] of Object.entries(rowEdits)) {
+                    const idx = colIndexByName.get(colName);
+                    if (idx !== undefined) values[idx] = newVal;
+                }
+            }
+            return values;
+        });
+    }, [edits, result, tableInstance]);
+
+    const confirmLargeExport = useCallback((rowCount: number) => {
+        if (rowCount <= 10000) return true;
+        return window.confirm(`Exporting ${rowCount} rows may take a while and could freeze the UI. Continue?`);
+    }, []);
+
+    const handleDownloadCsv = useCallback(
+        (opts = DEFAULT_CSV_OPTIONS) => {
+            if (!result) return;
+            const rows = getExportRows();
+            if (rows.length === 0) return;
+            if (!confirmLargeExport(rows.length)) return;
+
+            const text = toDelimitedText(result.columns, rows, opts);
+            const filename = buildExportFilename(['query_results', connectionId], 'csv');
+            downloadTextFile(text, filename, 'text/csv;charset=utf-8;');
+            showToast('Exported CSV', 'success');
+        },
+        [confirmLargeExport, connectionId, getExportRows, result, showToast]
+    );
+
+    const handleDownloadTsvForExcel = useCallback(() => {
+        if (!result) return;
+        const rows = getExportRows();
+        if (rows.length === 0) return;
+        if (!confirmLargeExport(rows.length)) return;
+
+        const text = toDelimitedText(result.columns, rows, { ...EXCEL_CSV_OPTIONS, delimiter: '\t', quote: '"' });
+        const filename = buildExportFilename(['query_results', connectionId], 'tsv');
+        downloadTextFile(text, filename, 'text/tab-separated-values;charset=utf-8;');
+        showToast('Exported TSV (Excel-friendly)', 'success');
+    }, [confirmLargeExport, connectionId, getExportRows, result, showToast]);
+
+    const handleDownloadExcelXls = useCallback(() => {
+        if (!result) return;
+        const rows = getExportRows();
+        if (rows.length === 0) return;
+        if (!confirmLargeExport(rows.length)) return;
+
+        const html = toExcelHtmlTable(result.columns, rows, 'Results');
+        const filename = buildExportFilename(['query_results', connectionId], 'xls');
+        downloadTextFile(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+        showToast('Exported Excel (.xls)', 'success');
+    }, [confirmLargeExport, connectionId, getExportRows, result, showToast]);
+
+    const handleDownloadJson = useCallback(
+        (mode: 'objects' | 'rows' = 'objects', pretty = true) => {
+            if (!result) return;
+            const rows = getExportRows();
+            if (rows.length === 0) return;
+            if (!confirmLargeExport(rows.length)) return;
+
+            const text =
+                mode === 'objects' ? toJsonObjects(result.columns, rows, pretty) : toJsonRows(result.columns, rows, pretty);
+            const filename = buildExportFilename(['query_results', connectionId], 'json');
+            downloadTextFile(text, filename, 'application/json;charset=utf-8;');
+            showToast('Exported JSON', 'success');
+        },
+        [confirmLargeExport, connectionId, getExportRows, result, showToast]
+    );
+
+    const handleDownloadInsertSql = useCallback(() => {
+        if (!result) return;
+        const rows = getExportRows();
+        if (rows.length === 0) return;
+        if (!confirmLargeExport(rows.length)) return;
+
+        const meta = result.column_metadata?.find((c) => c.table_name);
+        const defaultTarget = meta?.table_name ? `${meta.schema_name || 'public'}.${meta.table_name}` : '';
+        const target = window.prompt('Target table for INSERT statements (schema.table)', defaultTarget);
+        if (!target) return;
+
+        const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
+        const text = toInsertStatements({ schema, table, columns: result.columns, rows });
+        const filename = buildExportFilename(['query_results', connectionId], 'sql');
+        downloadTextFile(text, filename, 'application/sql;charset=utf-8;');
+        showToast('Exported INSERT statements', 'success');
+    }, [confirmLargeExport, connectionId, getExportRows, result, showToast]);
+
+    const handleCopy = useCallback(
+        async (kind: 'csv' | 'tsv' | 'json' | 'insert') => {
+            if (!result) return;
+            const rows = getExportRows();
+            if (rows.length === 0) return;
+            if (!confirmLargeExport(rows.length)) return;
+
+            let text = '';
+            if (kind === 'csv') text = toDelimitedText(result.columns, rows, DEFAULT_CSV_OPTIONS);
+            if (kind === 'tsv') text = toDelimitedText(result.columns, rows, { ...DEFAULT_CSV_OPTIONS, delimiter: '\t' });
+            if (kind === 'json') text = toJsonObjects(result.columns, rows, true);
+            if (kind === 'insert') {
+                const meta = result.column_metadata?.find((c) => c.table_name);
+                const defaultTarget = meta?.table_name ? `${meta.schema_name || 'public'}.${meta.table_name}` : '';
+                const target = window.prompt('Target table for INSERT statements (schema.table)', defaultTarget);
+                if (!target) return;
+                const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
+                text = toInsertStatements({ schema, table, columns: result.columns, rows });
+            }
+
+            try {
+                await copyToClipboard(text);
+                showToast(`Copied ${selectedCount > 0 ? 'selected' : 'all'} rows`, 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Copy failed', 'error');
+            }
+        },
+        [confirmLargeExport, getExportRows, result, selectedCount, showToast]
+    );
 
     return (
         <div className="flex-1 overflow-auto bg-bg-0 flex flex-col">
@@ -292,24 +447,114 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {/* Export Buttons */}
+                            {/* Export Menu */}
                             {result.rows.length > 0 && (
-                                <div className="flex items-center border-r border-border pr-2 mr-2 gap-1">
+                                <div className="relative flex items-center border-r border-border pr-2 mr-2 gap-2" ref={exportMenuRef}>
                                     <button
-                                        onClick={handleExportCSV}
+                                        onClick={() => setExportMenuOpen((v) => !v)}
                                         className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
-                                        title="Export as CSV"
+                                        title="Export / Copy"
                                     >
-                                        📄 CSV
+                                        ⬇ Export
                                     </button>
-                                    <button
-                                        onClick={handleExportJSON}
-                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
-                                        title="Export as JSON"
-                                    >
-                                        {/* JSON Icon or just text */}
-                                        📦 JSON
-                                    </button>
+                                    {selectedCount > 0 && (
+                                        <span className="text-[10px] text-text-secondary bg-bg-3 px-1 rounded border border-border">
+                                            {selectedCount} selected
+                                        </span>
+                                    )}
+
+                                    {exportMenuOpen && (
+                                        <div className="absolute right-0 top-full mt-1 w-64 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
+                                            <div className="px-3 py-2 text-[10px] font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+                                                Download
+                                            </div>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadCsv(DEFAULT_CSV_OPTIONS); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                CSV (.csv)
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setExportMenuOpen(false);
+                                                    handleDownloadCsv({ ...DEFAULT_CSV_OPTIONS, delimiter: ';' });
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                CSV (semicolon)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadCsv(EXCEL_CSV_OPTIONS); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                CSV for Excel (UTF-8 BOM)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadTsvForExcel(); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Excel-friendly TSV (.tsv)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadExcelXls(); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Excel (.xls)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadJson('objects', true); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                JSON (array of objects, pretty)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadJson('rows', true); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                JSON (columns + rows, pretty)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadJson('objects', false); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                JSON (minified)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); handleDownloadInsertSql(); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 border-t border-border"
+                                            >
+                                                INSERT statements (.sql)
+                                            </button>
+
+                                            <div className="px-3 py-2 text-[10px] font-semibold text-text-secondary uppercase tracking-wider border-y border-border">
+                                                Copy To Clipboard
+                                            </div>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); void handleCopy('csv'); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Copy CSV
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); void handleCopy('tsv'); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Copy TSV (Excel-friendly)
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); void handleCopy('json'); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Copy JSON
+                                            </button>
+                                            <button
+                                                onClick={() => { setExportMenuOpen(false); void handleCopy('insert'); }}
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2"
+                                            >
+                                                Copy INSERT statements
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

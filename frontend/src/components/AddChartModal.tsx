@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import api from '../services/api';
-import { SavedQuery } from './SavedQueriesList';
-import { AddChartModalProps } from '../types';
+import { AddChartModalProps, SavedQuery } from '../types';
 import Select from './ui/Select';
 
 export default function AddChartModal({ isOpen, onClose, onSuccess, dashboardId }: AddChartModalProps) {

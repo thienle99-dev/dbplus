@@ -9,7 +9,6 @@ import IndexesSection from './table-info/IndexesSection';
 import TableMetadata from './table-info/TableMetadata';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import {
-    IndexInfo,
     TableInfoTabProps
 } from '../types';
 import {

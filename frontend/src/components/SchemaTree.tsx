@@ -100,10 +100,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
     });
   };
 
-  const handleDropSchema = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
+  const doDropSchema = async () => {
     const confirmName = prompt(`To drop schema "${schemaName}", type its name to confirm:`);
     if (confirmName !== schemaName) {
       if (confirmName !== null) showToast('Schema name did not match', 'error');
@@ -121,6 +118,19 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
     }
   };
 
+  const handleDropSchemaClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await doDropSchema();
+  };
+
+  const handleDropSchemaKeyDown = async (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    e.stopPropagation();
+    await doDropSchema();
+  };
+
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <Collapsible.Trigger className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors">
@@ -129,13 +139,16 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
         </div>
         <Database size={14} className="text-accent/80" />
         <span className="truncate font-medium flex-1">{schemaName}</span>
-        <button
+        <span
           className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
           title="Drop schema"
-          onClick={handleDropSchema}
+          role="button"
+          tabIndex={0}
+          onClick={handleDropSchemaClick}
+          onKeyDown={handleDropSchemaKeyDown}
         >
           <Trash2 size={14} />
-        </button>
+        </span>
       </Collapsible.Trigger>
 
       <Collapsible.Content className="pl-3 ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">

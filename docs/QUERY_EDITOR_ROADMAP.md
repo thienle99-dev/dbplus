@@ -39,13 +39,19 @@
 
 #### 1.3 Export Results 💾
 **Goal**: Export query results in multiple formats
-- [ ] Frontend: Export button in results toolbar
-- [ ] Export to CSV
-- [ ] Export to JSON
-- [ ] Export to Excel (xlsx)
-- [ ] Copy as INSERT statements
-- [ ] Copy selected rows
-- [ ] Download with proper filename
+- [x] Frontend: Export button in results toolbar
+- [x] Frontend: Export menu (CSV / JSON / Excel / SQL / Clipboard)
+- [x] Export to CSV
+- [x] CSV options: delimiter presets, UTF-8 BOM (Excel-friendly)
+- [x] Export to JSON
+- [x] JSON options: array-of-rows vs array-of-objects, pretty/minified
+- [x] Export to Excel (via .xls / TSV)
+- [x] Copy as INSERT statements
+- [x] Copy selected rows
+- [x] Export respects current sorts (and selection when applicable)
+- [x] Download with proper filename
+- [x] Filename template: sanitized + timestamp
+- [x] Large results: warn/confirm (avoid UI freeze)
 
 **Estimated**: 1-2 days
 

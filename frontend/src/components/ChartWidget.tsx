@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Trash2, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -44,7 +43,7 @@ export default function ChartWidget({ chart, onDelete }: ChartWidgetProps) {
     isLoading: loading,
     error: queryError,
     refetch
-  } = useQuery({
+  } = useQuery<Record<string, any>[]>({
     queryKey: ['chartData', connectionId, chart.id, savedQuery?.id],
     queryFn: async () => {
       if (!savedQuery) throw new Error("Saved query not found");
@@ -134,7 +133,7 @@ export default function ChartWidget({ chart, onDelete }: ChartWidgetProps) {
                 dataKey={yKey}
                 nameKey={xKey}
               >
-                {data.map((_, index) => (
+                {data.map((_row, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
