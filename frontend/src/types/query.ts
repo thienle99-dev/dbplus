@@ -9,6 +9,14 @@ export interface SavedQuery {
     metadata?: Record<string, any>;
 }
 
+export interface SavedQueryFolder {
+    id: string;
+    connection_id: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface QuerySnippet {
     id: string;
     trigger: string;

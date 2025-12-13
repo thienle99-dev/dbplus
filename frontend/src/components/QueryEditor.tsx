@@ -36,6 +36,7 @@ interface QueryEditorProps {
   queryName?: string;
   onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
   onSaveSuccess?: () => void;
+  onSavedQueryCreated?: (savedQueryId: string, name: string) => void;
 }
 
 export default function QueryEditor({
@@ -46,7 +47,8 @@ export default function QueryEditor({
   savedQueryId,
   queryName,
   onQueryChange,
-  onSaveSuccess
+  onSaveSuccess,
+  onSavedQueryCreated
 }: QueryEditorProps) {
   const { connectionId } = useParams();
   const { showToast } = useToast();
@@ -374,7 +376,11 @@ export default function QueryEditor({
         isOpen={isSaveModalOpen}
         onClose={() => setIsSaveModalOpen(false)}
         sql={query}
-        onSave={() => { }}
+        initial={{ name: queryName, metadata: visualState || undefined }}
+        mode="create"
+        onSaved={({ id, name }) => {
+          if (onSavedQueryCreated) onSavedQueryCreated(id, name);
+        }}
       />
       <ConfirmationModal
         isOpen={isConfirmationOpen}

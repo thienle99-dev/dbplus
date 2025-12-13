@@ -153,10 +153,10 @@
 - [x] Backend: `query_bookmarks` table
 - [x] Backend: CRUD APIs
 - [x] Frontend: Bookmarks sidebar
-- [ ] Frontend: Folder organization
-- [ ] Frontend: Tags/labels
-- [ ] Frontend: Search bookmarks
-- [ ] Share bookmarks (export/import)
+- [x] Frontend: Folder organization
+- [x] Frontend: Tags/labels
+- [x] Frontend: Search bookmarks
+- [x] Share bookmarks (export/import)
 
 **Estimated**: 2-3 days
 

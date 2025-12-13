@@ -2,19 +2,12 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "saved_queries")]
+#[sea_orm(table_name = "saved_query_folders")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub connection_id: Uuid,
     pub name: String,
-    pub description: Option<String>,
-    pub sql: String,
-    pub folder_id: Option<Uuid>,
-    #[sea_orm(column_type = "Json")]
-    pub tags: Option<serde_json::Value>,
-    #[sea_orm(column_type = "Json", nullable)]
-    pub metadata: Option<serde_json::Value>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
 }
@@ -28,13 +21,6 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Connection,
-    #[sea_orm(
-        belongs_to = "super::saved_query_folder::Entity",
-        from = "Column::FolderId",
-        to = "super::saved_query_folder::Column::Id",
-        on_delete = "SetNull"
-    )]
-    Folder,
 }
 
 impl Related<super::connection::Entity> for Entity {
@@ -43,10 +29,5 @@ impl Related<super::connection::Entity> for Entity {
     }
 }
 
-impl Related<super::saved_query_folder::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Folder.def()
-    }
-}
-
 impl ActiveModelBehavior for ActiveModel {}
+

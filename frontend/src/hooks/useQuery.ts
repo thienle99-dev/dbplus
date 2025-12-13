@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { QueryResult, SavedQuery } from '../types';
+import { QueryResult, SavedQuery, SavedQueryFolder } from '../types';
 
 export const useExecuteQuery = (connectionId: string | undefined) => {
     return useMutation({
@@ -100,6 +100,63 @@ export const useDeleteSavedQuery = (connectionId: string | undefined) => {
             return id;
         },
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savedQueries', connectionId] });
+        }
+    });
+};
+
+// Saved Query Folder Hooks
+
+export const useSavedQueryFolders = (connectionId: string | undefined) => {
+    return useQuery({
+        queryKey: ['savedQueryFolders', connectionId],
+        queryFn: async () => {
+            if (!connectionId) return [];
+            const { data } = await api.get<SavedQueryFolder[]>(`/api/connections/${connectionId}/saved-query-folders`);
+            return data;
+        },
+        enabled: !!connectionId,
+    });
+};
+
+export const useCreateSavedQueryFolder = (connectionId: string | undefined) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ name }: { name: string }) => {
+            if (!connectionId) throw new Error("Connection ID is required");
+            const { data } = await api.post<SavedQueryFolder>(`/api/connections/${connectionId}/saved-query-folders`, { name });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savedQueryFolders', connectionId] });
+        }
+    });
+};
+
+export const useUpdateSavedQueryFolder = (connectionId: string | undefined) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, name }: { id: string; name: string }) => {
+            if (!connectionId) throw new Error("Connection ID is required");
+            const { data } = await api.put<SavedQueryFolder>(`/api/connections/${connectionId}/saved-query-folders/${id}`, { name });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savedQueryFolders', connectionId] });
+        }
+    });
+};
+
+export const useDeleteSavedQueryFolder = (connectionId: string | undefined) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            if (!connectionId) throw new Error("Connection ID is required");
+            await api.delete(`/api/connections/${connectionId}/saved-query-folders/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savedQueryFolders', connectionId] });
             queryClient.invalidateQueries({ queryKey: ['savedQueries', connectionId] });
         }
     });

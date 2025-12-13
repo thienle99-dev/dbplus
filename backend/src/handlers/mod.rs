@@ -6,6 +6,7 @@ pub mod history;
 pub mod query;
 pub mod result_edit;
 pub mod saved_query;
+pub mod saved_query_folder;
 pub mod schema;
 pub mod snippet;
 pub mod table_info;

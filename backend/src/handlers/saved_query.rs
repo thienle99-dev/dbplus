@@ -14,6 +14,7 @@ pub struct CreateSavedQueryParams {
     name: String,
     description: Option<String>,
     sql: String,
+    folder_id: Option<Uuid>,
     tags: Option<Vec<String>>,
     metadata: Option<serde_json::Value>,
 }
@@ -23,6 +24,7 @@ pub struct UpdateSavedQueryParams {
     name: Option<String>,
     description: Option<String>,
     sql: Option<String>,
+    folder_id: Option<Option<Uuid>>,
     tags: Option<Vec<String>>,
     metadata: Option<serde_json::Value>,
 }
@@ -44,7 +46,18 @@ pub async fn create_saved_query(
     Json(payload): Json<CreateSavedQueryParams>,
 ) -> impl IntoResponse {
     let service = SavedQueryService::new(db);
-    match service.create_saved_query(connection_id, payload.name, payload.description, payload.sql, payload.tags, payload.metadata).await {
+    match service
+        .create_saved_query(
+            connection_id,
+            payload.name,
+            payload.description,
+            payload.sql,
+            payload.folder_id,
+            payload.tags,
+            payload.metadata,
+        )
+        .await
+    {
         Ok(query) => (StatusCode::CREATED, Json(query)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
@@ -56,7 +69,18 @@ pub async fn update_saved_query(
     Json(payload): Json<UpdateSavedQueryParams>,
 ) -> impl IntoResponse {
     let service = SavedQueryService::new(db);
-    match service.update_saved_query(query_id, payload.name, payload.description, payload.sql, payload.tags, payload.metadata).await {
+    match service
+        .update_saved_query(
+            query_id,
+            payload.name,
+            payload.description,
+            payload.sql,
+            payload.folder_id,
+            payload.tags,
+            payload.metadata,
+        )
+        .await
+    {
         Ok(query) => (StatusCode::OK, Json(query)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }

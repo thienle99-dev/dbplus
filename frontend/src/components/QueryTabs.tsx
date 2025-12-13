@@ -558,6 +558,29 @@ export default function QueryTabs() {
                     queryName={tab.title}
                     onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
                     onSaveSuccess={() => handleSaveSuccess(tab.id)}
+                    onSavedQueryCreated={(savedId, name) => {
+                      setTabs(prev => prev.map(t => {
+                        if (t.id !== tab.id) return t;
+                        const updated = {
+                          ...t,
+                          savedQueryId: savedId,
+                          title: name,
+                          isDraft: false,
+                          isDirty: false,
+                          lastModified: Date.now(),
+                        };
+                        saveDraft({
+                          id: updated.id,
+                          title: updated.title,
+                          type: updated.type,
+                          sql: updated.sql || '',
+                          metadata: updated.metadata,
+                          savedQueryId: updated.savedQueryId,
+                          lastModified: updated.lastModified || Date.now(),
+                        });
+                        return updated;
+                      }));
+                    }}
                   />
                 )}
               </div>

@@ -13,7 +13,16 @@ export interface SaveQueryModalProps {
   isOpen: boolean;
   onClose: () => void;
   sql: string;
-  onSave: (name: string, description?: string) => void;
+  initial?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    tags?: string[];
+    folder_id?: string;
+    metadata?: Record<string, any>;
+  };
+  mode?: 'create' | 'edit';
+  onSaved: (savedQuery: { id: string; name: string }) => void;
 }
 
 export interface CreateDashboardModalProps {

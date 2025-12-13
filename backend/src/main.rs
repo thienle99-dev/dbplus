@@ -133,6 +133,16 @@ async fn main() {
             put(handlers::saved_query::update_saved_query)
                 .delete(handlers::saved_query::delete_saved_query),
         )
+        .route(
+            "/api/connections/:id/saved-query-folders",
+            get(handlers::saved_query_folder::list_folders)
+                .post(handlers::saved_query_folder::create_folder),
+        )
+        .route(
+            "/api/connections/:id/saved-query-folders/:folder_id",
+            put(handlers::saved_query_folder::update_folder)
+                .delete(handlers::saved_query_folder::delete_folder),
+        )
         // History routes
         .route(
             "/api/connections/:id/history",

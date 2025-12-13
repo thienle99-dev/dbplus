@@ -18,6 +18,7 @@ impl SavedQueryService {
         name: String,
         description: Option<String>,
         sql: String,
+        folder_id: Option<Uuid>,
         tags: Option<Vec<String>>,
         metadata: Option<serde_json::Value>,
     ) -> Result<saved_query::Model, DbErr> {
@@ -27,6 +28,7 @@ impl SavedQueryService {
             name: Set(name),
             description: Set(description),
             sql: Set(sql),
+            folder_id: Set(folder_id),
             tags: Set(tags.map(|t| serde_json::to_value(t).unwrap())),
             metadata: Set(metadata),
             created_at: Set(Utc::now().into()),
@@ -53,6 +55,7 @@ impl SavedQueryService {
         name: Option<String>,
         description: Option<String>,
         sql: Option<String>,
+        folder_id: Option<Option<Uuid>>,
         tags: Option<Vec<String>>,
         metadata: Option<serde_json::Value>,
     ) -> Result<saved_query::Model, DbErr> {
@@ -70,6 +73,9 @@ impl SavedQueryService {
         }
         if let Some(sql) = sql {
             saved_query.sql = Set(sql);
+        }
+        if let Some(folder_id) = folder_id {
+            saved_query.folder_id = Set(folder_id);
         }
         if let Some(tags) = tags {
             saved_query.tags = Set(Some(serde_json::to_value(tags).unwrap()));
