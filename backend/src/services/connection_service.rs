@@ -362,6 +362,18 @@ impl ConnectionService {
         connection_id: Uuid,
         query: &str,
     ) -> Result<crate::services::db_driver::QueryResult> {
+        self.execute_query_with_options(connection_id, query, None, None, false)
+            .await
+    }
+
+    pub async fn execute_query_with_options(
+        &self,
+        connection_id: Uuid,
+        query: &str,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        include_total_count: bool,
+    ) -> Result<crate::services::db_driver::QueryResult> {
         let connection = self
             .get_connection_by_id(connection_id)
             .await?
@@ -373,6 +385,71 @@ impl ConnectionService {
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
         use crate::services::sqlite::SQLiteDriver;
+
+        let trimmed = query.trim_start();
+        let upper = trimmed.to_uppercase();
+        let is_select = upper.starts_with("SELECT") || upper.starts_with("WITH");
+
+        // For SELECT/WITH queries we support server-side pagination by wrapping into a subquery.
+        // This avoids materializing huge result sets in the backend and frontend.
+        if is_select && (limit.is_some() || offset.is_some() || include_total_count) {
+            let base = query.trim().trim_end_matches(';').to_string();
+            let limit = limit.unwrap_or(1000).max(1);
+            let offset = offset.unwrap_or(0).max(0);
+
+            let page_sql = format!(
+                "SELECT * FROM ({}) AS __dbplus_subq LIMIT {} OFFSET {}",
+                base, limit, offset
+            );
+            let count_sql = format!("SELECT COUNT(*) AS count FROM ({}) AS __dbplus_subq", base);
+
+            let mut result = match connection.db_type.as_str() {
+                "postgres" => {
+                    let driver = PostgresDriver::new(&connection, &password).await?;
+                    driver.query(&page_sql).await?
+                }
+                "sqlite" => {
+                    let driver = SQLiteDriver::new(&connection, &password).await?;
+                    driver.query(&page_sql).await?
+                }
+                _ => return Err(anyhow::anyhow!("Unsupported database type")),
+            };
+
+            result.limit = Some(limit);
+            result.offset = Some(offset);
+
+            if include_total_count {
+                let count_result = match connection.db_type.as_str() {
+                    "postgres" => {
+                        let driver = PostgresDriver::new(&connection, &password).await?;
+                        driver.query(&count_sql).await?
+                    }
+                    "sqlite" => {
+                        let driver = SQLiteDriver::new(&connection, &password).await?;
+                        driver.query(&count_sql).await?
+                    }
+                    _ => return Err(anyhow::anyhow!("Unsupported database type")),
+                };
+
+                let total = count_result
+                    .rows
+                    .get(0)
+                    .and_then(|r| r.get(0))
+                    .and_then(|v| match v {
+                        serde_json::Value::Number(n) => n.as_i64(),
+                        serde_json::Value::String(s) => s.parse::<i64>().ok(),
+                        _ => None,
+                    });
+
+                result.total_count = total;
+                if let Some(total_count) = total {
+                    let fetched = result.rows.len() as i64;
+                    result.has_more = Some(offset + fetched < total_count);
+                }
+            }
+
+            return Ok(result);
+        }
 
         match connection.db_type.as_str() {
             "postgres" => {

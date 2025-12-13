@@ -39,6 +39,10 @@ impl QueryDriver for SQLiteQuery {
                 rows: vec![],
                 affected_rows: 0,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             });
         }
 
@@ -79,6 +83,10 @@ impl QueryDriver for SQLiteQuery {
             rows: result_rows,
             affected_rows: 0,
             column_metadata: None,
+            total_count: None,
+            limit: None,
+            offset: None,
+            has_more: None,
         })
     }
 
@@ -95,6 +103,10 @@ impl QueryDriver for SQLiteQuery {
                 rows: vec![],
                 affected_rows: affected,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             })
         }
     }

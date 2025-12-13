@@ -40,6 +40,14 @@ pub struct QueryResult {
     pub rows: Vec<Vec<Value>>,
     pub affected_rows: u64,
     pub column_metadata: Option<Vec<ColumnMetadata>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub has_more: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

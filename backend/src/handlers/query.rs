@@ -13,6 +13,9 @@ use uuid::Uuid;
 #[derive(Deserialize)]
 pub struct ExecuteQueryParams {
     query: String,
+    limit: Option<i64>,
+    offset: Option<i64>,
+    include_total_count: Option<bool>,
 }
 
 fn find_postgres_db_error<'a>(
@@ -39,7 +42,16 @@ pub async fn execute_query(
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(&headers));
 
-    match service.execute_query(connection_id, &payload.query).await {
+    match service
+        .execute_query_with_options(
+            connection_id,
+            &payload.query,
+            payload.limit,
+            payload.offset,
+            payload.include_total_count.unwrap_or(false),
+        )
+        .await
+    {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
         Err(e) => {
             // Preserve full context for logs, but return structured client-friendly DB error details when possible.

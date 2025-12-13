@@ -118,6 +118,10 @@ impl QueryDriver for PostgresQuery {
                 rows: vec![],
                 affected_rows: 0,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             });
         }
 
@@ -263,6 +267,10 @@ impl QueryDriver for PostgresQuery {
             rows: result_rows,
             affected_rows: 0,
             column_metadata,
+            total_count: None,
+            limit: None,
+            offset: None,
+            has_more: None,
         })
     }
 
@@ -282,6 +290,10 @@ impl QueryDriver for PostgresQuery {
                     rows: vec![],
                     affected_rows: 0,
                     column_metadata: None,
+                    total_count: None,
+                    limit: None,
+                    offset: None,
+                    has_more: None,
                 });
             }
 
@@ -427,6 +439,10 @@ impl QueryDriver for PostgresQuery {
                 rows: result_rows,
                 affected_rows: 0,
                 column_metadata,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             })
         } else {
             let affected = client.execute(&statement, &[]).await?;
@@ -435,6 +451,10 @@ impl QueryDriver for PostgresQuery {
                 rows: vec![],
                 affected_rows: affected,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             })
         }
     }

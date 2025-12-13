@@ -38,6 +38,10 @@ impl TableOperations for SQLiteTable {
                 rows: vec![],
                 affected_rows: 0,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             });
         }
 
@@ -55,6 +59,10 @@ impl TableOperations for SQLiteTable {
                 rows: vec![],
                 affected_rows: 0,
                 column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
             });
         }
 
@@ -98,6 +106,10 @@ impl TableOperations for SQLiteTable {
             rows: result_rows,
             affected_rows: 0,
             column_metadata: None,
+            total_count: None,
+            limit: None,
+            offset: None,
+            has_more: None,
         })
     }
 
