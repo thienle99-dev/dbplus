@@ -84,14 +84,14 @@
 
 #### 2.2 Query Snippets 📝
 **Goal**: Reusable query templates
-- [ ] Backend: `query_snippets` table
-- [ ] Backend: CRUD APIs
-- [ ] Frontend: Snippets library UI
-- [ ] Frontend: Insert snippet
-- [ ] Template variables (e.g., {{table_name}})
+- [x] Backend: `query_snippets` table
+- [x] Backend: CRUD APIs
+- [x] Frontend: Snippets library UI
+- [x] Frontend: Insert snippet
+- [x] Template variables (e.g., {{table_name}})
 - [ ] Pre-defined common snippets
-- [ ] Custom user snippets
-- [ ] Snippet categories/tags
+- [x] Custom user snippets
+- [x] Snippet categories/tags
 
 **Estimated**: 2-3 days
 

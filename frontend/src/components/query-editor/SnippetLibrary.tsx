@@ -5,6 +5,7 @@ import { QuerySnippet } from '../../types/snippet';
 import { snippetApi } from '../../services/snippetApi';
 import { useToast } from '../../context/ToastContext';
 import SnippetFormModal from './SnippetFormModal';
+import { applyTemplateVariables, extractTemplateVariables } from '../../utils/snippetTemplate';
 
 interface SnippetLibraryProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
     const [search, setSearch] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingSnippet, setEditingSnippet] = useState<QuerySnippet | undefined>(undefined);
+    const [insertSnippet, setInsertSnippet] = useState<QuerySnippet | null>(null);
+    const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
     const { showToast } = useToast();
 
     const fetchSnippets = async () => {
@@ -89,6 +92,25 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
         showToast('SQL copied to clipboard', 'success');
     };
 
+    const openInsert = (snippet: QuerySnippet) => {
+        const vars = extractTemplateVariables(snippet.sql);
+        if (vars.length === 0) {
+            onInsert(snippet.sql);
+            return;
+        }
+        setInsertSnippet(snippet);
+        setTemplateValues(Object.fromEntries(vars.map((v) => [v, ''])));
+    };
+
+    const handleConfirmInsert = () => {
+        if (!insertSnippet) return;
+        const resolved = applyTemplateVariables(insertSnippet.sql, templateValues);
+        onInsert(resolved);
+        setInsertSnippet(null);
+        setTemplateValues({});
+        showToast('Snippet inserted', 'success');
+    };
+
     return (
         <>
             <Modal
@@ -132,7 +154,7 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                                 <div
                                     key={snippet.id}
                                     className="p-3 border border-border rounded bg-bg-1 hover:border-accent/50 cursor-pointer group transition-all"
-                                    onClick={() => onInsert(snippet.sql)}
+                                    onClick={() => openInsert(snippet)}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <div>
@@ -177,17 +199,75 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                                                 </span>
                                             ))}
                                         </div>
-                                        <button
-                                            className="flex items-center gap-1 text-xs text-accent hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
+                                        <span className="flex items-center gap-1 text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Play size={10} /> Insert
-                                        </button>
+                                        </span>
                                     </div>
                                 </div>
                             ))
                         )}
                     </div>
                 </div>
+            </Modal>
+
+            <Modal
+                isOpen={!!insertSnippet}
+                onClose={() => {
+                    setInsertSnippet(null);
+                    setTemplateValues({});
+                }}
+                title={insertSnippet ? `Insert: ${insertSnippet.name}` : 'Insert Snippet'}
+                size="lg"
+            >
+                {insertSnippet && (
+                    <div className="space-y-4">
+                        <div className="text-xs text-text-secondary">
+                            Fill template variables like <span className="font-mono">{'{{var}}'}</span>.
+                        </div>
+
+                        <div className="space-y-3">
+                            {extractTemplateVariables(insertSnippet.sql).map((name) => (
+                                <div key={name}>
+                                    <label className="block text-xs font-medium text-text-secondary mb-1">{name}</label>
+                                    <input
+                                        type="text"
+                                        value={templateValues[name] ?? ''}
+                                        onChange={(e) => setTemplateValues((prev) => ({ ...prev, [name]: e.target.value }))}
+                                        className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+                                        placeholder={`Value for ${name}`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div>
+                            <div className="text-xs font-medium text-text-secondary mb-1">Preview</div>
+                            <pre className="bg-bg-0 border border-border rounded p-2 text-xs font-mono text-text-secondary whitespace-pre-wrap break-words max-h-48 overflow-auto">
+                                {applyTemplateVariables(insertSnippet.sql, templateValues)}
+                            </pre>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setInsertSnippet(null);
+                                    setTemplateValues({});
+                                }}
+                                className="px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-2 rounded transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmInsert}
+                                className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-blue-600 transition-colors"
+                            >
+                                Insert
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Modal>
 
             <SnippetFormModal
