@@ -12,6 +12,7 @@ import {
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
+import type { ApiErrorDetails } from '../../utils/apiError';
 import {
     buildExportFilename,
     copyToClipboard,
@@ -29,15 +30,17 @@ interface QueryResultsProps {
     result: QueryResult | null;
     loading: boolean;
     error: string | null;
+    errorDetails?: ApiErrorDetails | null;
     onRefresh?: () => void;
     connectionId: string;
 }
 
-export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, onRefresh, connectionId }) => {
+export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, errorDetails, onRefresh, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const [showErrorDetails, setShowErrorDetails] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
 
@@ -428,7 +431,61 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
     return (
         <div className="flex-1 overflow-auto bg-bg-0 flex flex-col">
             {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
-            {error && <div className="p-4 text-error font-mono text-sm whitespace-pre-wrap">{error}</div>}
+            {error && (
+                <div className="p-4 border-b border-border bg-bg-1">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="text-xs font-semibold text-error uppercase tracking-wider mb-2">Database Error</div>
+                            <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{error}</div>
+                            {errorDetails?.status && (
+                                <div className="mt-2 text-xs text-text-secondary">
+                                    {errorDetails.method ? `${errorDetails.method} ` : ''}
+                                    {errorDetails.url ? `${errorDetails.url} ` : ''}
+                                    {errorDetails.status}
+                                    {errorDetails.statusText ? ` ${errorDetails.statusText}` : ''}
+                                    {errorDetails.code ? ` • ${errorDetails.code}` : ''}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {errorDetails && (
+                                <>
+                                    <button
+                                        onClick={() => setShowErrorDetails((v) => !v)}
+                                        className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                        title="Toggle raw error details"
+                                    >
+                                        {showErrorDetails ? 'Hide details' : 'Show details'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const payload =
+                                                typeof errorDetails.responseData === 'string'
+                                                    ? errorDetails.responseData
+                                                    : JSON.stringify(errorDetails, null, 2);
+                                            void copyToClipboard(payload)
+                                                .then(() => showToast('Copied error details', 'success'))
+                                                .catch(() => showToast('Copy failed', 'error'));
+                                        }}
+                                        className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                        title="Copy error details"
+                                    >
+                                        Copy
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {showErrorDetails && errorDetails && (
+                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
+                            {typeof errorDetails.responseData === 'string'
+                                ? errorDetails.responseData
+                                : JSON.stringify(errorDetails, null, 2)}
+                        </pre>
+                    )}
+                </div>
+            )}
 
             {result && (
                 <div className="flex flex-col h-full">

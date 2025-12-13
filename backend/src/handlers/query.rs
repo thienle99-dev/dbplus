@@ -7,6 +7,7 @@ use axum::{
 };
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
+use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -26,6 +27,10 @@ pub async fn execute_query(
 
     match service.execute_query(connection_id, &payload.query).await {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "message": e.to_string() })),
+        )
+            .into_response(),
     }
 }

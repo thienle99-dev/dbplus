@@ -67,7 +67,7 @@ export default function QueryEditor({
 
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
-  const { execute, handleFormat, result, loading, error } = useQueryExecution(query, setQuery);
+  const { execute, handleFormat, result, loading, error, errorDetails } = useQueryExecution(query, setQuery);
   const explainQuery = useExplainQuery(connectionId);
   const updateSavedQuery = useUpdateSavedQuery(connectionId);
 
@@ -481,6 +481,7 @@ export default function QueryEditor({
               result={result}
               loading={loading}
               error={error}
+              errorDetails={errorDetails}
               connectionId={connectionId || ''}
             />
           </div>

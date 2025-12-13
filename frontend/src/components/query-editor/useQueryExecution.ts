@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { historyApi } from '../../services/historyApi';
 import { useExecuteQuery } from '../../hooks/useQuery';
 import { QueryResult } from '../../types';
+import { ApiErrorDetails, extractApiErrorDetails } from '../../utils/apiError';
 
 export function useQueryExecution(query: string, setQuery: (q: string) => void) {
     const { connectionId } = useParams();
@@ -15,6 +16,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
 
     const [result, setResult] = useState<QueryResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [errorDetails, setErrorDetails] = useState<ApiErrorDetails | null>(null);
     const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
 
     const execute = useCallback(async (queryOverride?: string) => {
@@ -23,6 +25,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
 
         setResult(null);
         setError(null);
+        setErrorDetails(null);
 
         try {
             const data = await executeMutation.mutateAsync({ query: sqlToExecute });
@@ -52,9 +55,11 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
             }
         } catch (err: any) {
             const executionTime = Date.now() - startTime;
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to execute query';
+            const details = extractApiErrorDetails(err);
+            const errorMessage = details.message;
 
             setError(errorMessage);
+            setErrorDetails(details);
             showToast('Query execution failed', 'error');
 
             // Save to history (error)
@@ -94,6 +99,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         result,
         loading: executeMutation.isPending,
         error,
+        errorDetails,
         setResult
     };
 }
