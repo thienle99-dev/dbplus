@@ -36,9 +36,8 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!connectionId) return;
-    const defaultDb = connectionById.get(connectionId)?.database;
     const path = location.pathname + location.search;
-    const id = ensureTabForRoute(connectionId, defaultDb, path);
+    const id = ensureTabForRoute(connectionId, path);
     setTabLastPath(id, path);
   }, [connectionId, connectionById, ensureTabForRoute, location.pathname, location.search, setTabLastPath]);
 

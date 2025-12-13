@@ -19,11 +19,20 @@ const api = axios.create({
 // Add interceptors for logging
 api.interceptors.request.use(
   (config) => {
-    const databaseOverride = useWorkspaceTabsStore.getState().activeDatabase();
-    if (databaseOverride) {
-      config.headers = config.headers ?? {};
+    const state = useWorkspaceTabsStore.getState();
+    const activeConnectionId = state.activeConnectionId();
+    const databaseOverride = state.activeDatabase();
+    const url = config.url || '';
+
+    const shouldAttach =
+      !!activeConnectionId &&
+      !!databaseOverride &&
+      url.includes(`/api/connections/${activeConnectionId}/`);
+
+    config.headers = config.headers ?? {};
+    if (shouldAttach) {
       (config.headers as any)['x-dbplus-database'] = databaseOverride;
-    } else if (config.headers && (config.headers as any)['x-dbplus-database']) {
+    } else if ((config.headers as any)['x-dbplus-database']) {
       delete (config.headers as any)['x-dbplus-database'];
     }
 

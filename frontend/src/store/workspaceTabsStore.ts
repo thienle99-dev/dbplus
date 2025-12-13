@@ -14,7 +14,7 @@ interface WorkspaceTabsState {
   openTab: (connectionId: string, database?: string) => string;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
-  ensureTabForRoute: (connectionId: string, defaultDatabase?: string, lastPath?: string) => string;
+  ensureTabForRoute: (connectionId: string, lastPath?: string) => string;
   setTabLastPath: (tabId: string, lastPath: string) => void;
 
   activeDatabase: () => string | undefined;
@@ -73,21 +73,21 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
 
   setActiveTab: (tabId) => set({ activeTabId: tabId }),
 
-  ensureTabForRoute: (connectionId, defaultDatabase, lastPath) => {
+  ensureTabForRoute: (connectionId, lastPath) => {
     const active = get().tabs.find((t) => t.id === get().activeTabId);
     if (active && active.connectionId === connectionId) {
       if (lastPath) get().setTabLastPath(active.id, lastPath);
       return active.id;
     }
 
-    const existing = findExistingTab(get().tabs, connectionId, defaultDatabase);
+    const existing = findExistingTab(get().tabs, connectionId, undefined);
     if (existing) {
       set({ activeTabId: existing.id });
       if (lastPath) get().setTabLastPath(existing.id, lastPath);
       return existing.id;
     }
 
-    const id = get().openTab(connectionId, defaultDatabase);
+    const id = get().openTab(connectionId, undefined);
     if (lastPath) get().setTabLastPath(id, lastPath);
     return id;
   },
@@ -108,4 +108,3 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
     return active?.connectionId;
   },
 }));
-

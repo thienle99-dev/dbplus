@@ -13,8 +13,8 @@ export interface DraftQuery {
 const STORAGE_PREFIX = 'dbplus_drafts_';
 const MAX_DRAFTS = 10;
 
-export function useDraftPersistence(connectionId: string) {
-    const storageKey = `${STORAGE_PREFIX}${connectionId}`;
+export function useDraftPersistence(scopeKey: string) {
+    const storageKey = `${STORAGE_PREFIX}${scopeKey}`;
 
     const loadDrafts = useCallback((): DraftQuery[] => {
         try {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Search, Database, ArrowRight, Plus } from 'lucide-react';
+import { Search, Database, ArrowRight, Plus, Check } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { connectionApi } from '../services/connectionApi';
 import { useToast } from '../context/ToastContext';
@@ -25,7 +25,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     const { showToast } = useToast();
     const queryClient = useQueryClient();
     const { connections, fetchConnections } = useConnectionStore();
-    const { openTab, setTabLastPath } = useWorkspaceTabsStore();
+    const { tabs: workspaceTabs, activeTabId, openTab, setTabLastPath } = useWorkspaceTabsStore();
 
     const refreshDatabases = async (id: string) => {
         setIsLoading(true);
@@ -64,6 +64,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     );
     const filteredDatabases = databases.filter((db) => db.toLowerCase().includes(lowered));
 
+    const isConnectionOpened = (id: string) => workspaceTabs.some((t) => t.connectionId === id);
+    const findDatabaseTab = (id: string, db: string) => {
+        const normalizedDb = db.trim();
+        return workspaceTabs.find(
+            (t) => t.connectionId === id && (t.database?.trim() || '') === normalizedDb
+        );
+    };
+
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,6 +102,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         if (!connectionId) return;
         const tabId = openTab(connectionId, db);
         setTabLastPath(tabId, `/workspace/${connectionId}/query`);
+        navigate(`/workspace/${connectionId}/query`);
         void Promise.all([
             queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] }),
             queryClient.invalidateQueries({ queryKey: ['tables', connectionId] }),
@@ -108,8 +117,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     };
 
     const handleSelectConnection = (connectionIdToOpen: string) => {
-        const conn = connections.find((c) => c.id === connectionIdToOpen);
-        const tabId = openTab(connectionIdToOpen, conn?.database);
+        const tabId = openTab(connectionIdToOpen, undefined);
         setTabLastPath(tabId, `/workspace/${connectionIdToOpen}/query`);
         navigate(`/workspace/${connectionIdToOpen}/query`);
         onClose();
@@ -167,7 +175,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                                                 <span className="text-text-secondary">·</span>
                                                 <span className="truncate text-text-secondary">{c.database}</span>
                                             </div>
-                                            <ArrowRight size={14} className="text-text-secondary" />
+                                            <div className="flex items-center gap-2">
+                                                {isConnectionOpened(c.id) && (
+                                                    <span
+                                                        className="inline-flex"
+                                                        title="Already opened"
+                                                        aria-label="Already opened"
+                                                    >
+                                                        <Check size={14} className="text-accent" />
+                                                    </span>
+                                                )}
+                                                <ArrowRight size={14} className="text-text-secondary" />
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
@@ -177,7 +196,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                                 <div className="space-y-1">
                                     <div className="px-2 py-1 text-xs font-semibold text-text-secondary uppercase">Databases</div>
                                     {filteredDatabases.length > 0 ? (
-                                        filteredDatabases.map((db, index) => (
+                                        filteredDatabases.map((db, index) => {
+                                            const existingTab = findDatabaseTab(connectionId, db);
+                                            const isOpened = !!existingTab;
+                                            const isActive = !!existingTab && existingTab.id === activeTabId;
+                                            return (
                                             <button
                                                 key={db}
                                                 onClick={() => handleSelect(db)}
@@ -189,9 +212,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                                                     <Database size={16} className={index === selectedIndex ? 'text-white' : 'text-text-secondary'} />
                                                     <span>{db}</span>
                                                 </div>
-                                                {index === selectedIndex && <ArrowRight size={14} />}
+                                                <div className="flex items-center gap-2">
+                                                    {isOpened && (
+                                                        <span
+                                                            className="inline-flex"
+                                                            title={isActive ? 'Current workspace tab' : 'Already opened'}
+                                                            aria-label={isActive ? 'Current workspace tab' : 'Already opened'}
+                                                        >
+                                                            <Check
+                                                                size={14}
+                                                                className={
+                                                                    index === selectedIndex ? 'text-white' : isActive ? 'text-accent' : 'text-text-secondary'
+                                                                }
+                                                            />
+                                                        </span>
+                                                    )}
+                                                    {index === selectedIndex && <ArrowRight size={14} />}
+                                                </div>
                                             </button>
-                                        ))
+                                            );
+                                        })
                                     ) : (
                                         <div className="text-center py-6 text-text-secondary">No databases found</div>
                                     )}

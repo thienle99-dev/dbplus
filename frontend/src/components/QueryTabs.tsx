@@ -11,13 +11,26 @@ import { TabProvider } from '../context/TabContext';
 import { Tab } from '../types';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
+import { useConnectionStore } from '../store/connectionStore';
 
 export default function QueryTabs() {
   const { connectionId } = useParams<{ connectionId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(connectionId || '');
   const { showToast } = useToast();
+  const { tabs: workspaceTabs, activeTabId: activeWorkspaceTabId } = useWorkspaceTabsStore();
+  const { connections } = useConnectionStore();
+
+  const connectionDefaultDb = connections.find((c) => c.id === connectionId)?.database;
+  const activeWorkspaceTab = workspaceTabs.find((t) => t.id === activeWorkspaceTabId);
+  const effectiveDatabase =
+    activeWorkspaceTab && activeWorkspaceTab.connectionId === connectionId
+      ? activeWorkspaceTab.database || connectionDefaultDb
+      : connectionDefaultDb;
+  const draftScopeKey = `${connectionId || 'no-connection'}::${effectiveDatabase || 'default'}`;
+
+  const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(draftScopeKey);
 
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeTabId, setActiveTabId] = useState('');
@@ -28,7 +41,13 @@ export default function QueryTabs() {
   // Debounce timers for auto-save (one per tab)
   const saveTimersRef = useRef<Map<string, number>>(new Map());
 
-  // Load drafts on mount
+  // Clear per-tab debounce timers when switching workspace tab/database
+  useEffect(() => {
+    saveTimersRef.current.forEach(timer => clearTimeout(timer));
+    saveTimersRef.current.clear();
+  }, [draftScopeKey]);
+
+  // Load drafts per (connection + database tab)
   useEffect(() => {
     if (!connectionId) return;
 
@@ -59,7 +78,7 @@ export default function QueryTabs() {
       setTabs([initialTab]);
       setActiveTabId(initialTab.id);
     }
-  }, [connectionId, loadDrafts]);
+  }, [connectionId, loadDrafts, draftScopeKey]);
 
   const addTab = useCallback((sql?: string, metadata?: Record<string, any>) => {
     const newId = Math.random().toString(36).substr(2, 9);
@@ -169,6 +188,12 @@ export default function QueryTabs() {
 
   const openTableInTab = useCallback((schema: string, table: string, newTab = true) => {
     if (newTab) {
+      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
+      if (existing) {
+        setActiveTabId(existing.id);
+        return;
+      }
+
       const tableTab: Tab = {
         id: Math.random().toString(36).substr(2, 9),
         title: `${schema}.${table}`,
@@ -187,7 +212,7 @@ export default function QueryTabs() {
           : t
       ));
     }
-  }, [activeTabId]);
+  }, [activeTabId, tabs]);
 
   // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   useEffect(() => {
@@ -196,16 +221,21 @@ export default function QueryTabs() {
     // Handle opening a table
     if (state?.openTable) {
       const { schema, table } = state.openTable;
-      const tableTab: Tab = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: `${schema}.${table}`,
-        type: 'table',
-        schema,
-        table,
-        lastModified: Date.now(),
-      };
-      setTabs(prev => [...prev, tableTab]);
-      setActiveTabId(tableTab.id);
+      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
+      if (existing) {
+        setActiveTabId(existing.id);
+      } else {
+        const tableTab: Tab = {
+          id: Math.random().toString(36).substr(2, 9),
+          title: `${schema}.${table}`,
+          type: 'table',
+          schema,
+          table,
+          lastModified: Date.now(),
+        };
+        setTabs(prev => [...prev, tableTab]);
+        setActiveTabId(tableTab.id);
+      }
 
       // Clear the state properly using navigate
       navigate(location.pathname, { replace: true, state: {} });
@@ -214,9 +244,12 @@ export default function QueryTabs() {
     // Handle loading a query (from Saved Queries or History in Sidebar)
     if (state?.sql) {
       const { sql, metadata, name, id } = state;
+      const normalizedSql = typeof sql === 'string' ? sql.trim() : '';
 
       // Check if tab with this savedQueryId already exists
-      const existingTab = id ? tabs.find(t => t.savedQueryId === id) : undefined;
+      const existingTab = id
+        ? tabs.find(t => t.savedQueryId === id)
+        : tabs.find(t => t.type === 'query' && (t.sql || '').trim() === normalizedSql);
 
       if (existingTab) {
         // Switch to existing tab and update content

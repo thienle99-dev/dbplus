@@ -22,10 +22,9 @@ Before you begin, ensure you have the following installed:
     cd dbplus
     ```
 
-2.  Install frontend dependencies:
+2.  Install frontend dependencies (pnpm workspace):
     ```bash
-    cd frontend
-    npm install
+    pnpm install
     ```
 
 ## Development
@@ -33,8 +32,7 @@ Before you begin, ensure you have the following installed:
 To start the application in development mode (with hot-reloading for both frontend and backend):
 
 ```bash
-cd frontend
-npm run tauri dev
+pnpm tauri:dev
 ```
 
 This command will:
@@ -49,16 +47,10 @@ To build the optimized executable for your operating system:
 
 ### Windows (.exe / .msi)
 
-1.  Navigate to the frontend directory:
+1.  Run the build command:
 
     ```bash
-    cd frontend
-    ```
-
-2.  Run the build command:
-
-    ```bash
-    npm run tauri build
+    pnpm --dir frontend tauri build
     ```
 
 3.  **Output**: The installer will be located at:
@@ -67,16 +59,10 @@ To build the optimized executable for your operating system:
 
 ### macOS (.dmg / .app)
 
-1.  Navigate to the frontend directory:
+1.  Run the build command (this bundles the backend automatically):
 
     ```bash
-    cd frontend
-    ```
-
-2.  Run the build command (this bundles the backend automatically):
-
-    ```bash
-    npm run build:dmg
+    pnpm build:dmg
     ```
 
 3.  **Output**: The disk image will be located at:
@@ -84,16 +70,10 @@ To build the optimized executable for your operating system:
 
 ### Linux (.deb / .AppImage)
 
-1.  Navigate to the frontend directory:
+1.  Run the build command:
 
     ```bash
-    cd frontend
-    ```
-
-2.  Run the build command:
-
-    ```bash
-    npm run tauri build
+    pnpm --dir frontend tauri build
     ```
 
 3.  **Output**: The bundle will be located at:
@@ -101,6 +81,6 @@ To build the optimized executable for your operating system:
 
 ## Troubleshooting
 
-- **"Cannot find module..."**: Ensure you have run `npm install` in the `frontend` directory.
+- **"Cannot find module..."**: Ensure you have run `pnpm install` at the repo root (or in `frontend`).
 - **Rust compilation errors**: Ensure your Rust installation is up to date (`rustup update`).
 - **Tauri errors**: Check the [Tauri Documentation](https://tauri.app/v1/guides/) for platform-specific requirements.

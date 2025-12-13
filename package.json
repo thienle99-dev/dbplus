@@ -1,0 +1,11 @@
+{
+  "name": "dbplus",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --dir frontend dev",
+    "tauri:dev": "pnpm --dir frontend tauri dev",
+    "build": "pnpm --dir frontend build",
+    "build:dmg": "pnpm --dir frontend build:dmg",
+    "preview": "pnpm --dir frontend preview"
+  }
+}

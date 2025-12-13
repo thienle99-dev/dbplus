@@ -14,14 +14,24 @@ use uuid::Uuid;
 pub struct SchemaParams {}
 
 #[derive(Deserialize)]
+pub struct DatabaseOverrideParams {
+    #[serde(default)]
+    pub database: Option<String>,
+}
+
+#[derive(Deserialize)]
 pub struct TableParams {
     schema: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct ColumnParams {
     schema: String,
     table: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -39,11 +49,16 @@ pub async fn list_schemas(
     State(db): State<DatabaseConnection>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
+    Query(params): Query<DatabaseOverrideParams>,
 ) -> impl IntoResponse {
     tracing::info!("[API] GET /schemas - connection_id: {}", connection_id);
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.get_schemas(connection_id).await {
         Ok(schemas) => {
             tracing::info!(
@@ -142,7 +157,12 @@ pub async fn list_schema_metadata(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .get_schema_metadata(connection_id, &params.schema)
         .await
@@ -174,7 +194,12 @@ pub async fn list_tables(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.get_tables(connection_id, &params.schema).await {
         Ok(tables) => {
             tracing::info!(
@@ -204,7 +229,12 @@ pub async fn list_columns(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .get_columns(connection_id, &params.schema, &params.table)
         .await
@@ -229,6 +259,8 @@ pub struct TableDataParams {
     table: String,
     limit: Option<i64>,
     offset: Option<i64>,
+    #[serde(default)]
+    database: Option<String>,
 }
 
 pub async fn get_table_data(
@@ -250,7 +282,12 @@ pub async fn get_table_data(
 
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
 
     match service
         .get_table_data(connection_id, &params.schema, &params.table, limit, offset)
@@ -276,6 +313,8 @@ use crate::services::db_driver::ColumnDefinition;
 pub struct AddColumnParams {
     schema: String,
     table: String,
+    #[serde(default)]
+    database: Option<String>,
 }
 
 pub async fn add_column(
@@ -294,7 +333,12 @@ pub async fn add_column(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .add_column(connection_id, &params.schema, &params.table, &column_def)
         .await
@@ -321,6 +365,8 @@ pub async fn add_column(
 pub struct AlterColumnParams {
     schema: String,
     table: String,
+    #[serde(default)]
+    database: Option<String>,
 }
 
 pub async fn alter_column(
@@ -339,7 +385,12 @@ pub async fn alter_column(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .alter_column(
             connection_id,
@@ -385,7 +436,12 @@ pub async fn drop_column(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .drop_column(connection_id, &params.schema, &params.table, &column_name)
         .await
