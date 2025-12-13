@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Trash2, Search } from 'lucide-react';
 import api from '../services/api';
 
 interface HistoryEntry {
@@ -26,6 +26,8 @@ export default function QueryHistory({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [localSearch, setLocalSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'error'>('all');
 
   useEffect(() => {
     if (connectionId) {
@@ -47,7 +49,7 @@ export default function QueryHistory({
     }
   };
 
-  const handleClear = async () => {
+  const handleClearAll = async () => {
     if (!confirm('Clear all query history?')) return;
     try {
       await api.delete(`/api/connections/${connectionId}/history`);
@@ -117,25 +119,36 @@ export default function QueryHistory({
     return new Date(dateStr).toLocaleString();
   };
 
-  const filteredHistory = history.filter(entry =>
-    !searchTerm || entry.sql.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const activeSearch = embedded ? searchTerm : localSearch;
+  const lowered = activeSearch.toLowerCase();
+  const filteredHistory = history.filter((entry) => {
+    if (statusFilter === 'success' && !entry.success) return false;
+    if (statusFilter === 'error' && entry.success) return false;
+
+    if (!lowered) return true;
+    const sqlMatch = entry.sql.toLowerCase().includes(lowered);
+    const errMatch = (entry.error_message || '').toLowerCase().includes(lowered);
+    return sqlMatch || errMatch;
+  });
 
   return (
     <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-l border-border w-72' : ''}`}>
-      {!embedded && (
-        <div className="p-4 border-b border-border flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
-              <Clock size={14} /> History
-            </h2>
-            {history.length > 0 && (
-              <span className="text-xs text-text-secondary">
-                ({selectedIds.size > 0 ? `${selectedIds.size}/` : ''}{history.length})
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
+      <div className={`p-4 border-b border-border ${embedded ? 'p-3' : ''}`}>
+        <div className="flex justify-between items-center">
+          {!embedded && (
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
+                <Clock size={14} /> History
+              </h2>
+              {history.length > 0 && (
+                <span className="text-xs text-text-secondary">
+                  ({selectedIds.size > 0 ? `${selectedIds.size}/` : ''}{history.length})
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 ml-auto">
             {selectedIds.size > 0 ? (
               <button
                 onClick={handleBulkDelete}
@@ -146,7 +159,7 @@ export default function QueryHistory({
               </button>
             ) : (
               <button
-                onClick={handleClear}
+                onClick={handleClearAll}
                 disabled={history.length === 0}
                 className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-error disabled:opacity-50"
                 title="Clear All History"
@@ -165,7 +178,55 @@ export default function QueryHistory({
             )}
           </div>
         </div>
-      )}
+
+        {!embedded && (
+          <div className="mt-3 space-y-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-2 text-text-secondary" />
+              <input
+                type="text"
+                placeholder="Search SQL or error..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
+              />
+            </div>
+
+            <div className="flex bg-bg-2 p-0.5 rounded border border-border">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'all'
+                  ? 'bg-bg-1 text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                title="Show all"
+              >
+                All
+              </button>
+              <button
+                onClick={() => setStatusFilter('success')}
+                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'success'
+                  ? 'bg-bg-1 text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                title="Show successful queries"
+              >
+                Success
+              </button>
+              <button
+                onClick={() => setStatusFilter('error')}
+                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'error'
+                  ? 'bg-bg-1 text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                title="Show errors"
+              >
+                Errors
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (

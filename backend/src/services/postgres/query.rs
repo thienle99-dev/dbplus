@@ -442,7 +442,8 @@ impl QueryDriver for PostgresQuery {
     async fn explain(&self, query: &str, analyze: bool) -> Result<Value> {
         let client = self.pool.get().await?;
         let explain_query = if analyze {
-            format!("EXPLAIN (ANALYZE, FORMAT JSON) {}", query)
+            // BUFFERS provides IO/cache insight (helps detect seq scan / missing indexes / heavy reads)
+            format!("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {}", query)
         } else {
             format!("EXPLAIN (FORMAT JSON) {}", query)
         };

@@ -97,12 +97,13 @@
 
 #### 2.3 Execution Plan 📊
 **Goal**: Query performance insights
-- [ ] Backend: EXPLAIN query support
-- [ ] Frontend: Execution plan tab
+- [x] Backend: EXPLAIN query support (Postgres JSON, SQLite query plan)
+- [x] Frontend: Execution plan tab
 - [ ] Visualize query plan (tree view)
-- [ ] Highlight slow operations
-- [ ] Index usage analysis
-- [ ] Cost estimation display
+- [x] Highlight slow operations (hotspots list)
+- [x] Index usage analysis (detect seq scan vs index scans)
+- [x] Cost estimation display (summary + top nodes)
+- [x] Buffers/IO insight (Postgres EXPLAIN ANALYZE BUFFERS)
 
 **Estimated**: 3-4 days
 

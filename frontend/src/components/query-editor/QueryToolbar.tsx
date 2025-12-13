@@ -88,7 +88,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                                     }}
                                     title="Run Explain Analyze (Cmd/Ctrl+Shift+E)"
                                 >
-                                    <span>Explain Analyze</span>
+                                    <span>Explain Analyze (+buffers)</span>
                                 </button>
                             </div>
                         </>
