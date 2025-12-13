@@ -89,7 +89,7 @@
 - [x] Frontend: Snippets library UI
 - [x] Frontend: Insert snippet
 - [x] Template variables (e.g., {{table_name}})
-- [ ] Pre-defined common snippets
+- [x] Pre-defined common snippets
 - [x] Custom user snippets
 - [x] Snippet categories/tags
 
