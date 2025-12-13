@@ -11,6 +11,10 @@ export interface QueryResult {
   rows: any[][];
   affected_rows: number;
   column_metadata?: ColumnMetadata[];
+  total_count?: number;
+  limit?: number;
+  offset?: number;
+  has_more?: boolean;
 }
 
 export type EditState = Record<string, Record<number, unknown>>;

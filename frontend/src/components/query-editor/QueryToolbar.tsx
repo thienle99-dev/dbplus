@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Play, Save, Eraser, Book, ChevronDown } from 'lucide-react';
 
 
@@ -32,6 +32,25 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     isDraft
 }) => {
     const [isExplainMenuOpen, setIsExplainMenuOpen] = React.useState(false);
+    const explainMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isExplainMenuOpen) return;
+        const onDocMouseDown = (e: MouseEvent) => {
+            if (!explainMenuRef.current) return;
+            if (!explainMenuRef.current.contains(e.target as Node)) setIsExplainMenuOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsExplainMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown);
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [isExplainMenuOpen]);
+
     return (
         <div className="h-10 px-3 border-b border-border bg-bg-0/50 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
             <div className="flex items-center gap-2">
@@ -46,7 +65,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     <div className="absolute inset-0 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
 
-                <div className="relative">
+                <div className="relative" ref={explainMenuRef}>
                     <div className="flex rounded-md shadow-sm">
                         <button
                             onClick={onExplain}
@@ -69,7 +88,6 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
 
                     {isExplainMenuOpen && (
                         <>
-                            <div className="fixed inset-0 z-30" onClick={() => setIsExplainMenuOpen(false)} />
                             <div className="absolute top-full left-0 mt-1 w-40 bg-bg-1 border border-border rounded-md shadow-lg z-40 py-1">
                                 <button
                                     className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"

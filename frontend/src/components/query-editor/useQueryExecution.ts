@@ -11,13 +11,20 @@ import { ApiErrorDetails, extractApiErrorDetails } from '../../utils/apiError';
 export function useQueryExecution(query: string, setQuery: (q: string) => void) {
     const { connectionId } = useParams();
     const { showToast } = useToast();
-    const { formatKeywordCase } = useSettingsStore();
+    const { formatKeywordCase, defaultLimit } = useSettingsStore();
     const executeMutation = useExecuteQuery(connectionId);
 
     const [result, setResult] = useState<QueryResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [errorDetails, setErrorDetails] = useState<ApiErrorDetails | null>(null);
+    const [lastSql, setLastSql] = useState<string | null>(null);
     const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
+
+    const isSelectLike = (sql: string) => {
+        const trimmed = sql.trimStart();
+        const upper = trimmed.toUpperCase();
+        return upper.startsWith('SELECT') || upper.startsWith('WITH');
+    };
 
     const execute = useCallback(async (queryOverride?: string) => {
         const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
@@ -26,9 +33,19 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         setResult(null);
         setError(null);
         setErrorDetails(null);
+        setLastSql(sqlToExecute);
 
         try {
-            const data = await executeMutation.mutateAsync({ query: sqlToExecute });
+            const data = await executeMutation.mutateAsync({
+                query: sqlToExecute,
+                ...(isSelectLike(sqlToExecute)
+                    ? {
+                        limit: defaultLimit,
+                        offset: 0,
+                        include_total_count: true,
+                    }
+                    : {}),
+            });
             const executionTime = Date.now() - startTime;
 
             setResult(data);
@@ -79,7 +96,39 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                 }
             }
         }
-    }, [connectionId, query, showToast, executeMutation]);
+    }, [connectionId, query, showToast, executeMutation, defaultLimit]);
+
+    const fetchPage = useCallback(
+        async (limit: number, offset: number) => {
+            if (!lastSql) return;
+            const sqlToExecute = lastSql;
+            const startTime = Date.now();
+            setError(null);
+            setErrorDetails(null);
+
+            try {
+                const data = await executeMutation.mutateAsync({
+                    query: sqlToExecute,
+                    limit,
+                    offset,
+                    include_total_count: true,
+                });
+                setResult(data);
+                const executionTime = Date.now() - startTime;
+                if (data.affected_rows > 0) {
+                    showToast(`Query executed successfully. ${data.affected_rows} rows affected.`, 'success');
+                } else {
+                    showToast(`Loaded ${data.rows.length} rows (${executionTime}ms)`, 'info');
+                }
+            } catch (err: any) {
+                const details = extractApiErrorDetails(err);
+                setError(details.message);
+                setErrorDetails({ ...details, sql: sqlToExecute });
+                showToast('Query execution failed', 'error');
+            }
+        },
+        [executeMutation, lastSql, showToast]
+    );
 
     const handleFormat = useCallback(() => {
         if (!query.trim()) return;
@@ -95,11 +144,13 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
 
     return {
         execute,
+        fetchPage,
         handleFormat,
         result,
         loading: executeMutation.isPending,
         error,
         errorDetails,
+        lastSql,
         setResult
     };
 }

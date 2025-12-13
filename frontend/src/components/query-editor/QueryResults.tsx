@@ -9,6 +9,7 @@ import {
     SortingState,
     RowSelectionState,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
@@ -32,16 +33,21 @@ interface QueryResultsProps {
     error: string | null;
     errorDetails?: ApiErrorDetails | null;
     onRefresh?: () => void;
+    lastSql?: string;
+    onPaginate?: (limit: number, offset: number) => void;
     connectionId: string;
 }
 
-export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, errorDetails, onRefresh, connectionId }) => {
+export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
     const [showErrorDetails, setShowErrorDetails] = useState(false);
+    const [renderAllRows, setRenderAllRows] = useState(false);
+    const [pageSize, setPageSize] = useState(1000);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const tableScrollRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
 
     // Custom Hooks
@@ -182,6 +188,37 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         };
     }, [exportMenuOpen]);
 
+    useEffect(() => {
+        // Reset potentially heavy rendering & selection when a new result arrives.
+        setRenderAllRows(false);
+        setRowSelection({});
+        if (typeof result?.limit === 'number' && Number.isFinite(result.limit)) {
+            setPageSize(result.limit);
+        }
+    }, [result]);
+
+    const MAX_RENDER_ROWS = 5000;
+    const displayRows = useMemo(() => {
+        if (!result?.rows) return [];
+        if (renderAllRows) return result.rows;
+        return result.rows.slice(0, MAX_RENDER_ROWS);
+    }, [result, renderAllRows]);
+
+    const hasTruncatedRows = !!result?.rows && !renderAllRows && result.rows.length > MAX_RENDER_ROWS;
+    const canPaginate =
+        !!result &&
+        typeof result.total_count === 'number' &&
+        typeof result.limit === 'number' &&
+        typeof result.offset === 'number' &&
+        !!onPaginate &&
+        !!lastSql;
+
+    const totalCount = typeof result?.total_count === 'number' ? result.total_count : undefined;
+    const limit = typeof result?.limit === 'number' ? result.limit : undefined;
+    const offset = typeof result?.offset === 'number' ? result.offset : undefined;
+    const currentPage = limit && offset !== undefined ? Math.floor(offset / limit) + 1 : undefined;
+    const totalPages = limit && totalCount !== undefined ? Math.max(1, Math.ceil(totalCount / limit)) : undefined;
+
     const columns = useMemo(() => {
         const helper = createColumnHelper<unknown[]>();
         const baseColumns: any[] = [
@@ -282,7 +319,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
     }, [result, edits, handleCellSave, hasEditableColumns]);
 
     const tableInstance = useReactTable({
-        data: result?.rows || [],
+        data: displayRows,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -298,6 +335,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
 
     const pendingEditsCount = Object.keys(edits).length;
     const selectedCount = useMemo(() => Object.keys(rowSelection).length, [rowSelection]);
+    const rowModelRows = tableInstance.getRowModel().rows;
+
+    const rowVirtualizer = useVirtualizer({
+        count: rowModelRows.length,
+        getScrollElement: () => tableScrollRef.current,
+        estimateSize: () => 28,
+        overscan: 16,
+    });
 
     const getExportRows = useCallback(() => {
         if (!result) return [];
@@ -570,6 +615,16 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                     Double-click cells to edit
                                 </span>
                             )}
+                            {hasTruncatedRows && (
+                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                    Showing first {MAX_RENDER_ROWS.toLocaleString()} of {result.rows.length.toLocaleString()} rows
+                                </span>
+                            )}
+                            {totalCount !== undefined && limit !== undefined && offset !== undefined && (
+                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                    Total {totalCount.toLocaleString()} • Page {currentPage}/{totalPages}
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -705,14 +760,102 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                             )}
                             {result.rows.length > 0 && (
                                 <span className="bg-accent/20 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: 'var(--color-primary-default)' }}>
-                                    {result.rows.length} {result.rows.length === 1 ? 'row' : 'rows'}
+                                    {displayRows.length} {displayRows.length === 1 ? 'row' : 'rows'}
+                                </span>
+                            )}
+                            {hasTruncatedRows && (
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm(`Render all ${result.rows.length.toLocaleString()} rows? This may freeze the UI.`)) {
+                                            setRenderAllRows(true);
+                                        }
+                                    }}
+                                    className="px-2 py-1 rounded bg-bg-3 border border-border text-[10px] text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
+                                    title="Render all rows (may be slow)"
+                                >
+                                    Render all
+                                </button>
+                            )}
+                            {result.rows.length > 2000 && (
+                                <span className="bg-bg-3 px-2 py-0.5 rounded-full text-[10px] text-text-secondary border border-border">
+                                    Virtualized
                                 </span>
                             )}
                         </div>
                     </div>
 
+                    {canPaginate && totalCount !== undefined && limit !== undefined && offset !== undefined && (
+                        <div className="px-2 py-2 bg-bg-1 border-b border-border flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-xs text-text-secondary">
+                                <span>Rows per page</span>
+                                <select
+                                    className="bg-bg-0 border border-border rounded px-2 py-1 text-xs text-text-primary"
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        const next = Number(e.target.value);
+                                        setPageSize(next);
+                                        onPaginate(next, 0);
+                                    }}
+                                >
+                                    {[100, 500, 1000, 2000, 5000, 10000].map((n) => (
+                                        <option key={n} value={n}>
+                                            {n.toLocaleString()}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => onPaginate(limit, Math.max(0, offset - limit))}
+                                    disabled={loading || offset === 0}
+                                    className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Prev
+                                </button>
+                                <button
+                                    onClick={() => onPaginate(limit, Math.min(offset + limit, Math.max(0, totalCount - 1)))}
+                                    disabled={loading || (result.has_more === false)}
+                                    className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const form = e.currentTarget;
+                                        const input = form.elements.namedItem('page') as HTMLInputElement | null;
+                                        if (!input) return;
+                                        const page = Number(input.value);
+                                        if (!Number.isFinite(page) || page < 1 || !totalPages) return;
+                                        const clamped = Math.min(Math.max(1, page), totalPages);
+                                        onPaginate(limit, (clamped - 1) * limit);
+                                    }}
+                                    className="flex items-center gap-1"
+                                >
+                                    <span className="text-xs text-text-secondary">Go</span>
+                                    <input
+                                        name="page"
+                                        defaultValue={currentPage}
+                                        className="w-16 bg-bg-0 border border-border rounded px-2 py-1 text-xs text-text-primary"
+                                        type="number"
+                                        min={1}
+                                        max={totalPages}
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Go
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     {result.columns.length > 0 && (
-                        <div className="flex-1 overflow-auto">
+                        <div className="flex-1 overflow-auto" ref={tableScrollRef}>
                             {result.rows.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-text-secondary">
                                     <div className="text-4xl mb-2">📊</div>
@@ -720,7 +863,10 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                     <div className="text-xs mt-1">No rows returned</div>
                                 </div>
                             ) : (
-                                <table className="w-full border-collapse text-sm" style={{ width: tableInstance.getTotalSize() }}>
+                                <table
+                                    className="w-full border-collapse text-sm"
+                                    style={{ width: tableInstance.getTotalSize(), tableLayout: 'fixed' }}
+                                >
                                     <thead className="bg-bg-1 sticky top-0 z-10">
                                         {tableInstance.getHeaderGroups().map((headerGroup) => (
                                             <tr key={headerGroup.id}>
@@ -762,26 +908,51 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                         ))}
                                     </thead>
                                     <tbody>
-                                        {tableInstance.getRowModel().rows.map((row) => (
-                                            <tr key={row.id} className="hover:bg-bg-2/50 group">
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <td
-                                                        key={cell.id}
-                                                        className="border-b border-r border-border font-mono text-xs p-0 overflow-hidden text-ellipsis whitespace-nowrap"
-                                                        style={{
-                                                            width: cell.column.getSize(),
-                                                            maxWidth: cell.column.getSize(),
-                                                            color: 'var(--color-text-primary)'
-                                                        }}
-                                                    >
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
+                                        {(() => {
+                                            const virtualItems = rowVirtualizer.getVirtualItems();
+                                            const totalSize = rowVirtualizer.getTotalSize();
+                                            const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+                                            const last = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1] : null;
+                                            const paddingBottom = last ? totalSize - (last.start + last.size) : 0;
+                                            const colSpan = tableInstance.getAllLeafColumns().length;
+
+                                            return (
+                                                <>
+                                                    {paddingTop > 0 && (
+                                                        <tr>
+                                                            <td style={{ height: `${paddingTop}px` }} colSpan={colSpan} />
+                                                        </tr>
+                                                    )}
+
+                                                    {virtualItems.map((virtualRow) => {
+                                                        const row = rowModelRows[virtualRow.index];
+                                                        return (
+                                                            <tr key={row.id} className="hover:bg-bg-2/50 group h-7">
+                                                                {row.getVisibleCells().map((cell) => (
+                                                                    <td
+                                                                        key={cell.id}
+                                                                        className="border-b border-r border-border font-mono text-xs p-0 overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                        style={{
+                                                                            width: cell.column.getSize(),
+                                                                            maxWidth: cell.column.getSize(),
+                                                                            color: 'var(--color-text-primary)',
+                                                                        }}
+                                                                    >
+                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                    </td>
+                                                                ))}
+                                                            </tr>
+                                                        );
+                                                    })}
+
+                                                    {paddingBottom > 0 && (
+                                                        <tr>
+                                                            <td style={{ height: `${paddingBottom}px` }} colSpan={colSpan} />
+                                                        </tr>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </tbody>
                                 </table>
                             )}

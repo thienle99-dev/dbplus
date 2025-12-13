@@ -132,7 +132,7 @@
 - [ ] Frontend: Jump to page
 - [ ] Infinite scroll option
 - [ ] Total row count display
-- [ ] Performance optimization
+- [x] Performance optimization (virtualized result rendering)
 
 **Estimated**: 2-3 days
 

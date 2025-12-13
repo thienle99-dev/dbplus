@@ -4,7 +4,21 @@ import { QueryResult, SavedQuery } from '../types';
 
 export const useExecuteQuery = (connectionId: string | undefined) => {
     return useMutation({
-        mutationFn: async ({ query, schema, table, limit, offset }: { query: string; schema?: string; table?: string, limit?: number, offset?: number }) => {
+        mutationFn: async ({
+            query,
+            schema,
+            table,
+            limit,
+            offset,
+            include_total_count,
+        }: {
+            query: string;
+            schema?: string;
+            table?: string;
+            limit?: number;
+            offset?: number;
+            include_total_count?: boolean;
+        }) => {
             if (!connectionId) throw new Error("Connection ID is required");
 
             // Build query params for GET request if it's a simple select (optional optimization, but keeping POST for generic execute is safer for now)
@@ -18,7 +32,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
                 return data;
             }
 
-            const { data } = await api.post<QueryResult>(url, { query });
+            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count });
             return data;
         },
     });

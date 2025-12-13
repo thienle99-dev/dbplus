@@ -67,7 +67,7 @@ export default function QueryEditor({
 
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
-  const { execute, handleFormat, result, loading, error, errorDetails } = useQueryExecution(query, setQuery);
+  const { execute, fetchPage, handleFormat, result, loading, error, errorDetails, lastSql } = useQueryExecution(query, setQuery);
   const explainQuery = useExplainQuery(connectionId);
   const updateSavedQuery = useUpdateSavedQuery(connectionId);
 
@@ -482,6 +482,8 @@ export default function QueryEditor({
               loading={loading}
               error={error}
               errorDetails={errorDetails}
+              lastSql={lastSql || undefined}
+              onPaginate={(limit, offset) => fetchPage(limit, offset)}
               connectionId={connectionId || ''}
             />
           </div>
