@@ -6,6 +6,7 @@ export type ApiErrorDetails = {
   url?: string;
   method?: string;
   responseData?: unknown;
+  sql?: string;
 };
 
 export function extractApiErrorDetails(err: any): ApiErrorDetails {
@@ -37,4 +38,3 @@ export function extractApiErrorDetails(err: any): ApiErrorDetails {
     responseData,
   };
 }
-

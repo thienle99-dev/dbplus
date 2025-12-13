@@ -428,15 +428,82 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         [confirmLargeExport, getExportRows, result, selectedCount, showToast]
     );
 
+    const formattedDbError = useMemo(() => {
+        if (!error || !errorDetails) return null;
+        const data = errorDetails.responseData;
+        const db = data && typeof data === 'object' ? (data as any).db : undefined;
+        if (!db || typeof db !== 'object') return null;
+
+        const engine = db.engine as string | undefined;
+        if (engine !== 'postgres') return null;
+
+        const sql = typeof errorDetails.sql === 'string' ? errorDetails.sql : null;
+        const posRaw = db.position as string | undefined;
+        const message = (db.message as string | undefined) || error;
+        const hint = db.hint as string | undefined;
+
+        if (!sql || !posRaw) return null;
+        const m = String(posRaw).match(/^(\d+)/);
+        const pos = m ? Number(m[1]) : NaN;
+        if (!Number.isFinite(pos) || pos <= 0) return null;
+
+        const offset = Math.min(pos - 1, sql.length);
+        const before = sql.slice(0, offset);
+        const line = before.split('\n').length;
+        const lineStart = before.lastIndexOf('\n') + 1;
+        const lineEndIdx = sql.indexOf('\n', lineStart);
+        const lineText = (lineEndIdx === -1 ? sql.slice(lineStart) : sql.slice(lineStart, lineEndIdx)).replace(/\r$/, '');
+        const colInLine = Math.max(0, offset - lineStart);
+
+        const linePrefix = `LINE ${line}: `;
+        const caretLine = `${' '.repeat(linePrefix.length + colInLine)}^`;
+
+        const parts = [
+            `Query ERROR at Line ${line}: ERROR:  ${message}`,
+            `${linePrefix}${lineText}`,
+            caretLine,
+        ];
+        if (hint) parts.push(`HINT:  ${hint}`);
+        return parts.join('\n');
+    }, [error, errorDetails]);
+
     return (
         <div className="flex-1 overflow-auto bg-bg-0 flex flex-col">
             {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
             {error && (
                 <div className="p-4 border-b border-border bg-bg-1">
+                    {(() => {
+                        const data = errorDetails?.responseData;
+                        const db = data && typeof data === 'object' ? (data as any).db : undefined;
+                        const engine = db?.engine as string | undefined;
+                        const code = db?.code as string | undefined;
+                        const dbMessage = db?.message as string | undefined;
+                        const detail = db?.detail as string | undefined;
+                        const hint = db?.hint as string | undefined;
+                        const position = db?.position as string | undefined;
+                        return (
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                             <div className="text-xs font-semibold text-error uppercase tracking-wider mb-2">Database Error</div>
-                            <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{error}</div>
+                            <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{dbMessage || error}</div>
+                            {formattedDbError && (
+                                <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
+                                    {formattedDbError}
+                                </pre>
+                            )}
+                            {(engine || code || detail || hint || position) && (
+                                <div className="mt-2 space-y-1 text-xs text-text-secondary">
+                                    {(engine || code) && (
+                                        <div>
+                                            {engine ? `${engine.toUpperCase()} ` : ''}
+                                            {code ? `(${code})` : ''}
+                                        </div>
+                                    )}
+                                    {position && <div>{`Position: ${position}`}</div>}
+                                    {detail && <div>{`Detail: ${detail}`}</div>}
+                                    {hint && <div>{`Hint: ${hint}`}</div>}
+                                </div>
+                            )}
                             {errorDetails?.status && (
                                 <div className="mt-2 text-xs text-text-secondary">
                                     {errorDetails.method ? `${errorDetails.method} ` : ''}
@@ -476,6 +543,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                             )}
                         </div>
                     </div>
+                        );
+                    })()}
 
                     {showErrorDetails && errorDetails && (
                         <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">

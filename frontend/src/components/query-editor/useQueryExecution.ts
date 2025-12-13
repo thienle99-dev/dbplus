@@ -59,7 +59,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
             const errorMessage = details.message;
 
             setError(errorMessage);
-            setErrorDetails(details);
+            setErrorDetails({ ...details, sql: sqlToExecute });
             showToast('Query execution failed', 'error');
 
             // Save to history (error)
