@@ -4,6 +4,7 @@ pub mod database;
 pub mod explain;
 pub mod history;
 pub mod query;
+pub mod query_stream;
 pub mod result_edit;
 pub mod saved_query;
 pub mod saved_query_folder;

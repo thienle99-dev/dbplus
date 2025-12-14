@@ -116,7 +116,7 @@
 - [x] Backend: Execute updates
 - [x] Validation before save
 - [x] Bulk edit support
-- [ ] Delete rows from results
+- [x] Delete rows from results
 
 **Estimated**: 4-5 days
 
@@ -213,7 +213,7 @@
 - [ ] Add comprehensive type tests
 
 ### Performance Optimization
-- [ ] Query result streaming for large datasets
+- [x] Query result streaming for large datasets (backend NDJSON: `POST /api/connections/:id/execute/stream`)
 - [x] Virtual scrolling for result table
 - [x] Debounce auto-save
 - [x] Optimize re-renders (memoize table columns, reduce recompute)

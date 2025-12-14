@@ -120,6 +120,10 @@ async fn main() {
             post(handlers::query::execute_query),
         )
         .route(
+            "/api/connections/:id/execute/stream",
+            post(handlers::query_stream::execute_query_stream),
+        )
+        .route(
             "/api/connections/:id/explain",
             post(handlers::explain::explain_query),
         )

@@ -2,13 +2,17 @@ use crate::services::db_driver::{ColumnMetadata, QueryResult};
 use crate::services::driver::{ConnectionDriver, QueryDriver};
 use anyhow::Result;
 use async_trait::async_trait;
+use bytes::Bytes;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use deadpool_postgres::Pool;
+use futures_util::{pin_mut, StreamExt};
 use postgres_types::{FromSql, Kind, Type as PgType};
 use rust_decimal::Decimal;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::net::IpAddr;
+use tokio::sync::mpsc;
+use tokio_postgres::types::ToSql;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -1496,6 +1500,107 @@ pub struct PostgresQuery {
 impl PostgresQuery {
     pub fn new(pool: Pool) -> Self {
         Self { pool }
+    }
+
+    pub async fn stream_ndjson(
+        &self,
+        query: &str,
+        limit: Option<i64>,
+        offset: Option<i64>,
+        include_total_count: bool,
+        tx: mpsc::Sender<Bytes>,
+    ) -> Result<()> {
+        fn is_select_like(sql: &str) -> bool {
+            let trimmed = sql.trim_start();
+            let upper = trimmed.to_uppercase();
+            upper.starts_with("SELECT") || upper.starts_with("WITH")
+        }
+
+        async fn send_line(tx: &mpsc::Sender<Bytes>, value: serde_json::Value) -> bool {
+            let mut buf = serde_json::to_vec(&value).unwrap_or_else(|_| {
+                b"{\"type\":\"error\",\"message\":\"serialization failed\"}".to_vec()
+            });
+            buf.push(b'\n');
+            tx.send(Bytes::from(buf)).await.is_ok()
+        }
+
+        let client = self.pool.get().await?;
+        let trimmed = query.trim();
+        let is_select = is_select_like(trimmed);
+
+        if !is_select {
+            let affected = client.execute(trimmed, &[]).await?;
+            let _ = send_line(&tx, serde_json::json!({ "type": "done", "affected_rows": affected })).await;
+            return Ok(());
+        }
+
+        let base = trimmed.trim_end_matches(';').to_string();
+        let (sql_to_run, meta_limit, meta_offset, total_count) =
+            if limit.is_some() || offset.is_some() || include_total_count {
+                let meta_limit = limit.unwrap_or(1000).max(1);
+                let meta_offset = offset.unwrap_or(0).max(0);
+                let page_sql = format!(
+                    "SELECT * FROM ({}) AS __dbplus_subq LIMIT {} OFFSET {}",
+                    base, meta_limit, meta_offset
+                );
+
+                let total_count = if include_total_count {
+                    let count_sql =
+                        format!("SELECT COUNT(*) AS count FROM ({}) AS __dbplus_subq", base);
+                    let row = client.query_one(&count_sql, &[]).await?;
+                    Some(row.try_get::<_, i64>(0).unwrap_or(0))
+                } else {
+                    None
+                };
+
+                (page_sql, Some(meta_limit), Some(meta_offset), total_count)
+            } else {
+                (base, None, None, None)
+            };
+
+        let statement = client.prepare(&sql_to_run).await?;
+        let columns: Vec<String> = statement.columns().iter().map(|c| c.name().to_string()).collect();
+        let decoders = build_column_decoders(statement.columns());
+
+        let _ = send_line(
+            &tx,
+            serde_json::json!({
+                "type": "meta",
+                "columns": columns,
+                "total_count": total_count,
+                "limit": meta_limit,
+                "offset": meta_offset,
+            }),
+        )
+        .await;
+
+        let params = std::iter::empty::<&(dyn ToSql + Sync)>();
+        let stream = client.query_raw(&statement, params).await?;
+        pin_mut!(stream);
+
+        let mut row_count: u64 = 0;
+        while let Some(item) = stream.next().await {
+            let row = match item {
+                Ok(r) => r,
+                Err(e) => {
+                    let _ = send_line(&tx, serde_json::json!({ "type": "error", "message": e.to_string() })).await;
+                    break;
+                }
+            };
+
+            let mut out = Vec::with_capacity(decoders.len());
+            for (i, decoder) in decoders.iter().enumerate() {
+                // Use empty column name/log prefix for hot path.
+                out.push(decode_with_decoder(decoder, &row, i, "", ""));
+            }
+            row_count += 1;
+            if !send_line(&tx, serde_json::json!({ "type": "row", "row": out })).await {
+                break;
+            }
+        }
+
+        let _ = send_line(&tx, serde_json::json!({ "type": "done", "row_count": row_count })).await;
+        Ok(())
     }
 
     async fn resolve_metadata(

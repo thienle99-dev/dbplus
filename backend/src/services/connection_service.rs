@@ -48,6 +48,19 @@ impl ConnectionService {
         Connection::find_by_id(id).one(&self.db).await
     }
 
+    pub async fn get_connection_with_password(
+        &self,
+        id: Uuid,
+    ) -> Result<(connection::Model, String)> {
+        let connection = self
+            .get_connection_by_id(id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+        Ok((connection, password))
+    }
+
     /// Creates a new connection with encrypted password.
     pub async fn create_connection(&self, data: connection::Model) -> Result<connection::Model> {
         let encrypted_password = self.encryption.encrypt(&data.password)?;

@@ -488,6 +488,16 @@ export default function QueryEditor({
               loading={loading}
               error={error}
               errorDetails={errorDetails}
+              onRefresh={() => {
+                if (!lastSql) return;
+                const limit = typeof result?.limit === 'number' ? result.limit : undefined;
+                const offset = typeof result?.offset === 'number' ? result.offset : undefined;
+                if (typeof limit === 'number' && typeof offset === 'number') {
+                  fetchPage(limit, offset);
+                } else {
+                  execute(lastSql);
+                }
+              }}
               lastSql={lastSql || undefined}
               onPaginate={(limit, offset) => fetchPage(limit, offset)}
               connectionId={connectionId || ''}
