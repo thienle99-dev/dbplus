@@ -123,3 +123,38 @@ pub async fn get_table_indexes(
         }
     }
 }
+
+// Get table triggers
+pub async fn get_table_triggers(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /triggers - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+    match service
+        .get_table_triggers(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(triggers) => {
+            tracing::info!(
+                "[API] GET /triggers - SUCCESS - found {} triggers",
+                triggers.len()
+            );
+            (StatusCode::OK, Json(triggers)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /triggers - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}

@@ -372,16 +372,18 @@ export default function QueryEditor({
 
   return (
     <div className="flex flex-col h-full">
-      <SaveQueryModal
-        isOpen={isSaveModalOpen}
-        onClose={() => setIsSaveModalOpen(false)}
-        sql={query}
-        initial={{ name: queryName, metadata: visualState || undefined }}
-        mode="create"
-        onSaved={({ id, name }) => {
-          if (onSavedQueryCreated) onSavedQueryCreated(id, name);
-        }}
-      />
+      {isSaveModalOpen && (
+        <SaveQueryModal
+          isOpen={true}
+          onClose={() => setIsSaveModalOpen(false)}
+          sql={query}
+          initial={{ name: queryName, metadata: visualState || undefined }}
+          mode="create"
+          onSaved={({ id, name }) => {
+            if (onSavedQueryCreated) onSavedQueryCreated(id, name);
+          }}
+        />
+      )}
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setIsConfirmationOpen(false)}

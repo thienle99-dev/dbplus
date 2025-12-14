@@ -7,6 +7,7 @@ import ColumnsDetailsTable from './ColumnsDetailsTable';
 import SqlDefinitionView from './table-info/SqlDefinitionView';
 import IndexesSection from './table-info/IndexesSection';
 import TableMetadata from './table-info/TableMetadata';
+import TriggersSection from './table-info/TriggersSection';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import {
     TableInfoTabProps
@@ -15,7 +16,8 @@ import {
     useColumns,
     useIndexes,
     useConstraints,
-    useTableStats
+    useTableStats,
+    useTriggers
 } from '../hooks/useDatabase';
 
 export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
@@ -30,13 +32,20 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const indexesQuery = useIndexes(connectionId, schema, table);
     const constraintsQuery = useConstraints(connectionId, schema, table);
     const statsQuery = useTableStats(connectionId, schema, table);
+    const triggersQuery = useTriggers(connectionId, schema, table);
 
-    const isLoading = columnsQuery.isLoading || indexesQuery.isLoading || constraintsQuery.isLoading || statsQuery.isLoading;
+    const isLoading =
+        columnsQuery.isLoading ||
+        indexesQuery.isLoading ||
+        constraintsQuery.isLoading ||
+        statsQuery.isLoading ||
+        triggersQuery.isLoading;
 
     const columns = columnsQuery.data || [];
     const indexes = indexesQuery.data || [];
     const constraints = constraintsQuery.data || null;
     const statistics = statsQuery.data || null;
+    const triggers = triggersQuery.data || [];
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
@@ -49,6 +58,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         indexesQuery.refetch();
         constraintsQuery.refetch();
         statsQuery.refetch();
+        triggersQuery.refetch();
     };
 
     if (isLoading && !columns.length) { // Show loading only if no data at all
@@ -128,6 +138,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                         />
                     </div>
                 )}
+
+                <TriggersSection triggers={triggers} loading={triggersQuery.isFetching} />
 
                 <TableMetadata schema={schema || ''} table={table || ''} />
             </div>

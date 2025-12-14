@@ -436,27 +436,29 @@ export default function SavedQueriesList({
         )}
       </div>
 
-      <SaveQueryModal
-        isOpen={!!editingQuery}
-        onClose={() => setEditingQuery(null)}
-        sql={editingQuery?.sql || ''}
-        mode="edit"
-        initial={{
-          id: editingQuery?.id,
-          name: editingQuery?.name,
-          description: editingQuery?.description,
-          tags: editingQuery?.tags,
-          folder_id: editingQuery?.folder_id,
-          metadata: editingQuery?.metadata,
-        }}
-        onSaved={async () => {
-          setEditingQuery(null);
-          if (connectionId) {
-            queryClient.invalidateQueries({ queryKey: ['savedQueryFolders', connectionId] });
-            queryClient.invalidateQueries({ queryKey: ['savedQueries', connectionId] });
-          }
-        }}
-      />
+      {editingQuery && (
+        <SaveQueryModal
+          isOpen={true}
+          onClose={() => setEditingQuery(null)}
+          sql={editingQuery.sql || ''}
+          mode="edit"
+          initial={{
+            id: editingQuery.id,
+            name: editingQuery.name,
+            description: editingQuery.description,
+            tags: editingQuery.tags,
+            folder_id: editingQuery.folder_id,
+            metadata: editingQuery.metadata,
+          }}
+          onSaved={async () => {
+            setEditingQuery(null);
+            if (connectionId) {
+              queryClient.invalidateQueries({ queryKey: ['savedQueryFolders', connectionId] });
+              queryClient.invalidateQueries({ queryKey: ['savedQueries', connectionId] });
+            }
+          }}
+        />
+      )}
 
       <input
         ref={fileInputRef}

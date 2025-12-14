@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
-import { TableColumn, QueryResult } from '../types';
+import { TableColumn, QueryResult, TriggerInfo } from '../types';
 import { useActiveDatabaseOverride } from './useActiveDatabaseOverride';
 
 export const useDatabases = (connectionId: string | undefined) => {
@@ -131,5 +131,21 @@ export const useTableStats = (connectionId: string | undefined, schema: string |
         },
         enabled: !!connectionId && !!schema && !!table,
         refetchOnWindowFocus: false,
+    });
+};
+
+export const useTriggers = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['triggers', connectionId, dbKey, schema, table],
+        queryFn: async () => {
+            if (!connectionId || !schema || !table) return [];
+            const { data } = await api.get<TriggerInfo[]>(`/api/connections/${connectionId}/triggers`, {
+                params: { schema, table },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!table,
     });
 };

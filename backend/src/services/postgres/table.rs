@@ -1,4 +1,4 @@
-use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics};
+use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics, TriggerInfo};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -365,5 +365,71 @@ impl TableOperations for PostgresTable {
         );
 
         Ok(indexes)
+    }
+
+    async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>> {
+        tracing::info!(
+            "[PostgresTable] get_table_triggers - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        let query = r#"
+            SELECT
+                t.tgname AS name,
+                CASE
+                    WHEN (t.tgtype & 2) = 2 THEN 'BEFORE'
+                    WHEN (t.tgtype & 64) = 64 THEN 'INSTEAD OF'
+                    ELSE 'AFTER'
+                END AS timing,
+                array_remove(ARRAY[
+                    CASE WHEN (t.tgtype & 4) = 4 THEN 'INSERT' END,
+                    CASE WHEN (t.tgtype & 16) = 16 THEN 'UPDATE' END,
+                    CASE WHEN (t.tgtype & 8) = 8 THEN 'DELETE' END,
+                    CASE WHEN (t.tgtype & 32) = 32 THEN 'TRUNCATE' END
+                ], NULL) AS events,
+                CASE WHEN (t.tgtype & 1) = 1 THEN 'ROW' ELSE 'STATEMENT' END AS level,
+                pn.nspname AS function_schema,
+                p.proname AS function_name,
+                t.tgenabled::text AS enabled,
+                pg_get_triggerdef(t.oid, true) AS definition
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_proc p ON p.oid = t.tgfoid
+            JOIN pg_namespace pn ON pn.oid = p.pronamespace
+            WHERE NOT t.tgisinternal
+                AND n.nspname = $1
+                AND c.relname = $2
+            ORDER BY t.tgname
+        "#;
+
+        let rows = client.query(query, &[&schema, &table]).await?;
+
+        let mut triggers = Vec::new();
+        for row in rows {
+            let enabled: String = match row.get::<_, String>(6).as_str() {
+                "O" => "enabled".to_string(),
+                "D" => "disabled".to_string(),
+                "R" => "replica".to_string(),
+                "A" => "always".to_string(),
+                other => other.to_string(),
+            };
+
+            triggers.push(TriggerInfo {
+                name: row.get(0),
+                timing: row.get(1),
+                events: row.get::<_, Option<Vec<String>>>(2).unwrap_or_default(),
+                level: row.get(3),
+                function_schema: Some(row.get(4)),
+                function_name: Some(row.get(5)),
+                enabled,
+                definition: row.get(7),
+            });
+        }
+
+        Ok(triggers)
     }
 }

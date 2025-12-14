@@ -103,6 +103,18 @@ pub struct IndexInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TriggerInfo {
+    pub name: String,
+    pub timing: String, // BEFORE / AFTER / INSTEAD OF
+    pub events: Vec<String>, // INSERT / UPDATE / DELETE / TRUNCATE
+    pub level: String, // ROW / STATEMENT
+    pub enabled: String, // enabled / disabled / replica / always
+    pub function_schema: Option<String>,
+    pub function_name: Option<String>,
+    pub definition: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
@@ -165,6 +177,7 @@ pub trait DatabaseDriver:
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
+    async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -254,6 +267,10 @@ where
 
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>> {
         <Self as TableOperations>::get_table_indexes(self, schema, table).await
+    }
+
+    async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>> {
+        <Self as TableOperations>::get_table_triggers(self, schema, table).await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {

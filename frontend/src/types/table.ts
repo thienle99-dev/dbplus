@@ -60,6 +60,17 @@ export interface TableStats {
     last_modified: string | null;
 }
 
+export interface TriggerInfo {
+    name: string;
+    timing: string;
+    events: string[];
+    level: string;
+    enabled: string;
+    function_schema?: string | null;
+    function_name?: string | null;
+    definition: string;
+}
+
 export interface ViewInfo {
     schema: string;
     name: string;

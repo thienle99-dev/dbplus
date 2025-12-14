@@ -274,15 +274,15 @@
 
 ### Phase 11.2 - Enhanced Features (Medium Priority)
 
-- [ ] **Triggers** ⭐⭐⭐
-  - [ ] Backend: Create API endpoint `GET /api/connections/:id/triggers`
-    - [ ] Query trigger information
-    - [ ] Get trigger definitions
-  - [ ] Frontend: Triggers display component
-    - [ ] List all triggers with event/timing
-    - [ ] Show function names
-    - [ ] Display enabled/disabled status
-    - [ ] View trigger definition modal
+- [x] **Triggers** ⭐⭐⭐
+  - [x] Backend: Create API endpoint `GET /api/connections/:id/triggers`
+    - [x] Query trigger information
+    - [x] Get trigger definitions
+  - [x] Frontend: Triggers display component
+    - [x] List all triggers with event/timing
+    - [x] Show function names
+    - [x] Display enabled/disabled status
+    - [x] View trigger definition modal
 
 - [ ] **Table Comments & Description** ⭐⭐⭐
   - [ ] Backend: Create API endpoints for comments

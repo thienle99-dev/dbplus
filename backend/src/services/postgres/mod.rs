@@ -166,6 +166,14 @@ impl TableOperations for PostgresDriver {
     ) -> Result<Vec<super::db_driver::IndexInfo>> {
         self.table.get_table_indexes(schema, table).await
     }
+
+    async fn get_table_triggers(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<super::db_driver::TriggerInfo>> {
+        self.table.get_table_triggers(schema, table).await
+    }
 }
 
 #[async_trait]

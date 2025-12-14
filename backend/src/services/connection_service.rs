@@ -648,6 +648,37 @@ impl ConnectionService {
         }
     }
 
+    pub async fn get_table_triggers(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<crate::services::db_driver::TriggerInfo>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        use crate::services::sqlite::SQLiteDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_table_triggers(schema, table).await
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&connection, &password).await?;
+                driver.get_table_triggers(schema, table).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
     pub async fn add_column(
         &self,
         connection_id: Uuid,

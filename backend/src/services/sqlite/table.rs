@@ -1,4 +1,4 @@
-use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics};
+use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics, TriggerInfo};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -261,5 +261,66 @@ impl TableOperations for SQLiteTable {
         );
 
         Ok(indexes)
+    }
+
+    async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>> {
+        tracing::info!(
+            "[SQLiteTable] get_table_triggers - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        if schema != "main" && !schema.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let rows = sqlx::query(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? ORDER BY name",
+        )
+        .bind(table)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut triggers = Vec::new();
+        for row in rows {
+            let name: String = row.get(0);
+            let definition: Option<String> = row.try_get(1).ok();
+            let definition = definition.unwrap_or_default();
+            let def_upper = definition.to_uppercase();
+
+            let timing = if def_upper.contains("INSTEAD OF") {
+                "INSTEAD OF"
+            } else if def_upper.contains("BEFORE") {
+                "BEFORE"
+            } else if def_upper.contains("AFTER") {
+                "AFTER"
+            } else {
+                "UNKNOWN"
+            };
+
+            let mut events = Vec::new();
+            if def_upper.contains("INSERT") {
+                events.push("INSERT".to_string());
+            }
+            if def_upper.contains("UPDATE") {
+                events.push("UPDATE".to_string());
+            }
+            if def_upper.contains("DELETE") {
+                events.push("DELETE".to_string());
+            }
+
+            triggers.push(TriggerInfo {
+                name,
+                timing: timing.to_string(),
+                events,
+                level: "ROW".to_string(),
+                enabled: "enabled".to_string(),
+                function_schema: None,
+                function_name: None,
+                definition,
+            });
+        }
+
+        Ok(triggers)
     }
 }
