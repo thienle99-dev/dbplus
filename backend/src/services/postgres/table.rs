@@ -1,5 +1,6 @@
 use crate::services::db_driver::{
-    IndexInfo, QueryResult, TableComment, TableConstraints, TableStatistics, TriggerInfo,
+    IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
+    TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -494,6 +495,139 @@ impl TableOperations for PostgresTable {
 
         let client = self.pool.get().await?;
         client.execute(&query, &[&comment_param]).await?;
+        Ok(())
+    }
+
+    async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>> {
+        tracing::info!(
+            "[PostgresTable] get_table_permissions - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+        let query = r#"
+            SELECT
+                grantee,
+                privilege_type,
+                grantor,
+                is_grantable
+            FROM information_schema.role_table_grants
+            WHERE table_schema = $1
+              AND table_name = $2
+            ORDER BY grantee, privilege_type
+        "#;
+
+        let rows = client.query(query, &[&schema, &table]).await?;
+        let mut grants = Vec::new();
+        for row in rows {
+            let is_grantable: String = row.get(3);
+            grants.push(TableGrant {
+                grantee: row.get(0),
+                privilege: row.get(1),
+                grantor: row.get::<_, Option<String>>(2),
+                is_grantable: is_grantable.eq_ignore_ascii_case("YES"),
+            });
+        }
+
+        Ok(grants)
+    }
+
+    async fn list_roles(&self) -> Result<Vec<RoleInfo>> {
+        let client = self.pool.get().await?;
+        let rows = client
+            .query(
+                r#"
+                SELECT rolname, rolcanlogin
+                FROM pg_roles
+                ORDER BY rolname
+                "#,
+                &[],
+            )
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| RoleInfo {
+                name: r.get(0),
+                can_login: r.get(1),
+            })
+            .collect())
+    }
+
+    async fn set_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()> {
+        fn quote_ident(s: &str) -> String {
+            format!("\"{}\"", s.replace('"', "\"\""))
+        }
+
+        fn normalize_priv(p: &str) -> Option<&'static str> {
+            match p.trim().to_uppercase().as_str() {
+                "SELECT" => Some("SELECT"),
+                "INSERT" => Some("INSERT"),
+                "UPDATE" => Some("UPDATE"),
+                "DELETE" => Some("DELETE"),
+                "TRUNCATE" => Some("TRUNCATE"),
+                "REFERENCES" => Some("REFERENCES"),
+                "TRIGGER" => Some("TRIGGER"),
+                _ => None,
+            }
+        }
+
+        if schema.trim().is_empty() || table.trim().is_empty() {
+            return Err(anyhow::anyhow!("Invalid schema or table name"));
+        }
+
+        // grantee can be quoted identifiers in postgres; allow a broader set by quoting,
+        // but reject control chars / empty.
+        if grantee.trim().is_empty() || grantee.chars().any(|c| c.is_control()) {
+            return Err(anyhow::anyhow!("Invalid grantee"));
+        }
+
+        let mut normalized_privs = Vec::new();
+        for p in privileges {
+            let Some(np) = normalize_priv(&p) else {
+                return Err(anyhow::anyhow!("Unsupported privilege: {}", p));
+            };
+            if !normalized_privs.contains(&np.to_string()) {
+                normalized_privs.push(np.to_string());
+            }
+        }
+
+        let target = format!("{}.{}", quote_ident(schema), quote_ident(table));
+        let grantee_ident = quote_ident(grantee);
+
+        let mut client = self.pool.get().await?;
+        let tx = client.transaction().await?;
+
+        // Revoke all explicit grants first (idempotent)
+        let revoke_all = format!("REVOKE ALL PRIVILEGES ON TABLE {} FROM {}", target, grantee_ident);
+        tx.execute(&revoke_all, &[]).await?;
+        let revoke_go = format!(
+            "REVOKE GRANT OPTION FOR ALL PRIVILEGES ON TABLE {} FROM {}",
+            target, grantee_ident
+        );
+        tx.execute(&revoke_go, &[]).await?;
+
+        if !normalized_privs.is_empty() {
+            let priv_list = normalized_privs.join(", ");
+            let grant = format!(
+                "GRANT {} ON TABLE {} TO {}{}",
+                priv_list,
+                target,
+                grantee_ident,
+                if grant_option { " WITH GRANT OPTION" } else { "" }
+            );
+            tx.execute(&grant, &[]).await?;
+        }
+
+        tx.commit().await?;
         Ok(())
     }
 }

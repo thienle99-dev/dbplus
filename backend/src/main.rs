@@ -201,6 +201,15 @@ async fn main() {
             get(handlers::table_info::get_table_comment)
                 .put(handlers::table_info::set_table_comment),
         )
+        .route(
+            "/api/connections/:id/permissions",
+            get(handlers::table_info::get_table_permissions)
+                .put(handlers::table_info::set_table_permissions),
+        )
+        .route(
+            "/api/connections/:id/roles",
+            get(handlers::table_info::list_roles),
+        )
         // Views and Functions routes
         .route(
             "/api/connections/:id/views",

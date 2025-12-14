@@ -120,6 +120,20 @@ pub struct TableComment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableGrant {
+    pub grantee: String,
+    pub privilege: String,
+    pub grantor: Option<String>,
+    pub is_grantable: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoleInfo {
+    pub name: String,
+    pub can_login: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
@@ -185,6 +199,16 @@ pub trait DatabaseDriver:
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
     async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment>;
     async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()>;
+    async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>>;
+    async fn list_roles(&self) -> Result<Vec<RoleInfo>>;
+    async fn set_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -286,6 +310,33 @@ where
 
     async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()> {
         <Self as TableOperations>::set_table_comment(self, schema, table, comment).await
+    }
+
+    async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>> {
+        <Self as TableOperations>::get_table_permissions(self, schema, table).await
+    }
+
+    async fn list_roles(&self) -> Result<Vec<RoleInfo>> {
+        <Self as TableOperations>::list_roles(self).await
+    }
+
+    async fn set_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()> {
+        <Self as TableOperations>::set_table_permissions(
+            self,
+            schema,
+            table,
+            grantee,
+            privileges,
+            grant_option,
+        )
+        .await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {

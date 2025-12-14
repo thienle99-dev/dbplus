@@ -1,5 +1,5 @@
 use crate::services::db_driver::{
-    IndexInfo, QueryResult, TableComment, TableConstraints, TableStatistics, TriggerInfo,
+    IndexInfo, QueryResult, TableComment, TableConstraints, TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -337,5 +337,24 @@ impl TableOperations for SQLiteTable {
         _comment: Option<String>,
     ) -> Result<()> {
         Err(anyhow::anyhow!("Table comments are not supported for sqlite"))
+    }
+
+    async fn get_table_permissions(&self, _schema: &str, _table: &str) -> Result<Vec<TableGrant>> {
+        Err(anyhow::anyhow!("Permissions are not supported for sqlite"))
+    }
+
+    async fn list_roles(&self) -> Result<Vec<crate::services::db_driver::RoleInfo>> {
+        Err(anyhow::anyhow!("Roles are not supported for sqlite"))
+    }
+
+    async fn set_table_permissions(
+        &self,
+        _schema: &str,
+        _table: &str,
+        _grantee: &str,
+        _privileges: Vec<String>,
+        _grant_option: bool,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!("Permissions are not supported for sqlite"))
     }
 }

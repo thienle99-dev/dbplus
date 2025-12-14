@@ -184,6 +184,31 @@ impl TableOperations for SQLiteDriver {
     ) -> Result<()> {
         self.table.set_table_comment(schema, table, comment).await
     }
+
+    async fn get_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<super::db_driver::TableGrant>> {
+        self.table.get_table_permissions(schema, table).await
+    }
+
+    async fn list_roles(&self) -> Result<Vec<super::db_driver::RoleInfo>> {
+        self.table.list_roles().await
+    }
+
+    async fn set_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()> {
+        self.table
+            .set_table_permissions(schema, table, grantee, privileges, grant_option)
+            .await
+    }
 }
 
 #[async_trait]

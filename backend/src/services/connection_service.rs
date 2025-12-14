@@ -742,6 +742,104 @@ impl ConnectionService {
         }
     }
 
+    pub async fn get_table_permissions(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        use crate::services::sqlite::SQLiteDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_table_permissions(schema, table).await
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&connection, &password).await?;
+                driver.get_table_permissions(schema, table).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn list_roles(
+        &self,
+        connection_id: Uuid,
+    ) -> Result<Vec<crate::services::db_driver::RoleInfo>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        use crate::services::sqlite::SQLiteDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.list_roles().await
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&connection, &password).await?;
+                driver.list_roles().await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn set_table_permissions(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+        use crate::services::sqlite::SQLiteDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&connection, &password).await?;
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
     pub async fn add_column(
         &self,
         connection_id: Uuid,

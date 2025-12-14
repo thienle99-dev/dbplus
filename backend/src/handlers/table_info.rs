@@ -24,6 +24,15 @@ pub struct SetTableCommentBody {
     comment: Option<String>,
 }
 
+#[derive(Deserialize)]
+pub struct SetTablePermissionsBody {
+    schema: String,
+    table: String,
+    grantee: String,
+    privileges: Vec<String>,
+    grant_option: bool,
+}
+
 // Get table constraints (foreign keys, check constraints, unique constraints)
 pub async fn get_table_constraints(
     State(db): State<DatabaseConnection>,
@@ -228,6 +237,114 @@ pub async fn set_table_comment(
         Err(e) => {
             let msg = e.to_string();
             let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
+// Get table permissions/grants
+pub async fn get_table_permissions(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /permissions - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .get_table_permissions(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(grants) => (StatusCode::OK, Json(grants)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
+// List roles/users (Postgres)
+pub async fn list_roles(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+) -> impl IntoResponse {
+    tracing::info!("[API] GET /roles - connection_id: {}", connection_id);
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service.list_roles(connection_id).await {
+        Ok(roles) => (StatusCode::OK, Json(roles)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
+// Set table permissions (overwrites explicit grants for that grantee on the table)
+pub async fn set_table_permissions(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Json(body): Json<SetTablePermissionsBody>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] PUT /permissions - connection_id: {}, schema: {}, table: {}, grantee: {}",
+        connection_id,
+        body.schema,
+        body.table,
+        body.grantee
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .set_table_permissions(
+            connection_id,
+            &body.schema,
+            &body.table,
+            &body.grantee,
+            body.privileges,
+            body.grant_option,
+        )
+        .await
+    {
+        Ok(()) => (StatusCode::OK, Json(json!({ "success": true }))).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
                 StatusCode::BAD_REQUEST
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR

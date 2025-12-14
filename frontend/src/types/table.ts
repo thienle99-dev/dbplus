@@ -75,6 +75,18 @@ export interface TableComment {
     comment: string | null;
 }
 
+export interface TableGrant {
+    grantee: string;
+    privilege: string;
+    grantor?: string | null;
+    is_grantable: boolean;
+}
+
+export interface RoleInfo {
+    name: string;
+    can_login: boolean;
+}
+
 export interface ViewInfo {
     schema: string;
     name: string;

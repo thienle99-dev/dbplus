@@ -1,7 +1,8 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use crate::services::db_driver::{
-    IndexInfo, QueryResult, TableComment, TableConstraints, TableStatistics, TriggerInfo,
+    IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
+    TriggerInfo,
 };
 
 #[async_trait]
@@ -20,4 +21,14 @@ pub trait TableOperations: Send + Sync {
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
     async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment>;
     async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()>;
+    async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>>;
+    async fn list_roles(&self) -> Result<Vec<RoleInfo>>;
+    async fn set_table_permissions(
+        &self,
+        schema: &str,
+        table: &str,
+        grantee: &str,
+        privileges: Vec<String>,
+        grant_option: bool,
+    ) -> Result<()>;
 }

@@ -293,14 +293,14 @@
     - [x] Edit mode with save/cancel
     - [ ] Markdown support (optional)
 
-- [ ] **Permissions & Grants** ⭐⭐⭐
-  - [ ] Backend: Create API endpoint `GET /api/connections/:id/permissions`
-    - [ ] Query table privileges
-    - [ ] Get user/role permissions
-  - [ ] Frontend: Permissions display component
-    - [ ] List all roles and their privileges
-    - [ ] Display grant options
-    - [ ] Show granted by information
+- [x] **Permissions & Grants** ⭐⭐⭐
+  - [x] Backend: Create API endpoint `GET /api/connections/:id/permissions`
+    - [x] Query table privileges
+    - [x] Get user/role permissions
+  - [x] Frontend: Permissions display component
+    - [x] List all roles and their privileges
+    - [x] Display grant options
+    - [x] Show granted by information
 
 - [ ] **UI Improvements**
   - [ ] Add tab navigation within Info Tab

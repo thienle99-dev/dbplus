@@ -9,7 +9,9 @@ import IndexesSection from './table-info/IndexesSection';
 import TableMetadata from './table-info/TableMetadata';
 import TriggersSection from './table-info/TriggersSection';
 import TableCommentEditor from './table-info/TableCommentEditor';
+import PermissionsSection from './table-info/PermissionsSection';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
+import { extractApiErrorDetails } from '../utils/apiError';
 import {
     TableInfoTabProps
 } from '../types';
@@ -18,7 +20,8 @@ import {
     useIndexes,
     useConstraints,
     useTableStats,
-    useTriggers
+    useTriggers,
+    usePermissions,
 } from '../hooks/useDatabase';
 
 export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
@@ -34,19 +37,23 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const constraintsQuery = useConstraints(connectionId, schema, table);
     const statsQuery = useTableStats(connectionId, schema, table);
     const triggersQuery = useTriggers(connectionId, schema, table);
+    const permissionsQuery = usePermissions(connectionId, schema, table);
 
     const isLoading =
         columnsQuery.isLoading ||
         indexesQuery.isLoading ||
         constraintsQuery.isLoading ||
         statsQuery.isLoading ||
-        triggersQuery.isLoading;
+        triggersQuery.isLoading ||
+        permissionsQuery.isLoading;
 
     const columns = columnsQuery.data || [];
     const indexes = indexesQuery.data || [];
     const constraints = constraintsQuery.data || null;
     const statistics = statsQuery.data || null;
     const triggers = triggersQuery.data || [];
+    const grants = permissionsQuery.data || [];
+    const permissionsError = permissionsQuery.error ? extractApiErrorDetails(permissionsQuery.error).message : null;
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
@@ -60,6 +67,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         constraintsQuery.refetch();
         statsQuery.refetch();
         triggersQuery.refetch();
+        permissionsQuery.refetch();
     };
 
     if (isLoading && !columns.length) { // Show loading only if no data at all
@@ -147,6 +155,15 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 )}
 
                 <TriggersSection triggers={triggers} loading={triggersQuery.isFetching} />
+
+                <PermissionsSection
+                    connectionId={connectionId}
+                    schema={schema || ''}
+                    table={table || ''}
+                    grants={grants}
+                    loading={permissionsQuery.isFetching}
+                    error={permissionsError}
+                />
 
                 <TableMetadata schema={schema || ''} table={table || ''} />
             </div>
