@@ -183,7 +183,32 @@
 - [x] Add rust_decimal for NUMERIC/DECIMAL
 - [x] Enable tokio-postgres features
 - [x] Fix NUMERIC(12,2) parsing (NULL detection issue)
-- [ ] Test all type conversions comprehensively
+
+**PostgreSQL result decoding coverage (to JSON)**
+- [x] BOOL
+- [x] INT2 / INT4 / INT8
+- [x] FLOAT4 / FLOAT8
+- [x] TEXT / VARCHAR / CHAR / NAME (as string)
+- [x] UUID
+- [x] DATE / TIME / TIMESTAMP / TIMESTAMPTZ
+- [x] JSON / JSONB
+- [x] INET / CIDR
+- [x] BYTEA (base64-encoded string)
+- [x] HSTORE
+- [x] Arrays: TEXT[] / INT4[] / INT8[]
+
+**Missing types to support/test**
+- [x] MONEY (decoded to Decimal string, fixed-scale cents)
+- [x] TIMETZ (decoded to `HH:MM:SS[.ffffff]±HH:MM`)
+- [x] INTERVAL (decoded to stable string: `X mons Y days HH:MM:SS[.ffffff]`)
+- [x] MACADDR / MACADDR8 (decoded to lowercase hex string)
+- [x] BIT / VARBIT (decoded to bitstring)
+- [x] ENUM / DOMAIN (decoded as string / underlying value)
+- [x] RANGE / MULTIRANGE (decoded to string representation)
+- [x] Arrays: INT2[] / BOOL[] / FLOAT4[] / FLOAT8[] / NUMERIC[] / UUID[] / DATE[] / TIMESTAMP[] / TIMESTAMPTZ[] / INET[] / BYTEA[] / JSONB[] / HSTORE[] (+ money/timetz/interval/macaddr/bit variants)
+
+**Verification**
+- [ ] Test all type conversions comprehensively (incl. NULLs)
 - [ ] Remove debug logs after verification
 - [ ] Add comprehensive type tests
 

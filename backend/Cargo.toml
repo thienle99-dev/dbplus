@@ -28,6 +28,7 @@ postgres-types = { version = "0.2", features = [
     "with-chrono-0_4",
     "with-uuid-1",
 ] }
+postgres-protocol = "0.6"
 deadpool-postgres = "0.13"
 sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio-native-tls"] }
 migration = { path = "migration" }
@@ -60,3 +61,4 @@ members = [".", "migration"]
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }
+bytes = "1"
