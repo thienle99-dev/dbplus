@@ -25,8 +25,6 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
     return Array.from(new Set(raw));
   }, [tagsText]);
 
-  if (!isOpen) return null;
-
   useEffect(() => {
     if (!isOpen) return;
     setName(initial?.name || '');
@@ -34,6 +32,8 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
     setTagsText((initial?.tags || []).join(', '));
     setFolderId(initial?.folder_id || '');
   }, [isOpen, initial?.name, initial?.description, initial?.folder_id, (initial?.tags || []).join(',')]);
+
+  if (!isOpen) return null;
 
   const handleCreateFolder = async () => {
     const folderName = prompt('Folder name');
