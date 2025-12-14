@@ -851,6 +851,644 @@ fn decode_row_value(
     Value::Null
 }
 
+#[derive(Clone, Debug)]
+enum ColumnDecoder {
+    EnumOrDomain,
+    Range,
+    Multirange,
+    Money,
+    MoneyArray,
+    Timetz,
+    TimetzArray,
+    Interval,
+    IntervalArray,
+    Macaddr,
+    MacaddrArray,
+    Macaddr8,
+    Macaddr8Array,
+    BitOrVarbit,
+    BitOrVarbitArray,
+    Json,
+    Bytea,
+    Hstore,
+    Bool,
+    I16,
+    I32,
+    I64,
+    F32,
+    F64,
+    Numeric,
+    Uuid,
+    NaiveDateTime,
+    NaiveDate,
+    NaiveTime,
+    DateTimeUtc,
+    DateTimeLocal,
+    Inet,
+    Text,
+    ArrayString,
+    ArrayI16,
+    ArrayI32,
+    ArrayI64,
+    ArrayBool,
+    ArrayF32,
+    ArrayF64,
+    ArrayNumeric,
+    ArrayUuid,
+    ArrayDate,
+    ArrayTimestamp,
+    ArrayTimestamptz,
+    ArrayInet,
+    ArrayBytea,
+    ArrayJson,
+    ArrayHstore,
+    Fallback,
+}
+
+fn build_column_decoders(columns: &[tokio_postgres::Column]) -> Vec<ColumnDecoder> {
+    columns
+        .iter()
+        .map(|c| {
+            let ty = c.type_();
+
+            match ty.kind() {
+                Kind::Enum(_) | Kind::Domain(_) => return ColumnDecoder::EnumOrDomain,
+                Kind::Range(_) => return ColumnDecoder::Range,
+                Kind::Multirange(_) => return ColumnDecoder::Multirange,
+                Kind::Array(inner) => {
+                    if *inner == PgType::MONEY {
+                        return ColumnDecoder::MoneyArray;
+                    }
+                    if *inner == PgType::TIMETZ {
+                        return ColumnDecoder::TimetzArray;
+                    }
+                    if *inner == PgType::INTERVAL {
+                        return ColumnDecoder::IntervalArray;
+                    }
+                    if *inner == PgType::MACADDR {
+                        return ColumnDecoder::MacaddrArray;
+                    }
+                    if *inner == PgType::MACADDR8 {
+                        return ColumnDecoder::Macaddr8Array;
+                    }
+                    if *inner == PgType::BIT || *inner == PgType::VARBIT {
+                        return ColumnDecoder::BitOrVarbitArray;
+                    }
+                    if *inner == PgType::BYTEA {
+                        return ColumnDecoder::ArrayBytea;
+                    }
+                    if *inner == PgType::JSON || *inner == PgType::JSONB {
+                        return ColumnDecoder::ArrayJson;
+                    }
+                    if inner.name() == "hstore" {
+                        return ColumnDecoder::ArrayHstore;
+                    }
+                    if <String as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayString;
+                    }
+                    if <i16 as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayI16;
+                    }
+                    if <i32 as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayI32;
+                    }
+                    if <i64 as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayI64;
+                    }
+                    if <bool as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayBool;
+                    }
+                    if <f32 as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayF32;
+                    }
+                    if <f64 as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayF64;
+                    }
+                    if *inner == PgType::NUMERIC || inner.name() == "numeric" || inner.name() == "decimal" {
+                        return ColumnDecoder::ArrayNumeric;
+                    }
+                    if <Uuid as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayUuid;
+                    }
+                    if <NaiveDate as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayDate;
+                    }
+                    if <NaiveDateTime as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayTimestamp;
+                    }
+                    if <DateTime<Utc> as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayTimestamptz;
+                    }
+                    if <IpAddr as FromSql>::accepts(inner) {
+                        return ColumnDecoder::ArrayInet;
+                    }
+                }
+                _ => {}
+            }
+
+            if *ty == PgType::MONEY {
+                return ColumnDecoder::Money;
+            }
+            if *ty == PgType::TIMETZ {
+                return ColumnDecoder::Timetz;
+            }
+            if *ty == PgType::INTERVAL {
+                return ColumnDecoder::Interval;
+            }
+            if *ty == PgType::MACADDR {
+                return ColumnDecoder::Macaddr;
+            }
+            if *ty == PgType::MACADDR8 {
+                return ColumnDecoder::Macaddr8;
+            }
+            if *ty == PgType::BIT || *ty == PgType::VARBIT {
+                return ColumnDecoder::BitOrVarbit;
+            }
+            if *ty == PgType::BOOL {
+                return ColumnDecoder::Bool;
+            }
+            if *ty == PgType::INT2 {
+                return ColumnDecoder::I16;
+            }
+            if *ty == PgType::INT4 {
+                return ColumnDecoder::I32;
+            }
+            if *ty == PgType::INT8 {
+                return ColumnDecoder::I64;
+            }
+            if *ty == PgType::FLOAT4 {
+                return ColumnDecoder::F32;
+            }
+            if *ty == PgType::FLOAT8 {
+                return ColumnDecoder::F64;
+            }
+            if *ty == PgType::NUMERIC || ty.name() == "numeric" || ty.name() == "decimal" {
+                return ColumnDecoder::Numeric;
+            }
+            if *ty == PgType::UUID {
+                return ColumnDecoder::Uuid;
+            }
+            if *ty == PgType::DATE {
+                return ColumnDecoder::NaiveDate;
+            }
+            if *ty == PgType::TIME {
+                return ColumnDecoder::NaiveTime;
+            }
+            if *ty == PgType::TIMESTAMP {
+                return ColumnDecoder::NaiveDateTime;
+            }
+            if *ty == PgType::TIMESTAMPTZ {
+                return ColumnDecoder::DateTimeUtc;
+            }
+            if *ty == PgType::INET || *ty == PgType::CIDR {
+                return ColumnDecoder::Inet;
+            }
+            if *ty == PgType::BYTEA {
+                return ColumnDecoder::Bytea;
+            }
+            if *ty == PgType::JSON || *ty == PgType::JSONB {
+                return ColumnDecoder::Json;
+            }
+            if ty.name() == "hstore" {
+                return ColumnDecoder::Hstore;
+            }
+            if <String as FromSql>::accepts(ty) {
+                return ColumnDecoder::Text;
+            }
+
+            ColumnDecoder::Fallback
+        })
+        .collect()
+}
+
+fn decode_with_decoder(
+    decoder: &ColumnDecoder,
+    row: &tokio_postgres::Row,
+    idx: usize,
+    col_name: &str,
+    log_prefix: &str,
+) -> Value {
+    match decoder {
+        ColumnDecoder::EnumOrDomain => row
+            .try_get::<_, Option<PgUserDefinedValue>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| v.0)
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Range => row
+            .try_get::<_, Option<PgRangeString>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Multirange => row
+            .try_get::<_, Option<PgMultirangeString>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Money => row
+            .try_get::<_, Option<PgMoney>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::MoneyArray => row
+            .try_get::<_, Option<Vec<PgMoney>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|m| Value::String(m.0.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Timetz => row
+            .try_get::<_, Option<PgTimeTz>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::TimetzArray => row
+            .try_get::<_, Option<Vec<PgTimeTz>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Interval => row
+            .try_get::<_, Option<PgInterval>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::IntervalArray => row
+            .try_get::<_, Option<Vec<PgInterval>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Macaddr => row
+            .try_get::<_, Option<PgMacAddr>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::MacaddrArray => row
+            .try_get::<_, Option<Vec<PgMacAddr>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Macaddr8 => row
+            .try_get::<_, Option<PgMacAddr8>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Macaddr8Array => row
+            .try_get::<_, Option<Vec<PgMacAddr8>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::BitOrVarbit => row
+            .try_get::<_, Option<PgBitString>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.0))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::BitOrVarbitArray => row
+            .try_get::<_, Option<Vec<PgBitString>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|b| Value::String(b.0)).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Json => row
+            .try_get::<_, Option<Value>>(idx)
+            .ok()
+            .flatten()
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Bytea => row
+            .try_get::<_, Option<Vec<u8>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::String(base64::Engine::encode(
+                    &base64::engine::general_purpose::STANDARD,
+                    &v,
+                ))
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Hstore => row
+            .try_get::<_, Option<HashMap<String, Option<String>>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                let obj: serde_json::Map<String, Value> = v
+                    .into_iter()
+                    .map(|(k, v)| (k, v.map(Value::String).unwrap_or(Value::Null)))
+                    .collect();
+                Value::Object(obj)
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Bool => row
+            .try_get::<_, Option<bool>>(idx)
+            .ok()
+            .flatten()
+            .map(Value::Bool)
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::I16 => row
+            .try_get::<_, Option<i16>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Number(v.into()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::I32 => row
+            .try_get::<_, Option<i32>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Number(v.into()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::I64 => row
+            .try_get::<_, Option<i64>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Number(v.into()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::F32 => row
+            .try_get::<_, Option<f32>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Number(
+                    serde_json::Number::from_f64(v as f64)
+                        .unwrap_or_else(|| serde_json::Number::from(0)),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::F64 => row
+            .try_get::<_, Option<f64>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Number(
+                    serde_json::Number::from_f64(v).unwrap_or_else(|| serde_json::Number::from(0)),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Numeric => row
+            .try_get::<_, Option<Decimal>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Uuid => row
+            .try_get::<_, Option<Uuid>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::NaiveDateTime => row
+            .try_get::<_, Option<NaiveDateTime>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::NaiveDate => row
+            .try_get::<_, Option<NaiveDate>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::NaiveTime => row
+            .try_get::<_, Option<NaiveTime>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::DateTimeUtc => row
+            .try_get::<_, Option<DateTime<Utc>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::DateTimeLocal => row
+            .try_get::<_, Option<DateTime<Local>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Inet => row
+            .try_get::<_, Option<IpAddr>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::String(v.to_string()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Text => row
+            .try_get::<_, Option<String>>(idx)
+            .ok()
+            .flatten()
+            .map(Value::String)
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayString => row
+            .try_get::<_, Option<Vec<String>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(Value::String).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayI16 => row
+            .try_get::<_, Option<Vec<i16>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|n| Value::Number(n.into())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayI32 => row
+            .try_get::<_, Option<Vec<i32>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|n| Value::Number(n.into())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayI64 => row
+            .try_get::<_, Option<Vec<i64>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|n| Value::Number(n.into())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayBool => row
+            .try_get::<_, Option<Vec<bool>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(Value::Bool).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayF32 => row
+            .try_get::<_, Option<Vec<f32>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|n| {
+                            Value::Number(
+                                serde_json::Number::from_f64(n as f64)
+                                    .unwrap_or_else(|| serde_json::Number::from(0)),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayF64 => row
+            .try_get::<_, Option<Vec<f64>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|n| {
+                            Value::Number(
+                                serde_json::Number::from_f64(n)
+                                    .unwrap_or_else(|| serde_json::Number::from(0)),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayNumeric => row
+            .try_get::<_, Option<Vec<Decimal>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayUuid => row
+            .try_get::<_, Option<Vec<Uuid>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|u| Value::String(u.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayDate => row
+            .try_get::<_, Option<Vec<NaiveDate>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayTimestamp => row
+            .try_get::<_, Option<Vec<NaiveDateTime>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayTimestamptz => row
+            .try_get::<_, Option<Vec<DateTime<Utc>>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayInet => row
+            .try_get::<_, Option<Vec<IpAddr>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| Value::Array(v.into_iter().map(|ip| Value::String(ip.to_string())).collect()))
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayBytea => row
+            .try_get::<_, Option<Vec<Vec<u8>>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|bytes| {
+                            Value::String(base64::Engine::encode(
+                                &base64::engine::general_purpose::STANDARD,
+                                &bytes,
+                            ))
+                        })
+                        .collect(),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayJson => row
+            .try_get::<_, Option<Vec<Value>>>(idx)
+            .ok()
+            .flatten()
+            .map(Value::Array)
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::ArrayHstore => row
+            .try_get::<_, Option<Vec<HashMap<String, Option<String>>>>>(idx)
+            .ok()
+            .flatten()
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|m| {
+                            Value::Object(
+                                m.into_iter()
+                                    .map(|(k, v)| (k, v.map(Value::String).unwrap_or(Value::Null)))
+                                    .collect(),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .unwrap_or(Value::Null),
+
+        ColumnDecoder::Fallback => {
+            tracing::debug!(
+                "{} Falling back to generic decoder for column '{}' (index {}) type '{}'",
+                log_prefix,
+                col_name,
+                idx,
+                row.columns()[idx].type_().name()
+            );
+            decode_row_value(row, idx, col_name, log_prefix)
+        }
+    }
+}
+
 pub struct PostgresQuery {
     pool: Pool,
 }
@@ -972,20 +1610,13 @@ impl QueryDriver for PostgresQuery {
             .map(|c| c.name().to_string())
             .collect();
 
+        let decoders = build_column_decoders(rows[0].columns());
+
         let mut result_rows = Vec::new();
         for row in &rows {
             let mut current_row = Vec::new();
             for (i, col) in columns.iter().enumerate() {
-                let col_type = row.columns()[i].type_();
-
-                tracing::info!(
-                    "Processing column '{}' (index {}) with PostgreSQL type: '{}'",
-                    col,
-                    i,
-                    col_type.name()
-                );
-
-                let value = decode_row_value(row, i, col, "");
+                let value = decode_with_decoder(&decoders[i], row, i, col, "");
                 current_row.push(value);
             }
             result_rows.push(current_row);
@@ -1036,15 +1667,13 @@ impl QueryDriver for PostgresQuery {
                 .map(|c| c.name().to_string())
                 .collect();
 
+            let decoders = build_column_decoders(rows[0].columns());
+
             let mut result_rows = Vec::new();
             for row in &rows {
                 let mut current_row = Vec::new();
                 for (i, col) in columns.iter().enumerate() {
-                    let col_type = row.columns()[i].type_();
-
-                    tracing::info!("[execute_query] Processing column '{}' (index {}) with PostgreSQL type: '{}'", col, i, col_type.name());
-
-                    let value = decode_row_value(row, i, col, "[execute_query]");
+                    let value = decode_with_decoder(&decoders[i], row, i, col, "[execute_query]");
                     current_row.push(value);
                 }
                 result_rows.push(current_row);

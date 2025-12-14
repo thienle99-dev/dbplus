@@ -214,9 +214,9 @@
 
 ### Performance Optimization
 - [ ] Query result streaming for large datasets
-- [ ] Virtual scrolling for result table
+- [x] Virtual scrolling for result table
 - [x] Debounce auto-save
-- [ ] Optimize re-renders
+- [x] Optimize re-renders (memoize table columns, reduce recompute)
 
 ### Code Quality
 - [ ] Add unit tests for query execution

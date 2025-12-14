@@ -40,6 +40,7 @@ interface QueryResultsProps {
 
 export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId }) => {
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
+    const editsRef = useRef<Record<number, Record<string, any>>>({});
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -70,6 +71,10 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
             }
         }));
     }, []);
+
+    useEffect(() => {
+        editsRef.current = edits;
+    }, [edits]);
 
     const handleSaveChanges = async () => {
         if (!result || !result.column_metadata) return;
@@ -273,7 +278,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                         ),
                         cell: (info) => {
                             const rowIndex = info.row.index;
-                            const val = edits[rowIndex]?.[col] !== undefined ? edits[rowIndex][col] : info.getValue();
+                            const rowEdits = editsRef.current[rowIndex];
+                            const val = rowEdits?.[col] !== undefined ? rowEdits[col] : info.getValue();
 
                             let type: 'string' | 'number' | 'boolean' | 'null' = 'string';
                             if (val === null) type = 'null';
@@ -316,7 +322,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
         }
 
         return baseColumns;
-    }, [result, edits, handleCellSave, hasEditableColumns]);
+    }, [result, handleCellSave, hasEditableColumns]);
 
     const tableInstance = useReactTable({
         data: displayRows,
