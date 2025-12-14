@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { QueryResult, RoleInfo, TableColumn, TableComment, TableGrant, TriggerInfo } from '../types';
+import {
+    QueryResult,
+    RoleInfo,
+    StorageBloatInfo,
+    TableColumn,
+    TableComment,
+    TableGrant,
+    TriggerInfo,
+} from '../types';
 import { useActiveDatabaseOverride } from './useActiveDatabaseOverride';
 
 export const useDatabases = (connectionId: string | undefined) => {
@@ -246,5 +254,27 @@ export const useSetPermissions = (connectionId: string | undefined) => {
             queryClient.invalidateQueries({ queryKey: ['permissions', connectionId, dbKey, variables.schema, variables.table] });
             queryClient.invalidateQueries({ queryKey: ['roles', connectionId, dbKey] });
         },
+    });
+};
+
+export const useStorageBloatInfo = (
+    connectionId: string | undefined,
+    schema: string | undefined,
+    table: string | undefined,
+) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['storageInfo', connectionId, dbKey, schema, table],
+        queryFn: async () => {
+            if (!connectionId || !schema || !table) {
+                return null as StorageBloatInfo | null;
+            }
+            const { data } = await api.get<StorageBloatInfo>(`/api/connections/${connectionId}/storage-info`, {
+                params: { schema, table },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!table,
     });
 };

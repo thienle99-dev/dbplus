@@ -134,6 +134,20 @@ pub struct RoleInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageBloatInfo {
+    pub live_tuples: Option<i64>,
+    pub dead_tuples: Option<i64>,
+    pub dead_tuple_pct: Option<f64>,
+    pub table_size: Option<i64>, // bytes
+    pub index_size: Option<i64>, // bytes
+    pub total_size: Option<i64>, // bytes
+    pub last_vacuum: Option<String>,
+    pub last_autovacuum: Option<String>,
+    pub last_analyze: Option<String>,
+    pub last_autoanalyze: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
@@ -209,6 +223,7 @@ pub trait DatabaseDriver:
         privileges: Vec<String>,
         grant_option: bool,
     ) -> Result<()>;
+    async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -337,6 +352,10 @@ where
             grant_option,
         )
         .await
+    }
+
+    async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {
+        <Self as TableOperations>::get_storage_bloat_info(self, schema, table).await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {

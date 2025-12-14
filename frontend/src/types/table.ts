@@ -87,6 +87,19 @@ export interface RoleInfo {
     can_login: boolean;
 }
 
+export interface StorageBloatInfo {
+    live_tuples: number | null;
+    dead_tuples: number | null;
+    dead_tuple_pct: number | null;
+    table_size: number | null;
+    index_size: number | null;
+    total_size: number | null;
+    last_vacuum: string | null;
+    last_autovacuum: string | null;
+    last_analyze: string | null;
+    last_autoanalyze: string | null;
+}
+
 export interface ViewInfo {
     schema: string;
     name: string;

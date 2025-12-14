@@ -1,6 +1,6 @@
 use crate::services::db_driver::{
     IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
-    TriggerInfo,
+    TriggerInfo, StorageBloatInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -629,5 +629,111 @@ impl TableOperations for PostgresTable {
 
         tx.commit().await?;
         Ok(())
+    }
+
+    async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {
+        tracing::info!(
+            "[PostgresTable] get_storage_bloat_info - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        let size_row = client
+            .query_opt(
+                r#"
+                SELECT
+                    pg_relation_size(c.oid) AS table_size,
+                    pg_indexes_size(c.oid) AS index_size,
+                    pg_total_relation_size(c.oid) AS total_size
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = $1
+                  AND c.relname = $2
+                  AND c.relkind = 'r'
+                "#,
+                &[&schema, &table],
+            )
+            .await?;
+
+        let (table_size, index_size, total_size) = if let Some(r) = size_row {
+            (
+                r.get::<_, Option<i64>>(0),
+                r.get::<_, Option<i64>>(1),
+                r.get::<_, Option<i64>>(2),
+            )
+        } else {
+            (None, None, None)
+        };
+
+        let stat_row = client
+            .query_opt(
+                r#"
+                SELECT
+                    n_live_tup,
+                    n_dead_tup,
+                    last_vacuum,
+                    last_autovacuum,
+                    last_analyze,
+                    last_autoanalyze
+                FROM pg_stat_user_tables
+                WHERE schemaname = $1
+                  AND relname = $2
+                "#,
+                &[&schema, &table],
+            )
+            .await?;
+
+        let mut live_tuples: Option<i64> = None;
+        let mut dead_tuples: Option<i64> = None;
+        let mut last_vacuum: Option<String> = None;
+        let mut last_autovacuum: Option<String> = None;
+        let mut last_analyze: Option<String> = None;
+        let mut last_autoanalyze: Option<String> = None;
+
+        if let Some(r) = stat_row {
+            live_tuples = r.get::<_, Option<i64>>(0);
+            dead_tuples = r.get::<_, Option<i64>>(1);
+
+            let to_string = |st: Option<std::time::SystemTime>| -> Option<String> {
+                st.and_then(|s| {
+                    s.duration_since(std::time::UNIX_EPOCH)
+                        .ok()
+                        .and_then(|d| chrono::DateTime::<chrono::Utc>::from_timestamp(d.as_secs() as i64, d.subsec_nanos()))
+                        .map(|dt| dt.to_string())
+                })
+            };
+
+            last_vacuum = to_string(r.try_get(2).ok().flatten());
+            last_autovacuum = to_string(r.try_get(3).ok().flatten());
+            last_analyze = to_string(r.try_get(4).ok().flatten());
+            last_autoanalyze = to_string(r.try_get(5).ok().flatten());
+        }
+
+        let dead_tuple_pct = match (live_tuples, dead_tuples) {
+            (Some(live), Some(dead)) => {
+                let denom = (live + dead) as f64;
+                if denom <= 0.0 {
+                    Some(0.0)
+                } else {
+                    Some((dead as f64) * 100.0 / denom)
+                }
+            }
+            _ => None,
+        };
+
+        Ok(StorageBloatInfo {
+            live_tuples,
+            dead_tuples,
+            dead_tuple_pct,
+            table_size,
+            index_size,
+            total_size,
+            last_vacuum,
+            last_autovacuum,
+            last_analyze,
+            last_autoanalyze,
+        })
     }
 }

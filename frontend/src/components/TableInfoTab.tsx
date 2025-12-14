@@ -12,6 +12,7 @@ import TableMetadata from './table-info/TableMetadata';
 import TriggersSection from './table-info/TriggersSection';
 import TableCommentEditor from './table-info/TableCommentEditor';
 import PermissionsSection from './table-info/PermissionsSection';
+import StorageBloatSection from './table-info/StorageBloatSection';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import { extractApiErrorDetails } from '../utils/apiError';
 import {
@@ -24,6 +25,7 @@ import {
     useTableStats,
     useTriggers,
     usePermissions,
+    useStorageBloatInfo,
 } from '../hooks/useDatabase';
 
 type InfoTabKey = 'overview' | 'columns' | 'constraints' | 'indexes' | 'triggers' | 'stats' | 'permissions';
@@ -74,6 +76,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const statsQuery = useTableStats(connectionId, schema, table);
     const triggersQuery = useTriggers(connectionId, schema, table);
     const permissionsQuery = usePermissions(connectionId, schema, table);
+    const storageQuery = useStorageBloatInfo(connectionId, schema, table);
 
     const isLoading =
         columnsQuery.isLoading ||
@@ -81,7 +84,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         constraintsQuery.isLoading ||
         statsQuery.isLoading ||
         triggersQuery.isLoading ||
-        permissionsQuery.isLoading;
+        permissionsQuery.isLoading ||
+        storageQuery.isLoading;
 
     const columns = columnsQuery.data || [];
     const indexes = indexesQuery.data || [];
@@ -90,6 +94,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const triggers = triggersQuery.data || [];
     const grants = permissionsQuery.data || [];
     const permissionsError = permissionsQuery.error ? extractApiErrorDetails(permissionsQuery.error).message : null;
+    const storageError = storageQuery.error ? extractApiErrorDetails(storageQuery.error).message : null;
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
@@ -104,6 +109,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         statsQuery.refetch();
         triggersQuery.refetch();
         permissionsQuery.refetch();
+        storageQuery.refetch();
     };
 
     if (isLoading && !columns.length) { // Show loading only if no data at all
@@ -333,20 +339,34 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 )}
 
                 {activeTab === 'stats' && (
-                    <Section id="stats.table" title="Statistics">
-                        {statistics ? (
-                            <TableStatistics
-                                statistics={statistics}
-                                onRefresh={async () => {
-                                    await statsQuery.refetch();
-                                    showToast('Statistics refreshed', 'success');
-                                }}
-                                loading={statsQuery.isFetching}
+                    <div className="space-y-3 md:space-y-4">
+                        <Section id="stats.table" title="Statistics">
+                            {statistics ? (
+                                <TableStatistics
+                                    statistics={statistics}
+                                    onRefresh={async () => {
+                                        await statsQuery.refetch();
+                                        showToast('Statistics refreshed', 'success');
+                                    }}
+                                    loading={statsQuery.isFetching}
+                                />
+                            ) : (
+                                <div className="text-xs text-text-secondary">No statistics available.</div>
+                            )}
+                        </Section>
+
+                        <Section id="stats.storage" title="Storage & Bloat">
+                            <StorageBloatSection
+                                connectionId={connectionId}
+                                schema={schema || ''}
+                                table={table || ''}
+                                info={storageQuery.data ?? null}
+                                loading={storageQuery.isFetching}
+                                error={storageError}
+                                onRefresh={() => storageQuery.refetch()}
                             />
-                        ) : (
-                            <div className="text-xs text-text-secondary">No statistics available.</div>
-                        )}
-                    </Section>
+                        </Section>
+                    </div>
                 )}
 
                 {activeTab === 'permissions' && (

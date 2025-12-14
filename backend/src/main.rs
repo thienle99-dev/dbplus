@@ -210,6 +210,10 @@ async fn main() {
             "/api/connections/:id/roles",
             get(handlers::table_info::list_roles),
         )
+        .route(
+            "/api/connections/:id/storage-info",
+            get(handlers::table_info::get_storage_bloat_info),
+        )
         // Views and Functions routes
         .route(
             "/api/connections/:id/views",

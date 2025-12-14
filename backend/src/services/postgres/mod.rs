@@ -216,6 +216,14 @@ impl TableOperations for PostgresDriver {
             .set_table_permissions(schema, table, grantee, privileges, grant_option)
             .await
     }
+
+    async fn get_storage_bloat_info(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::StorageBloatInfo> {
+        self.table.get_storage_bloat_info(schema, table).await
+    }
 }
 
 #[async_trait]

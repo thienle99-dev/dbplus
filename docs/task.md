@@ -324,16 +324,16 @@
     - [ ] List all dependent objects
     - [ ] Navigation to dependent objects
 
-- [ ] **Storage & Bloat Information** ⭐⭐
-  - [ ] Backend: Advanced storage queries (PostgreSQL)
-    - [ ] Dead tuples count
-    - [ ] Live tuples count
-    - [ ] Bloat percentage calculation
-    - [ ] Last vacuum/analyze timestamps
-  - [ ] Frontend: Storage info component
-    - [ ] Display bloat metrics
-    - [ ] VACUUM/ANALYZE action buttons
-    - [ ] Warning indicators for high bloat
+- [x] **Storage & Bloat Information** ⭐⭐
+  - [x] Backend: Advanced storage queries (PostgreSQL)
+    - [x] Dead tuples count
+    - [x] Live tuples count
+    - [x] Bloat percentage calculation
+    - [x] Last vacuum/analyze timestamps
+  - [x] Frontend: Storage info component
+    - [x] Display bloat metrics
+    - [x] VACUUM/ANALYZE action buttons
+    - [x] Warning indicators for high bloat
 
 - [ ] **Partitions** ⭐⭐
   - [ ] Backend: Partition information queries
