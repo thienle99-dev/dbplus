@@ -1,6 +1,8 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { Info, Database } from 'lucide-react';
+import { Activity, ChevronDown, Download, Info, RefreshCw, Copy } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import api from '../services/api';
 import ConstraintsSection from './ConstraintsSection';
 import TableStatistics from './TableStatistics';
 import ColumnsDetailsTable from './ColumnsDetailsTable';
@@ -24,12 +26,46 @@ import {
     usePermissions,
 } from '../hooks/useDatabase';
 
+type InfoTabKey = 'overview' | 'columns' | 'constraints' | 'indexes' | 'triggers' | 'stats' | 'permissions';
+
+function quoteIdent(s: string) {
+    return `"${s.replace(/"/g, '""')}"`;
+}
+
+function loadJson<T>(key: string, fallback: T): T {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw) as T;
+    } catch {
+        return fallback;
+    }
+}
+
 export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
     const params = useParams();
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
     const connectionId = params.connectionId;
     const { showToast } = useToast();
+    const storageBaseKey = useMemo(
+        () => `dbplus.tableInfo:${connectionId || 'no-conn'}:${schema || ''}.${table || ''}`,
+        [connectionId, schema, table],
+    );
+    const [activeTab, setActiveTab] = useState<InfoTabKey>(() =>
+        loadJson<InfoTabKey>(`${storageBaseKey}:activeTab`, 'overview'),
+    );
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
+        loadJson<Record<string, boolean>>(`${storageBaseKey}:collapsed`, {}),
+    );
+
+    useEffect(() => {
+        localStorage.setItem(`${storageBaseKey}:activeTab`, JSON.stringify(activeTab));
+    }, [storageBaseKey, activeTab]);
+
+    useEffect(() => {
+        localStorage.setItem(`${storageBaseKey}:collapsed`, JSON.stringify(collapsed));
+    }, [storageBaseKey, collapsed]);
 
     // Data Fetching Hooks
     const columnsQuery = useColumns(connectionId, schema, table);
@@ -78,6 +114,48 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         return <div className="p-8 text-text-secondary">Select a table to view info</div>;
     }
 
+    const Section = ({
+        id,
+        title,
+        children,
+        defaultCollapsed = false,
+    }: {
+        id: string;
+        title: string;
+        children: ReactNode;
+        defaultCollapsed?: boolean;
+    }) => {
+        const isCollapsed = collapsed[id] ?? defaultCollapsed;
+        return (
+            <div className="border border-border rounded bg-bg-1 overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setCollapsed((prev) => ({ ...prev, [id]: !(prev[id] ?? defaultCollapsed) }))}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-bg-0 hover:bg-bg-2 transition-colors"
+                >
+                    <span className="text-[10px] md:text-xs font-medium text-text-secondary uppercase tracking-wide">
+                        {title}
+                    </span>
+                    <ChevronDown
+                        size={14}
+                        className={`text-text-secondary transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                    />
+                </button>
+                {!isCollapsed && <div className="p-3 md:p-4">{children}</div>}
+            </div>
+        );
+    };
+
+    const tabs: Array<{ key: InfoTabKey; label: string }> = [
+        { key: 'overview', label: 'Overview' },
+        { key: 'columns', label: 'Columns' },
+        { key: 'constraints', label: 'Constraints' },
+        { key: 'indexes', label: 'Indexes' },
+        { key: 'triggers', label: 'Triggers' },
+        { key: 'stats', label: 'Stats' },
+        { key: 'permissions', label: 'Permissions' },
+    ];
+
     return (
         <div className="flex flex-col h-full overflow-auto">
             <div className="p-3 md:p-4 border-b border-border bg-bg-1">
@@ -88,84 +166,201 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
             </div>
 
             <div className="flex-1 p-3 md:p-4 space-y-3 md:space-y-4">
-                <SqlDefinitionView
-                    schema={schema || ''}
-                    table={table || ''}
-                    columns={columns}
-                    indexes={indexes}
-                    constraints={constraints}
-                    sqlDefinition={sqlDefinition}
-                />
+                {/* Quick Actions Bar */}
+                <div className="flex flex-wrap items-center gap-2 p-2 border border-border rounded bg-bg-1">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                await navigator.clipboard.writeText(sqlDefinition || '');
+                                showToast('DDL copied', 'success');
+                            } catch {
+                                showToast('Failed to copy DDL', 'error');
+                            }
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        title="Copy DDL"
+                    >
+                        <Copy size={14} />
+                        Copy DDL
+                    </button>
 
-                <TableCommentEditor
-                    connectionId={connectionId}
-                    schema={schema || ''}
-                    table={table || ''}
-                />
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const filename = `schema-${schema}.${table}.sql`.replace(/\//g, '_');
+                            const blob = new Blob([sqlDefinition || ''], { type: 'text/sql;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            showToast('Schema exported', 'success');
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        title="Export schema"
+                    >
+                        <Download size={14} />
+                        Export schema
+                    </button>
 
-                <IndexesSection
-                    schema={schema || ''}
-                    table={table || ''}
-                    columns={columns}
-                    indexes={indexes}
-                    onIndexCreated={handleIndexCreated}
-                />
+                    <button
+                        type="button"
+                        disabled={!connectionId}
+                        onClick={async () => {
+                            if (!connectionId) return;
+                            try {
+                                const analyzeSql =
+                                    schema === 'main'
+                                        ? `ANALYZE ${quoteIdent(table)};`
+                                        : `ANALYZE ${quoteIdent(schema)}.${quoteIdent(table)};`;
+                                await api.post(`/api/connections/${connectionId}/execute`, { query: analyzeSql });
+                                showToast('Analyze completed', 'success');
+                            } catch (err: any) {
+                                const msg = extractApiErrorDetails(err).message;
+                                showToast(msg || 'Analyze failed', 'error');
+                            }
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border disabled:opacity-50"
+                        title="Analyze table"
+                    >
+                        <Activity size={14} />
+                        Analyze
+                    </button>
 
-                {/* Columns Details */}
-                {columns.length > 0 && constraints && (
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <Database size={12} className="md:w-3.5 md:h-3.5 text-text-secondary" />
-                            <h4 className="text-[10px] md:text-xs font-medium text-text-secondary uppercase">
-                                Columns ({columns.length})
-                            </h4>
-                        </div>
-                        <ColumnsDetailsTable
+                    <button
+                        type="button"
+                        onClick={() => {
+                            handleRefreshAll();
+                            showToast('Refreshed', 'success');
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        title="Refresh all"
+                    >
+                        <RefreshCw size={14} />
+                        Refresh
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-2 border border-border rounded bg-bg-1 p-2">
+                    {tabs.map((t) => (
+                        <button
+                            key={t.key}
+                            type="button"
+                            onClick={() => setActiveTab(t.key)}
+                            className={`px-3 py-1.5 rounded text-xs border transition-colors ${
+                                activeTab === t.key
+                                    ? 'bg-bg-2 border-accent text-text-primary'
+                                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                            }`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab Content */}
+                {activeTab === 'overview' && (
+                    <div className="space-y-3 md:space-y-4">
+                        <Section id="overview.definition" title="SQL Definition">
+                            <SqlDefinitionView
+                                schema={schema || ''}
+                                table={table || ''}
+                                columns={columns}
+                                indexes={indexes}
+                                constraints={constraints}
+                                sqlDefinition={sqlDefinition}
+                            />
+                        </Section>
+
+                        <Section id="overview.comment" title="Comment">
+                            <TableCommentEditor connectionId={connectionId} schema={schema || ''} table={table || ''} />
+                        </Section>
+
+                        <Section id="overview.metadata" title="Metadata">
+                            <TableMetadata schema={schema || ''} table={table || ''} />
+                        </Section>
+                    </div>
+                )}
+
+                {activeTab === 'columns' && (
+                    <Section id="columns.table" title={`Columns (${columns.length})`}>
+                        {columns.length > 0 && constraints ? (
+                            <ColumnsDetailsTable
+                                columns={columns}
+                                foreignKeys={constraints.foreign_keys}
+                                indexes={indexes}
+                                onRefresh={handleRefreshAll}
+                            />
+                        ) : (
+                            <div className="text-xs text-text-secondary">No columns to display.</div>
+                        )}
+                    </Section>
+                )}
+
+                {activeTab === 'constraints' && (
+                    <Section id="constraints.table" title="Constraints">
+                        {constraints ? (
+                            <ConstraintsSection
+                                foreignKeys={constraints.foreign_keys}
+                                checkConstraints={constraints.check_constraints}
+                                uniqueConstraints={constraints.unique_constraints}
+                            />
+                        ) : (
+                            <div className="text-xs text-text-secondary">No constraints to display.</div>
+                        )}
+                    </Section>
+                )}
+
+                {activeTab === 'indexes' && (
+                    <Section id="indexes.table" title={`Indexes (${indexes.length})`}>
+                        <IndexesSection
+                            schema={schema || ''}
+                            table={table || ''}
                             columns={columns}
-                            foreignKeys={constraints.foreign_keys}
                             indexes={indexes}
-                            onRefresh={handleRefreshAll}
+                            onIndexCreated={handleIndexCreated}
                         />
-                    </div>
+                    </Section>
                 )}
 
-                {/* Constraints */}
-                {constraints && (
-                    <div>
-                        <ConstraintsSection
-                            foreignKeys={constraints.foreign_keys}
-                            checkConstraints={constraints.check_constraints}
-                            uniqueConstraints={constraints.unique_constraints}
-                        />
-                    </div>
+                {activeTab === 'triggers' && (
+                    <Section id="triggers.table" title="Triggers">
+                        <TriggersSection triggers={triggers} loading={triggersQuery.isFetching} />
+                    </Section>
                 )}
 
-                {/* Table Statistics */}
-                {statistics && (
-                    <div>
-                        <TableStatistics
-                            statistics={statistics}
-                            onRefresh={async () => {
-                                await statsQuery.refetch();
-                                showToast('Statistics refreshed', 'success');
-                            }}
-                            loading={statsQuery.isFetching}
-                        />
-                    </div>
+                {activeTab === 'stats' && (
+                    <Section id="stats.table" title="Statistics">
+                        {statistics ? (
+                            <TableStatistics
+                                statistics={statistics}
+                                onRefresh={async () => {
+                                    await statsQuery.refetch();
+                                    showToast('Statistics refreshed', 'success');
+                                }}
+                                loading={statsQuery.isFetching}
+                            />
+                        ) : (
+                            <div className="text-xs text-text-secondary">No statistics available.</div>
+                        )}
+                    </Section>
                 )}
 
-                <TriggersSection triggers={triggers} loading={triggersQuery.isFetching} />
-
-                <PermissionsSection
-                    connectionId={connectionId}
-                    schema={schema || ''}
-                    table={table || ''}
-                    grants={grants}
-                    loading={permissionsQuery.isFetching}
-                    error={permissionsError}
-                />
-
-                <TableMetadata schema={schema || ''} table={table || ''} />
+                {activeTab === 'permissions' && (
+                    <Section id="permissions.table" title="Permissions">
+                        <PermissionsSection
+                            connectionId={connectionId}
+                            schema={schema || ''}
+                            table={table || ''}
+                            grants={grants}
+                            loading={permissionsQuery.isFetching}
+                            error={permissionsError}
+                        />
+                    </Section>
+                )}
             </div>
         </div>
     );

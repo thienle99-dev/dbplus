@@ -5,7 +5,7 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { Save, X, RefreshCw, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus } from 'lucide-react';
 // import api from '../../services/api';
 // import { useToast } from '../../context/ToastContext';
 import { useSelectedRow } from '../../context/SelectedRowContext';
@@ -167,9 +167,11 @@ export default function TableDataTab({
           <button
             onClick={() => setPage(Math.max(0, page - 1))}
             disabled={page === 0 || loading}
-            className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
+            className="p-1.5 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm border border-border"
+            title="Previous page"
+            aria-label="Previous page"
           >
-            Previous
+            <ChevronLeft size={16} />
           </button>
           <span className="flex items-center text-sm text-text-secondary">
             Page {page + 1}
@@ -177,9 +179,11 @@ export default function TableDataTab({
           <button
             onClick={() => setPage(page + 1)}
             disabled={!data.rows.length || data.rows.length < pageSize || loading}
-            className="px-3 py-1 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm"
+            className="p-1.5 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm border border-border"
+            title="Next page"
+            aria-label="Next page"
           >
-            Next
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>

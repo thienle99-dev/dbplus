@@ -302,16 +302,16 @@
     - [x] Display grant options
     - [x] Show granted by information
 
-- [ ] **UI Improvements**
-  - [ ] Add tab navigation within Info Tab
-    - [ ] Overview, Columns, Constraints, Indexes, Triggers, Stats, Permissions
-  - [ ] Implement collapsible sections
-    - [ ] Save collapse state to localStorage
-  - [ ] Add Quick Actions Bar
-    - [ ] Copy DDL button
-    - [ ] Export schema button
-    - [ ] Analyze table button
-    - [ ] Refresh all button
+- [x] **UI Improvements**
+  - [x] Add tab navigation within Info Tab
+    - [x] Overview, Columns, Constraints, Indexes, Triggers, Stats, Permissions
+  - [x] Implement collapsible sections
+    - [x] Save collapse state to localStorage
+  - [x] Add Quick Actions Bar
+    - [x] Copy DDL button
+    - [x] Export schema button
+    - [x] Analyze table button
+    - [x] Refresh all button
 
 ### Phase 11.3 - Advanced Features (Low Priority - Optional)
 

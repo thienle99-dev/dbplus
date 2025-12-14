@@ -13,6 +13,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ApiErrorDetails } from '../../utils/apiError';
 import {
     buildExportFilename,
@@ -815,16 +816,20 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                 <button
                                     onClick={() => onPaginate(limit, Math.max(0, offset - limit))}
                                     disabled={loading || offset === 0}
-                                    className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Previous page"
+                                    aria-label="Previous page"
                                 >
-                                    Prev
+                                    <ChevronLeft size={14} />
                                 </button>
                                 <button
                                     onClick={() => onPaginate(limit, Math.min(offset + limit, Math.max(0, totalCount - 1)))}
                                     disabled={loading || (result.has_more === false)}
-                                    className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Next page"
+                                    aria-label="Next page"
                                 >
-                                    Next
+                                    <ChevronRight size={14} />
                                 </button>
                                 <form
                                     onSubmit={(e) => {
@@ -839,7 +844,6 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                     }}
                                     className="flex items-center gap-1"
                                 >
-                                    <span className="text-xs text-text-secondary">Go</span>
                                     <input
                                         name="page"
                                         defaultValue={currentPage}
@@ -851,9 +855,11 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-2 py-1 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Go to page"
+                                        aria-label="Go to page"
                                     >
-                                        Go
+                                        <ArrowRight size={14} />
                                     </button>
                                 </form>
                             </div>
