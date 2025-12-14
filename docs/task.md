@@ -1,5 +1,24 @@
 # Database Client Application - Task Breakdown
 
+## Tổng hợp (từ các file docs/*.md)
+
+### Đã làm (gần đây)
+- [x] Backend type decoding (Postgres): MONEY/TIMETZ/INTERVAL/MACADDR/MACADDR8/BIT/VARBIT/RANGE/MULTIRANGE + arrays; có unit tests (`backend/src/services/postgres/query.rs`)
+- [x] Backend query streaming cho dataset lớn: NDJSON stream endpoint `POST /api/connections/:id/execute/stream` (`backend/src/handlers/query_stream.rs`, `backend/src/main.rs`)
+- [x] Performance: virtualized result rendering + giảm re-render khi edit cell (`frontend/src/components/query-editor/QueryResults.tsx`)
+- [x] Row editing: delete row từ results + refresh lại query (`frontend/src/components/query-editor/QueryResults.tsx`, `frontend/src/components/QueryEditor.tsx`, `backend/src/handlers/result_edit.rs`)
+- [x] Fix lỗi React hooks khi `Cmd+S` (Rendered more hooks…) (`frontend/src/components/SaveQueryModal.tsx`)
+- [x] Fix đóng hết workspace tabs nhưng panel bên phải không unmount (`frontend/src/components/Sidebar.tsx`)
+
+### Chưa làm / Cần làm tiếp (theo `docs/QUERY_EDITOR_ROADMAP.md`)
+- [ ] Frontend: Search/filter history
+- [x] Visualize query plan (tree view)
+- [ ] Infinite scroll option
+- [ ] Column operations (sort/filter/hide/resize/reorder + save prefs)
+- [ ] Customizable shortcuts
+- [ ] Backend type verification: test conversions toàn diện (incl NULLs), remove debug logs, bổ sung test coverage
+- [ ] Code quality: unit/integration tests cho query execution, error boundary, accessibility
+
 ## Planning Phase
 
 - [x] Create comprehensive implementation plan
@@ -169,9 +188,10 @@
   - [x] Smooth animations
   - [x] Responsive design
 - [ ] Performance optimization
-  - [ ] Virtual scrolling
-  - [ ] Lazy loading
-  - [ ] Debouncing
+  - [x] Virtual scrolling (result table)
+  - [x] Lazy loading (schema tree + data fetch)
+  - [x] Debouncing (auto-save)
+  - [x] Query result streaming (NDJSON)
   - [ ] Connection pooling optimization
 
 - [ ] Create chart widgets

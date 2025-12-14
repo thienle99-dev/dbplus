@@ -98,7 +98,26 @@ export default function Sidebar() {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const closingWasActive = t.id === activeTabId;
+                    const nextTabs = tabs.filter((x) => x.id !== t.id);
+                    const closingIndex = tabs.findIndex((x) => x.id === t.id);
+                    const nextActive = closingWasActive
+                      ? (nextTabs[closingIndex - 1] || nextTabs[0] || null)
+                      : null;
+
                     closeTab(t.id);
+
+                    // If we just closed the last workspace tab, leave the workspace route entirely
+                    // so the right-side content unmounts too.
+                    if (nextTabs.length === 0) {
+                      navigate('/');
+                      return;
+                    }
+
+                    // If we closed the active tab, navigate to the newly active workspace tab.
+                    if (nextActive) {
+                      navigate(nextActive.lastPath || `/workspace/${nextActive.connectionId}/query`);
+                    }
                   }}
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-bg-2 border border-border text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center leading-none"
                   aria-label="Close tab"

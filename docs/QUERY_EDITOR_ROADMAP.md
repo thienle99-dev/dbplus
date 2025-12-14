@@ -99,7 +99,7 @@
 **Goal**: Query performance insights
 - [x] Backend: EXPLAIN query support (Postgres JSON, SQLite query plan)
 - [x] Frontend: Execution plan tab
-- [ ] Visualize query plan (tree view)
+- [x] Visualize query plan (tree view)
 - [x] Highlight slow operations (hotspots list)
 - [x] Index usage analysis (detect seq scan vs index scans)
 - [x] Cost estimation display (summary + top nodes)
