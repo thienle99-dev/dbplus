@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { TableColumn, QueryResult, TriggerInfo } from '../types';
+import { QueryResult, TableColumn, TableComment, TriggerInfo } from '../types';
 import { useActiveDatabaseOverride } from './useActiveDatabaseOverride';
 
 export const useDatabases = (connectionId: string | undefined) => {
@@ -147,5 +147,40 @@ export const useTriggers = (connectionId: string | undefined, schema: string | u
             return data;
         },
         enabled: !!connectionId && !!schema && !!table,
+    });
+};
+
+export const useTableComment = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['tableComment', connectionId, dbKey, schema, table],
+        queryFn: async () => {
+            if (!connectionId || !schema || !table) return { comment: null } as TableComment;
+            const { data } = await api.get<TableComment>(`/api/connections/${connectionId}/table-comment`, {
+                params: { schema, table },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!table,
+    });
+};
+
+export const useSetTableComment = (connectionId: string | undefined) => {
+    const queryClient = useQueryClient();
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useMutation({
+        mutationFn: async ({ schema, table, comment }: { schema: string; table: string; comment: string | null }) => {
+            if (!connectionId) throw new Error('Missing connection id');
+            await api.put(`/api/connections/${connectionId}/table-comment`, {
+                schema,
+                table,
+                comment,
+            });
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['tableComment', connectionId, dbKey, variables.schema, variables.table] });
+        },
     });
 };

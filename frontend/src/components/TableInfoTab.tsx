@@ -8,6 +8,7 @@ import SqlDefinitionView from './table-info/SqlDefinitionView';
 import IndexesSection from './table-info/IndexesSection';
 import TableMetadata from './table-info/TableMetadata';
 import TriggersSection from './table-info/TriggersSection';
+import TableCommentEditor from './table-info/TableCommentEditor';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import {
     TableInfoTabProps
@@ -86,6 +87,12 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                     indexes={indexes}
                     constraints={constraints}
                     sqlDefinition={sqlDefinition}
+                />
+
+                <TableCommentEditor
+                    connectionId={connectionId}
+                    schema={schema || ''}
+                    table={table || ''}
                 />
 
                 <IndexesSection

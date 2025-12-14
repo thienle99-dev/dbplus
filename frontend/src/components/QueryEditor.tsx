@@ -97,6 +97,20 @@ export default function QueryEditor({
   const [executionPlan, setExecutionPlan] = useState<any>(null);
   const [bottomTab, setBottomTab] = useState<'results' | 'plan'>('results');
 
+  const handleEditorChange = useCallback((val: string) => setQuery(val), []);
+
+  const handleCreateEditor = useCallback((view: EditorView) => {
+    setEditorView(view);
+    view.dom.addEventListener('mouseup', () => {
+      const selection = view.state.selection.main;
+      setHasSelection(!selection.empty);
+    });
+    view.dom.addEventListener('keyup', () => {
+      const selection = view.state.selection.main;
+      setHasSelection(!selection.empty);
+    });
+  }, []);
+
   const handleExplain = useCallback(async (analyze: boolean = false) => {
     let sqlToRun = query;
     if (editorView) {
@@ -431,18 +445,8 @@ export default function QueryEditor({
               value={query}
               height="100%"
               extensions={allExtensions}
-              onChange={useCallback((val: string) => setQuery(val), [])}
-              onCreateEditor={useCallback((view: EditorView) => {
-                setEditorView(view);
-                view.dom.addEventListener('mouseup', () => {
-                  const selection = view.state.selection.main;
-                  setHasSelection(!selection.empty);
-                });
-                view.dom.addEventListener('keyup', () => {
-                  const selection = view.state.selection.main;
-                  setHasSelection(!selection.empty);
-                });
-              }, [])}
+              onChange={handleEditorChange}
+              onCreateEditor={handleCreateEditor}
               className="text-base w-full h-full"
             />
           ) : (

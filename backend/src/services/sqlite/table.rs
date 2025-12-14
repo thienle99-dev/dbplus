@@ -1,4 +1,6 @@
-use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics, TriggerInfo};
+use crate::services::db_driver::{
+    IndexInfo, QueryResult, TableComment, TableConstraints, TableStatistics, TriggerInfo,
+};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -322,5 +324,18 @@ impl TableOperations for SQLiteTable {
         }
 
         Ok(triggers)
+    }
+
+    async fn get_table_comment(&self, _schema: &str, _table: &str) -> Result<TableComment> {
+        Ok(TableComment { comment: None })
+    }
+
+    async fn set_table_comment(
+        &self,
+        _schema: &str,
+        _table: &str,
+        _comment: Option<String>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!("Table comments are not supported for sqlite"))
     }
 }

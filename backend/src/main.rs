@@ -196,6 +196,11 @@ async fn main() {
             "/api/connections/:id/triggers",
             get(handlers::table_info::get_table_triggers),
         )
+        .route(
+            "/api/connections/:id/table-comment",
+            get(handlers::table_info::get_table_comment)
+                .put(handlers::table_info::set_table_comment),
+        )
         // Views and Functions routes
         .route(
             "/api/connections/:id/views",

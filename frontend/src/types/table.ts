@@ -71,6 +71,10 @@ export interface TriggerInfo {
     definition: string;
 }
 
+export interface TableComment {
+    comment: string | null;
+}
+
 export interface ViewInfo {
     schema: string;
     name: string;

@@ -284,13 +284,13 @@
     - [x] Display enabled/disabled status
     - [x] View trigger definition modal
 
-- [ ] **Table Comments & Description** ⭐⭐⭐
-  - [ ] Backend: Create API endpoints for comments
-    - [ ] GET table comment
-    - [ ] POST/PUT update table comment
-  - [ ] Frontend: Comment editor component
-    - [ ] Display current comment
-    - [ ] Edit mode with save/cancel
+- [x] **Table Comments & Description** ⭐⭐⭐
+  - [x] Backend: Create API endpoints for comments
+    - [x] GET table comment
+    - [x] POST/PUT update table comment
+  - [x] Frontend: Comment editor component
+    - [x] Display current comment
+    - [x] Edit mode with save/cancel
     - [ ] Markdown support (optional)
 
 - [ ] **Permissions & Grants** ⭐⭐⭐

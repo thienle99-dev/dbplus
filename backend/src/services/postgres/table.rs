@@ -1,4 +1,6 @@
-use crate::services::db_driver::{IndexInfo, QueryResult, TableConstraints, TableStatistics, TriggerInfo};
+use crate::services::db_driver::{
+    IndexInfo, QueryResult, TableComment, TableConstraints, TableStatistics, TriggerInfo,
+};
 use crate::services::driver::TableOperations;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -431,5 +433,67 @@ impl TableOperations for PostgresTable {
         }
 
         Ok(triggers)
+    }
+
+    async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment> {
+        tracing::info!(
+            "[PostgresTable] get_table_comment - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        if schema.contains(';')
+            || table.contains(';')
+            || schema.contains(' ')
+            || table.contains(' ')
+        {
+            return Err(anyhow::anyhow!("Invalid schema or table name"));
+        }
+
+        let client = self.pool.get().await?;
+        let row = client
+            .query_opt(
+                r#"
+                SELECT obj_description(c.oid) AS table_comment
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = $1
+                    AND c.relname = $2
+                    AND c.relkind = 'r'
+                "#,
+                &[&schema, &table],
+            )
+            .await?;
+
+        let comment: Option<String> = row.and_then(|r| r.get::<_, Option<String>>(0));
+        Ok(TableComment { comment })
+    }
+
+    async fn set_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+        comment: Option<String>,
+    ) -> Result<()> {
+        tracing::info!(
+            "[PostgresTable] set_table_comment - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        if schema.contains(';')
+            || table.contains(';')
+            || schema.contains(' ')
+            || table.contains(' ')
+        {
+            return Err(anyhow::anyhow!("Invalid schema or table name"));
+        }
+
+        let comment_param: Option<&str> = comment.as_deref();
+        let query = format!("COMMENT ON TABLE \"{}\".\"{}\" IS $1", schema, table);
+
+        let client = self.pool.get().await?;
+        client.execute(&query, &[&comment_param]).await?;
+        Ok(())
     }
 }

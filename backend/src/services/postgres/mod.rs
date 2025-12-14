@@ -174,6 +174,23 @@ impl TableOperations for PostgresDriver {
     ) -> Result<Vec<super::db_driver::TriggerInfo>> {
         self.table.get_table_triggers(schema, table).await
     }
+
+    async fn get_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::TableComment> {
+        self.table.get_table_comment(schema, table).await
+    }
+
+    async fn set_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+        comment: Option<String>,
+    ) -> Result<()> {
+        self.table.set_table_comment(schema, table, comment).await
+    }
 }
 
 #[async_trait]

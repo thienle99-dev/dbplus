@@ -115,6 +115,11 @@ pub struct TriggerInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableComment {
+    pub comment: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
@@ -178,6 +183,8 @@ pub trait DatabaseDriver:
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics>;
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
+    async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment>;
+    async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -271,6 +278,14 @@ where
 
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>> {
         <Self as TableOperations>::get_table_triggers(self, schema, table).await
+    }
+
+    async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment> {
+        <Self as TableOperations>::get_table_comment(self, schema, table).await
+    }
+
+    async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()> {
+        <Self as TableOperations>::set_table_comment(self, schema, table, comment).await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {

@@ -8,12 +8,20 @@ use axum::{
 };
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
+use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct TableParams {
     schema: String,
     table: String,
+}
+
+#[derive(Deserialize)]
+pub struct SetTableCommentBody {
+    schema: String,
+    table: String,
+    comment: Option<String>,
 }
 
 // Get table constraints (foreign keys, check constraints, unique constraints)
@@ -155,6 +163,76 @@ pub async fn get_table_triggers(
         Err(e) => {
             tracing::error!("[API] GET /triggers - ERROR: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+// Get table comment
+pub async fn get_table_comment(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /table-comment - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .get_table_comment(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(comment) => (StatusCode::OK, Json(comment)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
+// Set table comment (comment=null clears)
+pub async fn set_table_comment(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Json(body): Json<SetTableCommentBody>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] PUT /table-comment - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        body.schema,
+        body.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .set_table_comment(connection_id, &body.schema, &body.table, body.comment)
+        .await
+    {
+        Ok(()) => (StatusCode::OK, Json(json!({ "success": true }))).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
         }
     }
 }
