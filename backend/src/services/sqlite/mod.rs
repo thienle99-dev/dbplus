@@ -217,6 +217,14 @@ impl TableOperations for SQLiteDriver {
     ) -> Result<super::db_driver::StorageBloatInfo> {
         self.table.get_storage_bloat_info(schema, table).await
     }
+
+    async fn get_partitions(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::PartitionInfo> {
+        self.table.get_partitions(schema, table).await
+    }
 }
 
 #[async_trait]

@@ -214,6 +214,10 @@ async fn main() {
             "/api/connections/:id/storage-info",
             get(handlers::table_info::get_storage_bloat_info),
         )
+        .route(
+            "/api/connections/:id/partitions",
+            get(handlers::table_info::get_partitions),
+        )
         // Views and Functions routes
         .route(
             "/api/connections/:id/views",

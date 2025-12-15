@@ -1,6 +1,6 @@
 use crate::services::db_driver::{
-    IndexInfo, QueryResult, StorageBloatInfo, TableComment, TableConstraints, TableGrant,
-    TableStatistics, TriggerInfo,
+    IndexInfo, PartitionInfo, QueryResult, StorageBloatInfo, TableComment, TableConstraints,
+    TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -365,5 +365,9 @@ impl TableOperations for SQLiteTable {
         _table: &str,
     ) -> Result<StorageBloatInfo> {
         Err(anyhow::anyhow!("Storage & bloat info is not supported for sqlite"))
+    }
+
+    async fn get_partitions(&self, _schema: &str, _table: &str) -> Result<PartitionInfo> {
+        Err(anyhow::anyhow!("Partitions are not supported for sqlite"))
     }
 }

@@ -4,6 +4,7 @@ import {
     QueryResult,
     RoleInfo,
     StorageBloatInfo,
+    PartitionInfo,
     TableColumn,
     TableComment,
     TableGrant,
@@ -271,6 +272,26 @@ export const useStorageBloatInfo = (
                 return null as StorageBloatInfo | null;
             }
             const { data } = await api.get<StorageBloatInfo>(`/api/connections/${connectionId}/storage-info`, {
+                params: { schema, table },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!table,
+    });
+};
+
+export const usePartitions = (
+    connectionId: string | undefined,
+    schema: string | undefined,
+    table: string | undefined,
+) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['partitions', connectionId, dbKey, schema, table],
+        queryFn: async () => {
+            if (!connectionId || !schema || !table) return null as PartitionInfo | null;
+            const { data } = await api.get<PartitionInfo>(`/api/connections/${connectionId}/partitions`, {
                 params: { schema, table },
             });
             return data;

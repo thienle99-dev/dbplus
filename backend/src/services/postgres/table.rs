@@ -1,6 +1,6 @@
 use crate::services::db_driver::{
     IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
-    TriggerInfo, StorageBloatInfo,
+    TriggerInfo, StorageBloatInfo, PartitionChildInfo, PartitionInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -734,6 +734,86 @@ impl TableOperations for PostgresTable {
             last_autovacuum,
             last_analyze,
             last_autoanalyze,
+        })
+    }
+
+    async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo> {
+        tracing::info!(
+            "[PostgresTable] get_partitions - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        let meta_row = client
+            .query_opt(
+                r#"
+                SELECT
+                    pt.partstrat::text AS strategy,
+                    pg_get_partkeydef(pt.partrelid) AS key
+                FROM pg_partitioned_table pt
+                JOIN pg_class c ON c.oid = pt.partrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = $1
+                  AND c.relname = $2
+                "#,
+                &[&schema, &table],
+            )
+            .await?;
+
+        let Some(meta_row) = meta_row else {
+            return Ok(PartitionInfo {
+                is_partitioned: false,
+                strategy: None,
+                key: None,
+                partitions: vec![],
+            });
+        };
+
+        let strategy: Option<String> = meta_row.get(0);
+        let key: Option<String> = meta_row.get(1);
+
+        let rows = client
+            .query(
+                r#"
+                SELECT
+                    nc.nspname AS child_schema,
+                    c.relname AS child_name,
+                    pg_get_expr(c.relpartbound, c.oid, true) AS bound,
+                    pg_relation_size(c.oid) AS table_size,
+                    pg_indexes_size(c.oid) AS index_size,
+                    pg_total_relation_size(c.oid) AS total_size
+                FROM pg_inherits i
+                JOIN pg_class c ON c.oid = i.inhrelid
+                JOIN pg_namespace nc ON nc.oid = c.relnamespace
+                JOIN pg_class p ON p.oid = i.inhparent
+                JOIN pg_namespace np ON np.oid = p.relnamespace
+                WHERE np.nspname = $1
+                  AND p.relname = $2
+                ORDER BY nc.nspname, c.relname
+                "#,
+                &[&schema, &table],
+            )
+            .await?;
+
+        let partitions = rows
+            .into_iter()
+            .map(|r| PartitionChildInfo {
+                schema: r.get(0),
+                name: r.get(1),
+                bound: r.get::<_, Option<String>>(2),
+                table_size: r.get::<_, Option<i64>>(3),
+                index_size: r.get::<_, Option<i64>>(4),
+                total_size: r.get::<_, Option<i64>>(5),
+            })
+            .collect();
+
+        Ok(PartitionInfo {
+            is_partitioned: true,
+            strategy,
+            key,
+            partitions,
         })
     }
 }

@@ -13,6 +13,7 @@ import TriggersSection from './table-info/TriggersSection';
 import TableCommentEditor from './table-info/TableCommentEditor';
 import PermissionsSection from './table-info/PermissionsSection';
 import StorageBloatSection from './table-info/StorageBloatSection';
+import PartitionsSection from './table-info/PartitionsSection';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import { extractApiErrorDetails } from '../utils/apiError';
 import {
@@ -26,9 +27,18 @@ import {
     useTriggers,
     usePermissions,
     useStorageBloatInfo,
+    usePartitions,
 } from '../hooks/useDatabase';
 
-type InfoTabKey = 'overview' | 'columns' | 'constraints' | 'indexes' | 'triggers' | 'stats' | 'permissions';
+type InfoTabKey =
+    | 'overview'
+    | 'columns'
+    | 'constraints'
+    | 'indexes'
+    | 'triggers'
+    | 'stats'
+    | 'partitions'
+    | 'permissions';
 
 function quoteIdent(s: string) {
     return `"${s.replace(/"/g, '""')}"`;
@@ -77,6 +87,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const triggersQuery = useTriggers(connectionId, schema, table);
     const permissionsQuery = usePermissions(connectionId, schema, table);
     const storageQuery = useStorageBloatInfo(connectionId, schema, table);
+    const partitionsQuery = usePartitions(connectionId, schema, table);
 
     const isLoading =
         columnsQuery.isLoading ||
@@ -85,7 +96,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         statsQuery.isLoading ||
         triggersQuery.isLoading ||
         permissionsQuery.isLoading ||
-        storageQuery.isLoading;
+        storageQuery.isLoading ||
+        partitionsQuery.isLoading;
 
     const columns = columnsQuery.data || [];
     const indexes = indexesQuery.data || [];
@@ -95,6 +107,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const grants = permissionsQuery.data || [];
     const permissionsError = permissionsQuery.error ? extractApiErrorDetails(permissionsQuery.error).message : null;
     const storageError = storageQuery.error ? extractApiErrorDetails(storageQuery.error).message : null;
+    const partitionsError = partitionsQuery.error ? extractApiErrorDetails(partitionsQuery.error).message : null;
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
@@ -110,6 +123,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         triggersQuery.refetch();
         permissionsQuery.refetch();
         storageQuery.refetch();
+        partitionsQuery.refetch();
     };
 
     if (isLoading && !columns.length) { // Show loading only if no data at all
@@ -159,6 +173,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         { key: 'indexes', label: 'Indexes' },
         { key: 'triggers', label: 'Triggers' },
         { key: 'stats', label: 'Stats' },
+        { key: 'partitions', label: 'Partitions' },
         { key: 'permissions', label: 'Permissions' },
     ];
 
@@ -378,6 +393,17 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             grants={grants}
                             loading={permissionsQuery.isFetching}
                             error={permissionsError}
+                        />
+                    </Section>
+                )}
+
+                {activeTab === 'partitions' && (
+                    <Section id="partitions.table" title="Partitions">
+                        <PartitionsSection
+                            connectionId={connectionId}
+                            info={partitionsQuery.data ?? null}
+                            loading={partitionsQuery.isFetching}
+                            error={partitionsError}
                         />
                     </Section>
                 )}

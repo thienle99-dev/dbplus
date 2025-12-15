@@ -100,6 +100,22 @@ export interface StorageBloatInfo {
     last_autoanalyze: string | null;
 }
 
+export interface PartitionChildInfo {
+    schema: string;
+    name: string;
+    bound: string | null;
+    table_size: number | null;
+    index_size: number | null;
+    total_size: number | null;
+}
+
+export interface PartitionInfo {
+    is_partitioned: boolean;
+    strategy: string | null;
+    key: string | null;
+    partitions: PartitionChildInfo[];
+}
+
 export interface ViewInfo {
     schema: string;
     name: string;

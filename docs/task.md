@@ -335,16 +335,16 @@
     - [x] VACUUM/ANALYZE action buttons
     - [x] Warning indicators for high bloat
 
-- [ ] **Partitions** ⭐⭐
-  - [ ] Backend: Partition information queries
-    - [ ] Detect if table is partitioned
-    - [ ] Get partition strategy
-    - [ ] List all partitions
-    - [ ] Get partition sizes
-  - [ ] Frontend: Partitions display component
-    - [ ] Show partition strategy and key
-    - [ ] List partitions with sizes
-    - [ ] Navigate to partition details
+- [x] **Partitions** ⭐⭐
+  - [x] Backend: Partition information queries
+    - [x] Detect if table is partitioned
+    - [x] Get partition strategy
+    - [x] List all partitions
+    - [x] Get partition sizes
+  - [x] Frontend: Partitions display component
+    - [x] Show partition strategy and key
+    - [x] List partitions with sizes
+    - [x] Navigate to partition details
 
 ## Phase 10: Testing & Documentation
 

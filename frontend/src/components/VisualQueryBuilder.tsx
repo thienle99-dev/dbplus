@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
+import { useSchemas } from '../hooks/useDatabase';
 
 interface Column {
   name: string;
@@ -25,6 +26,7 @@ interface SortRule {
 interface VisualQueryBuilderProps {
   onSqlChange: (sql: string) => void;
   initialState?: {
+    schema?: string;
     table: string;
     columns: string[];
     filters: FilterRule[];
@@ -33,8 +35,20 @@ interface VisualQueryBuilderProps {
   };
 }
 
+function quoteIdent(s: string) {
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function quoteSqlString(s: string) {
+  return `'${s.replace(/'/g, "''")}'`;
+}
+
 export default function VisualQueryBuilder({ onSqlChange, initialState }: VisualQueryBuilderProps) {
   const { connectionId } = useParams();
+  const schemasQuery = useSchemas(connectionId);
+  const schemas = schemasQuery.data || [];
+
+  const [selectedSchema, setSelectedSchema] = useState<string>('');
   const [tables, setTables] = useState<string[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [columns, setColumns] = useState<Column[]>([]);
@@ -43,30 +57,70 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
   const [sorts, setSorts] = useState<SortRule[]>([]);
   const [limit, setLimit] = useState<string>('100');
 
-  // Fetch tables on mount
+  // Default schema
   useEffect(() => {
-    if (connectionId) {
-      api.get(`/api/connections/${connectionId}/tables`)
-        .then(res => setTables(res.data.map((t: { name: string }) => t.name)))
-        .catch(err => console.error(err));
+    if (selectedSchema) return;
+    if (initialState?.schema) {
+      setSelectedSchema(initialState.schema);
+      return;
     }
-  }, [connectionId]);
+    if (schemas.length > 0) {
+      // Prefer common defaults
+      if (schemas.includes('public')) setSelectedSchema('public');
+      else if (schemas.includes('main')) setSelectedSchema('main');
+      else setSelectedSchema(schemas[0]);
+    }
+  }, [schemas, selectedSchema, initialState?.schema]);
+
+  // Fetch tables when schema changes
+  useEffect(() => {
+    if (!connectionId || !selectedSchema) {
+      setTables([]);
+      return;
+    }
+    api.get(`/api/connections/${connectionId}/tables`, { params: { schema: selectedSchema } })
+      .then(res => {
+        const items: any[] = Array.isArray(res.data) ? res.data : [];
+        const names = items.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean);
+        setTables(names);
+      })
+      .catch(err => {
+        console.error(err);
+        setTables([]);
+      });
+  }, [connectionId, selectedSchema]);
 
   // Fetch columns when table changes
   useEffect(() => {
-    if (connectionId && selectedTable) {
-      api.get(`/api/connections/${connectionId}/columns?table=${selectedTable}`)
-        .then(res => setColumns(res.data))
-        .catch(err => console.error(err));
+    if (connectionId && selectedSchema && selectedTable) {
+      api.get(`/api/connections/${connectionId}/columns`, { params: { schema: selectedSchema, table: selectedTable } })
+        .then(res => {
+          const items: any[] = Array.isArray(res.data) ? res.data : [];
+          setColumns(items.map((c) => ({ name: c?.name, type: c?.data_type || c?.type || '' })).filter((c) => !!c.name));
+        })
+        .catch(err => {
+          console.error(err);
+          setColumns([]);
+        });
     } else {
       setColumns([]);
     }
-  }, [connectionId, selectedTable]);
+  }, [connectionId, selectedSchema, selectedTable]);
 
   // Load initial state
   useEffect(() => {
     if (initialState) {
-      setSelectedTable(initialState.table || '');
+      const rawTable = initialState.table || '';
+      if (initialState.schema) {
+        setSelectedSchema(initialState.schema);
+        setSelectedTable(rawTable);
+      } else if (rawTable.includes('.')) {
+        const [s, t] = rawTable.split('.', 2);
+        setSelectedSchema(s);
+        setSelectedTable(t);
+      } else {
+        setSelectedTable(rawTable);
+      }
       setSelectedColumns(initialState.columns || []);
       setFilters(initialState.filters || []);
       setSorts(initialState.sorts || []);
@@ -74,26 +128,42 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
     }
   }, [initialState]);
 
+  const schemaOptions = useMemo(
+    () => [{ value: '', label: 'Select schema...' }, ...schemas.map((s) => ({ value: s, label: s }))],
+    [schemas],
+  );
+
+  const tableOptions = useMemo(
+    () => [{ value: '', label: 'Select a table...' }, ...tables.map((t) => ({ value: t, label: t }))],
+    [tables],
+  );
+
   // Generate SQL whenever state changes
   useEffect(() => {
-    if (!selectedTable) {
+    if (!selectedSchema || !selectedTable) {
       onSqlChange('');
       return;
     }
 
-    const cols = selectedColumns.length > 0 ? selectedColumns.join(', ') : '*';
-    let sql = `SELECT ${cols} FROM ${selectedTable}`;
+    const cols =
+      selectedColumns.length > 0 ? selectedColumns.map((c) => quoteIdent(c)).join(', ') : '*';
+    const from =
+      selectedSchema === 'main'
+        ? `${quoteIdent(selectedTable)}`
+        : `${quoteIdent(selectedSchema)}.${quoteIdent(selectedTable)}`;
+    let sql = `SELECT ${cols} FROM ${from}`;
 
     if (filters.length > 0) {
       const whereClause = filters.map(f => {
-        const val = isNaN(Number(f.value)) ? `'${f.value}'` : f.value;
-        return `${f.column} ${f.operator} ${val}`;
+        const asNum = Number(f.value);
+        const val = !Number.isNaN(asNum) && f.value.trim() !== '' ? String(asNum) : quoteSqlString(f.value);
+        return `${quoteIdent(f.column)} ${f.operator} ${val}`;
       }).join(' AND ');
       sql += ` WHERE ${whereClause}`;
     }
 
     if (sorts.length > 0) {
-      const orderBy = sorts.map(s => `${s.column} ${s.direction}`).join(', ');
+      const orderBy = sorts.map(s => `${quoteIdent(s.column)} ${s.direction}`).join(', ');
       sql += ` ORDER BY ${orderBy}`;
     }
 
@@ -102,7 +172,7 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
     }
 
     onSqlChange(sql);
-  }, [selectedTable, selectedColumns, filters, sorts, limit]);
+  }, [selectedSchema, selectedTable, selectedColumns, filters, sorts, limit, onSqlChange]);
 
   const addFilter = () => {
     setFilters([...filters, { id: Math.random().toString(), column: columns[0]?.name || '', operator: '=', value: '' }]);
@@ -138,6 +208,23 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
 
   return (
     <div className="flex flex-col h-full bg-bg-1 p-4 gap-4 overflow-y-auto">
+      {/* Schema Selection */}
+      <div>
+        <label className="block text-xs font-medium text-text-secondary mb-1">Schema</label>
+        <Select
+          value={selectedSchema}
+          onChange={(val) => {
+            setSelectedSchema(val);
+            setSelectedTable('');
+            setSelectedColumns([]);
+            setFilters([]);
+            setSorts([]);
+          }}
+          options={schemaOptions}
+          searchable
+        />
+      </div>
+
       {/* Table Selection */}
       <div>
         <label className="block text-xs font-medium text-text-secondary mb-1">Table</label>
@@ -149,15 +236,12 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
             setFilters([]);
             setSorts([]);
           }}
-          options={[
-            { value: '', label: 'Select a table...' },
-            ...tables.map(t => ({ value: t, label: t }))
-          ]}
+          options={tableOptions}
           searchable
         />
       </div>
 
-      {selectedTable && (
+      {selectedSchema && selectedTable && (
         <>
           {/* Columns */}
           <div>

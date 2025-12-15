@@ -148,6 +148,24 @@ pub struct StorageBloatInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PartitionChildInfo {
+    pub schema: String,
+    pub name: String,
+    pub bound: Option<String>,
+    pub table_size: Option<i64>, // bytes
+    pub index_size: Option<i64>, // bytes
+    pub total_size: Option<i64>, // bytes
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PartitionInfo {
+    pub is_partitioned: bool,
+    pub strategy: Option<String>, // LIST / RANGE / HASH
+    pub key: Option<String>,      // pg_get_partkeydef(...)
+    pub partitions: Vec<PartitionChildInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
@@ -224,6 +242,7 @@ pub trait DatabaseDriver:
         grant_option: bool,
     ) -> Result<()>;
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
+    async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -356,6 +375,10 @@ where
 
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {
         <Self as TableOperations>::get_storage_bloat_info(self, schema, table).await
+    }
+
+    async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo> {
+        <Self as TableOperations>::get_partitions(self, schema, table).await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {
