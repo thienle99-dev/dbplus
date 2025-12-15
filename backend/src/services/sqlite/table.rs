@@ -156,9 +156,9 @@ impl TableOperations for SQLiteTable {
         let index_rows = sqlx::query(&index_query).fetch_all(&self.pool).await?;
 
         for row in index_rows {
-            let is_unique: i32 = row.get(1);
+            let is_unique: i32 = row.get(2);
             if is_unique == 1 {
-                let index_name: String = row.get(0);
+                let index_name: String = row.get(1);
                 let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
                 let info_rows = sqlx::query(&info_query).fetch_all(&self.pool).await?;
                 let columns: Vec<String> =
@@ -237,9 +237,9 @@ impl TableOperations for SQLiteTable {
 
         let mut indexes = Vec::new();
         for row in index_rows {
-            let index_name: String = row.get(0);
-            let is_unique: i32 = row.get(1);
-            let origin: String = row.get(2);
+            let index_name: String = row.get(1);
+            let is_unique: i32 = row.get(2);
+            let origin: String = row.get(3);
             let is_pk = origin == "pk";
 
             let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
@@ -375,5 +375,37 @@ impl TableOperations for SQLiteTable {
 
     async fn get_partitions(&self, _schema: &str, _table: &str) -> Result<PartitionInfo> {
         Err(anyhow::anyhow!("Partitions are not supported for sqlite"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SQLiteTable;
+    use crate::services::driver::TableOperations;
+    use sqlx::sqlite::SqlitePool;
+
+    #[tokio::test]
+    async fn sqlite_index_list_decoding_matches_sqlite_pragma_shape() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+
+        sqlx::query("CREATE TABLE t (id INTEGER PRIMARY KEY, email TEXT)")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("CREATE UNIQUE INDEX idx_t_email ON t(email)")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let table = SQLiteTable::new(pool);
+
+        let indexes = table.get_table_indexes("main", "t").await.unwrap();
+        assert!(indexes.iter().any(|idx| idx.name == "idx_t_email" && idx.is_unique));
+
+        let constraints = table.get_table_constraints("main", "t").await.unwrap();
+        assert!(constraints
+            .unique_constraints
+            .iter()
+            .any(|uc| uc.constraint_name == "idx_t_email" && uc.columns == vec!["email"]));
     }
 }

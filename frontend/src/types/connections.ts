@@ -10,6 +10,7 @@ export interface ConnectionFormModalProps {
   onClose: () => void;
   onSubmit: (connection: Omit<Connection, 'id'>) => Promise<void>;
   initialValues?: Omit<Connection, 'id'>;
+  initialType?: Connection['type'];
 }
 
 export interface ConnectionListProps {

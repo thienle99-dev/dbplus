@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react';
 
 const DB_TYPES = [
     { value: 'postgres', label: 'PostgreSQL' },
+    { value: 'sqlite', label: 'SQLite' },
     { value: 'mysql', label: 'MySQL' },
     { value: 'mongo', label: 'MongoDB' },
     { value: 'redis', label: 'Redis' },
@@ -31,7 +32,7 @@ const DEFAULT_FORM_DATA = {
     ssl: false,
 };
 
-export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit, initialValues }) => {
+export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit, initialValues, initialType }) => {
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
 
     useEffect(() => {
@@ -44,10 +45,18 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     user: initialValues.username || '',
                 }));
             } else {
-                setFormData(DEFAULT_FORM_DATA);
+                const nextType = initialType || DEFAULT_FORM_DATA.type;
+                setFormData({
+                    ...DEFAULT_FORM_DATA,
+                    type: nextType,
+                    host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
+                    port: nextType === 'sqlite' ? '0' : DEFAULT_FORM_DATA.port,
+                    user: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.user,
+                    password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
+                });
             }
         }
-    }, [isOpen, initialValues]);
+    }, [isOpen, initialValues, initialType]);
 
     const { testConnectionDetails } = useConnectionStore();
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -68,11 +77,11 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
     const getConnectionData = () => ({
         name: formData.name,
         type: formData.type,
-        host: formData.host,
-        port: parseInt(formData.port) || 5432,
+        host: formData.type === 'sqlite' ? '' : formData.host,
+        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || 5432),
         database: formData.database,
-        username: formData.user,
-        password: formData.password,
+        username: formData.type === 'sqlite' ? '' : formData.user,
+        password: formData.type === 'sqlite' ? '' : formData.password,
         ssl: formData.ssl ?? false,
     });
 
@@ -184,83 +193,89 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                         </div>
 
                         {/* Host & Port */}
-                        <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                            <label className="text-sm text-gray-400">Host/Socket</label>
-                            <div className="flex gap-3">
-                                <input
-                                    type="text"
-                                    value={formData.host}
-                                    onChange={(e) => handleChange('host', e.target.value)}
-                                    placeholder="localhost"
-                                    autoCapitalize="off"
-                                    autoCorrect="off"
-                                    spellCheck={false}
-                                    required
-                                    className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
-                                />
-                                <label className="text-sm text-gray-400 self-center">Port</label>
-                                <input
-                                    type="text"
-                                    value={formData.port}
-                                    onChange={(e) => handleChange('port', e.target.value)}
-                                    placeholder="5432"
-                                    className="w-20 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
-                                />
+                        {formData.type !== 'sqlite' && (
+                            <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
+                                <label className="text-sm text-gray-400">Host/Socket</label>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={formData.host}
+                                        onChange={(e) => handleChange('host', e.target.value)}
+                                        placeholder="localhost"
+                                        autoCapitalize="off"
+                                        autoCorrect="off"
+                                        spellCheck={false}
+                                        required
+                                        className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                                    />
+                                    <label className="text-sm text-gray-400 self-center">Port</label>
+                                    <input
+                                        type="text"
+                                        value={formData.port}
+                                        onChange={(e) => handleChange('port', e.target.value)}
+                                        placeholder="5432"
+                                        className="w-20 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* User */}
-                        <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                            <label className="text-sm text-gray-400">User</label>
-                            <div className="flex gap-3">
-                                <input
-                                    type="text"
-                                    value={formData.user}
-                                    onChange={(e) => handleChange('user', e.target.value)}
-                                    placeholder="postgres"
-                                    autoCapitalize="off"
-                                    autoCorrect="off"
-                                    spellCheck={false}
-                                    className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
-                                />
-                                <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm flex items-center gap-2 hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
-                                    Other options
-                                    <ChevronDown className="w-3 h-3" />
-                                </button>
+                        {formData.type !== 'sqlite' && (
+                            <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
+                                <label className="text-sm text-gray-400">User</label>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={formData.user}
+                                        onChange={(e) => handleChange('user', e.target.value)}
+                                        placeholder="postgres"
+                                        autoCapitalize="off"
+                                        autoCorrect="off"
+                                        spellCheck={false}
+                                        className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                                    />
+                                    <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm flex items-center gap-2 hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
+                                        Other options
+                                        <ChevronDown className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Password */}
-                        <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                            <label className="text-sm text-gray-400">Password</label>
-                            <div className="flex gap-3">
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => handleChange('password', e.target.value)}
-                                    placeholder="••••••••"
-                                    className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
-                                />
-                                <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm flex items-center gap-2 hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
-                                    Store in keychain
-                                    <ChevronDown className="w-3 h-3" />
-                                </button>
+                        {formData.type !== 'sqlite' && (
+                            <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
+                                <label className="text-sm text-gray-400">Password</label>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => handleChange('password', e.target.value)}
+                                        placeholder="••••••••"
+                                        className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                                    />
+                                    <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm flex items-center gap-2 hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
+                                        Store in keychain
+                                        <ChevronDown className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Database */}
                         <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                            <label className="text-sm text-gray-400">Database</label>
+                            <label className="text-sm text-gray-400">{formData.type === 'sqlite' ? 'Database file' : 'Database'}</label>
                             <div className="flex gap-3">
                                 <input
                                     type="text"
                                     value={formData.database}
                                     onChange={(e) => handleChange('database', e.target.value)}
-                                    placeholder="my_database"
+                                    placeholder={formData.type === 'sqlite' ? '/path/to/db.sqlite (empty = :memory:)' : 'my_database'}
                                     autoCapitalize="off"
                                     autoCorrect="off"
                                     spellCheck={false}
-                                    required
+                                    required={formData.type !== 'sqlite'}
                                     className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
                                 />
                                 <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">

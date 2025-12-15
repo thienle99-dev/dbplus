@@ -82,6 +82,7 @@ export const ConnectionsDashboard: React.FC = () => {
         onClose={() => { setIsFormModalOpen(false); setEditingConnection(null); }}
         onSubmit={handleFormSubmit}
         initialValues={editingConnection || undefined}
+        initialType={editingConnection ? editingConnection.type : (selectedDbType as Connection['type'])}
       />
 
       <DatabaseSelectorModal

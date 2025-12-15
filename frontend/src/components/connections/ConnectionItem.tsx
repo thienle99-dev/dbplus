@@ -16,6 +16,7 @@ interface ConnectionItemProps {
 
 const DB_ICONS: Record<Connection['type'], { icon: string; color: string }> = {
     postgres: { icon: 'Pg', color: 'bg-blue-500' },
+    sqlite: { icon: 'Sq', color: 'bg-blue-400' },
     mysql: { icon: 'My', color: 'bg-green-500' },
     mongo: { icon: 'Mg', color: 'bg-green-600' },
     redis: { icon: 'Re', color: 'bg-red-500' },
@@ -23,7 +24,7 @@ const DB_ICONS: Record<Connection['type'], { icon: string; color: string }> = {
 
 export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOpen, onEdit, index = 0 }) => {
     const { deleteConnection, createConnection, connections, setSortOption } = useConnectionStore();
-    const isLocal = connection.host === 'localhost' || connection.host === '127.0.0.1';
+    const isLocal = connection.type === 'sqlite' || connection.host === 'localhost' || connection.host === '127.0.0.1';
     const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
     const { showToast } = useToast();
 
@@ -66,7 +67,10 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     };
 
     const handleCopyUrl = () => {
-        const url = `${connection.type}://${connection.username || 'user'}:${connection.password ? '****' : ''}@${connection.host}:${connection.port || 5432}/${connection.database}`;
+        const url =
+            connection.type === 'sqlite'
+                ? `sqlite:///${connection.database || ':memory:'}`
+                : `${connection.type}://${connection.username || 'user'}:${connection.password ? '****' : ''}@${connection.host}:${connection.port || 5432}/${connection.database}`;
         navigator.clipboard.writeText(url);
         setMenuPosition(null);
     };

@@ -3,7 +3,7 @@ import { Connection, CreateDatabaseRequest, DatabaseManagementResponse } from '.
 
 export interface CreateConnectionRequest {
     name: string;
-    type: 'postgres' | 'mysql' | 'mongo' | 'redis';
+    type: 'postgres' | 'sqlite' | 'mysql' | 'mongo' | 'redis';
     host: string;
     port?: number;
     database: string;

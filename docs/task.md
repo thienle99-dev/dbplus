@@ -61,12 +61,21 @@
   - [x] PostgreSQL implementation with pg library
   - [x] Connection pooling
   - [x] Error handling
+- [x] Build SQLite driver
+  - [x] SQLite connection pooling (sqlx)
+  - [x] Query execution + streaming
+  - [x] Schema/table introspection (main)
+  - [ ] SQLite advanced metadata parity (permissions/roles/comments/bloat/partitions/dependencies)
 - [x] Create connection UI
   - [x] ConnectionList component
   - [x] ConnectionForm component
   - [x] ConnectionCard component
   - [x] Test connection UI flow
   - [x] State management setup
+  - [x] Enable SQLite connection creation
+    - [x] SQLite selectable in DB picker
+    - [x] Connection form supports SQLite file path / :memory:
+    - [x] Backend accepts SQLite connection payload (optional host/port/user/pass)
 
 ## Phase 2b: Connections Dashboard Redesign (TablePlus-style)
 
@@ -359,3 +368,50 @@
   - [x] API documentation
   - [x] Code comments
   - [x] README with architecture overview
+
+## Phase 12: Next Features Backlog
+
+### Ưu tiên cao (đáng làm sớm)
+- [ ] Search/filter Query History + Saved Queries (tag, time range, connection/db scope)
+- [ ] Column operations (sort/filter/hide/resize/reorder + save prefs theo bảng)
+- [ ] Row Editor modal (form Insert/Edit/Delete + validate kiểu dữ liệu + NULL)
+- [ ] Filter Builder Panel (UI → SQL WHERE) + lưu preset filter
+- [ ] Transaction preview + “Run in transaction / rollback” cho query nguy hiểm
+- [ ] Background jobs (long query/import/export) + progress + cancel
+- [ ] Secrets storage via OS keychain (macOS/Windows)
+- [ ] SSH tunnel / bastion support (Postgres/MySQL)
+- [ ] Data profiling (null %, distinct, top values, histograms)
+- [ ] SQL lint rules (dangerous patterns, missing WHERE on UPDATE/DELETE)
+
+### Query Editor
+- [ ] Autocomplete JOIN/columns theo schema context
+- [ ] Snippet variables + param placeholders + form nhập params
+- [ ] Tabs: pin/duplicate + split editor/results (vertical/horizontal)
+- [ ] EXPLAIN nâng cao: highlight hotspots, compare plans, toggle ANALYZE
+- [ ] Result diff/compare (two queries / snapshots)
+- [ ] Query formatter options per dialect + on-save format
+
+### Schema & Navigation
+- [ ] ER diagram (FK graph) + click navigate
+- [ ] Global search objects (table/view/function/column) + quick open
+- [ ] Object definition viewers đầy đủ (view/function/procedure/trigger) + copy/create/alter
+- [ ] Schema diff + generate ALTER (between two schemas)
+
+### Data Tools (nâng cấp)
+- [ ] Import wizard: mapping columns, type coercion, error report, dry-run
+- [ ] Export wizard: chọn columns/format, chunking, progress + cancel
+- [ ] Backup/Restore: custom format + gzip + progress + cancel + logs
+- [ ] Create table from file (CSV infer schema)
+- [ ] Export to Parquet/Arrow + import from Parquet
+
+### Settings & UX
+- [ ] Preferences window (editor font, theme, result grid behavior)
+- [ ] Customizable shortcuts + keyboard shortcuts map
+- [ ] Accessibility pass (keyboard nav, focus states) + error boundary polish
+- [ ] Session/workspace restore (tabs/layout per connection)
+- [ ] Multi-window mode (separate query/data window)
+
+### SQLite (nâng cấp)
+- [ ] File picker cho đường dẫn DB + recent DB list
+- [ ] Attached databases support (ATTACH) + schema list ngoài `main`
+- [ ] PRAGMA editor + integrity check + VACUUM/ANALYZE UI
