@@ -30,7 +30,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-4xl h-[600px] bg-bg-1 border border-border rounded-lg shadow-2xl flex flex-col">
+            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[600px] bg-bg-1 border border-border rounded-lg shadow-2xl flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                     <h2 className="text-lg font-semibold text-text-primary">Settings</h2>

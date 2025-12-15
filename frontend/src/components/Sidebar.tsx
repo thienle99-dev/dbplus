@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Database, FileText, Clock, Settings, LogOut, Plus } from 'lucide-react';
 import SchemaTree from './SchemaTree';
@@ -21,6 +21,12 @@ export default function Sidebar() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { tabs, activeTabId, ensureTabForRoute, setActiveTab: setActiveWorkspaceTab, closeTab, setTabLastPath } = useWorkspaceTabsStore();
   const { connections, fetchConnections } = useConnectionStore();
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('left-sidebar-width');
+    return saved ? parseInt(saved, 10) : 320;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarWidthRef = useRef(sidebarWidth);
 
   useEffect(() => {
     if (connections.length === 0) {
@@ -41,6 +47,38 @@ export default function Sidebar() {
     setTabLastPath(id, path);
   }, [connectionId, connectionById, ensureTabForRoute, location.pathname, location.search, setTabLastPath]);
 
+  useEffect(() => {
+    sidebarWidthRef.current = sidebarWidth;
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = e.clientX;
+      const constrainedWidth = Math.max(240, Math.min(520, newWidth));
+      setSidebarWidth(constrainedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      localStorage.setItem('left-sidebar-width', sidebarWidthRef.current.toString());
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem('left-sidebar-width', sidebarWidthRef.current.toString());
+    };
+  }, [isResizing]);
+
   // Global Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,7 +98,10 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-bg-1 pb-[30px] border-r border-border flex h-screen flex-shrink-0">
+    <div
+      className="bg-bg-1 pb-[30px] border-r border-border flex h-full flex-shrink-0 relative"
+      style={{ width: `${sidebarWidth}px` }}
+    >
       {/* Vertical Workspace Tabs Rail */}
       <div className="w-[60px] border-r border-border bg-bg-1 flex flex-col">
         <div className="flex-1 overflow-y-auto py-2 px-1 space-y-1">
@@ -140,6 +181,16 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
+
+      {/* Resize Handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent/50 z-50 transition-colors"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+        title="Drag to resize"
+      />
 
       {/* Main Sidebar Content */}
       <div className="flex-1 flex flex-col min-w-0">

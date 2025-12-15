@@ -13,7 +13,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate 
             <div className="mb-6">
                 <div className="w-32 h-32 flex items-center justify-center">
                     <img
-                        src="/cat_logo.png"
+                        src="/cat_logo_square.png"
                         alt="App Logo"
                         className="w-full h-full object-contain filter grayscale invert contrast-150 mix-blend-screen"
                     />

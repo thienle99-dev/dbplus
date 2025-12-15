@@ -248,7 +248,7 @@ export default function DataToolsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-1 rounded-lg shadow-xl w-[720px] max-w-[95vw] border border-border">
+      <div className="bg-bg-1 rounded-lg shadow-xl w-[720px] max-w-[95vw] max-h-[85vh] border border-border flex flex-col overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-border">
           <h3 className="font-semibold text-text-primary">{title}</h3>
           <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
@@ -256,7 +256,7 @@ export default function DataToolsModal({
           </button>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 overflow-auto">
           {!fixedConnectionId && connections && (
             <div className="flex items-center gap-2">
               <div className="text-xs text-text-secondary w-28">Connection</div>

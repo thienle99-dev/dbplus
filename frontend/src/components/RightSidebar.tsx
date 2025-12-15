@@ -250,7 +250,7 @@ export default function RightSidebar() {
 
   if (!isOpen) {
     return (
-      <div className="w-10 border-l border-border bg-bg-1 flex flex-col items-center py-2 gap-2">
+      <div className="w-10 flex-shrink-0 border-l border-border bg-bg-1 flex flex-col items-center py-2 gap-2">
         <button
           onClick={() => setIsOpen(true)}
           className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded"
@@ -264,7 +264,7 @@ export default function RightSidebar() {
 
   return (
     <div
-      className="border-l border-border bg-bg-1 flex flex-col h-full transition-all duration-300 relative"
+      className="flex-shrink-0 border-l border-border bg-bg-1 flex flex-col h-full transition-all duration-300 relative"
       style={{ width: `${sidebarWidth}px` }}
     >
       <div
