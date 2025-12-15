@@ -210,6 +210,14 @@ impl TableOperations for SQLiteDriver {
             .await
     }
 
+    async fn get_table_dependencies(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<super::db_driver::TableDependencies> {
+        self.table.get_table_dependencies(schema, table).await
+    }
+
     async fn get_storage_bloat_info(
         &self,
         schema: &str,

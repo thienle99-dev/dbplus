@@ -316,13 +316,13 @@
 ### Phase 11.3 - Advanced Features (Low Priority - Optional)
 
 - [ ] **Dependencies** ⭐⭐
-  - [ ] Backend: Create API endpoint `GET /api/connections/:id/dependencies`
-    - [ ] Query views using this table
-    - [ ] Query functions/procedures referencing table
-    - [ ] Query tables with foreign keys to this table
-  - [ ] Frontend: Dependencies display component
-    - [ ] List all dependent objects
-    - [ ] Navigation to dependent objects
+  - [x] Backend: Create API endpoint `GET /api/connections/:id/dependencies`
+    - [x] Query views using this table
+    - [x] Query functions/procedures referencing table
+    - [x] Query tables with foreign keys to this table
+  - [x] Frontend: Dependencies display component
+    - [x] List all dependent objects
+    - [x] Navigation to dependent objects
 
 - [x] **Storage & Bloat Information** ⭐⭐
   - [x] Backend: Advanced storage queries (PostgreSQL)

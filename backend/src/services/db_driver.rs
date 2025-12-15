@@ -192,6 +192,39 @@ pub struct FunctionInfo {
     pub owner: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependentViewInfo {
+    pub schema: String,
+    pub name: String,
+    pub kind: String, // view / materialized_view
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependentRoutineInfo {
+    pub schema: String,
+    pub name: String,
+    pub kind: String,      // function / procedure / aggregate / window
+    pub arguments: String, // pg_get_function_identity_arguments(...)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferencingForeignKeyInfo {
+    pub schema: String,
+    pub table: String,
+    pub constraint_name: String,
+    pub columns: Vec<String>,
+    pub referenced_columns: Vec<String>,
+    pub on_update: String,
+    pub on_delete: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableDependencies {
+    pub views: Vec<DependentViewInfo>,
+    pub routines: Vec<DependentRoutineInfo>,
+    pub referencing_foreign_keys: Vec<ReferencingForeignKeyInfo>,
+}
+
 use crate::services::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, NoSQLOperations, QueryDriver,
     SchemaIntrospection, TableOperations, ViewOperations,
@@ -241,6 +274,7 @@ pub trait DatabaseDriver:
         privileges: Vec<String>,
         grant_option: bool,
     ) -> Result<()>;
+    async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies>;
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
@@ -371,6 +405,10 @@ where
             grant_option,
         )
         .await
+    }
+
+    async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies> {
+        <Self as TableOperations>::get_table_dependencies(self, schema, table).await
     }
 
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {

@@ -7,6 +7,7 @@ import {
     PartitionInfo,
     TableColumn,
     TableComment,
+    TableDependencies,
     TableGrant,
     TriggerInfo,
 } from '../types';
@@ -202,6 +203,26 @@ export const usePermissions = (connectionId: string | undefined, schema: string 
         queryFn: async () => {
             if (!connectionId || !schema || !table) return [] as TableGrant[];
             const { data } = await api.get<TableGrant[]>(`/api/connections/${connectionId}/permissions`, {
+                params: { schema, table },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!table,
+    });
+};
+
+export const useDependencies = (
+    connectionId: string | undefined,
+    schema: string | undefined,
+    table: string | undefined,
+) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['dependencies', connectionId, dbKey, schema, table],
+        queryFn: async () => {
+            if (!connectionId || !schema || !table) return null as TableDependencies | null;
+            const { data } = await api.get<TableDependencies>(`/api/connections/${connectionId}/dependencies`, {
                 params: { schema, table },
             });
             return data;

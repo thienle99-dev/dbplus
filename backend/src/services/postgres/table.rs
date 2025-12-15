@@ -1,6 +1,7 @@
 use crate::services::db_driver::{
     IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
-    TriggerInfo, StorageBloatInfo, PartitionChildInfo, PartitionInfo,
+    DependentRoutineInfo, DependentViewInfo, PartitionChildInfo, PartitionInfo, ReferencingForeignKeyInfo,
+    StorageBloatInfo, TableDependencies, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -629,6 +630,166 @@ impl TableOperations for PostgresTable {
 
         tx.commit().await?;
         Ok(())
+    }
+
+    async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies> {
+        tracing::info!(
+            "[PostgresTable] get_table_dependencies - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        let client = self.pool.get().await?;
+
+        let views = client
+            .query(
+                r#"
+                WITH target AS (
+                    SELECT c.oid AS relid
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = $1
+                      AND c.relname = $2
+                )
+                SELECT DISTINCT
+                    nv.nspname AS schema,
+                    v.relname AS name,
+                    CASE v.relkind
+                        WHEN 'v' THEN 'view'
+                        WHEN 'm' THEN 'materialized_view'
+                        ELSE v.relkind::text
+                    END AS kind
+                FROM target t
+                JOIN pg_depend d
+                  ON d.refobjid = t.relid
+                 AND d.classid = 'pg_rewrite'::regclass
+                JOIN pg_rewrite r ON r.oid = d.objid
+                JOIN pg_class v ON v.oid = r.ev_class
+                JOIN pg_namespace nv ON nv.oid = v.relnamespace
+                WHERE v.relkind IN ('v', 'm')
+                ORDER BY 1, 2
+                "#,
+                &[&schema, &table],
+            )
+            .await?
+            .into_iter()
+            .map(|r| DependentViewInfo {
+                schema: r.get(0),
+                name: r.get(1),
+                kind: r.get(2),
+            })
+            .collect::<Vec<_>>();
+
+        let routines = client
+            .query(
+                r#"
+                WITH target AS (
+                    SELECT c.oid AS relid
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = $1
+                      AND c.relname = $2
+                )
+                SELECT DISTINCT
+                    np.nspname AS schema,
+                    p.proname AS name,
+                    CASE p.prokind
+                        WHEN 'f' THEN 'function'
+                        WHEN 'p' THEN 'procedure'
+                        WHEN 'a' THEN 'aggregate'
+                        WHEN 'w' THEN 'window'
+                        ELSE p.prokind::text
+                    END AS kind,
+                    pg_get_function_identity_arguments(p.oid) AS arguments
+                FROM target t
+                JOIN pg_depend d
+                  ON d.refobjid = t.relid
+                 AND d.classid = 'pg_proc'::regclass
+                JOIN pg_proc p ON p.oid = d.objid
+                JOIN pg_namespace np ON np.oid = p.pronamespace
+                ORDER BY 1, 2, 4
+                "#,
+                &[&schema, &table],
+            )
+            .await?
+            .into_iter()
+            .map(|r| DependentRoutineInfo {
+                schema: r.get(0),
+                name: r.get(1),
+                kind: r.get(2),
+                arguments: r.get(3),
+            })
+            .collect::<Vec<_>>();
+
+        let referencing_foreign_keys = client
+            .query(
+                r#"
+                WITH target AS (
+                    SELECT c.oid AS relid
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = $1
+                      AND c.relname = $2
+                )
+                SELECT
+                    ns.nspname AS schema,
+                    cl.relname AS table,
+                    con.conname AS constraint_name,
+                    array_agg(att_local.attname ORDER BY u.ord) AS columns,
+                    array_agg(att_ref.attname ORDER BY u.ord) AS referenced_columns,
+                    CASE con.confupdtype
+                        WHEN 'a' THEN 'NO ACTION'
+                        WHEN 'r' THEN 'RESTRICT'
+                        WHEN 'c' THEN 'CASCADE'
+                        WHEN 'n' THEN 'SET NULL'
+                        WHEN 'd' THEN 'SET DEFAULT'
+                        ELSE con.confupdtype::text
+                    END AS on_update,
+                    CASE con.confdeltype
+                        WHEN 'a' THEN 'NO ACTION'
+                        WHEN 'r' THEN 'RESTRICT'
+                        WHEN 'c' THEN 'CASCADE'
+                        WHEN 'n' THEN 'SET NULL'
+                        WHEN 'd' THEN 'SET DEFAULT'
+                        ELSE con.confdeltype::text
+                    END AS on_delete
+                FROM target t
+                JOIN pg_constraint con
+                  ON con.confrelid = t.relid
+                 AND con.contype = 'f'
+                JOIN pg_class cl ON cl.oid = con.conrelid
+                JOIN pg_namespace ns ON ns.oid = cl.relnamespace
+                JOIN unnest(con.conkey) WITH ORDINALITY AS u(attnum, ord) ON true
+                JOIN unnest(con.confkey) WITH ORDINALITY AS ur(attnum, ord) ON ur.ord = u.ord
+                JOIN pg_attribute att_local
+                  ON att_local.attrelid = con.conrelid
+                 AND att_local.attnum = u.attnum
+                JOIN pg_attribute att_ref
+                  ON att_ref.attrelid = con.confrelid
+                 AND att_ref.attnum = ur.attnum
+                GROUP BY ns.nspname, cl.relname, con.conname, con.confupdtype, con.confdeltype
+                ORDER BY 1, 2, 3
+                "#,
+                &[&schema, &table],
+            )
+            .await?
+            .into_iter()
+            .map(|r| ReferencingForeignKeyInfo {
+                schema: r.get(0),
+                table: r.get(1),
+                constraint_name: r.get(2),
+                columns: r.get::<_, Vec<String>>(3),
+                referenced_columns: r.get::<_, Vec<String>>(4),
+                on_update: r.get(5),
+                on_delete: r.get(6),
+            })
+            .collect::<Vec<_>>();
+
+        Ok(TableDependencies {
+            views,
+            routines,
+            referencing_foreign_keys,
+        })
     }
 
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {

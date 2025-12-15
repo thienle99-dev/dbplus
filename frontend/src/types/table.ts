@@ -133,6 +133,35 @@ export interface FunctionInfo {
     owner?: string;
 }
 
+export interface DependentViewInfo {
+    schema: string;
+    name: string;
+    kind: string; // view / materialized_view
+}
+
+export interface DependentRoutineInfo {
+    schema: string;
+    name: string;
+    kind: string; // function / procedure / aggregate / window
+    arguments: string;
+}
+
+export interface ReferencingForeignKeyInfo {
+    schema: string;
+    table: string;
+    constraint_name: string;
+    columns: string[];
+    referenced_columns: string[];
+    on_update: string;
+    on_delete: string;
+}
+
+export interface TableDependencies {
+    views: DependentViewInfo[];
+    routines: DependentRoutineInfo[];
+    referencing_foreign_keys: ReferencingForeignKeyInfo[];
+}
+
 export interface FilterCondition {
     column: string;
     operator: string;

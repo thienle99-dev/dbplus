@@ -1,6 +1,6 @@
 use crate::services::db_driver::{
     IndexInfo, PartitionInfo, QueryResult, StorageBloatInfo, TableComment, TableConstraints,
-    TableGrant, TableStatistics, TriggerInfo,
+    TableDependencies, TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -357,6 +357,12 @@ impl TableOperations for SQLiteTable {
         _grant_option: bool,
     ) -> Result<()> {
         Err(anyhow::anyhow!("Permissions are not supported for sqlite"))
+    }
+
+    async fn get_table_dependencies(&self, _schema: &str, _table: &str) -> Result<TableDependencies> {
+        Err(anyhow::anyhow!(
+            "Dependencies are not supported for sqlite"
+        ))
     }
 
     async fn get_storage_bloat_info(

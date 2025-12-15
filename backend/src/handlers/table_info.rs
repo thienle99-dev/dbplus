@@ -281,6 +281,43 @@ pub async fn get_table_permissions(
     }
 }
 
+// Get table dependencies (views, routines, referencing foreign keys)
+pub async fn get_table_dependencies(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /dependencies - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .get_table_dependencies(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(deps) => (StatusCode::OK, Json(deps)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
 // Get storage & bloat info
 pub async fn get_storage_bloat_info(
     State(db): State<DatabaseConnection>,

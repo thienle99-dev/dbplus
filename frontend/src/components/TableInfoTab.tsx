@@ -14,6 +14,7 @@ import TableCommentEditor from './table-info/TableCommentEditor';
 import PermissionsSection from './table-info/PermissionsSection';
 import StorageBloatSection from './table-info/StorageBloatSection';
 import PartitionsSection from './table-info/PartitionsSection';
+import DependenciesSection from './table-info/DependenciesSection';
 import { generateSqlDefinition } from '../utils/sqlGenerator';
 import { extractApiErrorDetails } from '../utils/apiError';
 import {
@@ -28,6 +29,7 @@ import {
     usePermissions,
     useStorageBloatInfo,
     usePartitions,
+    useDependencies,
 } from '../hooks/useDatabase';
 
 type InfoTabKey =
@@ -38,6 +40,7 @@ type InfoTabKey =
     | 'triggers'
     | 'stats'
     | 'partitions'
+    | 'dependencies'
     | 'permissions';
 
 function quoteIdent(s: string) {
@@ -88,6 +91,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const permissionsQuery = usePermissions(connectionId, schema, table);
     const storageQuery = useStorageBloatInfo(connectionId, schema, table);
     const partitionsQuery = usePartitions(connectionId, schema, table);
+    const dependenciesQuery = useDependencies(connectionId, schema, table);
 
     const isLoading =
         columnsQuery.isLoading ||
@@ -97,7 +101,8 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         triggersQuery.isLoading ||
         permissionsQuery.isLoading ||
         storageQuery.isLoading ||
-        partitionsQuery.isLoading;
+        partitionsQuery.isLoading ||
+        dependenciesQuery.isLoading;
 
     const columns = columnsQuery.data || [];
     const indexes = indexesQuery.data || [];
@@ -108,6 +113,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const permissionsError = permissionsQuery.error ? extractApiErrorDetails(permissionsQuery.error).message : null;
     const storageError = storageQuery.error ? extractApiErrorDetails(storageQuery.error).message : null;
     const partitionsError = partitionsQuery.error ? extractApiErrorDetails(partitionsQuery.error).message : null;
+    const dependenciesError = dependenciesQuery.error ? extractApiErrorDetails(dependenciesQuery.error).message : null;
 
     const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
 
@@ -124,6 +130,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         permissionsQuery.refetch();
         storageQuery.refetch();
         partitionsQuery.refetch();
+        dependenciesQuery.refetch();
     };
 
     if (isLoading && !columns.length) { // Show loading only if no data at all
@@ -174,6 +181,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         { key: 'triggers', label: 'Triggers' },
         { key: 'stats', label: 'Stats' },
         { key: 'partitions', label: 'Partitions' },
+        { key: 'dependencies', label: 'Dependencies' },
         { key: 'permissions', label: 'Permissions' },
     ];
 
@@ -384,6 +392,27 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                     </div>
                 )}
 
+                {activeTab === 'partitions' && (
+                    <Section id="partitions.table" title="Partitions">
+                        <PartitionsSection
+                            connectionId={connectionId}
+                            info={partitionsQuery.data ?? null}
+                            loading={partitionsQuery.isFetching}
+                            error={partitionsError}
+                        />
+                    </Section>
+                )}
+
+                {activeTab === 'dependencies' && (
+                    <Section id="dependencies.table" title="Dependencies">
+                        <DependenciesSection
+                            dependencies={dependenciesQuery.data ?? null}
+                            loading={dependenciesQuery.isFetching}
+                            error={dependenciesError}
+                        />
+                    </Section>
+                )}
+
                 {activeTab === 'permissions' && (
                     <Section id="permissions.table" title="Permissions">
                         <PermissionsSection
@@ -393,17 +422,6 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             grants={grants}
                             loading={permissionsQuery.isFetching}
                             error={permissionsError}
-                        />
-                    </Section>
-                )}
-
-                {activeTab === 'partitions' && (
-                    <Section id="partitions.table" title="Partitions">
-                        <PartitionsSection
-                            connectionId={connectionId}
-                            info={partitionsQuery.data ?? null}
-                            loading={partitionsQuery.isFetching}
-                            error={partitionsError}
                         />
                     </Section>
                 )}
