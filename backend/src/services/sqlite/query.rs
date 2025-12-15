@@ -260,6 +260,26 @@ impl QueryDriver for SQLiteQuery {
         }
     }
 
+    async fn execute_script(&self, script: &str) -> Result<u64> {
+        let statements = crate::utils::sql_script::split_sql_statements(script);
+        if statements.is_empty() {
+            return Ok(0);
+        }
+
+        let mut tx = self.pool.begin().await?;
+        let mut count = 0u64;
+        for stmt in statements {
+            let trimmed = stmt.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            sqlx::query(trimmed).execute(&mut *tx).await?;
+            count += 1;
+        }
+        tx.commit().await?;
+        Ok(count)
+    }
+
     async fn explain(&self, query: &str, _analyze: bool) -> Result<Value> {
         let explain_query = format!("EXPLAIN QUERY PLAN {}", query);
         let result = self.query(&explain_query).await?;

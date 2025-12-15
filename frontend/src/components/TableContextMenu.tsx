@@ -27,6 +27,8 @@ interface TableContextMenuProps {
     onClose: () => void;
     isPinned: boolean;
     onTogglePin: () => void;
+    onOpenExport: (format: 'csv' | 'json' | 'sql') => void;
+    onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
 }
 
 interface MenuItem {
@@ -48,6 +50,8 @@ export default function TableContextMenu({
     onClose,
     isPinned,
     onTogglePin,
+    onOpenExport,
+    onOpenImport,
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
@@ -252,18 +256,18 @@ export default function TableContextMenu({
             label: 'Export',
             icon: <FileDown size={14} />,
             submenu: [
-                { label: 'Export as CSV', icon: <FileDown size={14} />, onClick: () => { showToast('Export CSV coming soon', 'info'); onClose(); } },
-                { label: 'Export as JSON', icon: <FileDown size={14} />, onClick: () => { showToast('Export JSON coming soon', 'info'); onClose(); } },
-                { label: 'Export as SQL', icon: <FileDown size={14} />, onClick: () => { showToast('Export SQL coming soon', 'info'); onClose(); } },
+                { label: 'Export as CSV', icon: <FileDown size={14} />, onClick: () => { onOpenExport('csv'); onClose(); } },
+                { label: 'Export as JSON', icon: <FileDown size={14} />, onClick: () => { onOpenExport('json'); onClose(); } },
+                { label: 'Export as SQL', icon: <FileDown size={14} />, onClick: () => { onOpenExport('sql'); onClose(); } },
             ],
         },
         {
             label: 'Import',
             icon: <FileUp size={14} />,
             submenu: [
-                { label: 'Import from CSV', icon: <FileUp size={14} />, onClick: () => { showToast('Import CSV coming soon', 'info'); onClose(); } },
-                { label: 'Import from JSON', icon: <FileUp size={14} />, onClick: () => { showToast('Import JSON coming soon', 'info'); onClose(); } },
-                { label: 'Import from SQL', icon: <FileUp size={14} />, onClick: () => { showToast('Import SQL coming soon', 'info'); onClose(); } },
+                { label: 'Import from CSV', icon: <FileUp size={14} />, onClick: () => { onOpenImport('csv'); onClose(); } },
+                { label: 'Import from JSON', icon: <FileUp size={14} />, onClick: () => { onOpenImport('json'); onClose(); } },
+                { label: 'Import from SQL', icon: <FileUp size={14} />, onClick: () => { onOpenImport('sql'); onClose(); } },
             ],
             divider: true,
         },

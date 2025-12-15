@@ -1813,6 +1813,12 @@ impl QueryDriver for PostgresQuery {
         }
     }
 
+    async fn execute_script(&self, script: &str) -> Result<u64> {
+        let client = self.pool.get().await?;
+        client.batch_execute(script).await?;
+        Ok(crate::utils::sql_script::count_sql_statements(script))
+    }
+
     async fn explain(&self, query: &str, analyze: bool) -> Result<Value> {
         let client = self.pool.get().await?;
         let explain_query = if analyze {

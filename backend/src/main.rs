@@ -120,6 +120,10 @@ async fn main() {
             post(handlers::query::execute_query),
         )
         .route(
+            "/api/connections/:id/execute-script",
+            post(handlers::data_tools::execute_script),
+        )
+        .route(
             "/api/connections/:id/execute/stream",
             post(handlers::query_stream::execute_query_stream),
         )
@@ -221,6 +225,10 @@ async fn main() {
         .route(
             "/api/connections/:id/partitions",
             get(handlers::table_info::get_partitions),
+        )
+        .route(
+            "/api/connections/:id/backup/sql",
+            get(handlers::data_tools::backup_postgres_sql),
         )
         // Views and Functions routes
         .route(

@@ -94,6 +94,10 @@ impl QueryDriver for PostgresDriver {
         self.query.execute_query(query).await
     }
 
+    async fn execute_script(&self, script: &str) -> Result<u64> {
+        self.query.execute_script(script).await
+    }
+
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {
         self.query.explain(query, analyze).await
     }

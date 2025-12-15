@@ -11,3 +11,4 @@ pub mod saved_query_folder;
 pub mod schema;
 pub mod snippet;
 pub mod table_info;
+pub mod data_tools;

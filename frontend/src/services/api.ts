@@ -32,8 +32,6 @@ api.interceptors.request.use(
     config.headers = config.headers ?? {};
     if (shouldAttach) {
       (config.headers as any)['x-dbplus-database'] = databaseOverride;
-    } else if ((config.headers as any)['x-dbplus-database']) {
-      delete (config.headers as any)['x-dbplus-database'];
     }
 
     useLogStore.getState().addLog({

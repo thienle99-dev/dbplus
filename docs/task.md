@@ -207,9 +207,9 @@
   - [/] View/Function Definition Viewer (Backend complete, frontend pending)
   - [/] Filter Builder Panel (Backend complete, frontend pending)
 - [ ] **Data Tools**
-  - [ ] Import Wizard (CSV/JSON/SQL)
-  - [ ] Export Wizard
-  - [ ] Backup/Restore UI
+  - [x] Import Wizard (CSV/JSON/SQL)
+  - [x] Export Wizard
+  - [x] Backup/Restore UI
 - [ ] **Administration**
   - [ ] Database Switcher/Manager
   - [ ] User/Role Management Screen

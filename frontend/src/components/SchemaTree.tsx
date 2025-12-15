@@ -7,6 +7,7 @@ import { useTabContext } from '../context/TabContext';
 import { useToast } from '../context/ToastContext';
 import { TableInfo } from '../types';
 import TableContextMenu from './TableContextMenu';
+import DataToolsModal from './DataToolsModal';
 import { usePinnedTables } from '../hooks/usePinnedTables';
 import { useSchemas, useTables } from '../hooks/useDatabase';
 import { connectionApi } from '../services/connectionApi';
@@ -27,6 +28,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
     table: string;
     position: { x: number; y: number };
   } | null>(null);
+  const [dataTools, setDataTools] = useState<null | { mode: 'export' | 'import'; format: 'csv' | 'json' | 'sql'; schema: string; table: string }>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { isPinned, togglePin } = usePinnedTables(connectionId);
@@ -186,6 +188,26 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
           onClose={() => setContextMenu(null)}
           isPinned={isPinned(schemaName, contextMenu.table)}
           onTogglePin={() => togglePin(schemaName, contextMenu.table)}
+          onOpenExport={(format) =>
+            setDataTools({ mode: 'export', format, schema: schemaName, table: contextMenu.table })
+          }
+          onOpenImport={(format) =>
+            setDataTools({ mode: 'import', format, schema: schemaName, table: contextMenu.table })
+          }
+        />
+      )}
+
+      {dataTools && (
+        <DataToolsModal
+          key={`${connectionId}:${dataTools.schema}.${dataTools.table}:${dataTools.mode}:${dataTools.format}`}
+          isOpen
+          onClose={() => setDataTools(null)}
+          initialMode={dataTools.mode}
+          initialExportFormat={dataTools.mode === 'export' ? dataTools.format : undefined}
+          initialImportFormat={dataTools.mode === 'import' ? dataTools.format : undefined}
+          connectionId={connectionId}
+          schema={dataTools.schema}
+          table={dataTools.table}
         />
       )}
     </Collapsible.Root>

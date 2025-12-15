@@ -6,11 +6,13 @@ import { ConnectionList } from './ConnectionList';
 import { DatabaseSelectorModal } from './DatabaseSelectorModal';
 import { ConnectionFormModal } from './ConnectionFormModal';
 import { useConnectionStore } from '../../store/connectionStore';
+import DataToolsModal from '../DataToolsModal';
 
 export const ConnectionsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isdbSelectorOpen, setIsDbSelectorOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [dataToolsMode, setDataToolsMode] = useState<null | 'backup' | 'restore'>(null);
   const [selectedDbType, setSelectedDbType] = useState<string>('postgres');
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const { connections, isLoading, error, fetchConnections, createConnection, updateConnection } = useConnectionStore();
@@ -49,8 +51,8 @@ export const ConnectionsDashboard: React.FC = () => {
   return (
     <div className="h-screen flex text-gray-200 font-sans selection:bg-blue-500/30 bg-[#1e1e1e] overflow-hidden">
       <Sidebar
-        onBackup={() => console.log('Backup not implemented')}
-        onRestore={() => console.log('Restore not implemented')}
+        onBackup={() => setDataToolsMode('backup')}
+        onRestore={() => setDataToolsMode('restore')}
         onCreate={() => setIsDbSelectorOpen(true)}
       />
 
@@ -91,6 +93,16 @@ export const ConnectionsDashboard: React.FC = () => {
           setIsFormModalOpen(true);
         }}
       />
+
+      {dataToolsMode && (
+        <DataToolsModal
+          key={`connections-dashboard:${dataToolsMode}`}
+          isOpen
+          onClose={() => setDataToolsMode(null)}
+          initialMode={dataToolsMode}
+          connections={connections}
+        />
+      )}
     </div>
   );
 };
