@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "sqlite_attached_dbs")]
+#[sea_orm(table_name = "dbplus_sqlite_attached_dbs")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
@@ -31,4 +31,3 @@ impl Related<super::connection::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
