@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dbplus-postgres
+    environment:
+      POSTGRES_USER: dbplus
+      POSTGRES_PASSWORD: dbplus
+      POSTGRES_DB: dbplus
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbplus -d dbplus"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

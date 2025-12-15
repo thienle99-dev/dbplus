@@ -2,6 +2,7 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Router,
 };
+use axum::extract::DefaultBodyLimit;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use std::net::SocketAddr;
@@ -247,6 +248,7 @@ async fn main() {
             "/api/connections/:id/function-definition",
             get(handlers::schema::get_function_definition),
         )
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
