@@ -3,8 +3,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { ToastProvider } from "./context/ToastContext";
+import { AccessibilityProvider } from "./context/AccessibilityProvider";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
+import "./styles/accessibility.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -22,9 +24,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          <AccessibilityProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </AccessibilityProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

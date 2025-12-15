@@ -6,3 +6,4 @@ pub mod query_snippet;
 pub mod saved_query;
 pub mod saved_query_folder;
 pub mod sqlite_attached_db;
+pub mod user_settings;

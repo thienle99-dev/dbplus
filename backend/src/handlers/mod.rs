@@ -1,5 +1,6 @@
 pub mod connection;
 pub mod dashboard;
+pub mod data_tools;
 pub mod database;
 pub mod explain;
 pub mod history;
@@ -9,7 +10,7 @@ pub mod result_edit;
 pub mod saved_query;
 pub mod saved_query_folder;
 pub mod schema;
+pub mod settings;
 pub mod snippet;
-pub mod table_info;
-pub mod data_tools;
 pub mod sqlite_tools;
+pub mod table_info;

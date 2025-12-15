@@ -1,8 +1,8 @@
+use axum::extract::DefaultBodyLimit;
 use axum::{
     routing::{delete, get, patch, post, put},
     Router,
 };
-use axum::extract::DefaultBodyLimit;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use std::net::SocketAddr;
@@ -257,6 +257,18 @@ async fn main() {
         .route(
             "/api/connections/:id/sqlite/attachments/:name",
             delete(handlers::sqlite_tools::delete_sqlite_attachment),
+        )
+        // Settings routes
+        .route("/api/settings", get(handlers::settings::get_all_settings))
+        .route(
+            "/api/settings/reset",
+            post(handlers::settings::reset_settings),
+        )
+        .route(
+            "/api/settings/:key",
+            get(handlers::settings::get_setting)
+                .put(handlers::settings::update_setting)
+                .delete(handlers::settings::delete_setting),
         )
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(

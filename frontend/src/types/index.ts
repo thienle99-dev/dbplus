@@ -6,3 +6,4 @@ export * from './modals';
 export * from './tabs';
 export * from './schema';
 export * from './query';
+export * from './settings';

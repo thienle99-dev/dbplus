@@ -1,0 +1,142 @@
+/* Accessibility Styles */
+
+/* Screen reader only content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Keyboard focus indicators */
+.keyboard-focus-visible *:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+/* High contrast mode */
+.high-contrast {
+    --bg-0: #000000;
+    --bg-1: #1a1a1a;
+    --bg-2: #2a2a2a;
+    --bg-3: #3a3a3a;
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --border: #ffffff;
+    --accent: #00ff00;
+}
+
+.high-contrast button,
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+    border: 2px solid var(--border) !important;
+}
+
+/* Reduced motion */
+.reduce-motion,
+.reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+}
+
+/* Screen reader optimized */
+.screen-reader-optimized {
+    /* Increase spacing for better screen reader parsing */
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+}
+
+.screen-reader-optimized button,
+.screen-reader-optimized a {
+    /* Ensure all interactive elements have clear labels */
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* Skip to content link */
+.skip-to-content:focus {
+    position: absolute !important;
+    left: 1rem !important;
+    top: 1rem !important;
+    z-index: 9999;
+}
+
+/* Focus visible for keyboard users */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Ensure sufficient color contrast */
+@media (prefers-contrast: high) {
+    :root {
+        --bg-0: #000000;
+        --bg-1: #1a1a1a;
+        --text-primary: #ffffff;
+        --border: #ffffff;
+    }
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Enhanced focus for form elements */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    box-shadow: 0 0 0 3px rgba(79, 131, 255, 0.3);
+}
+
+/* Ensure interactive elements are large enough */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"] {
+    min-width: 24px;
+    min-height: 24px;
+}
+
+/* Better visibility for disabled elements */
+:disabled,
+[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Loading state announcements */
+[aria-busy="true"] {
+    position: relative;
+}
+
+[aria-busy="true"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
