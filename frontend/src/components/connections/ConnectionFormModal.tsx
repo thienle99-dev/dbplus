@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Connection, ConnectionFormModalProps } from '../../types';
 import { useConnectionStore } from '../../store/connectionStore';
 import { ChevronDown } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 
 const DB_TYPES = [
     { value: 'postgres', label: 'PostgreSQL' },
@@ -32,8 +33,31 @@ const DEFAULT_FORM_DATA = {
     ssl: false,
 };
 
+const RECENT_SQLITE_DB_KEY = 'dbplus.recentSqliteDbs';
+const MAX_RECENT_SQLITE_DBS = 8;
+
+function loadRecentSqliteDbs(): string[] {
+    try {
+        const raw = localStorage.getItem(RECENT_SQLITE_DB_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+function pushRecentSqliteDb(path: string) {
+    const clean = path.trim();
+    if (!clean) return;
+    const current = loadRecentSqliteDbs();
+    const next = [clean, ...current.filter((p) => p !== clean)].slice(0, MAX_RECENT_SQLITE_DBS);
+    localStorage.setItem(RECENT_SQLITE_DB_KEY, JSON.stringify(next));
+}
+
 export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen, onClose, onSubmit, initialValues, initialType }) => {
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+    const [recentSqliteDbs, setRecentSqliteDbs] = useState<string[]>([]);
 
     useEffect(() => {
         if (isOpen) {
@@ -55,6 +79,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
                 });
             }
+            setRecentSqliteDbs(loadRecentSqliteDbs());
         }
     }, [isOpen, initialValues, initialType]);
 
@@ -115,6 +140,10 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         setIsSubmitting(true);
 
         try {
+            if (formData.type === 'sqlite' && formData.database.trim()) {
+                pushRecentSqliteDb(formData.database);
+                setRecentSqliteDbs(loadRecentSqliteDbs());
+            }
             await onSubmit(getConnectionData());
             setFormData(DEFAULT_FORM_DATA);
             onClose();
@@ -122,6 +151,18 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             setError(err instanceof Error ? err.message : 'Failed to create connection');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleBrowseSqlite = async () => {
+        try {
+            const selected = await invoke<string | null>('pick_sqlite_db_file');
+            if (!selected) return;
+            handleChange('database', selected);
+            pushRecentSqliteDb(selected);
+            setRecentSqliteDbs(loadRecentSqliteDbs());
+        } catch {
+            // ignore
         }
     };
 
@@ -278,10 +319,35 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     required={formData.type !== 'sqlite'}
                                     className="flex-1 h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
                                 />
-                                <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
-                                    Bootstrap commands...
-                                </button>
+                                {formData.type === 'sqlite' ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleBrowseSqlite}
+                                        className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-300 text-sm hover:bg-[#1a1a1a] transition-colors whitespace-nowrap"
+                                    >
+                                        Browse...
+                                    </button>
+                                ) : (
+                                    <button type="button" className="h-8 px-3 bg-[#121212] border border-[#2a2a2a] rounded text-gray-400 text-sm hover:bg-[#1a1a1a] transition-colors whitespace-nowrap">
+                                        Bootstrap commands...
+                                    </button>
+                                )}
                             </div>
+                            {formData.type === 'sqlite' && recentSqliteDbs.length > 0 && (
+                                <div className="col-start-2 flex flex-wrap gap-2">
+                                    {recentSqliteDbs.slice(0, 6).map((p) => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            onClick={() => handleChange('database', p)}
+                                            className="max-w-full px-2 py-1 rounded border border-[#2a2a2a] bg-[#121212] text-xs text-gray-300 hover:bg-[#1a1a1a] truncate"
+                                            title={p}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* SSL Mode */}

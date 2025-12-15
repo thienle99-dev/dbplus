@@ -5,6 +5,7 @@ mod m20240101_000002_add_metadata;
 mod m20240101_000003_create_dashboards;
 mod m20250101_000004_create_snippets;
 mod m20251213_000005_saved_query_folders;
+mod m20251215_000006_sqlite_attached_dbs;
 
 pub struct Migrator;
 
@@ -17,6 +18,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000003_create_dashboards::Migration),
             Box::new(m20250101_000004_create_snippets::Migration),
             Box::new(m20251213_000005_saved_query_folders::Migration),
+            Box::new(m20251215_000006_sqlite_attached_dbs::Migration),
         ]
     }
 }

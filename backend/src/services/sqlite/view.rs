@@ -19,12 +19,13 @@ impl ViewOperations for SQLiteView {
     async fn list_views(&self, schema: &str) -> Result<Vec<ViewInfo>> {
         tracing::info!("[SQLiteView] list_views - schema: {}", schema);
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let query = "SELECT 'main' as schema, name, sql FROM sqlite_master WHERE type = 'view' AND name NOT LIKE 'sqlite_%' ORDER BY name";
-        let rows = sqlx::query(query)
+        let schema = normalize_schema(schema);
+        let query = format!(
+            "SELECT {} as schema, name, sql FROM {}.sqlite_master WHERE type = 'view' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+            quote_literal(&schema),
+            quote_ident(&schema),
+        );
+        let rows = sqlx::query(&query)
             .fetch_all(&self.pool)
             .await?;
 
@@ -51,12 +52,13 @@ impl ViewOperations for SQLiteView {
             view_name
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Err(anyhow::anyhow!("View not found"));
-        }
-
-        let query = "SELECT 'main' as schema, name, sql FROM sqlite_master WHERE type = 'view' AND name = ?";
-        let row = sqlx::query(query)
+        let schema = normalize_schema(schema);
+        let query = format!(
+            "SELECT {} as schema, name, sql FROM {}.sqlite_master WHERE type = 'view' AND name = ?",
+            quote_literal(&schema),
+            quote_ident(&schema),
+        );
+        let row = sqlx::query(&query)
             .bind(view_name)
             .fetch_optional(&self.pool)
             .await?;
@@ -72,4 +74,21 @@ impl ViewOperations for SQLiteView {
             None => Err(anyhow::anyhow!("View not found")),
         }
     }
+}
+
+fn normalize_schema(schema: &str) -> String {
+    let s = schema.trim();
+    if s.is_empty() {
+        "main".to_string()
+    } else {
+        s.to_string()
+    }
+}
+
+fn quote_ident(s: &str) -> String {
+    format!("\"{}\"", s.replace('"', "\"\""))
+}
+
+fn quote_literal(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "''"))
 }

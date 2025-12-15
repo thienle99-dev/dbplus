@@ -1,4 +1,5 @@
 use crate::models::entities::{connection, connection::Entity as Connection};
+use crate::models::entities::sqlite_attached_db;
 use crate::services::encryption_service::EncryptionService;
 use anyhow::Result;
 use chrono::Utc;
@@ -36,6 +37,35 @@ impl ConnectionService {
             }
         }
         connection
+    }
+
+    async fn load_sqlite_attachments(
+        &self,
+        connection_id: Uuid,
+    ) -> Result<Vec<crate::services::sqlite::SqliteAttachedDatabase>> {
+        let rows = sqlite_attached_db::Entity::find()
+            .filter(sqlite_attached_db::Column::ConnectionId.eq(connection_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| crate::services::sqlite::SqliteAttachedDatabase {
+                name: r.name,
+                file_path: r.file_path,
+                read_only: r.read_only,
+            })
+            .collect())
+    }
+
+    async fn sqlite_driver(
+        &self,
+        connection: &connection::Model,
+        password: &str,
+    ) -> Result<crate::services::sqlite::SQLiteDriver> {
+        let attachments = self.load_sqlite_attachments(connection.id).await?;
+        crate::services::sqlite::SQLiteDriver::new_with_attachments(connection, password, attachments).await
     }
 
     /// Retrieves all connections from the database.
@@ -97,7 +127,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -105,7 +134,7 @@ impl ConnectionService {
                 driver.get_databases().await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_databases().await
             }
             _ => Err(anyhow::anyhow!(
@@ -179,7 +208,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -187,7 +215,7 @@ impl ConnectionService {
                 driver.get_schemas().await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_schemas().await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -261,7 +289,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -269,7 +296,7 @@ impl ConnectionService {
                 driver.get_tables(schema).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_tables(schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -292,7 +319,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -300,7 +326,7 @@ impl ConnectionService {
                 driver.get_columns(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_columns(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -322,7 +348,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -330,7 +355,7 @@ impl ConnectionService {
                 driver.get_schema_metadata(schema).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_schema_metadata(schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -355,7 +380,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -363,7 +387,7 @@ impl ConnectionService {
                 driver.get_table_data(schema, table, limit, offset).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_data(schema, table, limit, offset).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -377,6 +401,31 @@ impl ConnectionService {
     ) -> Result<crate::services::db_driver::QueryResult> {
         self.execute_query_with_options(connection_id, query, None, None, false)
             .await
+    }
+
+    pub async fn execute_script(&self, connection_id: Uuid, script: &str) -> Result<u64> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::driver::QueryDriver as _;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.execute_script(script).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                driver.execute_script(script).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
     }
 
     pub async fn execute_query_with_options(
@@ -397,7 +446,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         let trimmed = query.trim_start();
         let upper = trimmed.to_uppercase();
@@ -422,7 +470,7 @@ impl ConnectionService {
                     driver.query(&page_sql).await?
                 }
                 "sqlite" => {
-                    let driver = SQLiteDriver::new(&connection, &password).await?;
+                    let driver = self.sqlite_driver(&connection, &password).await?;
                     driver.query(&page_sql).await?
                 }
                 _ => return Err(anyhow::anyhow!("Unsupported database type")),
@@ -438,7 +486,7 @@ impl ConnectionService {
                         driver.query(&count_sql).await?
                     }
                     "sqlite" => {
-                        let driver = SQLiteDriver::new(&connection, &password).await?;
+                        let driver = self.sqlite_driver(&connection, &password).await?;
                         driver.query(&count_sql).await?
                     }
                     _ => return Err(anyhow::anyhow!("Unsupported database type")),
@@ -470,7 +518,7 @@ impl ConnectionService {
                 driver.execute_query(query).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.execute_query(query).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -538,7 +586,6 @@ impl ConnectionService {
     ) -> Result<()> {
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -547,7 +594,7 @@ impl ConnectionService {
                 Ok(())
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, password).await?;
+                let driver = self.sqlite_driver(&connection, password).await?;
                 driver.test_connection().await?;
                 Ok(())
             }
@@ -571,7 +618,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -579,7 +625,7 @@ impl ConnectionService {
                 driver.get_table_constraints(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_constraints(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -602,7 +648,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -610,7 +655,7 @@ impl ConnectionService {
                 driver.get_table_statistics(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_statistics(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -633,7 +678,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -641,7 +685,7 @@ impl ConnectionService {
                 driver.get_table_indexes(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_indexes(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -664,7 +708,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -672,7 +715,7 @@ impl ConnectionService {
                 driver.get_table_triggers(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_triggers(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -695,7 +738,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -703,7 +745,7 @@ impl ConnectionService {
                 driver.get_table_comment(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_comment(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -727,7 +769,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -735,7 +776,7 @@ impl ConnectionService {
                 driver.set_table_comment(schema, table, comment).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.set_table_comment(schema, table, comment).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -758,7 +799,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -766,7 +806,7 @@ impl ConnectionService {
                 driver.get_table_permissions(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_permissions(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -787,7 +827,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -795,7 +834,7 @@ impl ConnectionService {
                 driver.list_roles().await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.list_roles().await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -821,7 +860,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -831,7 +869,7 @@ impl ConnectionService {
                     .await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver
                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
                     .await
@@ -856,7 +894,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -864,7 +901,7 @@ impl ConnectionService {
                 driver.get_table_dependencies(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_table_dependencies(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -887,7 +924,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -895,7 +931,7 @@ impl ConnectionService {
                 driver.get_storage_bloat_info(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_storage_bloat_info(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -918,7 +954,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -926,7 +961,7 @@ impl ConnectionService {
                 driver.get_partitions(schema, table).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_partitions(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -948,14 +983,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.add_column(schema, table, column).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.add_column(schema, table, column).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -978,7 +1012,6 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
@@ -987,7 +1020,7 @@ impl ConnectionService {
                     .await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver
                     .alter_column(schema, table, column_name, new_def)
                     .await
@@ -1011,14 +1044,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.drop_column(schema, table, column_name).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.drop_column(schema, table, column_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1038,14 +1070,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.list_views(schema).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.list_views(schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1066,14 +1097,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.get_view_definition(schema, view_name).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_view_definition(schema, view_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1093,14 +1123,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.list_functions(schema).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.list_functions(schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1121,14 +1150,13 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.get_function_definition(schema, function_name).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_function_definition(schema, function_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1145,7 +1173,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -1153,7 +1180,7 @@ impl ConnectionService {
                 driver.execute(query).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.execute(query).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -1176,7 +1203,6 @@ impl ConnectionService {
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
-        use crate::services::sqlite::SQLiteDriver;
 
         match connection.db_type.as_str() {
             "postgres" => {
@@ -1184,7 +1210,7 @@ impl ConnectionService {
                 driver.explain(query, analyze).await
             }
             "sqlite" => {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
+                let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.explain(query, analyze).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),

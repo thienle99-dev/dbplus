@@ -12,3 +12,4 @@ pub mod schema;
 pub mod snippet;
 pub mod table_info;
 pub mod data_tools;
+pub mod sqlite_tools;

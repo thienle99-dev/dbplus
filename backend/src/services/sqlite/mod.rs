@@ -24,6 +24,13 @@ use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
 use async_trait::async_trait;
 
+#[derive(Clone, Debug)]
+pub struct SqliteAttachedDatabase {
+    pub name: String,
+    pub file_path: String,
+    pub read_only: bool,
+}
+
 pub struct SQLiteDriver {
     connection: SQLiteConnection,
     query: SQLiteQuery,
@@ -36,7 +43,15 @@ pub struct SQLiteDriver {
 
 impl SQLiteDriver {
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
-        let conn = SQLiteConnection::new(connection, password).await?;
+        Self::new_with_attachments(connection, password, Vec::new()).await
+    }
+
+    pub async fn new_with_attachments(
+        connection: &ConnectionModel::Model,
+        password: &str,
+        attachments: Vec<SqliteAttachedDatabase>,
+    ) -> Result<Self> {
+        let conn = SQLiteConnection::new_with_attachments(connection, password, &attachments).await?;
         let pool = conn.pool().clone();
 
         Ok(Self {

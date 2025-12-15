@@ -412,6 +412,6 @@
 - [ ] Multi-window mode (separate query/data window)
 
 ### SQLite (nâng cấp)
-- [ ] File picker cho đường dẫn DB + recent DB list
-- [ ] Attached databases support (ATTACH) + schema list ngoài `main`
-- [ ] PRAGMA editor + integrity check + VACUUM/ANALYZE UI
+- [x] File picker cho đường dẫn DB + recent DB list
+- [x] Attached databases support (ATTACH) + schema list ngoài `main`
+- [x] PRAGMA editor + integrity check + VACUUM/ANALYZE UI

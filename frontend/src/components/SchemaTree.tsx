@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ChevronRight, Database, Plus, Table, Pin, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,15 +12,19 @@ import { usePinnedTables } from '../hooks/usePinnedTables';
 import { useSchemas, useTables } from '../hooks/useDatabase';
 import { connectionApi } from '../services/connectionApi';
 import CreateDatabaseModal from './connections/CreateDatabaseModal';
+import { invoke } from '@tauri-apps/api/core';
+import { useConnectionStore } from '../store/connectionStore';
+import SqliteToolsModal from './sqlite/SqliteToolsModal';
 
 interface SchemaNodeProps {
   schemaName: string;
   connectionId: string;
   searchTerm?: string;
   defaultOpen?: boolean;
+  connectionType?: string;
 }
 
-function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: SchemaNodeProps) {
+function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connectionType }: SchemaNodeProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -103,6 +107,25 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
   };
 
   const doDropSchema = async () => {
+    if (connectionType === 'sqlite') {
+      if (schemaName === 'main') {
+        showToast('Cannot detach main database', 'error');
+        return;
+      }
+      const ok = confirm(`Detach attached database "${schemaName}"?`);
+      if (!ok) return;
+      try {
+        await connectionApi.deleteSqliteAttachment(connectionId, schemaName);
+        await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+        await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+        showToast(`Detached '${schemaName}'`, 'success');
+      } catch (err: any) {
+        console.error('Failed to detach database', err);
+        showToast(err?.response?.data?.message || err?.response?.data || 'Failed to detach database', 'error');
+      }
+      return;
+    }
+
     const confirmName = prompt(`To drop schema "${schemaName}", type its name to confirm:`);
     if (confirmName !== schemaName) {
       if (confirmName !== null) showToast('Schema name did not match', 'error');
@@ -141,16 +164,18 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen }: Schem
         </div>
         <Database size={14} className="text-accent/80" />
         <span className="truncate font-medium flex-1">{schemaName}</span>
-        <span
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
-          title="Drop schema"
-          role="button"
-          tabIndex={0}
-          onClick={handleDropSchemaClick}
-          onKeyDown={handleDropSchemaKeyDown}
-        >
-          <Trash2 size={14} />
-        </span>
+        {!(connectionType === 'sqlite' && schemaName === 'main') && (
+          <span
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
+            title={connectionType === 'sqlite' ? 'Detach database' : 'Drop schema'}
+            role="button"
+            tabIndex={0}
+            onClick={handleDropSchemaClick}
+            onKeyDown={handleDropSchemaKeyDown}
+          >
+            <Trash2 size={14} />
+          </span>
+        )}
       </Collapsible.Trigger>
 
       <Collapsible.Content className="pl-3 ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
@@ -220,6 +245,12 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [createDbOpen, setCreateDbOpen] = useState(false);
+  const [sqliteToolsOpen, setSqliteToolsOpen] = useState(false);
+  const { connections } = useConnectionStore();
+  const connectionType = useMemo(
+    () => connections.find((c) => c.id === connectionId)?.type,
+    [connections, connectionId],
+  );
 
   if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
 
@@ -230,6 +261,7 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
 
   const handleCreateSchema = async () => {
     if (!connectionId) return;
+    if (connectionType === 'sqlite') return;
     const name = (prompt('Schema name to create:') || '').trim();
     if (!name) return;
 
@@ -248,20 +280,70 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
       <div className="px-3 py-2 flex items-center justify-between">
         <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">Schemas</div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={handleOpenCreateDatabase}
-            className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-            title="Create database"
-          >
-            <Database size={14} />
-          </button>
-          <button
-            onClick={handleCreateSchema}
-            className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-            title="Create schema"
-          >
-            <Plus size={14} />
-          </button>
+          {connectionType !== 'sqlite' ? (
+            <>
+              <button
+                onClick={handleOpenCreateDatabase}
+                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                title="Create database"
+              >
+                <Database size={14} />
+              </button>
+              <button
+                onClick={handleCreateSchema}
+                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                title="Create schema"
+              >
+                <Plus size={14} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={async () => {
+                  if (!connectionId) return;
+                  try {
+                    const selected = await invoke<string | null>('pick_sqlite_db_file');
+                    if (!selected) return;
+                    const base = selected.split(/[\\/]/).pop() || 'attached';
+                    const noExt = base.replace(/\.[^.]+$/, '');
+                    const suggested = (noExt || 'attached')
+                      .replace(/[^a-zA-Z0-9_]/g, '_')
+                      .replace(/^(\d)/, '_$1');
+                    const name = (prompt('Attach as schema name:', suggested) || '').trim();
+                    if (!name) return;
+                    await connectionApi.createSqliteAttachment(connectionId, {
+                      name,
+                      file_path: selected,
+                      read_only: false,
+                    });
+                    await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+                    await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+                    showToast(`Attached '${name}'`, 'success');
+                  } catch (err: any) {
+                    console.error('Failed to attach database', err);
+                    showToast(
+                      err?.response?.data?.message || err?.response?.data || 'Failed to attach database',
+                      'error',
+                    );
+                  }
+                }}
+                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                title="Attach database"
+              >
+                <Plus size={14} />
+              </button>
+              {connectionId && (
+                <button
+                  onClick={() => setSqliteToolsOpen(true)}
+                  className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                  title="SQLite tools"
+                >
+                  <Wrench size={14} />
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
       {schemas.map((schema) => (
@@ -270,6 +352,7 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
           schemaName={schema}
           connectionId={connectionId!}
           searchTerm={searchTerm}
+          connectionType={connectionType}
         />
       ))}
 
@@ -281,6 +364,14 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
           onCreated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
           }}
+        />
+      )}
+
+      {sqliteToolsOpen && connectionId && (
+        <SqliteToolsModal
+          isOpen={sqliteToolsOpen}
+          onClose={() => setSqliteToolsOpen(false)}
+          connectionId={connectionId}
         />
       )}
     </div>

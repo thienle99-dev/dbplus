@@ -35,20 +35,12 @@ impl TableOperations for SQLiteTable {
             offset
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(QueryResult {
-                columns: vec![],
-                rows: vec![],
-                affected_rows: 0,
-                column_metadata: None,
-                total_count: None,
-                limit: None,
-                offset: None,
-                has_more: None,
-            });
-        }
-
-        let query = format!("SELECT * FROM \"{}\" LIMIT ? OFFSET ?", table);
+        let schema = normalize_schema(schema);
+        let query = format!(
+            "SELECT * FROM {}.{} LIMIT ? OFFSET ?",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
 
         let rows = sqlx::query(&query)
             .bind(limit)
@@ -69,7 +61,11 @@ impl TableOperations for SQLiteTable {
             });
         }
 
-        let query_columns = format!("PRAGMA table_info(\"{}\")", table);
+        let query_columns = format!(
+            "PRAGMA {}.table_info({})",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
         let column_info = sqlx::query(&query_columns).fetch_all(&self.pool).await?;
         let columns: Vec<String> = column_info
             .iter()
@@ -123,16 +119,14 @@ impl TableOperations for SQLiteTable {
             table
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(TableConstraints {
-                foreign_keys: vec![],
-                check_constraints: vec![],
-                unique_constraints: vec![],
-            });
-        }
+        let schema = normalize_schema(schema);
 
         let mut foreign_keys = Vec::new();
-        let fk_query = format!("PRAGMA foreign_key_list(\"{}\")", table);
+        let fk_query = format!(
+            "PRAGMA {}.foreign_key_list({})",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
         let fk_rows = sqlx::query(&fk_query).fetch_all(&self.pool).await?;
 
         for row in fk_rows {
@@ -152,14 +146,22 @@ impl TableOperations for SQLiteTable {
         }
 
         let mut unique_constraints = Vec::new();
-        let index_query = format!("PRAGMA index_list(\"{}\")", table);
+        let index_query = format!(
+            "PRAGMA {}.index_list({})",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
         let index_rows = sqlx::query(&index_query).fetch_all(&self.pool).await?;
 
         for row in index_rows {
             let is_unique: i32 = row.get(2);
             if is_unique == 1 {
                 let index_name: String = row.get(1);
-                let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
+                let info_query = format!(
+                    "PRAGMA {}.index_info({})",
+                    quote_ident(&schema),
+                    quote_ident(&index_name)
+                );
                 let info_rows = sqlx::query(&info_query).fetch_all(&self.pool).await?;
                 let columns: Vec<String> =
                     info_rows.iter().map(|r| r.get::<String, _>(2)).collect();
@@ -186,18 +188,13 @@ impl TableOperations for SQLiteTable {
             table
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(TableStatistics {
-                row_count: None,
-                table_size: None,
-                index_size: None,
-                total_size: None,
-                created_at: None,
-                last_modified: None,
-            });
-        }
+        let schema = normalize_schema(schema);
 
-        let count_query = format!("SELECT COUNT(*) FROM \"{}\"", table);
+        let count_query = format!(
+            "SELECT COUNT(*) FROM {}.{}",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
         let count_row = sqlx::query(&count_query).fetch_one(&self.pool).await?;
         let row_count: i64 = count_row.get(0);
 
@@ -205,7 +202,7 @@ impl TableOperations for SQLiteTable {
         let page_size_row = sqlx::query(page_size_query).fetch_one(&self.pool).await?;
         let page_size: i64 = page_size_row.get(0);
 
-        let page_count_query = format!("PRAGMA page_count");
+        let page_count_query = format!("PRAGMA {}.page_count", quote_ident(&schema));
         let page_count_row = sqlx::query(&page_count_query).fetch_one(&self.pool).await?;
         let page_count: i64 = page_count_row.get(0);
 
@@ -228,11 +225,13 @@ impl TableOperations for SQLiteTable {
             table
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(vec![]);
-        }
+        let schema = normalize_schema(schema);
 
-        let index_query = format!("PRAGMA index_list(\"{}\")", table);
+        let index_query = format!(
+            "PRAGMA {}.index_list({})",
+            quote_ident(&schema),
+            quote_ident(table)
+        );
         let index_rows = sqlx::query(&index_query).fetch_all(&self.pool).await?;
 
         let mut indexes = Vec::new();
@@ -242,7 +241,11 @@ impl TableOperations for SQLiteTable {
             let origin: String = row.get(3);
             let is_pk = origin == "pk";
 
-            let info_query = format!("PRAGMA index_info(\"{}\")", index_name);
+            let info_query = format!(
+                "PRAGMA {}.index_info({})",
+                quote_ident(&schema),
+                quote_ident(&index_name)
+            );
             let info_rows = sqlx::query(&info_query).fetch_all(&self.pool).await?;
             let columns: Vec<String> = info_rows.iter().map(|r| r.get::<String, _>(2)).collect();
 
@@ -273,13 +276,13 @@ impl TableOperations for SQLiteTable {
             table
         );
 
-        if schema != "main" && !schema.is_empty() {
-            return Ok(vec![]);
-        }
+        let schema = normalize_schema(schema);
 
-        let rows = sqlx::query(
-            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? ORDER BY name",
-        )
+        let q = format!(
+            "SELECT name, sql FROM {}.sqlite_master WHERE type = 'trigger' AND tbl_name = ? ORDER BY name",
+            quote_ident(&schema)
+        );
+        let rows = sqlx::query(&q)
         .bind(table)
         .fetch_all(&self.pool)
         .await?;
@@ -376,6 +379,19 @@ impl TableOperations for SQLiteTable {
     async fn get_partitions(&self, _schema: &str, _table: &str) -> Result<PartitionInfo> {
         Err(anyhow::anyhow!("Partitions are not supported for sqlite"))
     }
+}
+
+fn normalize_schema(schema: &str) -> String {
+    let s = schema.trim();
+    if s.is_empty() {
+        "main".to_string()
+    } else {
+        s.to_string()
+    }
+}
+
+fn quote_ident(s: &str) -> String {
+    format!("\"{}\"", s.replace('"', "\"\""))
 }
 
 #[cfg(test)]

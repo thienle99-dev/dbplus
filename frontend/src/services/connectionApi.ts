@@ -16,6 +16,12 @@ export interface UpdateConnectionRequest extends Partial<CreateConnectionRequest
     id: string;
 }
 
+export interface SqliteAttachment {
+    name: string;
+    file_path: string;
+    read_only: boolean;
+}
+
 export const connectionApi = {
     // Get all connections
     getAll: async (): Promise<Connection[]> => {
@@ -107,5 +113,25 @@ export const connectionApi = {
         // Use 'any' or import TableConstraints from types
         const response = await api.get(`/api/connections/${id}/constraints`, { params: { schema, table } });
         return response.data;
+    },
+
+    listSqliteAttachments: async (id: string): Promise<SqliteAttachment[]> => {
+        const response = await api.get(`/api/connections/${id}/sqlite/attachments`);
+        return response.data;
+    },
+
+    createSqliteAttachment: async (
+        id: string,
+        payload: { name: string; file_path: string; read_only?: boolean }
+    ): Promise<SqliteAttachment> => {
+        const response = await api.post(`/api/connections/${id}/sqlite/attachments`, {
+            ...payload,
+            read_only: payload.read_only ?? false,
+        });
+        return response.data;
+    },
+
+    deleteSqliteAttachment: async (id: string, name: string): Promise<void> => {
+        await api.delete(`/api/connections/${id}/sqlite/attachments/${encodeURIComponent(name)}`);
     },
 };

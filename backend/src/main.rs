@@ -248,6 +248,16 @@ async fn main() {
             "/api/connections/:id/function-definition",
             get(handlers::schema::get_function_definition),
         )
+        // SQLite-specific tools
+        .route(
+            "/api/connections/:id/sqlite/attachments",
+            get(handlers::sqlite_tools::list_sqlite_attachments)
+                .post(handlers::sqlite_tools::create_sqlite_attachment),
+        )
+        .route(
+            "/api/connections/:id/sqlite/attachments/:name",
+            delete(handlers::sqlite_tools::delete_sqlite_attachment),
+        )
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(
             CorsLayer::new()

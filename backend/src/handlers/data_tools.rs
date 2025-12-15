@@ -31,32 +31,7 @@ pub async fn execute_script(
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(&headers));
 
-    let (connection, password) = match service.get_connection_with_password(connection_id).await {
-        Ok(v) => v,
-        Err(e) => return (StatusCode::NOT_FOUND, Json(json!({ "message": e.to_string() }))).into_response(),
-    };
-
-    let result = match connection.db_type.as_str() {
-        "postgres" => {
-            use crate::services::postgres_driver::PostgresDriver;
-            use crate::services::driver::QueryDriver as _;
-            async {
-                let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.execute_script(&body.script).await
-            }
-            .await
-        }
-        "sqlite" => {
-            use crate::services::sqlite::SQLiteDriver;
-            use crate::services::driver::QueryDriver as _;
-            async {
-                let driver = SQLiteDriver::new(&connection, &password).await?;
-                driver.execute_script(&body.script).await
-            }
-            .await
-        }
-        _ => Err(anyhow::anyhow!("Unsupported database type")),
-    };
+    let result = service.execute_script(connection_id, &body.script).await;
 
     match result {
         Ok(statements_executed) => (

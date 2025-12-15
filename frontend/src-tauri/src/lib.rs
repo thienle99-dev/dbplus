@@ -4,6 +4,14 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[tauri::command]
+fn pick_sqlite_db_file() -> Option<String> {
+    rfd::FileDialog::new()
+        .add_filter("SQLite Database", &["db", "sqlite", "sqlite3"])
+        .pick_file()
+        .map(|p| p.to_string_lossy().to_string())
+}
+
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Mutex;
@@ -16,6 +24,7 @@ struct BackendProcess {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![greet, pick_sqlite_db_file])
         .plugin(tauri_plugin_opener::init())
         .manage(BackendProcess {
             child: Mutex::new(None),

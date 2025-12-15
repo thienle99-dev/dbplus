@@ -22,13 +22,14 @@ impl ColumnManagement for SQLiteColumn {
         table: &str,
         column: &ColumnDefinition,
     ) -> Result<()> {
-        if schema != "main" && !schema.is_empty() {
-            return Err(anyhow::anyhow!("SQLite only supports 'main' schema"));
-        }
+        let schema = normalize_schema(schema);
 
         let mut query = format!(
-            "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {}",
-            table, column.name, column.data_type
+            "ALTER TABLE {}.{} ADD COLUMN {} {}",
+            quote_ident(&schema),
+            quote_ident(table),
+            quote_ident(&column.name),
+            column.data_type
         );
 
         if !column.is_nullable {
@@ -53,22 +54,27 @@ impl ColumnManagement for SQLiteColumn {
         column_name: &str,
         new_def: &ColumnDefinition,
     ) -> Result<()> {
-        if schema != "main" && !schema.is_empty() {
-            return Err(anyhow::anyhow!("SQLite only supports 'main' schema"));
-        }
-
         return Err(anyhow::anyhow!(
             "SQLite does not support ALTER COLUMN. You need to recreate the table."
         ));
     }
 
     async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
-        if schema != "main" && !schema.is_empty() {
-            return Err(anyhow::anyhow!("SQLite only supports 'main' schema"));
-        }
-
         return Err(anyhow::anyhow!(
             "SQLite does not support DROP COLUMN directly. You need to recreate the table."
         ));
     }
+}
+
+fn normalize_schema(schema: &str) -> String {
+    let s = schema.trim();
+    if s.is_empty() {
+        "main".to_string()
+    } else {
+        s.to_string()
+    }
+}
+
+fn quote_ident(s: &str) -> String {
+    format!("\"{}\"", s.replace('"', "\"\""))
 }
