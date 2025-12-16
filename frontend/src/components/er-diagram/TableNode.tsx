@@ -1,5 +1,5 @@
 import { Handle, Position } from 'reactflow';
-import { Key, Database } from 'lucide-react';
+import { Key, Database, Loader2 } from 'lucide-react';
 import { ColumnInfo } from '../../types/foreignKey';
 
 interface TableNodeData {
@@ -8,6 +8,7 @@ interface TableNodeData {
     schema: string;
     columns: ColumnInfo[];
     primaryKeys: string[];
+    isLoadingColumns?: boolean;
 }
 
 interface TableNodeProps {
@@ -44,7 +45,12 @@ export default function TableNode({ data, selected }: TableNodeProps) {
 
             {/* Columns */}
             <div className="p-2 max-h-[300px] overflow-y-auto">
-                {data.columns.length === 0 ? (
+                {data.isLoadingColumns ? (
+                    <div className="px-2 py-3 flex items-center justify-center gap-2 text-xs text-text-tertiary">
+                        <Loader2 size={12} className="animate-spin" />
+                        <span>Loading columns...</span>
+                    </div>
+                ) : data.columns.length === 0 ? (
                     <div className="px-2 py-3 text-xs text-text-tertiary text-center">
                         No columns
                     </div>

@@ -30,36 +30,46 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     const { data: tables = [], isLoading: tablesLoading } = useTables(connectionId, schema);
     const [layoutType, setLayoutType] = useState<'grid' | 'smart'>('smart');
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-    const [tableColumns, setTableColumns] = useState<Map<string, any[]>>(new Map());
     const [isFullscreen, setIsFullscreen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Fetch columns for all tables
-    useEffect(() => {
-        const fetchColumns = async () => {
-            const columnsMap = new Map<string, any[]>();
+    // Lazy column loading
+    const [tableColumns, setTableColumns] = useState<Map<string, any[]>>(new Map());
+    const [loadingColumns, setLoadingColumns] = useState<Set<string>>(new Set());
+    const fetchedTablesRef = useRef<Set<string>>(new Set());
 
-            for (const table of tables) {
-                try {
-                    const response = await fetch(
-                        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table.name}`
-                    );
-                    if (response.ok) {
-                        const cols = await response.json();
-                        columnsMap.set(table.name, cols);
-                    }
-                } catch (error) {
-                    console.error(`Failed to fetch columns for ${table.name}:`, error);
-                }
-            }
-
-            setTableColumns(columnsMap);
-        };
-
-        if (tables.length > 0) {
-            fetchColumns();
+    // Lazy fetch columns for a specific table
+    const fetchColumnsForTable = useCallback(async (tableName: string) => {
+        // Skip if already fetched or currently loading
+        if (fetchedTablesRef.current.has(tableName) || loadingColumns.has(tableName)) {
+            return;
         }
-    }, [tables, connectionId, schema]);
+
+        setLoadingColumns(prev => new Set(prev).add(tableName));
+
+        try {
+            const response = await fetch(
+                `/api/connections/${connectionId}/columns?schema=${schema}&table=${tableName}`
+            );
+            if (response.ok) {
+                const cols = await response.json();
+                setTableColumns(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(tableName, cols);
+                    return newMap;
+                });
+                fetchedTablesRef.current.add(tableName);
+            }
+        } catch (error) {
+            console.error(`Failed to fetch columns for ${tableName}:`, error);
+        } finally {
+            setLoadingColumns(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(tableName);
+                return newSet;
+            });
+        }
+    }, [connectionId, schema, loadingColumns]);
 
     // Generate nodes from data (independent of hover state)
     const initialNodes = useMemo(() => {
@@ -75,17 +85,51 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
 
         // Create nodes for each table
         const nodes: Node[] = tables.map((table) => {
-            // Get actual columns from fetched data
-            const actualColumns = tableColumns.get(table.name) || [];
+            // Get fetched columns if available
+            const fetchedCols = tableColumns.get(table.name) || [];
 
-            // Map to ColumnInfo format
-            const columns = actualColumns.map((col: any) => ({
-                name: col.column_name || col.name,
-                type: col.data_type || col.type || 'unknown',
-                isPrimaryKey: col.is_primary_key || false,
-                isForeignKey: fkLookup.has(`${table.name}.${col.column_name || col.name}`),
-                isNullable: col.is_nullable === 'YES' || col.is_nullable === true,
-            }));
+            // Get FK-related columns (always available)
+            const fkColumns = foreignKeys
+                .filter(fk => fk.tableName === table.name || fk.referencedTableName === table.name)
+                .reduce((cols, fk) => {
+                    // Add source column (FK)
+                    if (fk.tableName === table.name && !cols.some(c => c.name === fk.columnName)) {
+                        cols.push({
+                            name: fk.columnName,
+                            type: 'FK',
+                            isPrimaryKey: false,
+                            isForeignKey: true,
+                            isNullable: true,
+                        });
+                    }
+                    // Add target column (usually PK)
+                    if (fk.referencedTableName === table.name && !cols.some(c => c.name === fk.referencedColumnName)) {
+                        cols.push({
+                            name: fk.referencedColumnName,
+                            type: 'PK',
+                            isPrimaryKey: true,
+                            isForeignKey: false,
+                            isNullable: false,
+                        });
+                    }
+                    return cols;
+                }, [] as Array<{ name: string; type: string; isPrimaryKey: boolean; isForeignKey: boolean; isNullable: boolean }>);
+
+            // Use fetched columns if available, otherwise use FK columns
+            let columns;
+            if (fetchedCols.length > 0) {
+                // Map fetched columns to ColumnInfo format
+                columns = fetchedCols.map((col: any) => ({
+                    name: col.column_name || col.name,
+                    type: col.data_type || col.type || 'unknown',
+                    isPrimaryKey: col.is_primary_key || false,
+                    isForeignKey: fkLookup.has(`${table.name}.${col.column_name || col.name}`),
+                    isNullable: col.is_nullable === 'YES' || col.is_nullable === true,
+                }));
+            } else {
+                // Use FK columns as fallback
+                columns = fkColumns;
+            }
 
             return {
                 id: table.name,
@@ -97,6 +141,7 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
                     schema: schema,
                     columns: columns,
                     primaryKeys: columns.filter(c => c.isPrimaryKey).map(c => c.name),
+                    isLoadingColumns: loadingColumns.has(table.name),
                 },
             };
         });
@@ -104,7 +149,7 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
         // Apply layout
         const layouted = getLayoutedElements(nodes, [], layoutType);
         return layouted.nodes;
-    }, [tables, foreignKeys, schema, layoutType, tableColumns]);
+    }, [tables, foreignKeys, schema, layoutType, tableColumns, loadingColumns]);
 
     // Generate edges from foreign keys (depends on hover state for highlighting)
     const initialEdges = useMemo(() => {
@@ -194,7 +239,9 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
 
     const onNodeMouseEnter = useCallback((_event: React.MouseEvent, node: Node) => {
         setHoveredNode(node.id);
-    }, []);
+        // Lazy fetch columns for this table
+        fetchColumnsForTable(node.id);
+    }, [fetchColumnsForTable]);
 
     const onNodeMouseLeave = useCallback(() => {
         setHoveredNode(null);
