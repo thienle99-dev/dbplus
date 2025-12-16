@@ -173,7 +173,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           <ChevronRight size={12} className="text-text-secondary" />
         </div>
         <Database size={14} className="text-accent/80" />
-        <span className="truncate font-medium flex-1">{schemaName}</span>
+        <span className="truncate font-medium flex-1 text-left">{schemaName}</span>
         {!(connectionType === 'sqlite' && schemaName === 'main') && (
           <span
             className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
