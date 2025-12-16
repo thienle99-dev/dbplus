@@ -24,32 +24,32 @@ const WorkspacePage = () => {
   useKeyboardShortcuts();
   const { connectionId } = useParams();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const [defInfo, setDefInfo] = useState<{ open: boolean, name: string, schema: string, type: 'view' | 'function' }>({ 
-      open: false, name: '', schema: '', type: 'view' 
+  const [defInfo, setDefInfo] = useState<{ open: boolean, name: string, schema: string, type: 'view' | 'function' }>({
+    open: false, name: '', schema: '', type: 'view'
   });
 
   useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-              e.preventDefault();
-              setCmdOpen(true);
-          }
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault();
+        setCmdOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
-      const handler = (e: CustomEvent) => {
-         setDefInfo({ 
-             open: true, 
-             name: e.detail.name, 
-             schema: e.detail.schema, 
-             type: e.detail.type 
-         });
-      };
-      window.addEventListener('dbplus:open-definition' as any, handler);
-      return () => window.removeEventListener('dbplus:open-definition' as any, handler);
+    const handler = (e: CustomEvent) => {
+      setDefInfo({
+        open: true,
+        name: e.detail.name,
+        schema: e.detail.schema,
+        type: e.detail.type
+      });
+    };
+    window.addEventListener('dbplus:open-definition' as any, handler);
+    return () => window.removeEventListener('dbplus:open-definition' as any, handler);
   }, []);
 
   return (
@@ -82,14 +82,14 @@ const WorkspacePage = () => {
         </div>
         <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} connectionId={connectionId} />
         {connectionId && (
-            <ObjectDefinitionModal 
-                isOpen={defInfo.open}
-                onClose={() => setDefInfo(prev => ({ ...prev, open: false }))}
-                objectName={defInfo.name}
-                schema={defInfo.schema}
-                type={defInfo.type}
-                connectionId={connectionId}
-            />
+          <ObjectDefinitionModal
+            isOpen={defInfo.open}
+            onClose={() => setDefInfo(prev => ({ ...prev, open: false }))}
+            objectName={defInfo.name}
+            schema={defInfo.schema}
+            type={defInfo.type}
+            connectionId={connectionId}
+          />
         )}
       </TablePageProvider>
     </SelectedRowProvider>

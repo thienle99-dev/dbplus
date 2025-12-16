@@ -7,7 +7,7 @@ import {
   selectLine,
   toggleComment
 } from '@codemirror/commands';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 
@@ -107,6 +107,39 @@ export default function QueryEditor({
   // Comparison State
   const [snapshot, setSnapshot] = useState<QueryResult | null>(null);
   const [resultDiff, setResultDiff] = useState<DiffResult | null>(null);
+
+  // Resize State
+  const [editorHeight, setEditorHeight] = useState(350);
+  const [isResizing, setIsResizing] = useState(false);
+  const dragStartRef = useRef<{ startY: number, startHeight: number } | null>(null);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (dragStartRef.current) {
+        const delta = e.clientY - dragStartRef.current.startY;
+        setEditorHeight(Math.max(100, dragStartRef.current.startHeight + delta));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      dragStartRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   const handleEditorChange = useCallback((val: string) => setQuery(val), []);
 
@@ -478,10 +511,13 @@ export default function QueryEditor({
       {/* Split View Container */}
       <div className={`flex-1 flex ${splitMode === 'vertical' ? 'flex-row' : 'flex-col'} min-h-0`}>
         {/* Editor Section */}
-        <div className={`${splitMode === 'none' ? 'h-[300px]' :
-            splitMode === 'vertical' ? 'w-1/2' :
-              'h-1/2'
-          } border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}>
+        <div
+          style={{
+            height: splitMode === 'vertical' ? '100%' : `${editorHeight}px`,
+            width: splitMode === 'vertical' ? '50%' : '100%'
+          }}
+          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}
+        >
           <div className="flex-1 overflow-hidden flex relative">
             {mode === 'sql' ? (
               <CodeMirror
@@ -507,6 +543,19 @@ export default function QueryEditor({
             queryTrimmed={query.trim()}
           />
         </div>
+
+        {/* Resize Handle (Horizontal Split Only) */}
+        {splitMode !== 'vertical' && (
+          <div
+            className="h-1 -mt-0.5 cursor-row-resize hover:bg-accent/50 z-50 transition-colors w-full flex-shrink-0"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              dragStartRef.current = { startY: e.clientY, startHeight: editorHeight };
+              setIsResizing(true);
+            }}
+            title="Drag to resize"
+          />
+        )}
 
         {/* Results Section */}
         <div className="flex-1 flex flex-col min-h-0 bg-bg-1/20">

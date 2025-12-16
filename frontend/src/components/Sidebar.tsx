@@ -104,7 +104,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1/95 border-r border-border/40 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
+      className="bg-bg-1/95 border-r pb-[20px] border-border/40 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
       style={{ width: `${sidebarWidth}px` }}
     >
       {/* Vertical Workspace Tabs Rail */}
@@ -223,9 +223,10 @@ export default function Sidebar() {
                 ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                 }`}
-              title="Items"
+              title="Explorer"
             >
-              <Database size={14} className="mr-1.5" /> Explorer
+              <Database size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              {sidebarWidth > 280 && <span>Explorer</span>}
             </button>
             <button
               onClick={() => setActiveTab('queries')}
@@ -235,7 +236,8 @@ export default function Sidebar() {
                 }`}
               title="Saved Queries"
             >
-              <FileText size={14} className="mr-1.5" /> Saved
+              <FileText size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              {sidebarWidth > 280 && <span>Saved</span>}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -245,7 +247,8 @@ export default function Sidebar() {
                 }`}
               title="History"
             >
-              <Clock size={14} className="mr-1.5" /> History
+              <Clock size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              {sidebarWidth > 280 && <span>History</span>}
             </button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Clock, Trash2, Search } from 'lucide-react';
+import { Clock, Trash2, Search, CheckCircle2, XCircle, Copy, Filter } from 'lucide-react';
 import api from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 interface HistoryEntry {
   id: string;
@@ -11,6 +12,21 @@ interface HistoryEntry {
   success: boolean;
   error_message: string | null;
   executed_at: string;
+}
+
+function timeAgo(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
 }
 
 export default function QueryHistory({
@@ -23,11 +39,13 @@ export default function QueryHistory({
   searchTerm?: string;
 }) {
   const { connectionId } = useParams();
+  const { showToast } = useToast();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [localSearch, setLocalSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'error'>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (connectionId) {
@@ -39,7 +57,6 @@ export default function QueryHistory({
     setLoading(true);
     try {
       const response = await api.get(`/api/connections/${connectionId}/history`);
-      // Backend returns { history: [...] }
       setHistory(response.data.history || response.data);
       setSelectedIds(new Set());
     } catch (err: unknown) {
@@ -55,15 +72,14 @@ export default function QueryHistory({
       await api.delete(`/api/connections/${connectionId}/history`);
       setHistory([]);
       setSelectedIds(new Set());
+      showToast('History cleared', 'success');
     } catch (err: unknown) {
-      alert('Failed to clear history');
+      showToast('Failed to clear history', 'error');
     }
   };
 
   const handleDeleteEntry = async (e: React.MouseEvent, entryId: string) => {
     e.stopPropagation();
-    if (!confirm('Delete this history entry?')) return;
-
     try {
       await api.delete(`/api/connections/${connectionId}/history/${entryId}`);
       setHistory(prev => prev.filter(h => h.id !== entryId));
@@ -74,7 +90,16 @@ export default function QueryHistory({
       });
     } catch (err: unknown) {
       console.error('Failed to delete history entry:', err);
-      // alert('Failed to delete entry');
+    }
+  };
+
+  const handleCopySql = async (e: React.MouseEvent, sql: string) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(sql);
+      showToast('SQL copied to clipboard', 'success');
+    } catch (err) {
+      showToast('Failed to copy SQL', 'error');
     }
   };
 
@@ -88,9 +113,10 @@ export default function QueryHistory({
       });
       setHistory(prev => prev.filter(h => !selectedIds.has(h.id)));
       setSelectedIds(new Set());
+      showToast('Selected items deleted', 'success');
     } catch (err: unknown) {
       console.error('Failed to delete history entries:', err);
-      alert('Failed to delete selected items');
+      showToast('Failed to delete selected items', 'error');
     }
   };
 
@@ -107,18 +133,6 @@ export default function QueryHistory({
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredHistory.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredHistory.map(h => h.id)));
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString();
-  };
-
   const activeSearch = embedded ? searchTerm : localSearch;
   const lowered = activeSearch.toLowerCase();
   const filteredHistory = history.filter((entry) => {
@@ -132,151 +146,170 @@ export default function QueryHistory({
   });
 
   return (
-    <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-l border-border w-72' : ''}`}>
-      <div className={`p-4 border-b border-border ${embedded ? 'p-3' : ''}`}>
-        <div className="flex justify-between items-center">
-          {!embedded && (
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                <Clock size={14} /> History
-              </h2>
-              {history.length > 0 && (
-                <span className="text-xs text-text-secondary">
-                  ({selectedIds.size > 0 ? `${selectedIds.size}/` : ''}{history.length})
-                </span>
-              )}
+    <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-l border-border w-80' : ''}`}>
+      {/* Header */}
+      <div className={`flex-shrink-0 border-b border-border/40 bg-bg-1/50 backdrop-blur-sm ${embedded ? 'p-2' : 'p-4'}`}>
+        <div className="flex items-center justify-between mb-3">
+          {!embedded ? (
+            <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+              <Clock size={14} /> History
+            </h2>
+          ) : (
+            <div className="text-[10px] text-text-tertiary font-medium px-1">
+              {filteredHistory.length} ENTRIES
             </div>
           )}
 
-          <div className="flex items-center gap-1 ml-auto">
-            {selectedIds.size > 0 ? (
+          <div className="flex items-center gap-1">
+            {selectedIds.size > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="p-1 hover:bg-bg-2 rounded text-error hover:text-error-dark"
+                className="p-1.5 hover:bg-error/10 text-error rounded-md transition-colors"
                 title="Delete Selected"
               >
                 <Trash2 size={14} />
               </button>
-            ) : (
-              <button
-                onClick={handleClearAll}
-                disabled={history.length === 0}
-                className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-error disabled:opacity-50"
-                title="Clear All History"
-              >
-                <Trash2 size={14} />
-              </button>
             )}
-            {history.length > 0 && (
-              <button
-                onClick={toggleSelectAll}
-                className={`p-1 hover:bg-bg-2 rounded ${selectedIds.size === filteredHistory.length && filteredHistory.length > 0 ? 'text-primary' : 'text-text-secondary'}`}
-                title="Select All"
-              >
-                <span className="text-[10px] font-bold">ALL</span>
-              </button>
-            )}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-1.5 rounded-md transition-colors ${showFilters || statusFilter !== 'all' ? 'bg-accent/10 text-accent' : 'hover:bg-bg-2 text-text-secondary'}`}
+              title="Filter"
+            >
+              <Filter size={14} />
+            </button>
+            <button
+              onClick={handleClearAll}
+              disabled={history.length === 0}
+              className="p-1.5 hover:bg-bg-2 text-text-secondary hover:text-error rounded-md transition-colors disabled:opacity-30"
+              title="Clear All History"
+            >
+              <Trash2 size={14} />
+            </button>
           </div>
         </div>
 
-        {!embedded && (
-          <div className="mt-3 space-y-2">
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-2 text-text-secondary" />
+        {/* Search & Filters */}
+        <div className="space-y-2">
+          {!embedded && (
+            <div className="relative group">
+              <Search size={13} className="absolute left-2.5 top-2 text-text-tertiary group-focus-within:text-accent transition-colors" />
               <input
                 type="text"
-                placeholder="Search SQL or error..."
+                placeholder="Search history..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
+                className="w-full bg-bg-2/50 border border-border/40 rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:bg-bg-0 focus:outline-none transition-all"
               />
             </div>
+          )}
 
-            <div className="flex bg-bg-2 p-0.5 rounded border border-border">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'all'
-                  ? 'bg-bg-1 text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                title="Show all"
-              >
-                All
-              </button>
-              <button
-                onClick={() => setStatusFilter('success')}
-                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'success'
-                  ? 'bg-bg-1 text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                title="Show successful queries"
-              >
-                Success
-              </button>
-              <button
-                onClick={() => setStatusFilter('error')}
-                className={`flex-1 py-1 rounded text-[11px] font-medium transition-all ${statusFilter === 'error'
-                  ? 'bg-bg-1 text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                title="Show errors"
-              >
-                Errors
-              </button>
+          {(showFilters || (!embedded && statusFilter !== 'all')) && (
+            <div className="flex bg-bg-2/50 p-0.5 rounded-lg border border-border/40">
+              {(['all', 'success', 'error'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`flex-1 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-all ${statusFilter === filter
+                    ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
+                    : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-2/50'
+                    }`}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* List */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         {loading ? (
-          <div className="p-4 text-center text-text-secondary text-sm">Loading...</div>
+          <div className="p-8 text-center text-text-tertiary text-xs">Loading history...</div>
         ) : filteredHistory.length === 0 ? (
-          <div className="p-4 text-center text-text-secondary text-sm">No history found</div>
+          <div className="flex flex-col items-center justify-center h-40 text-text-tertiary gap-2">
+            <Clock size={24} className="opacity-20" />
+            <span className="text-xs">No history found</span>
+          </div>
         ) : (
-          <div className="divide-y divide-border">
-            {filteredHistory.map(entry => (
-              <div
-                key={entry.id}
-                className={`p-3 cursor-pointer group transition-colors relative ${selectedIds.has(entry.id) ? 'bg-primary/5' : 'hover:bg-bg-2'}`}
-                onClick={() => onSelectQuery(entry.sql)}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(entry.id)}
+          <div className="divide-y divide-border/30">
+            {filteredHistory.map((entry) => {
+              const isSelected = selectedIds.has(entry.id);
+              return (
+                <div
+                  key={entry.id}
+                  className={`group relative flex items-start gap-3 p-3 hover:bg-bg-2/50 cursor-pointer transition-all ${isSelected ? 'bg-accent/5 hover:bg-accent/10' : ''
+                    }`}
+                  onClick={() => onSelectQuery(entry.sql)}
+                >
+                  {/* Selection Checkbox (Visible on hover or selected) */}
+                  <div className={`absolute left-2 top-3 z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    <div
+                      role="checkbox"
+                      aria-checked={isSelected}
                       onClick={(e) => toggleSelection(e, entry.id)}
-                      className="opacity-0 group-hover:opacity-100 checked:opacity-100 transition-opacity cursor-pointer"
-                    />
-                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${entry.success ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-                      {entry.success ? 'SUCCESS' : 'ERROR'}
-                    </span>
+                      className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected
+                        ? 'bg-accent border-accent text-white'
+                        : 'bg-bg-0 border-border hover:border-accent'
+                        }`}
+                    >
+                      {isSelected && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-text-secondary">{formatDate(entry.executed_at)}</span>
+
+                  {/* Status Icon */}
+                  <div className={`mt-0.5 flex-shrink-0 ${isSelected ? 'opacity-0' : 'group-hover:opacity-0'} transition-opacity`}>
+                    {entry.success ? (
+                      <CheckCircle2 size={16} className="text-success" />
+                    ) : (
+                      <XCircle size={16} className="text-error" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <pre className="text-xs font-mono text-text-primary truncate font-medium">
+                      {entry.sql.replace(/\s+/g, ' ').trim()}
+                    </pre>
+                    <div className="flex items-center gap-2 text-[10px] text-text-tertiary">
+                      <span className={entry.success ? 'text-text-secondary' : 'text-error'}>
+                        {entry.success ? timeAgo(entry.executed_at) : 'Error'}
+                      </span>
+                      {entry.execution_time !== null && (
+                        <>
+                          <span className="w-0.5 h-0.5 rounded-full bg-text-tertiary/50" />
+                          <span>{entry.execution_time}ms</span>
+                        </>
+                      )}
+                      {entry.row_count !== null && (
+                        <>
+                          <span className="w-0.5 h-0.5 rounded-full bg-text-tertiary/50" />
+                          <span>{entry.row_count} rows</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => handleCopySql(e, entry.sql)}
+                      className="p-1.5 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded-md transition-colors"
+                      title="Copy SQL"
+                    >
+                      <Copy size={12} />
+                    </button>
                     <button
                       onClick={(e) => handleDeleteEntry(e, entry.id)}
-                      className="p-1 hover:bg-bg-3 rounded -mr-1 text-text-secondary hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete Entry"
+                      className="p-1.5 hover:bg-error/10 text-text-secondary hover:text-error rounded-md transition-colors"
+                      title="Delete"
                     >
                       <Trash2 size={12} />
                     </button>
                   </div>
                 </div>
-                <pre className="text-xs text-text-primary font-mono line-clamp-3 my-2 whitespace-pre-wrap break-all">
-                  {entry.sql}
-                </pre>
-                <div className="flex gap-3 text-[10px] text-text-secondary">
-                  {entry.execution_time !== null && (
-                    <span>{entry.execution_time}ms</span>
-                  )}
-                  {entry.row_count !== null && (
-                    <span>{entry.row_count} rows</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
