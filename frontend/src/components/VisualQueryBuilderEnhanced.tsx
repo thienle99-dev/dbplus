@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Trash2, HelpCircle } from 'lucide-react';
+import { Plus, Trash2, HelpCircle, Database, Table, Columns, Filter, ArrowUpDown, Settings, Link2, Group, Calculator } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
 import { useSchemas } from '../hooks/useDatabase';
@@ -15,7 +15,7 @@ interface FilterRule {
     column: string;
     operator: string;
     value: string;
-    value2?: string; // For BETWEEN
+    value2?: string;
 }
 
 interface SortRule {
@@ -60,7 +60,6 @@ function quoteSqlString(s: string) {
     return `'${s.replace(/'/g, "''")}'`;
 }
 
-// Helper tooltips for non-developers
 const TOOLTIPS = {
     distinct: 'Remove duplicate rows from results',
     groupBy: 'Group rows that have the same values in specified columns',
@@ -69,6 +68,41 @@ const TOOLTIPS = {
     join: 'Combine data from multiple tables',
     offset: 'Skip first N rows (useful for pagination)',
 };
+
+// Section Card Component
+function SectionCard({
+    title,
+    icon: Icon,
+    tooltip,
+    children,
+    action
+}: {
+    title: string;
+    icon: any;
+    tooltip?: string;
+    children: React.ReactNode;
+    action?: React.ReactNode;
+}) {
+    return (
+        <div className="bg-bg-1 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-2/50">
+                <div className="flex items-center gap-2">
+                    <Icon size={16} className="text-accent" />
+                    <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+                    {tooltip && (
+                        <span title={tooltip} className="text-text-secondary cursor-help">
+                            <HelpCircle size={14} />
+                        </span>
+                    )}
+                </div>
+                {action}
+            </div>
+            <div className="p-4">
+                {children}
+            </div>
+        </div>
+    );
+}
 
 export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }: VisualQueryBuilderProps) {
     const { connectionId } = useParams();
@@ -89,8 +123,6 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
     const [havingFilters, setHavingFilters] = useState<FilterRule[]>([]);
     const [aggregates, setAggregates] = useState<AggregateColumn[]>([]);
     const [joins, setJoins] = useState<JoinRule[]>([]);
-
-    // Fetch available tables for joins
     const [joinTables, setJoinTables] = useState<Record<string, Column[]>>({});
 
     // Default schema
@@ -107,7 +139,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
         }
     }, [schemas, selectedSchema, initialState?.schema]);
 
-    // Fetch tables when schema changes
+    // Fetch tables
     useEffect(() => {
         if (!connectionId || !selectedSchema) {
             setTables([]);
@@ -125,7 +157,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
             });
     }, [connectionId, selectedSchema]);
 
-    // Fetch columns when table changes
+    // Fetch columns
     useEffect(() => {
         if (connectionId && selectedSchema && selectedTable) {
             api.get(`/api/connections/${connectionId}/columns`, { params: { schema: selectedSchema, table: selectedTable } })
@@ -142,7 +174,6 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
         }
     }, [connectionId, selectedSchema, selectedTable]);
 
-    // Fetch columns for joined tables
     const fetchJoinTableColumns = async (table: string) => {
         if (!connectionId || !selectedSchema || joinTables[table]) return;
         try {
@@ -157,7 +188,6 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
         }
     };
 
-    // Load initial state
     useEffect(() => {
         if (initialState) {
             const rawTable = initialState.table || '';
@@ -195,30 +225,23 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
             return;
         }
 
-        // SELECT clause
         let selectClause = distinct ? 'SELECT DISTINCT ' : 'SELECT ';
-
         const selectItems: string[] = [];
 
-        // Add aggregates
         aggregates.forEach(agg => {
-            let aggFunc = agg.function;
-            let col = agg.column;
             if (agg.function === 'COUNT_DISTINCT') {
-                selectItems.push(`COUNT(DISTINCT ${quoteIdent(col)}) AS ${quoteIdent(agg.alias)}`);
+                selectItems.push(`COUNT(DISTINCT ${quoteIdent(agg.column)}) AS ${quoteIdent(agg.alias)}`);
             } else {
-                selectItems.push(`${aggFunc}(${quoteIdent(col)}) AS ${quoteIdent(agg.alias)}`);
+                selectItems.push(`${agg.function}(${quoteIdent(agg.column)}) AS ${quoteIdent(agg.alias)}`);
             }
         });
 
-        // Add regular columns
         if (selectedColumns.length > 0) {
             selectedColumns.forEach(c => selectItems.push(quoteIdent(c)));
         } else if (aggregates.length === 0) {
             selectItems.push('*');
         }
 
-        // If GROUP BY is used but no aggregates, include grouped columns
         if (groupByColumns.length > 0 && aggregates.length === 0) {
             groupByColumns.forEach(c => {
                 if (!selectItems.includes(quoteIdent(c))) {
@@ -229,14 +252,12 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
 
         selectClause += selectItems.join(', ');
 
-        // FROM clause
         const from =
             selectedSchema === 'main'
                 ? `${quoteIdent(selectedTable)}`
                 : `${quoteIdent(selectedSchema)}.${quoteIdent(selectedTable)}`;
         let sql = `${selectClause} FROM ${from}`;
 
-        // JOIN clauses
         if (joins.length > 0) {
             joins.forEach(join => {
                 const joinTable = join.schema && join.schema !== 'main'
@@ -246,7 +267,6 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
             });
         }
 
-        // WHERE clause
         if (filters.length > 0) {
             const whereClause = filters.map(f => {
                 if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
@@ -266,13 +286,11 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
             sql += ` WHERE ${whereClause}`;
         }
 
-        // GROUP BY clause
         if (groupByColumns.length > 0) {
             const groupBy = groupByColumns.map(c => quoteIdent(c)).join(', ');
             sql += ` GROUP BY ${groupBy}`;
         }
 
-        // HAVING clause
         if (havingFilters.length > 0) {
             const havingClause = havingFilters.map(f => {
                 const asNum = Number(f.value);
@@ -282,13 +300,11 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
             sql += ` HAVING ${havingClause}`;
         }
 
-        // ORDER BY clause
         if (sorts.length > 0) {
             const orderBy = sorts.map(s => `${quoteIdent(s.column)} ${s.direction}`).join(', ');
             sql += ` ORDER BY ${orderBy}`;
         }
 
-        // LIMIT and OFFSET
         if (limit) {
             sql += ` LIMIT ${limit}`;
         }
@@ -402,12 +418,12 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
 
     const operatorOptions = [
         { value: '=', label: '= (equals)' },
-        { value: '>', label: '> (greater than)' },
-        { value: '<', label: '< (less than)' },
+        { value: '>', label: '> (greater)' },
+        { value: '<', label: '< (less)' },
         { value: '>=', label: '>= (greater or equal)' },
         { value: '<=', label: '<= (less or equal)' },
         { value: '!=', label: '!= (not equal)' },
-        { value: 'LIKE', label: 'LIKE (pattern match)' },
+        { value: 'LIKE', label: 'LIKE (pattern)' },
         { value: 'ILIKE', label: 'ILIKE (case-insensitive)' },
         { value: 'IN', label: 'IN (in list)' },
         { value: 'NOT IN', label: 'NOT IN (not in list)' },
@@ -417,401 +433,460 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
     ];
 
     return (
-        <div className="flex flex-col h-full bg-bg-1 p-4 gap-4 overflow-y-auto">
-            {/* Schema Selection */}
-            <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Schema</label>
-                <Select
-                    value={selectedSchema}
-                    onChange={(val) => {
-                        setSelectedSchema(val);
-                        setSelectedTable('');
-                        setSelectedColumns([]);
-                        setFilters([]);
-                        setSorts([]);
-                        setJoins([]);
-                        setAggregates([]);
-                        setGroupByColumns([]);
-                        setHavingFilters([]);
-                    }}
-                    options={schemaOptions}
-                    searchable
-                />
-            </div>
-
-            {/* Table Selection */}
-            <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">Table</label>
-                <Select
-                    value={selectedTable}
-                    onChange={(val) => {
-                        setSelectedTable(val);
-                        setSelectedColumns([]);
-                        setFilters([]);
-                        setSorts([]);
-                        setJoins([]);
-                        setAggregates([]);
-                        setGroupByColumns([]);
-                        setHavingFilters([]);
-                    }}
-                    options={tableOptions}
-                    searchable
-                />
-            </div>
-
-            {selectedSchema && selectedTable && (
-                <>
-                    {/* DISTINCT Toggle */}
-                    <div className="flex items-center gap-2 p-2 bg-bg-2 rounded border border-border">
-                        <input
-                            type="checkbox"
-                            id="distinct"
-                            checked={distinct}
-                            onChange={(e) => setDistinct(e.target.checked)}
-                            className="w-4 h-4 accent-accent"
+        <div className="h-full bg-gradient-to-br from-bg-0 to-bg-1 overflow-y-auto">
+            <div className="max-w-7xl mx-auto p-6 space-y-6">
+                {/* Header Section */}
+                <div className="grid grid-cols-2 gap-4">
+                    <SectionCard title="Schema" icon={Database}>
+                        <Select
+                            value={selectedSchema}
+                            onChange={(val) => {
+                                setSelectedSchema(val);
+                                setSelectedTable('');
+                                setSelectedColumns([]);
+                                setFilters([]);
+                                setSorts([]);
+                                setJoins([]);
+                                setAggregates([]);
+                                setGroupByColumns([]);
+                                setHavingFilters([]);
+                            }}
+                            options={schemaOptions}
+                            searchable
                         />
-                        <label htmlFor="distinct" className="text-sm text-text-primary cursor-pointer flex items-center gap-1">
-                            Remove Duplicates (DISTINCT)
-                            <span title={TOOLTIPS.distinct} className="text-text-secondary cursor-help">
-                                <HelpCircle size={14} />
-                            </span>
-                        </label>
-                    </div>
+                    </SectionCard>
 
-                    {/* Columns */}
-                    <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1">Select Columns</label>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => setSelectedColumns([])}
-                                className={`px-2 py-1 text-xs rounded border ${selectedColumns.length === 0 ? 'bg-accent text-white border-accent' : 'bg-bg-2 text-text-primary border-border'}`}
-                            >
-                                All (*)
-                            </button>
-                            {columns.map(col => (
-                                <button
-                                    key={col.name}
-                                    onClick={() => toggleColumn(col.name)}
-                                    className={`px-2 py-1 text-xs rounded border ${selectedColumns.includes(col.name) ? 'bg-accent text-white border-accent' : 'bg-bg-2 text-text-primary border-border'}`}
-                                >
-                                    {col.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    <SectionCard title="Table" icon={Table}>
+                        <Select
+                            value={selectedTable}
+                            onChange={(val) => {
+                                setSelectedTable(val);
+                                setSelectedColumns([]);
+                                setFilters([]);
+                                setSorts([]);
+                                setJoins([]);
+                                setAggregates([]);
+                                setGroupByColumns([]);
+                                setHavingFilters([]);
+                            }}
+                            options={tableOptions}
+                            searchable
+                        />
+                    </SectionCard>
+                </div>
 
-                    {/* Aggregate Functions */}
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
-                                Calculate Values (Aggregates)
-                                <span title={TOOLTIPS.aggregate} className="text-text-secondary cursor-help">
+                {selectedSchema && selectedTable && (
+                    <>
+                        {/* Options Row */}
+                        <div className="flex items-center gap-4 p-4 bg-bg-1 rounded-lg border border-border">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={distinct}
+                                    onChange={(e) => setDistinct(e.target.checked)}
+                                    className="w-4 h-4 accent-accent cursor-pointer"
+                                />
+                                <span className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
+                                    Remove Duplicates
+                                </span>
+                                <span title={TOOLTIPS.distinct} className="text-text-secondary cursor-help">
                                     <HelpCircle size={14} />
                                 </span>
                             </label>
-                            <button onClick={addAggregate} className="text-xs text-accent hover:underline flex items-center gap-1">
-                                <Plus size={12} /> Add Calculation
-                            </button>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            {aggregates.map(agg => (
-                                <div key={agg.id} className="flex gap-2 items-center p-2 bg-bg-2 rounded">
-                                    <Select
-                                        value={agg.function}
-                                        onChange={(val) => updateAggregate(agg.id, 'function', val)}
-                                        options={[
-                                            { value: 'COUNT', label: 'COUNT (count rows)' },
-                                            { value: 'COUNT_DISTINCT', label: 'COUNT DISTINCT (unique)' },
-                                            { value: 'SUM', label: 'SUM (total)' },
-                                            { value: 'AVG', label: 'AVG (average)' },
-                                            { value: 'MIN', label: 'MIN (minimum)' },
-                                            { value: 'MAX', label: 'MAX (maximum)' },
-                                        ]}
-                                        size="sm"
-                                        className="w-48"
-                                    />
-                                    <Select
-                                        value={agg.column}
-                                        onChange={(val) => updateAggregate(agg.id, 'column', val)}
-                                        options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                        size="sm"
-                                        className="flex-1"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={agg.alias}
-                                        onChange={(e) => updateAggregate(agg.id, 'alias', e.target.value)}
-                                        placeholder="Result name"
-                                        className="flex-1 bg-bg-0 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                                    />
-                                    <button onClick={() => removeAggregate(agg.id)} className="text-text-secondary hover:text-error">
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* JOIN Tables */}
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
-                                Join Other Tables
-                                <span title={TOOLTIPS.join} className="text-text-secondary cursor-help">
-                                    <HelpCircle size={14} />
-                                </span>
-                            </label>
-                            <button onClick={addJoin} className="text-xs text-accent hover:underline flex items-center gap-1">
-                                <Plus size={12} /> Add Join
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {joins.map(join => (
-                                <div key={join.id} className="flex flex-col gap-2 p-2 bg-bg-2 rounded">
-                                    <div className="flex gap-2 items-center">
-                                        <Select
-                                            value={join.type}
-                                            onChange={(val) => updateJoin(join.id, 'type', val)}
-                                            options={[
-                                                { value: 'INNER JOIN', label: 'INNER (matching rows)' },
-                                                { value: 'LEFT JOIN', label: 'LEFT (all from left)' },
-                                                { value: 'RIGHT JOIN', label: 'RIGHT (all from right)' },
-                                                { value: 'FULL JOIN', label: 'FULL (all rows)' },
-                                            ]}
-                                            size="sm"
-                                            className="w-48"
-                                        />
-                                        <Select
-                                            value={join.table}
-                                            onChange={(val) => updateJoin(join.id, 'table', val)}
-                                            options={tables.map(t => ({ value: t, label: t }))}
-                                            size="sm"
-                                            className="flex-1"
-                                        />
-                                        <button onClick={() => removeJoin(join.id)} className="text-text-secondary hover:text-error">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                    <div className="flex gap-2 items-center text-xs text-text-secondary">
-                                        <span>ON</span>
-                                        <Select
-                                            value={join.onColumn}
-                                            onChange={(val) => updateJoin(join.id, 'onColumn', val)}
-                                            options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                            size="sm"
-                                            className="flex-1"
-                                        />
-                                        <span>=</span>
-                                        <Select
-                                            value={join.targetColumn}
-                                            onChange={(val) => updateJoin(join.id, 'targetColumn', val)}
-                                            options={(joinTables[join.table] || []).map(col => ({ value: col.name, label: col.name }))}
-                                            size="sm"
-                                            className="flex-1"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Filters (WHERE) */}
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs font-medium text-text-secondary">Filter Rows (WHERE)</label>
-                            <button onClick={addFilter} className="text-xs text-accent hover:underline flex items-center gap-1">
-                                <Plus size={12} /> Add Filter
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {filters.map(filter => (
-                                <div key={filter.id} className="flex gap-2 items-center">
-                                    <Select
-                                        value={filter.column}
-                                        onChange={(val) => updateFilter(filter.id, 'column', val)}
-                                        options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                        size="sm"
-                                        className="flex-1"
-                                    />
-                                    <Select
-                                        value={filter.operator}
-                                        onChange={(val) => updateFilter(filter.id, 'operator', val)}
-                                        options={operatorOptions}
-                                        size="sm"
-                                        className="w-48"
-                                    />
-                                    {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
-                                        <>
-                                            <input
-                                                type="text"
-                                                value={filter.value}
-                                                onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-                                                placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'value1, value2, ...' : 'Value'}
-                                                className="flex-1 bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                                            />
-                                            {filter.operator === 'BETWEEN' && (
-                                                <>
-                                                    <span className="text-xs text-text-secondary">AND</span>
-                                                    <input
-                                                        type="text"
-                                                        value={filter.value2 || ''}
-                                                        onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
-                                                        placeholder="Value 2"
-                                                        className="flex-1 bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                                                    />
-                                                </>
-                                            )}
-                                        </>
-                                    )}
-                                    <button onClick={() => removeFilter(filter.id)} className="text-text-secondary hover:text-error">
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* GROUP BY */}
-                    <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1 flex items-center gap-1">
-                            Group Rows By
-                            <span title={TOOLTIPS.groupBy} className="text-text-secondary cursor-help">
-                                <HelpCircle size={14} />
-                            </span>
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {columns.map(col => (
+                        {/* Columns Selection */}
+                        <SectionCard title="Select Columns" icon={Columns}>
+                            <div className="flex flex-wrap gap-2">
                                 <button
-                                    key={col.name}
-                                    onClick={() => toggleGroupBy(col.name)}
-                                    className={`px-2 py-1 text-xs rounded border ${groupByColumns.includes(col.name) ? 'bg-accent text-white border-accent' : 'bg-bg-2 text-text-primary border-border'}`}
+                                    onClick={() => setSelectedColumns([])}
+                                    className={`px-3 py-1.5 text-sm rounded-md border transition-all ${selectedColumns.length === 0
+                                            ? 'bg-accent text-white border-accent shadow-sm'
+                                            : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                        }`}
                                 >
-                                    {col.name}
+                                    All Columns (*)
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* HAVING Filters */}
-                    {groupByColumns.length > 0 && (
-                        <div>
-                            <div className="flex justify-between items-center mb-1">
-                                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
-                                    Filter Groups (HAVING)
-                                    <span title={TOOLTIPS.having} className="text-text-secondary cursor-help">
-                                        <HelpCircle size={14} />
-                                    </span>
-                                </label>
-                                <button onClick={addHavingFilter} className="text-xs text-accent hover:underline flex items-center gap-1">
-                                    <Plus size={12} /> Add Filter
-                                </button>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                {havingFilters.map(filter => (
-                                    <div key={filter.id} className="flex gap-2 items-center">
-                                        <Select
-                                            value={filter.column}
-                                            onChange={(val) => updateHavingFilter(filter.id, 'column', val)}
-                                            options={aggregates.map(agg => ({ value: agg.alias, label: agg.alias }))}
-                                            size="sm"
-                                            className="flex-1"
-                                        />
-                                        <Select
-                                            value={filter.operator}
-                                            onChange={(val) => updateHavingFilter(filter.id, 'operator', val)}
-                                            options={[
-                                                { value: '=', label: '=' },
-                                                { value: '>', label: '>' },
-                                                { value: '<', label: '<' },
-                                                { value: '>=', label: '>=' },
-                                                { value: '<=', label: '<=' },
-                                                { value: '!=', label: '!=' },
-                                            ]}
-                                            size="sm"
-                                            className="w-24"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={filter.value}
-                                            onChange={(e) => updateHavingFilter(filter.id, 'value', e.target.value)}
-                                            placeholder="Value"
-                                            className="flex-1 bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                                        />
-                                        <button onClick={() => removeHavingFilter(filter.id)} className="text-text-secondary hover:text-error">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
+                                {columns.map(col => (
+                                    <button
+                                        key={col.name}
+                                        onClick={() => toggleColumn(col.name)}
+                                        className={`px-3 py-1.5 text-sm rounded-md border transition-all ${selectedColumns.includes(col.name)
+                                                ? 'bg-accent text-white border-accent shadow-sm'
+                                                : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                            }`}
+                                    >
+                                        {col.name}
+                                        <span className="ml-1 text-xs opacity-70">({col.type})</span>
+                                    </button>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        </SectionCard>
 
-                    {/* Sorting */}
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs font-medium text-text-secondary">Sort Results (ORDER BY)</label>
-                            <button onClick={addSort} className="text-xs text-accent hover:underline flex items-center gap-1">
-                                <Plus size={12} /> Add Sort
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {sorts.map(sort => (
-                                <div key={sort.id} className="flex gap-2 items-center">
-                                    <Select
-                                        value={sort.column}
-                                        onChange={(val) => updateSort(sort.id, 'column', val)}
-                                        options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                        size="sm"
-                                        className="flex-1"
-                                    />
-                                    <Select
-                                        value={sort.direction}
-                                        onChange={(val) => updateSort(sort.id, 'direction', val as 'ASC' | 'DESC')}
-                                        options={[
-                                            { value: 'ASC', label: 'A → Z (ascending)' },
-                                            { value: 'DESC', label: 'Z → A (descending)' },
-                                        ]}
-                                        size="sm"
-                                        className="w-40"
-                                    />
-                                    <button onClick={() => removeSort(sort.id)} className="text-text-secondary hover:text-error">
-                                        <Trash2 size={14} />
-                                    </button>
+                        {/* Aggregates */}
+                        <SectionCard
+                            title="Calculate Values"
+                            icon={Calculator}
+                            tooltip={TOOLTIPS.aggregate}
+                            action={
+                                <button
+                                    onClick={addAggregate}
+                                    className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                >
+                                    <Plus size={14} /> Add
+                                </button>
+                            }
+                        >
+                            {aggregates.length === 0 ? (
+                                <p className="text-sm text-text-secondary italic">No calculations added yet</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {aggregates.map(agg => (
+                                        <div key={agg.id} className="flex gap-2 items-center p-3 bg-bg-0 rounded-md border border-border">
+                                            <Select
+                                                value={agg.function}
+                                                onChange={(val) => updateAggregate(agg.id, 'function', val)}
+                                                options={[
+                                                    { value: 'COUNT', label: 'COUNT' },
+                                                    { value: 'COUNT_DISTINCT', label: 'COUNT DISTINCT' },
+                                                    { value: 'SUM', label: 'SUM' },
+                                                    { value: 'AVG', label: 'AVG' },
+                                                    { value: 'MIN', label: 'MIN' },
+                                                    { value: 'MAX', label: 'MAX' },
+                                                ]}
+                                                size="sm"
+                                                className="w-40"
+                                            />
+                                            <Select
+                                                value={agg.column}
+                                                onChange={(val) => updateAggregate(agg.id, 'column', val)}
+                                                options={columns.map(col => ({ value: col.name, label: col.name }))}
+                                                size="sm"
+                                                className="flex-1"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={agg.alias}
+                                                onChange={(e) => updateAggregate(agg.id, 'alias', e.target.value)}
+                                                placeholder="Result name"
+                                                className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                            />
+                                            <button
+                                                onClick={() => removeAggregate(agg.id)}
+                                                className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            )}
+                        </SectionCard>
 
-                    {/* Limit & Offset */}
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-xs font-medium text-text-secondary mb-1">
-                                Limit (max rows)
-                            </label>
-                            <input
-                                type="number"
-                                value={limit}
-                                onChange={(e) => setLimit(e.target.value)}
-                                className="w-full bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-xs font-medium text-text-secondary mb-1 flex items-center gap-1">
-                                Offset (skip rows)
-                                <span title={TOOLTIPS.offset} className="text-text-secondary cursor-help">
-                                    <HelpCircle size={14} />
-                                </span>
-                            </label>
-                            <input
-                                type="number"
-                                value={offset}
-                                onChange={(e) => setOffset(e.target.value)}
-                                className="w-full bg-bg-2 border border-border rounded px-2 py-1 text-sm text-text-primary outline-none"
-                            />
-                        </div>
-                    </div>
-                </>
-            )}
+                        {/* JOINs */}
+                        <SectionCard
+                            title="Join Tables"
+                            icon={Link2}
+                            tooltip={TOOLTIPS.join}
+                            action={
+                                <button
+                                    onClick={addJoin}
+                                    className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                >
+                                    <Plus size={14} /> Add
+                                </button>
+                            }
+                        >
+                            {joins.length === 0 ? (
+                                <p className="text-sm text-text-secondary italic">No joins added yet</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {joins.map(join => (
+                                        <div key={join.id} className="p-3 bg-bg-0 rounded-md border border-border space-y-2">
+                                            <div className="flex gap-2 items-center">
+                                                <Select
+                                                    value={join.type}
+                                                    onChange={(val) => updateJoin(join.id, 'type', val)}
+                                                    options={[
+                                                        { value: 'INNER JOIN', label: 'INNER' },
+                                                        { value: 'LEFT JOIN', label: 'LEFT' },
+                                                        { value: 'RIGHT JOIN', label: 'RIGHT' },
+                                                        { value: 'FULL JOIN', label: 'FULL' },
+                                                    ]}
+                                                    size="sm"
+                                                    className="w-32"
+                                                />
+                                                <Select
+                                                    value={join.table}
+                                                    onChange={(val) => updateJoin(join.id, 'table', val)}
+                                                    options={tables.map(t => ({ value: t, label: t }))}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                />
+                                                <button
+                                                    onClick={() => removeJoin(join.id)}
+                                                    className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2 items-center text-xs text-text-secondary pl-2">
+                                                <span className="font-medium">ON</span>
+                                                <Select
+                                                    value={join.onColumn}
+                                                    onChange={(val) => updateJoin(join.id, 'onColumn', val)}
+                                                    options={columns.map(col => ({ value: col.name, label: col.name }))}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                />
+                                                <span className="font-medium">=</span>
+                                                <Select
+                                                    value={join.targetColumn}
+                                                    onChange={(val) => updateJoin(join.id, 'targetColumn', val)}
+                                                    options={(joinTables[join.table] || []).map(col => ({ value: col.name, label: col.name }))}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </SectionCard>
+
+                        {/* Filters */}
+                        <SectionCard
+                            title="Filter Rows (WHERE)"
+                            icon={Filter}
+                            action={
+                                <button
+                                    onClick={addFilter}
+                                    className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                >
+                                    <Plus size={14} /> Add
+                                </button>
+                            }
+                        >
+                            {filters.length === 0 ? (
+                                <p className="text-sm text-text-secondary italic">No filters added yet</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {filters.map(filter => (
+                                        <div key={filter.id} className="flex gap-2 items-center">
+                                            <Select
+                                                value={filter.column}
+                                                onChange={(val) => updateFilter(filter.id, 'column', val)}
+                                                options={columns.map(col => ({ value: col.name, label: col.name }))}
+                                                size="sm"
+                                                className="flex-1"
+                                            />
+                                            <Select
+                                                value={filter.operator}
+                                                onChange={(val) => updateFilter(filter.id, 'operator', val)}
+                                                options={operatorOptions}
+                                                size="sm"
+                                                className="w-48"
+                                            />
+                                            {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        value={filter.value}
+                                                        onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
+                                                        placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'val1, val2, ...' : 'Value'}
+                                                        className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                    />
+                                                    {filter.operator === 'BETWEEN' && (
+                                                        <>
+                                                            <span className="text-xs text-text-secondary font-medium">AND</span>
+                                                            <input
+                                                                type="text"
+                                                                value={filter.value2 || ''}
+                                                                onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
+                                                                placeholder="Value 2"
+                                                                className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                            />
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                            <button
+                                                onClick={() => removeFilter(filter.id)}
+                                                className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </SectionCard>
+
+                        {/* GROUP BY */}
+                        <SectionCard
+                            title="Group Rows By"
+                            icon={Group}
+                            tooltip={TOOLTIPS.groupBy}
+                        >
+                            <div className="flex flex-wrap gap-2">
+                                {columns.map(col => (
+                                    <button
+                                        key={col.name}
+                                        onClick={() => toggleGroupBy(col.name)}
+                                        className={`px-3 py-1.5 text-sm rounded-md border transition-all ${groupByColumns.includes(col.name)
+                                                ? 'bg-accent text-white border-accent shadow-sm'
+                                                : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                            }`}
+                                    >
+                                        {col.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        {/* HAVING */}
+                        {groupByColumns.length > 0 && (
+                            <SectionCard
+                                title="Filter Groups (HAVING)"
+                                icon={Filter}
+                                tooltip={TOOLTIPS.having}
+                                action={
+                                    <button
+                                        onClick={addHavingFilter}
+                                        className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                    >
+                                        <Plus size={14} /> Add
+                                    </button>
+                                }
+                            >
+                                {havingFilters.length === 0 ? (
+                                    <p className="text-sm text-text-secondary italic">No HAVING filters added yet</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {havingFilters.map(filter => (
+                                            <div key={filter.id} className="flex gap-2 items-center">
+                                                <Select
+                                                    value={filter.column}
+                                                    onChange={(val) => updateHavingFilter(filter.id, 'column', val)}
+                                                    options={aggregates.map(agg => ({ value: agg.alias, label: agg.alias }))}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                />
+                                                <Select
+                                                    value={filter.operator}
+                                                    onChange={(val) => updateHavingFilter(filter.id, 'operator', val)}
+                                                    options={[
+                                                        { value: '=', label: '=' },
+                                                        { value: '>', label: '>' },
+                                                        { value: '<', label: '<' },
+                                                        { value: '>=', label: '>=' },
+                                                        { value: '<=', label: '<=' },
+                                                        { value: '!=', label: '!=' },
+                                                    ]}
+                                                    size="sm"
+                                                    className="w-24"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={filter.value}
+                                                    onChange={(e) => updateHavingFilter(filter.id, 'value', e.target.value)}
+                                                    placeholder="Value"
+                                                    className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                />
+                                                <button
+                                                    onClick={() => removeHavingFilter(filter.id)}
+                                                    className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </SectionCard>
+                        )}
+
+                        {/* Sorting */}
+                        <SectionCard
+                            title="Sort Results (ORDER BY)"
+                            icon={ArrowUpDown}
+                            action={
+                                <button
+                                    onClick={addSort}
+                                    className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                >
+                                    <Plus size={14} /> Add
+                                </button>
+                            }
+                        >
+                            {sorts.length === 0 ? (
+                                <p className="text-sm text-text-secondary italic">No sorting added yet</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {sorts.map(sort => (
+                                        <div key={sort.id} className="flex gap-2 items-center">
+                                            <Select
+                                                value={sort.column}
+                                                onChange={(val) => updateSort(sort.id, 'column', val)}
+                                                options={columns.map(col => ({ value: col.name, label: col.name }))}
+                                                size="sm"
+                                                className="flex-1"
+                                            />
+                                            <Select
+                                                value={sort.direction}
+                                                onChange={(val) => updateSort(sort.id, 'direction', val as 'ASC' | 'DESC')}
+                                                options={[
+                                                    { value: 'ASC', label: 'A → Z (ascending)' },
+                                                    { value: 'DESC', label: 'Z → A (descending)' },
+                                                ]}
+                                                size="sm"
+                                                className="w-44"
+                                            />
+                                            <button
+                                                onClick={() => removeSort(sort.id)}
+                                                className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </SectionCard>
+
+                        {/* Limit & Offset */}
+                        <SectionCard title="Pagination" icon={Settings}>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-2">
+                                        Limit (max rows)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={limit}
+                                        onChange={(e) => setLimit(e.target.value)}
+                                        className="w-full bg-bg-2 border border-border rounded-md px-3 py-2 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-2 flex items-center gap-1">
+                                        Offset (skip rows)
+                                        <span title={TOOLTIPS.offset} className="text-text-secondary cursor-help">
+                                            <HelpCircle size={14} />
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={offset}
+                                        onChange={(e) => setOffset(e.target.value)}
+                                        className="w-full bg-bg-2 border border-border rounded-md px-3 py-2 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                    />
+                                </div>
+                            </div>
+                        </SectionCard>
+                    </>
+                )}
+            </div>
         </div>
     );
 }
