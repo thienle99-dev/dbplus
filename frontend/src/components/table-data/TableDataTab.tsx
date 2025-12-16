@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus } from 'lucide-reac
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState } from '../../types';
+import Button from '../ui/Button';
 
 interface TableDataTabProps {
   connectionId?: string;
@@ -57,9 +58,6 @@ export default function TableDataTab({
   // const { showToast } = useToast();
   const { setSelectedRow } = useSelectedRow();
 
-
-
-
   const columns = useMemo(() => {
     if (!data?.columns) return [];
     const helper = createColumnHelper<unknown[]>();
@@ -100,103 +98,109 @@ export default function TableDataTab({
 
   return (
     <>
-      <div className="p-4 border-b border-border flex justify-between items-center bg-bg-1">
+      <div className="p-3 border-b border-border/40 flex justify-between items-center bg-bg-1/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-sm font-semibold text-text-primary px-2">
             {schema}.{table}
           </h2>
           {isAddingRow && (
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={onSaveNewRow}
                 disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50"
+                icon={<Save size={14} />}
               >
-                <Save size={14} />
                 Save Row
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onCancelNewRow}
                 disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-bg-3 hover:bg-bg-2 text-text-primary rounded text-sm font-medium"
+                icon={<X size={14} />}
               >
-                <X size={14} />
                 Cancel
-              </button>
+              </Button>
             </div>
           )}
           {hasChanges && (
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={onSave}
                 disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50"
+                icon={<Save size={14} />}
               >
-                <Save size={14} />
                 Save ({Object.keys(edits).length})
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onDiscard}
                 disabled={saving}
-                className="flex items-center gap-1 px-3 py-1.5 bg-bg-3 hover:bg-bg-2 text-text-primary rounded text-sm font-medium"
+                icon={<X size={14} />}
               >
-                <X size={14} />
                 Discard
-              </button>
+              </Button>
             </div>
           )}
         </div>
-        <div className="flex gap-2">
-          <button
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onStartAddingRow}
-            className="flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-blue-600 text-white rounded text-sm font-medium"
-            title="Add New Record"
+            icon={<Plus size={14} />}
+            className="h-8"
           >
-            <Plus size={14} />
             Row
-          </button>
-          <div className="h-4 w-px bg-border mx-2 self-center" />
-          <button
+          </Button>
+          <div className="h-4 w-px bg-border/40 mx-1 self-center" />
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onRefresh}
-            className="p-1.5 text-text-secondary hover:text-text-primary rounded hover:bg-bg-2"
+            icon={<RefreshCw size={15} />}
+            className="h-8 w-8 p-0"
             title="Refresh"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <div className="h-4 w-px bg-border mx-2 self-center" />
-          <button
-            onClick={() => setPage(Math.max(0, page - 1))}
-            disabled={page === 0 || loading}
-            className="p-1.5 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm border border-border"
-            title="Previous page"
-            aria-label="Previous page"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="flex items-center text-sm text-text-secondary">
-            Page {page + 1}
-          </span>
-          <button
-            onClick={() => setPage(page + 1)}
-            disabled={!data.rows.length || data.rows.length < pageSize || loading}
-            className="p-1.5 bg-bg-2 rounded hover:bg-bg-3 disabled:opacity-50 text-sm border border-border"
-            title="Next page"
-            aria-label="Next page"
-          >
-            <ChevronRight size={16} />
-          </button>
+          />
+          <div className="h-4 w-px bg-border/40 mx-1 self-center" />
+          <div className="flex items-center gap-1 rounded-full bg-bg-2/50 border border-border/40 p-0.5">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0 || loading}
+              className="p-1.5 rounded-full hover:bg-bg-0 disabled:opacity-30 text-text-secondary hover:text-text-primary transition-all"
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="text-xs text-text-secondary px-2 font-medium min-w-[60px] text-center">
+              Page {page + 1}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={!data.rows.length || data.rows.length < pageSize || loading}
+              className="p-1.5 rounded-full hover:bg-bg-0 disabled:opacity-30 text-text-secondary hover:text-text-primary transition-all"
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-bg-1 sticky top-0 z-10">
+      <div className="flex-1 overflow-auto bg-bg-1/30">
+        <table className="w-full border-collapse text-xs">
+          <thead className="bg-bg-2/80 backdrop-blur sticky top-0 z-10">
             {tableInstance.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="border-b border-border/60">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[150px]"
+                    className="border-r border-border/30 px-4 py-2 text-left font-semibold text-text-secondary tracking-wide min-w-[150px] first:pl-6"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -207,17 +211,17 @@ export default function TableDataTab({
               </tr>
             ))}
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/30">
             {isAddingRow && (
-              <tr className="bg-accent/10">
+              <tr className="bg-accent/5">
                 {data.columns.map((_col, index) => (
                   <td
                     key={`new-row-${index}`}
-                    className="border-b border-r border-border px-4 py-1.5"
+                    className="border-r border-border/30 px-4 py-2 first:pl-6"
                   >
                     <input
                       autoFocus={index === 0}
-                      className="w-full bg-transparent border-b border-accent/50 outline-none p-0 text-sm text-text-primary placeholder:text-text-secondary/50"
+                      className="w-full bg-transparent border-b border-accent/50 outline-none p-0 text-xs text-text-primary placeholder:text-text-secondary/50 focus:border-accent font-medium"
                       value={newRowData[index] === undefined ? '' : String(newRowData[index])}
                       onChange={(e) => onNewRowChange(index, e.target.value)}
                       placeholder="NULL"
@@ -238,7 +242,7 @@ export default function TableDataTab({
               return (
                 <tr
                   key={row.id}
-                  className={`hover:bg-bg-1/50 cursor-pointer ${isModified ? 'bg-accent/5' : ''}`}
+                  className={`group hover:bg-bg-2/50 transition-colors ${isModified ? 'bg-amber-500/5' : 'odd:bg-bg-1/30'}`}
                   onClick={() => {
                     setSelectedRow({
                       rowIndex: row.index,
@@ -252,7 +256,7 @@ export default function TableDataTab({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
+                      className="border-r border-border/20 px-4 py-2 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px] first:pl-6 group-hover:border-border/10"
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
@@ -263,7 +267,9 @@ export default function TableDataTab({
           </tbody>
         </table>
         {data.rows.length === 0 && (
-          <div className="p-8 text-center text-text-secondary">No rows found</div>
+          <div className="flex flex-col items-center justify-center p-12 text-text-secondary/60">
+            <p>No rows found</p>
+          </div>
         )}
       </div>
     </>

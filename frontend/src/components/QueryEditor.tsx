@@ -103,7 +103,7 @@ export default function QueryEditor({
   const [baselinePlan, setBaselinePlan] = useState<any>(null);
   const [analyzeEnabled, setAnalyzeEnabled] = useState(false);
   const [bottomTab, setBottomTab] = useState<'results' | 'plan' | 'comparison'>('results');
-  
+
   // Comparison State
   const [snapshot, setSnapshot] = useState<QueryResult | null>(null);
   const [resultDiff, setResultDiff] = useState<DiffResult | null>(null);
@@ -152,16 +152,16 @@ export default function QueryEditor({
   }, [query, editorView, connectionId, analyzeEnabled, explainQuery]);
 
   const handleSnapshot = useCallback((res: QueryResult) => {
-      setSnapshot(res);
-      showToast('Snapshot captured for comparison', 'success');
+    setSnapshot(res);
+    showToast('Snapshot captured for comparison', 'success');
   }, [showToast]);
 
 
 
   const handleClearSnapshot = useCallback(() => {
-      setSnapshot(null);
-      setResultDiff(null);
-      if (bottomTab === 'comparison') setBottomTab('results');
+    setSnapshot(null);
+    setResultDiff(null);
+    if (bottomTab === 'comparison') setBottomTab('results');
   }, [bottomTab]);
 
   const isDangerousQuery = useCallback((sql: string) => {
@@ -374,12 +374,12 @@ export default function QueryEditor({
   ], [extensions, handleExecuteRequest, handleExpandStar, handleExecuteSelection, handleExplain]);
 
   const handleCompareSnapshot = useCallback(() => {
-     if (!snapshot || !result) return;
-     // result.columns is typically string[] for now based on types, map to object for compat
-     const columns = result.columns ? result.columns.map(c => ({name: c})) : [];
-     const diff = computeResultDiff(snapshot.rows, result.rows, columns);
-     setResultDiff(diff);
-     setBottomTab('comparison');
+    if (!snapshot || !result) return;
+    // result.columns is typically string[] for now based on types, map to object for compat
+    const columns = result.columns ? result.columns.map(c => ({ name: c })) : [];
+    const diff = computeResultDiff(snapshot.rows, result.rows, columns);
+    setResultDiff(diff);
+    setBottomTab('comparison');
   }, [snapshot, result]);
 
   // Shortcuts
@@ -478,11 +478,10 @@ export default function QueryEditor({
       {/* Split View Container */}
       <div className={`flex-1 flex ${splitMode === 'vertical' ? 'flex-row' : 'flex-col'} min-h-0`}>
         {/* Editor Section */}
-        <div className={`${
-          splitMode === 'none' ? 'h-[300px]' : 
-          splitMode === 'vertical' ? 'w-1/2' : 
-          'h-1/2'
-        } border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}>
+        <div className={`${splitMode === 'none' ? 'h-[300px]' :
+            splitMode === 'vertical' ? 'w-1/2' :
+              'h-1/2'
+          } border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}>
           <div className="flex-1 overflow-hidden flex relative">
             {mode === 'sql' ? (
               <CodeMirror
@@ -510,37 +509,39 @@ export default function QueryEditor({
         </div>
 
         {/* Results Section */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center border-b border-border bg-bg-1">
-            <button
-              onClick={() => setBottomTab('results')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'results'
-                ? 'border-accent text-text-primary bg-bg-2'
-                : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
-            >
-              Results
-            </button>
-            <button
-              onClick={() => setBottomTab('plan')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'plan'
-                ? 'border-accent text-text-primary bg-bg-2'
-                : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
-            >
-              Execution Plan
-            </button>
-            {snapshot && (
+        <div className="flex-1 flex flex-col min-h-0 bg-bg-1/20">
+          <div className="flex items-center justify-between border-b border-border/40 bg-bg-1 p-2">
+            <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
+              <button
+                onClick={() => setBottomTab('results')}
+                className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'results'
+                  ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+                  }`}
+              >
+                Results
+              </button>
+              <button
+                onClick={() => setBottomTab('plan')}
+                className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'plan'
+                  ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+                  }`}
+              >
+                Execution Plan
+              </button>
+              {snapshot && (
                 <button
-                onClick={() => setBottomTab('comparison')}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'comparison'
-                    ? 'border-accent text-text-primary bg-bg-2'
-                    : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                  onClick={() => setBottomTab('comparison')}
+                  className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'comparison'
+                    ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                     }`}
                 >
-                Diff Comparison
+                  Diff Comparison
                 </button>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden relative">
@@ -578,9 +579,9 @@ export default function QueryEditor({
             <div className={`absolute inset-0 flex flex-col ${bottomTab === 'comparison' ? 'z-10' : 'z-0 invisible'}`}>
               {resultDiff && snapshot && (
                 <ResultComparison
-                    diff={resultDiff}
-                    columns={result?.columns?.map(c => ({name: c})) || []}
-                    onClose={() => setBottomTab('results')}
+                  diff={resultDiff}
+                  columns={result?.columns?.map(c => ({ name: c })) || []}
+                  onClose={() => setBottomTab('results')}
                 />
               )}
             </div>

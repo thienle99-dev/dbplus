@@ -491,3 +491,20 @@ body {
 .slide-in-from-top-2 {
   animation: slideInFromTop 0.15s ease-out;
 }
+
+/* Mask for horizontal scroll fading */
+.mask-linear-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}

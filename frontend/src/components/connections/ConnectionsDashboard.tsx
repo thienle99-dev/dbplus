@@ -42,14 +42,14 @@ export const ConnectionsDashboard: React.FC = () => {
 
   if (isLoading && connections.length === 0) {
     return (
-      <div className="flex h-screen w-full bg-[#1e1e1e] items-center justify-center">
-        <div className="text-gray-400 font-mono animate-pulse">Loading connections...</div>
+      <div className="flex h-screen w-full bg-bg-0 items-center justify-center">
+        <div className="text-text-secondary font-mono animate-pulse">Loading connections...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex text-gray-200 font-sans selection:bg-blue-500/30 bg-[#1e1e1e] overflow-hidden">
+    <div className="h-screen flex text-text-primary font-sans bg-bg-0 overflow-hidden">
       <Sidebar
         onBackup={() => setDataToolsMode('backup')}
         onRestore={() => setDataToolsMode('restore')}
@@ -57,23 +57,25 @@ export const ConnectionsDashboard: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
+      <div className="flex-1 flex flex-col min-w-0 bg-bg-0">
         {/* Search Header Area (handled by ConnectionList mostly, but we can add a drag region) */}
-        <div className="h-4 w-full bg-[#1e1e1e] draggable-region" />
+        <div className="h-4 w-full bg-bg-0 draggable-region" />
 
         {/* Connection List */}
-        <div className="flex-1 overflow-hidden p-2">
-          {error && (
-            <div className="mx-4 mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-          <ConnectionList
-            connections={connections}
-            onAdd={() => setIsDbSelectorOpen(true)}
-            onOpen={(id) => navigate(`/workspace/${id}`)}
-            onEdit={handleEdit}
-          />
+        <div className="flex-1 overflow-hidden p-4 md:p-6">
+          <div className="h-full flex flex-col rounded-2xl bg-bg-1/95 border border-border/40 shadow-[0_18px_40px_rgba(0,0,0,0.25)] overflow-hidden">
+            {error && (
+              <div className="m-4 mb-0 p-3 bg-error/10 border border-error/30 rounded text-error text-sm">
+                {error}
+              </div>
+            )}
+            <ConnectionList
+              connections={connections}
+              onAdd={() => setIsDbSelectorOpen(true)}
+              onOpen={(id) => navigate(`/workspace/${id}`)}
+              onEdit={handleEdit}
+            />
+          </div>
         </div>
       </div>
 

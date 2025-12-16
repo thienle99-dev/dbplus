@@ -8,7 +8,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate }) => {
     return (
-        <div className="w-[280px] h-full bg-[#3a3a3a] flex flex-col items-center py-8 px-6 border-r border-black/20">
+        <div className="w-[280px] h-full bg-bg-1 flex flex-col items-center py-8 px-6 border-r border-border">
             {/* Logo */}
             <div className="mb-6">
                 <div className="w-32 h-32 flex items-center justify-center">
@@ -21,8 +21,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate 
             </div>
 
             {/* App Name */}
-            <h1 className="text-2xl font-bold text-white mb-1">DBPlus</h1>
-            <p className="text-sm text-gray-500 mb-12">Version 1.0.0</p>
+            <h1 className="text-2xl font-bold text-text-primary mb-1">DBPlus</h1>
+            <p className="text-sm text-text-secondary mb-12">Version 1.0.0</p>
 
             {/* Action Buttons */}
             <div className="w-full space-y-2">
@@ -68,7 +68,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ icon, label, onClick }) => 
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-gray-400 hover:bg-white/5 transition-colors text-sm"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-secondary hover:bg-bg-2 hover:text-text-primary transition-colors text-sm font-medium"
         >
             <span className="flex-shrink-0">{icon}</span>
             <span>{label}</span>

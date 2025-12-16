@@ -1,5 +1,7 @@
-import { X, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { ConfirmationModalProps } from '../types';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 export default function ConfirmationModal({
   isOpen,
@@ -11,43 +13,38 @@ export default function ConfirmationModal({
   cancelText = 'Cancel',
   isDangerous = false,
 }: ConfirmationModalProps) {
-  if (!isOpen) return null;
+
+  const footer = (
+    <div className="flex w-full justify-end gap-2">
+      <Button variant="secondary" onClick={onClose}>
+        {cancelText}
+      </Button>
+      <Button
+        variant={isDangerous ? 'danger' : 'primary'}
+        onClick={() => {
+          onConfirm();
+          onClose();
+        }}
+      >
+        {confirmText}
+      </Button>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-1 rounded-lg shadow-xl w-96 border border-border">
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <h3 className="font-semibold text-text-primary flex items-center gap-2">
-            {isDangerous && <AlertTriangle size={18} className="text-red-500" />}
-            {title}
-          </h3>
-          <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center gap-2">
+          {isDangerous && <AlertTriangle size={18} className="text-red-500" />}
+          {title}
         </div>
-        <div className="p-4">
-          <p className="text-sm text-text-secondary">{message}</p>
-        </div>
-        <div className="flex justify-end gap-2 p-4 border-t border-border">
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className={`px-3 py-1.5 text-sm text-white rounded ${
-              isDangerous ? 'bg-red-500 hover:bg-red-600' : 'bg-accent hover:bg-blue-600'
-            }`}
-          >
-            {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
+      }
+      size="sm"
+      footer={footer}
+    >
+      <p className="text-sm text-text-secondary">{message}</p>
+    </Modal>
   );
 }

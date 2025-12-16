@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 export interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    title?: string;
+    title?: React.ReactNode;
     children: React.ReactNode;
     footer?: React.ReactNode;
     size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -51,12 +51,12 @@ export default function Modal({
 
     return (
         <div
-            className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-[var(--modal-backdrop)] backdrop-blur-sm"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                 aria-hidden="true"
             />
 
@@ -66,9 +66,9 @@ export default function Modal({
           relative
           w-full
           ${sizeClasses[size]}
-          bg-[var(--modal-bg)]
-          rounded-[var(--modal-radius)]
-          shadow-[var(--modal-shadow)]
+          bg-bg-1/95 border border-border/40
+          rounded-2xl
+          shadow-[0_18px_40px_rgba(0,0,0,0.25)]
           flex flex-col
           max-h-[90vh]
           animate-in fade-in slide-in-from-top-2 duration-200
@@ -79,9 +79,9 @@ export default function Modal({
             >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-divider)]">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                         {title && (
-                            <h2 className="text-[var(--font-size-lg)] font-semibold text-[var(--color-text)]">
+                            <h2 className="text-lg font-semibold text-text-primary">
                                 {title}
                             </h2>
                         )}
@@ -90,10 +90,10 @@ export default function Modal({
                                 onClick={onClose}
                                 className="
                   p-1.5
-                  rounded-[var(--radius-sm)]
-                  text-[var(--color-text-muted)]
-                  hover:text-[var(--color-text)]
-                  hover:bg-[var(--color-hover)]
+                  rounded-md
+                  text-text-secondary
+                  hover:text-text-primary
+                  hover:bg-bg-2
                   transition-colors
                 "
                                 aria-label="Close modal"
@@ -111,7 +111,7 @@ export default function Modal({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-divider)]">
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
                         {footer}
                     </div>
                 )}

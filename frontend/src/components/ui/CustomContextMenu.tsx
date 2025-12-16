@@ -47,7 +47,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, childre
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-50 min-w-[220px] bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-75 text-sm"
+            className="fixed z-50 min-w-[220px] bg-bg-1/80 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-100 text-sm"
             style={style}
         >
             {children}
@@ -77,35 +77,35 @@ export const ContextMenuItem: React.FC<ContextMenuItemProps> = ({ onClick, child
                 }
             }}
             disabled={disabled}
-            className={`w-full text-left px-3 py-1.5 flex items-center justify-between
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-blue-600 hover:text-white'}
-                ${danger ? 'text-red-400 hover:text-white hover:bg-red-600' : 'text-gray-200'}
+            className={`w-full text-left px-3 py-1.5 flex items-center justify-between rounded-lg
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-accent hover:text-white'}
+                ${danger ? 'text-red-500 hover:text-white hover:bg-red-500' : 'text-text-primary'}
                 ${className || ''}
                 transition-colors group
             `}
         >
             <div className="flex items-center gap-2.5">
-                {icon && <span className="text-gray-400 group-hover:text-currentColor w-4 flex justify-center">{icon}</span>}
+                {icon && <span className="text-text-secondary group-hover:text-currentColor w-4 flex justify-center">{icon}</span>}
                 <span>{children}</span>
             </div>
             {hasSubmenu && (
-                <svg className="w-3 h-3 text-gray-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-text-secondary group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
             )}
             {shortcut && (
-                <span className="text-xs text-gray-500 group-hover:text-white/80 ml-4 font-sans">{shortcut}</span>
+                <span className="text-xs text-text-muted group-hover:text-white/80 ml-4 font-sans">{shortcut}</span>
             )}
         </button>
     );
 };
 
 export const ContextMenuSeparator: React.FC = () => (
-    <div className="h-px bg-white/10 my-1 mx-1" />
+    <div className="h-px bg-border/40 my-1 mx-2" />
 );
 
 export const ContextMenuLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="px-3 py-1.5 text-xs font-medium text-gray-500">
+    <div className="px-3 py-1.5 text-xs font-semibold text-text-tertiary uppercase tracking-wide">
         {children}
     </div>
 );

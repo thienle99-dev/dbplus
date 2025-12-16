@@ -32,7 +32,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
 
   // Guard: Return early if schema or table is not defined
   if (!schema || !table) {
-    return <div className="p-8 text-text-secondary">Select a table to view data</div>;
+    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
   }
 
   const fetchColumns = useCallback(async () => {
@@ -226,7 +226,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   }, []);
 
   if (loading && !data) {
-    return <div className="p-8 text-text-secondary">Loading data...</div>;
+    return <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>;
   }
 
   if (error) {
@@ -234,71 +234,75 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   }
 
   if (!data) {
-    return <div className="p-8 text-text-secondary">Select a table to view data</div>;
+    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
       {/* Tab Navigation */}
-      <div className="flex items-center border-b border-border bg-bg-1">
-        <button
-          onClick={() => setActiveTab('data')}
-          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'data'
-            ? 'text-accent border-accent bg-bg-0'
-            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
-            }`}
-        >
-          <Table size={14} />
-          Data
-        </button>
-        <button
-          onClick={() => setActiveTab('structure')}
-          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'structure'
-            ? 'text-accent border-accent bg-bg-0'
-            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
-            }`}
-        >
-          <Database size={14} />
-          Structure
-        </button>
-        <button
-          onClick={() => setActiveTab('info')}
-          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'info'
-            ? 'text-accent border-accent bg-bg-0'
-            : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-2'
-            }`}
-        >
-          <Info size={14} />
-          Info
-        </button>
+      <div className="flex items-center justify-between border-b border-border/40 bg-bg-1 p-2">
+        <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
+          <button
+            onClick={() => setActiveTab('data')}
+            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
+              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              }`}
+          >
+            <Table size={14} />
+            Data
+          </button>
+          <button
+            onClick={() => setActiveTab('structure')}
+            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
+              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              }`}
+          >
+            <Database size={14} />
+            Structure
+          </button>
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
+              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              }`}
+          >
+            <Info size={14} />
+            Info
+          </button>
+        </div>
       </div>
 
-      {activeTab === 'data' && data ? (
-        <TableDataTab
-          connectionId={connectionId}
-          schema={schema}
-          table={table}
-          data={data}
-          columnsInfo={columnsInfo}
-          edits={edits}
-          isAddingRow={isAddingRow}
-          newRowData={newRowData}
-          saving={saving}
-          loading={loading}
-          onEdit={handleEdit}
-          onSave={handleSave}
-          onDiscard={handleDiscard}
-          onNewRowChange={handleNewRowChange}
-          onSaveNewRow={handleSaveNewRow}
-          onCancelNewRow={handleCancelNewRow}
-          onStartAddingRow={handleStartAddingRow}
-          onRefresh={fetchData}
-        />
-      ) : activeTab === 'structure' ? (
-        <TableStructureTab schema={schema} table={table} />
-      ) : (
-        <TableInfoTab schema={schema} table={table} />
-      )}
+      <div className="flex-1 overflow-hidden relative">
+        {activeTab === 'data' && data ? (
+          <TableDataTab
+            connectionId={connectionId}
+            schema={schema}
+            table={table}
+            data={data}
+            columnsInfo={columnsInfo}
+            edits={edits}
+            isAddingRow={isAddingRow}
+            newRowData={newRowData}
+            saving={saving}
+            loading={loading}
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onDiscard={handleDiscard}
+            onNewRowChange={handleNewRowChange}
+            onSaveNewRow={handleSaveNewRow}
+            onCancelNewRow={handleCancelNewRow}
+            onStartAddingRow={handleStartAddingRow}
+            onRefresh={fetchData}
+          />
+        ) : activeTab === 'structure' ? (
+          <TableStructureTab schema={schema} table={table} />
+        ) : (
+          <TableInfoTab schema={schema} table={table} />
+        )}
+      </div>
     </div>
   );
 }

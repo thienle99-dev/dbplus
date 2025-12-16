@@ -322,11 +322,10 @@ export default function DataToolsModal({
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
-                className={`px-3 py-1.5 rounded text-xs border transition-colors ${
-                  mode === m
+                className={`px-3 py-1.5 rounded text-xs border transition-colors ${mode === m
                     ? 'bg-bg-2 border-accent text-text-primary'
                     : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
+                  }`}
               >
                 {m === 'export' ? 'Export' : m === 'import' ? 'Import' : m === 'backup' ? 'Backup' : 'Restore'}
               </button>
@@ -361,7 +360,7 @@ export default function DataToolsModal({
                 <button
                   disabled={loading || !canUseTableTools}
                   onClick={() => void handleExport()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:bg-blue-600 text-white rounded disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   <Download size={14} />
                   Export
@@ -442,7 +441,7 @@ export default function DataToolsModal({
                 <button
                   disabled={loading || !canUseTableTools || !importScript.trim()}
                   onClick={() => void handleImportRun()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:bg-blue-600 text-white rounded disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   Run import
                 </button>
@@ -459,7 +458,7 @@ export default function DataToolsModal({
                 <button
                   disabled={loading || !connectionId}
                   onClick={() => void handleBackupDownload()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:bg-blue-600 text-white rounded disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   <Download size={14} />
                   Download SQL backup
@@ -510,7 +509,7 @@ export default function DataToolsModal({
                 <button
                   disabled={loading || !connectionId || !importScript.trim()}
                   onClick={() => void handleRestoreSql()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-error hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   Restore
                 </button>

@@ -193,7 +193,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 select-none group"
+                className="px-4 py-3 cursor-pointer hover:bg-bg-2/70 transition-colors border-b border-border/40 last:border-b-0 select-none group"
                 style={{ animationDelay: `${index * 30}ms` }}
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
@@ -202,7 +202,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     {/* Expand Toggle */}
                     <button
                         onClick={handleToggleExpand}
-                        className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                        className="p-1 rounded-lg hover:bg-bg-3 text-text-secondary hover:text-text-primary transition-colors"
                     >
                         {isExpanded ? (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
@@ -212,21 +212,21 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     </button>
 
                     {/* DB Type Icon */}
-                    <div className={`w-10 h-10 rounded-lg ${dbConfig.color} flex items-center justify-center flex-shrink-0 shadow-md`}>
+                    <div className={`w-10 h-10 rounded-xl ${dbConfig.color} flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-inset ring-black/10`}>
                         <span className="text-white text-sm font-bold">{dbConfig.icon}</span>
                     </div>
 
                     {/* Connection Info */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-sm font-medium text-white truncate">
+                            <h3 className="text-sm font-medium text-text-primary truncate">
                                 {connection.name}
                             </h3>
                             {isLocal && (
-                                <span className="text-xs text-green-400 font-medium">(local)</span>
+                                <span className="text-xs text-success font-medium">(local)</span>
                             )}
                         </div>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-text-muted truncate">
                             {connection.host} : {connection.database}
                         </p>
                     </div>
@@ -234,22 +234,22 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                 {/* Inline Database List */}
                 {isExpanded && (
-                    <div className="mt-2 pl-[3.25rem] border-l-2 border-white/5 ml-5">
+                    <div className="mt-2 pl-[3.25rem] border-l-2 border-border/40 ml-5">
                         {isLoadingDbs ? (
-                            <div className="py-1 px-2 text-xs text-gray-500 italic">Loading databases...</div>
+                            <div className="py-1 px-2 text-xs text-text-muted italic">Loading databases...</div>
                         ) : databases.length > 0 ? (
                             <div className="flex flex-col">
                                 {databases.map(db => (
                                     <div
                                         key={db}
-                                        className="flex items-center gap-2 py-1 px-2 hover:bg-white/5 rounded text-xs text-gray-300 group"
+                                        className="flex items-center gap-2 py-1 px-2 hover:bg-bg-2 rounded text-xs text-text-secondary group"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
                                         <span className="flex-1 truncate">{db}</span>
                                         {connection.type === 'postgres' && (
                                             <button
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400"
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-error"
                                                 title="Drop database"
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -264,7 +264,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                                 ))}
                                 {connection.type === 'postgres' && (
                                     <button
-                                        className="mt-1 py-1 px-2 text-left text-xs text-blue-400 hover:text-blue-300 hover:bg-white/5 rounded transition-colors"
+                                        className="mt-1 py-1 px-2 text-left text-xs text-accent hover:text-accent-hover hover:bg-bg-2 rounded transition-colors"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -276,7 +276,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                                 )}
                             </div>
                         ) : (
-                            <div className="py-1 px-2 text-xs text-gray-500 italic">No databases found</div>
+                            <div className="py-1 px-2 text-xs text-text-muted italic">No databases found</div>
                         )}
                     </div>
                 )}
@@ -296,7 +296,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     y={menuPosition.y}
                     onClose={() => setMenuPosition(null)}
                 >
-                    <ContextMenuItem onClick={() => { onOpen(connection.id); setMenuPosition(null); }} className="bg-blue-600 text-white font-medium hover:bg-blue-700">
+                    <ContextMenuItem onClick={() => { onOpen(connection.id); setMenuPosition(null); }} className="bg-accent text-white font-medium hover:bg-accent-hover">
                         Connect
                     </ContextMenuItem>
 

@@ -9,6 +9,7 @@ import CommandPalette from './CommandPalette';
 import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import { useConnectionStore } from '../store/connectionStore';
 import { useQueryClient } from '@tanstack/react-query';
+import Input from './ui/Input';
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -103,12 +104,12 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1 pb-[30px] border-r border-border flex h-full flex-shrink-0 relative"
+      className="bg-bg-1/95 border-r border-border/40 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
       style={{ width: `${sidebarWidth}px` }}
     >
       {/* Vertical Workspace Tabs Rail */}
-      <div className="w-[60px] border-r border-border bg-bg-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto py-2 px-1 space-y-1">
+      <div className="w-[60px] border-r border-border/40 bg-bg-2/50 flex flex-col items-center py-3 gap-2">
+        <div className="flex-1 overflow-y-auto px-1 space-y-2 w-full no-scrollbar">
           {tabs.map((t) => {
             const meta = connectionById.get(t.connectionId);
             const label = meta ? `${meta.name}${t.database ? ` · ${t.database}` : ''}` : t.connectionId;
@@ -131,9 +132,9 @@ export default function Sidebar() {
                     queryClient.invalidateQueries({ queryKey: ['tableStats', t.connectionId] }),
                   ]);
                 }}
-                className={`group relative w-full h-10 rounded border flex items-center justify-center text-[10px] font-semibold transition-colors ${isActive
-                  ? 'bg-bg-2 border-accent text-text-primary'
-                  : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                className={`group relative w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-200 mx-auto ${isActive
+                  ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-105'
+                  : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border/40 hover:border-accent/40'
                   }`}
                 title={label}
               >
@@ -151,19 +152,16 @@ export default function Sidebar() {
 
                     closeTab(t.id);
 
-                    // If we just closed the last workspace tab, leave the workspace route entirely
-                    // so the right-side content unmounts too.
                     if (nextTabs.length === 0) {
                       navigate('/');
                       return;
                     }
 
-                    // If we closed the active tab, navigate to the newly active workspace tab.
                     if (nextActive) {
                       navigate(nextActive.lastPath || `/workspace/${nextActive.connectionId}/query`);
                     }
                   }}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-bg-2 border border-border text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center leading-none"
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-bg-2 border border-border text-text-secondary hover:text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center leading-none shadow-sm z-10"
                   aria-label="Close tab"
                   title="Close"
                 >
@@ -174,20 +172,20 @@ export default function Sidebar() {
           })}
         </div>
 
-        <div className="p-1 border-t border-border">
+        <div className="p-1 pt-2 border-t border-border/40 w-full flex justify-center">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-full h-10 rounded border border-border bg-bg-0 text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors text-sm"
+            className="w-10 h-10 rounded-xl border border-border/40 bg-bg-1 text-text-secondary hover:text-accent hover:border-accent/50 hover:bg-bg-0 transition-all flex items-center justify-center shadow-sm"
             title="Open connection/database (Cmd+K)"
           >
-            +
+            <span className="text-lg leading-none pb-0.5">+</span>
           </button>
         </div>
       </div>
 
       {/* Resize Handle */}
       <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent/50 z-50 transition-colors"
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent/50 z-50 transition-colors opacity-0 hover:opacity-100"
         onMouseDown={(e) => {
           e.preventDefault();
           setIsResizing(true);
@@ -196,55 +194,58 @@ export default function Sidebar() {
       />
 
       {/* Main Sidebar Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-bg-1/50">
         {/* Search Header */}
-        <div className="p-3 border-b border-border space-y-3">
+        <div className="p-4 border-b border-border/40 space-y-4">
           {/* Global Search Input */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search size={14} className="absolute left-2.5 top-2.5 text-text-secondary" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
-              />
-            </div>
+          <div className="flex gap-2 items-center">
+            <Input
+              leftIcon={<Search size={14} className="text-text-tertiary" />}
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-bg-2/50 border-transparent focus:bg-bg-0"
+            />
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="px-2 py-1.5 bg-bg-2 border border-border rounded text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
+              className="p-2 bg-bg-2/50 border border-border/40 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
               title="Switch Database (Cmd+K)"
             >
               <Database size={16} />
             </button>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex bg-bg-2 p-0.5 rounded border border-border">
+          {/* Tab Navigation (Segmented Control style) */}
+          <div className="flex bg-bg-2/50 p-1 rounded-xl border border-border/40">
             <button
               onClick={() => setActiveTab('items')}
-              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'items' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'items'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                 }`}
               title="Items"
             >
-              <Database size={14} />
+              <Database size={14} className="mr-1.5" /> Explorer
             </button>
             <button
               onClick={() => setActiveTab('queries')}
-              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'queries' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'queries'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                 }`}
               title="Saved Queries"
             >
-              <FileText size={14} />
+              <FileText size={14} className="mr-1.5" /> Saved
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'history' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'history'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                 }`}
               title="History"
             >
-              <Clock size={14} />
+              <Clock size={14} className="mr-1.5" /> History
             </button>
           </div>
         </div>
@@ -253,21 +254,19 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'items' && (
             <div className="flex flex-col">
-              <div className="px-3 py-2 flex justify-between items-center text-xs font-semibold text-text-secondary uppercase tracking-wider">
+              <div className="px-4 py-3 flex justify-between items-center text-xs font-semibold text-text-tertiary uppercase tracking-wider">
                 <span>Explorer</span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
-                      // Refresh schema tree by invalidating queries
                       void Promise.all([
                         queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] }),
                         queryClient.invalidateQueries({ queryKey: ['tables', connectionId] }),
                         queryClient.invalidateQueries({ queryKey: ['columns', connectionId] }),
                       ]);
                     }}
-                    className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-text-primary transition-colors"
+                    className="p-1.5 hover:bg-bg-2 rounded-lg text-text-secondary hover:text-text-primary transition-colors"
                     title="Refresh Schema"
-                    aria-label="Refresh database schema"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
@@ -279,18 +278,19 @@ export default function Sidebar() {
                       setShowPinnedOnly(newValue);
                       localStorage.setItem('show-pinned-only', JSON.stringify(newValue));
                     }}
-                    className={`p-1 hover:bg-bg-2 rounded transition-colors ${showPinnedOnly
-                      ? 'text-accent'
+                    className={`p-1.5 hover:bg-bg-2 rounded-lg transition-colors ${showPinnedOnly
+                      ? 'text-accent bg-accent/10'
                       : 'text-text-secondary hover:text-text-primary'
                       }`}
                     title={showPinnedOnly ? "Show All Tables" : "Show Pinned Tables Only"}
-                    aria-label={showPinnedOnly ? "Show all tables" : "Show pinned tables only"}
                   >
                     <Pin size={14} fill={showPinnedOnly ? "currentColor" : "none"} />
                   </button>
                 </div>
               </div>
-              <SchemaTree searchTerm={searchTerm} showPinnedOnly={showPinnedOnly} />
+              <div className="px-2">
+                <SchemaTree searchTerm={searchTerm} showPinnedOnly={showPinnedOnly} />
+              </div>
             </div>
           )}
 
@@ -312,17 +312,17 @@ export default function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div className="p-2 border-t border-border space-y-1 bg-bg-1 z-10">
+        <div className="p-3 border-t border-border/40 space-y-1 bg-bg-1/80 backdrop-blur-sm z-10">
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-bg-2/80 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             <Settings size={16} />
             Settings
           </button>
           <button
             onClick={() => navigate('/')}
-            className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl text-sm text-text-secondary transition-colors"
           >
             <LogOut size={16} />
             Disconnect

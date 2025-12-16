@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FolderPlus, X } from 'lucide-react';
+import { FolderPlus } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { SaveQueryModalProps } from '../types';
 import { useCreateSavedQueryFolder, useSavedQueryFolders } from '../hooks/useQuery';
+import Modal from './ui/Modal';
+import Input from './ui/Input';
+import Button from './ui/Button';
 
 export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = 'create', onSaved }: SaveQueryModalProps) {
   const { connectionId } = useParams();
@@ -32,8 +35,6 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
     setTagsText((initial?.tags || []).join(', '));
     setFolderId(initial?.folder_id || '');
   }, [isOpen, initial?.name, initial?.description, initial?.folder_id, (initial?.tags || []).join(',')]);
-
-  if (!isOpen) return null;
 
   const handleCreateFolder = async () => {
     const folderName = prompt('Folder name');
@@ -84,90 +85,86 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
     }
   };
 
+  const footer = (
+    <div className="flex w-full justify-end gap-2">
+      <Button variant="secondary" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        onClick={() => handleSave({ preventDefault: () => { } } as any)}
+        disabled={loading}
+      >
+        {loading ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-1 rounded-lg shadow-xl w-96 border border-border">
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <h3 className="font-semibold text-text-primary">{mode === 'edit' ? 'Edit Saved Query' : 'Save Query'}</h3>
-          <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'edit' ? 'Edit Saved Query' : 'Save Query'}
+      size="md"
+      footer={footer}
+    >
+      <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Name</label>
+          <Input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="My Query"
+            autoFocus
+          />
         </div>
-        <form onSubmit={handleSave} className="p-4 flex flex-col gap-4">
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Name</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent outline-none"
-              placeholder="My Query"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent outline-none h-20 resize-none"
-              placeholder="What does this query do?"
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-text-secondary">Folder</label>
-              <button
-                type="button"
-                onClick={handleCreateFolder}
-                className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary"
-                title="Create folder"
-              >
-                <FolderPlus size={14} />
-                New
-              </button>
-            </div>
-            <select
-              value={folderId}
-              onChange={(e) => setFolderId(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent outline-none"
-            >
-              <option value="">No folder</option>
-              {folders.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Tags</label>
-            <input
-              type="text"
-              value={tagsText}
-              onChange={(e) => setTagsText(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent outline-none"
-              placeholder="e.g. reporting, weekly, revenue"
-            />
-          </div>
-          <div className="flex justify-end gap-2 mt-2">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-xl bg-bg-1/80 border border-border/60 px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/70 focus:border-accent/60 h-20 resize-none transition-all"
+            placeholder="What does this query do?"
+          />
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-medium text-text-secondary">Folder</label>
             <button
               type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded"
+              onClick={handleCreateFolder}
+              className="flex items-center gap-1 text-xs text-accent hover:text-accent/90 transition-colors"
+              title="Create folder"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-blue-600 disabled:opacity-50"
-            >
-              {loading ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
+              <FolderPlus size={14} />
+              New
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+          <select
+            value={folderId}
+            onChange={(e) => setFolderId(e.target.value)}
+            className="w-full rounded-xl bg-bg-1/80 border border-border/60 px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/70 focus:border-accent/60 transition-all"
+          >
+            <option value="">No folder</option>
+            {folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Tags</label>
+          <Input
+            type="text"
+            value={tagsText}
+            onChange={(e) => setTagsText(e.target.value)}
+            placeholder="e.g. reporting, weekly, revenue"
+          />
+        </div>
+      </form>
+    </Modal>
   );
 }

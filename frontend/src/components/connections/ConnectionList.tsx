@@ -46,9 +46,9 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                 onAdd={onAdd}
             />
 
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 {filteredConnections.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500 px-8">
+                    <div className="flex flex-col items-center justify-center h-full text-text-muted px-8">
                         <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                         </svg>
@@ -58,14 +58,14 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                         {!searchQuery && (
                             <button
                                 onClick={onAdd}
-                                className="mt-4 text-blue-500 hover:text-blue-400 text-sm font-medium transition-colors"
+                                className="mt-4 text-accent hover:text-accent-hover text-sm font-medium transition-colors"
                             >
                                 Create your first connection
                             </button>
                         )}
                     </div>
                 ) : (
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-border-subtle">
                         {filteredConnections.map((connection, index) => (
                             <ConnectionItem
                                 key={connection.id}

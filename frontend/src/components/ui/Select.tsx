@@ -85,15 +85,15 @@ export default function Select({
                 disabled={disabled}
                 className={`
           w-full flex items-center justify-between gap-2
-          bg-bg-2 border border-border rounded
+          rounded-xl bg-bg-1/80 border border-border/60
           text-text-primary
           transition-all duration-200
           ${sizeClasses[size]}
           ${disabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:border-accent hover:bg-bg-3 focus:outline-none focus:ring-2 focus:ring-accent/50'
+                        ? 'opacity-50 cursor-not-allowed bg-bg-2/80'
+                        : 'hover:border-accent hover:bg-bg-2 focus:outline-none focus:ring-2 focus:ring-accent/70'
                     }
-          ${isOpen ? 'ring-2 ring-accent/50 border-accent' : ''}
+          ${isOpen ? 'ring-2 ring-accent/70 border-accent' : ''}
         `}
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0">

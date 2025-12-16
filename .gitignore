@@ -97,3 +97,4 @@ coverage/
 *.bak
 *.backup
 *.orig
+/output
