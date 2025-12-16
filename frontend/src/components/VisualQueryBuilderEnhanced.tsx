@@ -723,59 +723,65 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 ) : (
                                     <div className="space-y-2">
                                         {filters.map((filter, index) => (
-                                            <div key={filter.id} className="flex gap-2 items-center">
+                                            <div key={filter.id} className="group flex flex-wrap items-stretch gap-2 p-2 rounded-lg border border-border/40 hover:border-border hover:bg-bg-1/30 transition-all">
                                                 {index > 0 && (
+                                                    <button
+                                                        onClick={() => updateFilter(filter.id, 'logic', filter.logic === 'AND' ? 'OR' : 'AND')}
+                                                        className={`shrink-0 w-16 rounded-md text-xs font-bold border transition-all flex items-center justify-center
+                                                            ${filter.logic === 'OR'
+                                                                ? 'bg-orange-500/10 text-orange-500 border-orange-500/30 hover:bg-orange-500/20'
+                                                                : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'}
+                                                        `}
+                                                        title="Click to toggle AND/OR"
+                                                    >
+                                                        {filter.logic === 'OR' ? 'OR' : 'AND'}
+                                                    </button>
+                                                )}
+
+                                                <div className="flex-1 flex flex-wrap md:flex-nowrap gap-2 items-center min-w-0">
                                                     <Select
-                                                        value={filter.logic || 'AND'}
-                                                        onChange={(val) => updateFilter(filter.id, 'logic', val as 'AND' | 'OR')}
-                                                        options={[
-                                                            { value: 'AND', label: t.logic.and },
-                                                            { value: 'OR', label: t.logic.or },
-                                                        ]}
+                                                        value={filter.column}
+                                                        onChange={(val) => updateFilter(filter.id, 'column', val)}
+                                                        options={columns.map(col => ({ value: col.name, label: col.name }))}
                                                         size="sm"
-                                                        className="w-24"
+                                                        className="min-w-[150px] flex-1"
                                                     />
-                                                )}
-                                                <Select
-                                                    value={filter.column}
-                                                    onChange={(val) => updateFilter(filter.id, 'column', val)}
-                                                    options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                                    size="sm"
-                                                    className="flex-1"
-                                                />
-                                                <Select
-                                                    value={filter.operator}
-                                                    onChange={(val) => updateFilter(filter.id, 'operator', val)}
-                                                    options={operatorOptions}
-                                                    size="sm"
-                                                    className="w-48"
-                                                />
-                                                {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
-                                                    <>
-                                                        <input
-                                                            type="text"
-                                                            value={filter.value}
-                                                            onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-                                                            placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'val1, val2, ...' : t.labels.value}
-                                                            className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
-                                                        />
-                                                        {filter.operator === 'BETWEEN' && (
-                                                            <>
-                                                                <span className="text-xs text-text-secondary font-medium">AND</span>
-                                                                <input
-                                                                    type="text"
-                                                                    value={filter.value2 || ''}
-                                                                    onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
-                                                                    placeholder={t.labels.value2}
-                                                                    className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
-                                                                />
-                                                            </>
-                                                        )}
-                                                    </>
-                                                )}
+                                                    <Select
+                                                        value={filter.operator}
+                                                        onChange={(val) => updateFilter(filter.id, 'operator', val)}
+                                                        options={operatorOptions}
+                                                        size="sm"
+                                                        className="min-w-[140px] w-[140px]"
+                                                    />
+                                                    {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
+                                                        <>
+                                                            <input
+                                                                type="text"
+                                                                value={filter.value}
+                                                                onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
+                                                                placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'val1, val2, ...' : t.labels.value}
+                                                                className="flex-1 min-w-[120px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                            />
+                                                            {filter.operator === 'BETWEEN' && (
+                                                                <>
+                                                                    <span className="text-xs text-text-secondary font-medium shrink-0">AND</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={filter.value2 || ''}
+                                                                        onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
+                                                                        placeholder={t.labels.value2}
+                                                                        className="flex-1 min-w-[120px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                                    />
+                                                                </>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+
                                                 <button
                                                     onClick={() => removeFilter(filter.id)}
-                                                    className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors"
+                                                    className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                                    title={t.actions.remove}
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
