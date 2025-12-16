@@ -88,21 +88,29 @@ export const autocompleteTheme = EditorView.theme({
         maxHeight: "300px !important"
     },
     ".cm-tooltip-autocomplete > ul > li": {
-        padding: "6px 10px !important",
+        padding: "8px 12px !important",
         borderRadius: "6px !important",
         color: "var(--text-secondary) !important",
         display: "flex !important",
         alignItems: "center !important",
         gap: "8px !important",
         lineHeight: "1.4",
-        minHeight: "24px" // Ensure touch target size/readability
+        minHeight: "32px",
+        cursor: "pointer !important",
+        transition: "background-color 0.1s ease, color 0.1s ease !important",
+        border: "1px solid transparent !important"
+    },
+    ".cm-tooltip-autocomplete > ul > li:hover": {
+        backgroundColor: "var(--bg-2) !important"
     },
     ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-        backgroundColor: "var(--bg-active) !important",
-        color: "var(--text-primary) !important"
+        backgroundColor: "var(--accent-muted) !important",
+        color: "var(--text-primary) !important",
+        border: "1px solid var(--accent) !important"
     },
     ".cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail": {
-        color: "var(--text-muted) !important"
+        color: "var(--accent) !important",
+        opacity: "0.9 !important"
     },
     ".cm-completionDetail": {
         marginLeft: "auto !important",

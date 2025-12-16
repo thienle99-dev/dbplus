@@ -3,9 +3,11 @@ import {
   CompletionContext,
   completeFromList,
   snippetCompletion,
+  completionKeymap,
 } from "@codemirror/autocomplete";
 import { sql } from "@codemirror/lang-sql";
 import { EditorState } from "@codemirror/state";
+import { keymap } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { connectionApi } from "../../services/connectionApi";
 import { ForeignKey } from "../../types";
@@ -94,7 +96,7 @@ export function useQueryCompletion({
       if (!connectionId) return;
 
       const key = `${schema}.${table}`;
-      
+
       // Skip if already loaded or loading
       if (foreignKeys[key] || foreignKeys[table] || loadingConstraints.has(key)) {
         return;
@@ -133,9 +135,9 @@ export function useQueryCompletion({
   // Fetch schema metadata for autocomplete
   useEffect(() => {
     if (!connectionId) return;
-    
+
     let isCancelled = false;
-    
+
     const fetchMeta = async () => {
       let schemas: string[] = [];
       try {
@@ -159,9 +161,9 @@ export function useQueryCompletion({
               connectionId,
               schemaName
             );
-            
+
             if (isCancelled) return;
-            
+
             if (meta && meta.length > 0) {
               meta.forEach((m) => {
                 // 1. Unqualified match (users -> [cols])
@@ -182,9 +184,9 @@ export function useQueryCompletion({
         setSchemaCompletion(schemaConfig);
       }
     };
-    
+
     fetchMeta();
-    
+
     return () => {
       isCancelled = true;
     };
@@ -247,9 +249,9 @@ export function useQueryCompletion({
         return {
           from: joinPattern
             ? joinPattern.from +
-              (wordText.match(
-                /(INNER\s+JOIN|LEFT\s+(?:OUTER\s+)?JOIN|RIGHT\s+(?:OUTER\s+)?JOIN|FULL\s+(?:OUTER\s+)?JOIN|JOIN)\s+/i
-              )?.[0].length || 0)
+            (wordText.match(
+              /(INNER\s+JOIN|LEFT\s+(?:OUTER\s+)?JOIN|RIGHT\s+(?:OUTER\s+)?JOIN|FULL\s+(?:OUTER\s+)?JOIN|JOIN)\s+/i
+            )?.[0].length || 0)
             : context.pos,
           options,
         };
@@ -324,9 +326,9 @@ export function useQueryCompletion({
       return {
         from: joinPattern
           ? joinPattern.from +
-            (wordText.match(
-              /(INNER\s+JOIN|LEFT\s+(?:OUTER\s+)?JOIN|RIGHT\s+(?:OUTER\s+)?JOIN|FULL\s+(?:OUTER\s+)?JOIN|JOIN)\s+/i
-            )?.[0].length || 0)
+          (wordText.match(
+            /(INNER\s+JOIN|LEFT\s+(?:OUTER\s+)?JOIN|RIGHT\s+(?:OUTER\s+)?JOIN|FULL\s+(?:OUTER\s+)?JOIN|JOIN)\s+/i
+          )?.[0].length || 0)
           : context.pos,
         options,
       };
@@ -477,6 +479,7 @@ export function useQueryCompletion({
       ...(codeMirrorTheme ? [codeMirrorTheme] : []),
       transparentTheme,
       autocompleteTheme,
+      keymap.of(completionKeymap),
       EditorState.languageData.of(() => [
         {
           autocomplete: completeFromList(sqlSnippets),
