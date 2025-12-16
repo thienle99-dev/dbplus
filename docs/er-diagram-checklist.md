@@ -16,12 +16,12 @@
 - [x] Test data fetching
 
 ## Frontend - Components
-- [ ] Install reactflow: `pnpm add reactflow`
-- [ ] Create `frontend/src/components/er-diagram/TableNode.tsx`
-- [ ] Create `frontend/src/components/er-diagram/ERDiagram.tsx`
-- [ ] Create `frontend/src/components/er-diagram/layout.ts`
-- [ ] Create `frontend/src/components/ERDiagramModal.tsx`
-- [ ] Style components with design system
+- [x] Install reactflow: `pnpm add reactflow`
+- [x] Create `frontend/src/components/er-diagram/TableNode.tsx`
+- [x] Create `frontend/src/components/er-diagram/ERDiagram.tsx`
+- [x] Create `frontend/src/components/er-diagram/layout.ts`
+- [x] Create `frontend/src/components/ERDiagramModal.tsx`
+- [x] Style components with design system
 
 ## Integration
 - [ ] Add "View ER Diagram" to schema context menu
