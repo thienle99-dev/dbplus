@@ -10,7 +10,7 @@ import {
 } from './exportDdl.types';
 import { exportPostgresDdl, checkPgDump } from './exportDdl.service';
 import { useToast } from '../../context/ToastContext';
-import { Copy, Download, AlertTriangle, Loader2 } from 'lucide-react';
+import { Copy, Download, AlertTriangle, Loader2, Check } from 'lucide-react';
 
 interface ExportDdlModalProps {
     isOpen: boolean;
@@ -20,6 +20,58 @@ interface ExportDdlModalProps {
     initialSchema?: string;
     initialTable?: string;
 }
+
+const Checkbox = ({ checked, onChange, label, disabled, className }: { checked: boolean, onChange: (val: boolean) => void, label?: React.ReactNode, disabled?: boolean, className?: string }) => (
+    <label className={`flex items-start gap-2 cursor-pointer select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}>
+        <div className="relative flex items-center justify-center shrink-0 mt-0.5 w-4 h-4">
+            <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={checked}
+                onChange={e => !disabled && onChange(e.target.checked)}
+                disabled={disabled}
+            />
+            <div className={`
+                absolute inset-0 rounded border transition-all flex items-center justify-center
+                ${checked
+                    ? 'bg-accent border-accent text-bg-0'
+                    : 'border-border bg-bg-1 group-hover:border-text-secondary'}
+                peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50
+            `}>
+                <Check size={12} strokeWidth={3} className={`transition-opacity ${checked ? 'opacity-100' : 'opacity-0'}`} />
+            </div>
+        </div>
+        {label && <div className="text-sm text-text-primary leading-tight pt-[1px]">{label}</div>}
+    </label>
+);
+
+const Radio = ({ checked, onChange, label, disabled, subLabel, className }: { checked: boolean, onChange: () => void, label: React.ReactNode, disabled?: boolean, subLabel?: React.ReactNode, className?: string }) => (
+    <label className={`flex items-start gap-2 cursor-pointer select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}>
+        <div className="relative flex items-center justify-center shrink-0 mt-0.5 w-4 h-4">
+            <input
+                type="radio"
+                className="peer sr-only"
+                checked={checked}
+                onChange={() => !disabled && onChange()}
+                disabled={disabled}
+                name="export-ddl-radio-group"
+            />
+            <div className={`
+                absolute inset-0 rounded-full border transition-all flex items-center justify-center
+                ${checked
+                    ? 'border-accent bg-bg-0'
+                    : 'border-border bg-bg-1 group-hover:border-text-secondary'}
+                peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50
+            `}>
+                <div className={`w-2 h-2 rounded-full bg-accent transition-transform ${checked ? 'scale-100' : 'scale-0'}`} />
+            </div>
+        </div>
+        <div className="flex flex-col pt-[1px]">
+            <span className="text-sm text-text-primary leading-tight">{label}</span>
+            {subLabel && <span className="text-[10px] text-text-tertiary">{subLabel}</span>}
+        </div>
+    </label>
+);
 
 export default function ExportDdlModal({
     isOpen,
@@ -181,28 +233,18 @@ export default function ExportDdlModal({
                         <div>
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Method</label>
                             <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={exportMethod === 'bundled_pg_dump'}
-                                        onChange={() => setExportMethod('bundled_pg_dump')}
-                                        disabled={!statusResponse?.bundled.found}
-                                        className="accent-primary-default"
-                                    />
-                                    <span>Bundled pg_dump</span>
-                                    {statusResponse?.bundled.version && (
-                                        <span className="text-xs text-text-tertiary">({statusResponse.bundled.version})</span>
-                                    )}
-                                </label>
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={exportMethod === 'user_pg_dump'}
-                                        onChange={() => setExportMethod('user_pg_dump')}
-                                        className="accent-primary-default"
-                                    />
-                                    <span>System pg_dump</span>
-                                </label>
+                                <Radio
+                                    checked={exportMethod === 'bundled_pg_dump'}
+                                    onChange={() => setExportMethod('bundled_pg_dump')}
+                                    disabled={!statusResponse?.bundled.found}
+                                    label="Bundled pg_dump"
+                                    subLabel={statusResponse?.bundled.version}
+                                />
+                                <Radio
+                                    checked={exportMethod === 'user_pg_dump'}
+                                    onChange={() => setExportMethod('user_pg_dump')}
+                                    label="System pg_dump"
+                                />
                                 {exportMethod === 'user_pg_dump' && (
                                     <div className="ml-6 mb-1">
                                         <input
@@ -210,85 +252,71 @@ export default function ExportDdlModal({
                                             value={pgDumpPath}
                                             onChange={(e) => setPgDumpPath(e.target.value)}
                                             placeholder="Path to pg_dump (optional)"
-                                            className="w-full text-xs px-2 py-1 bg-bg-2 border border-border rounded"
+                                            className="w-full text-xs px-2 py-1 bg-bg-2 border border-border rounded focus:border-accent outline-none"
                                         />
                                         {statusResponse?.user.path && !pgDumpPath && (
                                             <div className="text-[10px] text-text-tertiary mt-0.5 ml-1">Detected: {statusResponse.user.path}</div>
                                         )}
                                     </div>
                                 )}
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={exportMethod === 'driver'}
-                                        onChange={() => setExportMethod('driver')}
-                                        className="accent-primary-default"
-                                    />
-                                    <span>Driver (Introspection)</span>
-                                    <span className="text-[10px] px-1 bg-warning/20 text-warning rounded">Beta</span>
-                                </label>
+                                <Radio
+                                    checked={exportMethod === 'driver'}
+                                    onChange={() => setExportMethod('driver')}
+                                    label={
+                                        <span className="flex items-center gap-2">
+                                            Driver (Introspection)
+                                            <span className="text-[9px] px-1 py-0.5 bg-warning/20 text-warning rounded leading-none uppercase font-bold">Beta</span>
+                                        </span>
+                                    }
+                                />
                             </div>
                         </div>
 
-                        <div className="border-t border-border pt-2">
+                        <div className="border-t border-border pt-4">
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Scope</label>
                             <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={scope === DdlScope.Database}
-                                        onChange={() => setScope(DdlScope.Database)}
-                                        className="accent-primary-default"
-                                    />
-                                    Whole Database
-                                </label>
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={scope === DdlScope.Schema}
-                                        onChange={() => setScope(DdlScope.Schema)}
-                                        className="accent-primary-default"
-                                    />
-                                    Specific Schemas
-                                </label>
-                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={scope === DdlScope.Objects}
-                                        onChange={() => setScope(DdlScope.Objects)}
-                                        className="accent-primary-default"
-                                    />
-                                    Selected Objects
-                                </label>
+                                <Radio
+                                    checked={scope === DdlScope.Database}
+                                    onChange={() => setScope(DdlScope.Database)}
+                                    label="Whole Database"
+                                />
+                                <Radio
+                                    checked={scope === DdlScope.Schema}
+                                    onChange={() => setScope(DdlScope.Schema)}
+                                    label="Specific Schemas"
+                                />
+                                <Radio
+                                    checked={scope === DdlScope.Objects}
+                                    onChange={() => setScope(DdlScope.Objects)}
+                                    label="Selected Objects"
+                                />
                             </div>
                         </div>
 
                         {scope === DdlScope.Schema && (
-                            <div className="flex-1 flex flex-col min-h-0">
+                            <div className="flex-1 flex flex-col min-h-0 pt-2 border-t border-border">
                                 <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
                                     Schemas
                                 </label>
                                 <div className="border border-border rounded overflow-y-auto p-1 bg-bg-2 flex-1 max-h-[150px]">
                                     {schemas.map(s => (
-                                        <label key={s} className="flex items-center gap-2 px-2 py-1 hover:bg-bg-3 cursor-pointer text-sm">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedSchemas.includes(s)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) setSelectedSchemas([...selectedSchemas, s]);
-                                                    else setSelectedSchemas(selectedSchemas.filter(x => x !== s));
-                                                }}
-                                                className="rounded border-border"
-                                            />
-                                            {s}
-                                        </label>
+                                        <Checkbox
+                                            key={s}
+                                            checked={selectedSchemas.includes(s)}
+                                            onChange={(checked) => {
+                                                if (checked) setSelectedSchemas([...selectedSchemas, s]);
+                                                else setSelectedSchemas(selectedSchemas.filter(x => x !== s));
+                                            }}
+                                            label={s}
+                                            className="px-2 py-1 hover:bg-bg-3 rounded"
+                                        />
                                     ))}
                                 </div>
                             </div>
                         )}
 
                         {scope === DdlScope.Objects && (
-                            <div className="flex-1 flex flex-col min-h-0 gap-2">
+                            <div className="flex-1 flex flex-col min-h-0 gap-2 pt-2 border-t border-border">
                                 <div>
                                     <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1 block">Context Schema</label>
                                     <select
@@ -309,51 +337,45 @@ export default function ExportDdlModal({
                                             <>
                                                 {tables.length > 0 && (
                                                     <>
-                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase sticky top-0 bg-bg-2">Tables</div>
+                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase sticky top-0 bg-bg-2 z-10">Tables</div>
                                                         {tables.map(t => (
-                                                            <label key={t.name} className="flex items-center gap-2 px-2 py-0.5 hover:bg-bg-3 cursor-pointer text-xs">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isObjectSelected(activeObjectSchema, DdlObjectType.Table, t.name)}
-                                                                    onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Table, name: t.name })}
-                                                                    className="rounded border-border"
-                                                                />
-                                                                <span className="truncate">{t.name}</span>
-                                                            </label>
+                                                            <Checkbox
+                                                                key={t.name}
+                                                                checked={isObjectSelected(activeObjectSchema, DdlObjectType.Table, t.name)}
+                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Table, name: t.name })}
+                                                                label={t.name}
+                                                                className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
+                                                            />
                                                         ))}
                                                     </>
                                                 )}
 
                                                 {views.length > 0 && (
                                                     <>
-                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase mt-2 sticky top-0 bg-bg-2">Views</div>
+                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase mt-2 sticky top-0 bg-bg-2 z-10">Views</div>
                                                         {views.map(v => (
-                                                            <label key={v.name} className="flex items-center gap-2 px-2 py-0.5 hover:bg-bg-3 cursor-pointer text-xs">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isObjectSelected(activeObjectSchema, DdlObjectType.View, v.name)}
-                                                                    onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.View, name: v.name })}
-                                                                    className="rounded border-border"
-                                                                />
-                                                                <span className="truncate">{v.name}</span>
-                                                            </label>
+                                                            <Checkbox
+                                                                key={v.name}
+                                                                checked={isObjectSelected(activeObjectSchema, DdlObjectType.View, v.name)}
+                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.View, name: v.name })}
+                                                                label={v.name}
+                                                                className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
+                                                            />
                                                         ))}
                                                     </>
                                                 )}
 
                                                 {functions.length > 0 && (
                                                     <>
-                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase mt-2 sticky top-0 bg-bg-2">Functions</div>
+                                                        <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase mt-2 sticky top-0 bg-bg-2 z-10">Functions</div>
                                                         {functions.map(f => (
-                                                            <label key={f.name} className="flex items-center gap-2 px-2 py-0.5 hover:bg-bg-3 cursor-pointer text-xs">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isObjectSelected(activeObjectSchema, DdlObjectType.Function, f.name)}
-                                                                    onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Function, name: f.name })}
-                                                                    className="rounded border-border"
-                                                                />
-                                                                <span className="truncate">{f.name}</span>
-                                                            </label>
+                                                            <Checkbox
+                                                                key={f.name}
+                                                                checked={isObjectSelected(activeObjectSchema, DdlObjectType.Function, f.name)}
+                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Function, name: f.name })}
+                                                                label={f.name}
+                                                                className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
+                                                            />
                                                         ))}
                                                     </>
                                                 )}
@@ -366,25 +388,30 @@ export default function ExportDdlModal({
                             </div>
                         )}
 
-                        <div className="mt-2 text-sm pt-2 border-t border-border">
+                        <div className="mt-2 text-sm pt-4 border-t border-border">
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Options</label>
                             <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
-                                    <input type="checkbox" checked={includeDrop} onChange={e => setIncludeDrop(e.target.checked)} className="rounded border-border" />
-                                    Include DROP statements
-                                </label>
-                                <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
-                                    <input type="checkbox" checked={ifExists} onChange={e => setIfExists(e.target.checked)} disabled={!includeDrop} className="rounded border-border" />
-                                    IF EXISTS
-                                </label>
-                                <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
-                                    <input type="checkbox" checked={!includeOwnerPrivileges} onChange={e => setIncludeOwnerPrivileges(!e.target.checked)} className="rounded border-border" />
-                                    Exclude Owner/Privileges
-                                </label>
-                                <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
-                                    <input type="checkbox" checked={includeComments} onChange={e => setIncludeComments(e.target.checked)} className="rounded border-border" />
-                                    Include Comments
-                                </label>
+                                <Checkbox
+                                    checked={includeDrop}
+                                    onChange={setIncludeDrop}
+                                    label="Include DROP statements"
+                                />
+                                <Checkbox
+                                    checked={ifExists}
+                                    onChange={setIfExists}
+                                    label="IF EXISTS"
+                                    disabled={!includeDrop}
+                                />
+                                <Checkbox
+                                    checked={!includeOwnerPrivileges}
+                                    onChange={val => setIncludeOwnerPrivileges(!val)}
+                                    label="Exclude Owner/Privileges"
+                                />
+                                <Checkbox
+                                    checked={includeComments}
+                                    onChange={setIncludeComments}
+                                    label="Include Comments"
+                                />
                             </div>
                         </div>
 
