@@ -162,11 +162,26 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-    // Update nodes when data changes
+    // Only update nodes when tables or layout actually change (not on hover)
+    const prevTablesRef = useRef<string>('');
+    const prevLayoutRef = useRef<string>(layoutType);
+
     useEffect(() => {
-        setNodes(initialNodes);
+        const tablesKey = tables.map(t => t.name).join(',');
+        const layoutChanged = prevLayoutRef.current !== layoutType;
+        const tablesChanged = prevTablesRef.current !== tablesKey;
+
+        if (tablesChanged || layoutChanged) {
+            setNodes(initialNodes);
+            prevTablesRef.current = tablesKey;
+            prevLayoutRef.current = layoutType;
+        }
+    }, [initialNodes, layoutType, tables, setNodes]);
+
+    // Always update edges (for highlighting)
+    useEffect(() => {
         setEdges(initialEdges);
-    }, [initialNodes, initialEdges, setNodes, setEdges]);
+    }, [initialEdges, setEdges]);
 
     const onNodeClick = useCallback(
         (_event: React.MouseEvent, node: Node) => {
