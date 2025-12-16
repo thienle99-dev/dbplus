@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -6,7 +6,6 @@ import ReactFlow, {
     useNodesState,
     useEdgesState,
     Node,
-    Edge,
     ConnectionLineType,
     MarkerType,
 } from 'reactflow';
@@ -14,7 +13,7 @@ import 'reactflow/dist/style.css';
 import { useForeignKeys, useTables } from '../../hooks/useDatabase';
 import TableNode from './TableNode';
 import { getLayoutedElements } from './layout';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2 } from 'lucide-react';
 
 const nodeTypes = {
     table: TableNode,
@@ -32,6 +31,8 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     const [layoutType, setLayoutType] = useState<'grid' | 'smart'>('smart');
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [tableColumns, setTableColumns] = useState<Map<string, any[]>>(new Map());
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Fetch columns for all tables
     useEffect(() => {
@@ -60,15 +61,14 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
         }
     }, [tables, connectionId, schema]);
 
-    // Generate nodes and edges from data
-    const { initialNodes, initialEdges } = useMemo(() => {
+    // Generate nodes from data (independent of hover state)
+    const initialNodes = useMemo(() => {
         if (tables.length === 0) {
-            return { initialNodes: [], initialEdges: [] };
+            return [];
         }
 
         // Build FK lookup for quick checks
         const fkLookup = new Set<string>();
-
         foreignKeys.forEach(fk => {
             fkLookup.add(`${fk.tableName}.${fk.columnName}`);
         });
@@ -101,8 +101,18 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
             };
         });
 
-        // Create edges from foreign keys
-        const edges: Edge[] = foreignKeys.map((fk, idx) => {
+        // Apply layout
+        const layouted = getLayoutedElements(nodes, [], layoutType);
+        return layouted.nodes;
+    }, [tables, foreignKeys, schema, layoutType, tableColumns]);
+
+    // Generate edges from foreign keys (depends on hover state for highlighting)
+    const initialEdges = useMemo(() => {
+        if (foreignKeys.length === 0) {
+            return [];
+        }
+
+        return foreignKeys.map((fk, idx) => {
             const isHighlighted = hoveredNode === fk.tableName || hoveredNode === fk.referencedTableName;
 
             return {
@@ -127,10 +137,11 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
                 animated: isHighlighted,
                 type: ConnectionLineType.SmoothStep,
                 markerEnd: {
-                    type: MarkerType.ArrowClosed,
+                    type: MarkerType.Arrow,
                     color: isHighlighted ? '#6366f1' : '#6b7280',
-                    width: 24,
-                    height: 24,
+                    width: 20,
+                    height: 20,
+                    strokeWidth: 2,
                 },
                 style: {
                     stroke: isHighlighted ? '#6366f1' : '#6b7280',
@@ -146,15 +157,7 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
                 },
             };
         });
-
-        // Apply layout
-        const layouted = getLayoutedElements(nodes, edges, layoutType);
-
-        return {
-            initialNodes: layouted.nodes,
-            initialEdges: layouted.edges,
-        };
-    }, [tables, foreignKeys, schema, layoutType, hoveredNode, tableColumns]);
+    }, [foreignKeys, hoveredNode]);
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -182,6 +185,33 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
         setHoveredNode(null);
     }, []);
 
+    // Fullscreen handlers
+    const toggleFullscreen = useCallback(() => {
+        if (!containerRef.current) return;
+
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().then(() => {
+                setIsFullscreen(true);
+            }).catch((err) => {
+                console.error('Error attempting to enable fullscreen:', err);
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                setIsFullscreen(false);
+            });
+        }
+    }, []);
+
+    // Listen for fullscreen changes (e.g., ESC key)
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
@@ -189,11 +219,15 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
             if (e.key === 'l' || e.key === 'L') {
                 setLayoutType(prev => prev === 'smart' ? 'grid' : 'smart');
             }
+            // Toggle fullscreen: F key
+            if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, []);
+    }, [toggleFullscreen]);
 
     if (tablesLoading || fkLoading) {
         return (
@@ -218,7 +252,7 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     }
 
     return (
-        <div className="w-full h-full relative bg-bg-0">
+        <div ref={containerRef} className="w-full h-full relative bg-bg-0">
             {/* Toolbar */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-bg-1 border border-border rounded-lg shadow-lg px-3 py-2">
                 <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide">
@@ -247,6 +281,21 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
                         Press <kbd className="px-1 py-0.5 bg-bg-2 border border-border rounded text-text-secondary">L</kbd> to toggle
                     </div>
                 </div>
+            </div>
+
+            {/* Fullscreen Button */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                <button
+                    onClick={toggleFullscreen}
+                    className="flex items-center gap-2 px-3 py-2 bg-bg-1 border border-border rounded-lg shadow-lg hover:bg-bg-2 transition-colors"
+                    title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                >
+                    {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    <span className="text-xs text-text-secondary">
+                        {isFullscreen ? 'Exit' : 'Fullscreen'}
+                    </span>
+                    <kbd className="px-1 py-0.5 bg-bg-2 border border-border rounded text-[10px] text-text-tertiary">F</kbd>
+                </button>
             </div>
 
             {/* Stats */}
