@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/ui/Modal';
-import { useSchemas, useTables, useViews, useFunctions } from '../../hooks/useDatabase';
+import { useSchemas } from '../../hooks/useDatabase';
 import {
     DdlScope,
     DdlObjectType,
@@ -109,9 +109,45 @@ export default function ExportDdlModal({
 
     // Data fetching
     const { data: schemas = [] } = useSchemas(connectionId);
-    const { data: tables = [] } = useTables(connectionId, activeObjectSchema || undefined);
-    const { data: views = [] } = useViews(connectionId, activeObjectSchema || undefined);
-    const { data: functions = [] } = useFunctions(connectionId, activeObjectSchema || undefined);
+    const [tables, setTables] = useState<any[]>([]);
+    const [views, setViews] = useState<any[]>([]);
+    const [functions, setFunctions] = useState<any[]>([]);
+
+    // Fetch objects when activeObjectSchema or initialDatabase changes
+    useEffect(() => {
+        if (!activeObjectSchema || !connectionId) {
+            setTables([]);
+            setViews([]);
+            setFunctions([]);
+            return;
+        }
+
+        const fetchObjects = async () => {
+            try {
+                const params: Record<string, string> = { schema: activeObjectSchema };
+                if (initialDatabase) {
+                    params.database = initialDatabase;
+                }
+
+                const [tablesRes, viewsRes, functionsRes] = await Promise.all([
+                    fetch(`/api/connections/${connectionId}/tables?${new URLSearchParams(params)}`).then(r => r.json()),
+                    fetch(`/api/connections/${connectionId}/views?${new URLSearchParams(params)}`).then(r => r.json()),
+                    fetch(`/api/connections/${connectionId}/functions?${new URLSearchParams(params)}`).then(r => r.json()),
+                ]);
+
+                setTables(tablesRes || []);
+                setViews(viewsRes || []);
+                setFunctions(functionsRes || []);
+            } catch (error) {
+                console.error('Failed to fetch objects:', error);
+                setTables([]);
+                setViews([]);
+                setFunctions([]);
+            }
+        };
+
+        fetchObjects();
+    }, [activeObjectSchema, connectionId, initialDatabase]);
 
     // Status check
     useEffect(() => {
@@ -146,6 +182,7 @@ export default function ExportDdlModal({
     }, [initialTable, initialSchema]);
 
     const handleObjectToggle = (spec: DdlObjectSpec) => {
+        console.log('Toggle object:', spec);
         const key = (s: DdlObjectSpec) => `${s.schema}.${s.objectType}.${s.name}`;
         const target = key(spec);
         const exists = selectedTables.some(s => key(s) === target);
@@ -180,6 +217,10 @@ export default function ExportDdlModal({
                 exportMethod,
                 pgDumpPath: exportMethod === 'user_pg_dump' && pgDumpPath ? pgDumpPath : undefined,
             };
+
+            console.log('Export options:', options);
+            console.log('Selected tables:', selectedTables);
+            console.log('Scope:', scope);
 
             const res = await exportPostgresDdl(connectionId, options);
             setResult(res.ddl);
@@ -356,21 +397,31 @@ export default function ExportDdlModal({
 
                         {scope === DdlScope.Objects && (
                             <div className="flex-1 flex flex-col min-h-0 gap-2 pt-2 border-t border-border">
-                                <div>
-                                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1 block">Context Schema</label>
-                                    <select
-                                        className="w-full bg-bg-2 border border-border rounded px-2 py-1 text-sm outline-none focus:border-accent hover:border-accent/50 transition-colors cursor-pointer text-text-primary"
-                                        value={activeObjectSchema || ''}
-                                        onChange={e => setActiveObjectSchema(e.target.value)}
-                                    >
-                                        {!activeObjectSchema && <option value="">Select a schema...</option>}
-                                        {schemas.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Database size={14} className="text-accent" />
+                                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Select Schema</label>
+                                    </div>
+                                    <div className="relative">
+                                        <select
+                                            className="w-full bg-bg-1 border-2 border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-accent hover:border-accent/50 transition-all cursor-pointer text-text-primary font-medium appearance-none pr-10 shadow-sm"
+                                            value={activeObjectSchema || ''}
+                                            onChange={e => setActiveObjectSchema(e.target.value)}
+                                        >
+                                            {!activeObjectSchema && <option value="">Choose a schema to view objects...</option>}
+                                            {schemas.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary">
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex-1 border border-border rounded overflow-hidden flex flex-col bg-bg-2 max-h-[200px]">
-                                    <div className="flex border-b border-border text-xs">
-                                        <div className="flex-1 px-2 py-1 font-medium bg-bg-3 text-center">Objects</div>
+                                <div className="flex-1 border-2 border-border rounded-lg overflow-hidden flex flex-col bg-bg-1 max-h-[400px] shadow-sm">
+                                    <div className="flex border-b-2 border-border bg-gradient-to-r from-bg-2 to-bg-3">
+                                        <div className="flex-1 px-3 py-2 font-semibold text-xs text-text-secondary uppercase tracking-wide">Available Objects</div>
                                     </div>
                                     <div className="overflow-y-auto p-1 flex-1">
                                         {activeObjectSchema ? (
@@ -382,7 +433,11 @@ export default function ExportDdlModal({
                                                             <Checkbox
                                                                 key={t.name}
                                                                 checked={isObjectSelected(activeObjectSchema, DdlObjectType.Table, t.name)}
-                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Table, name: t.name })}
+                                                                onChange={() => {
+                                                                    if (activeObjectSchema) {
+                                                                        handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Table, name: t.name });
+                                                                    }
+                                                                }}
                                                                 label={t.name}
                                                                 className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
                                                             />
@@ -397,7 +452,11 @@ export default function ExportDdlModal({
                                                             <Checkbox
                                                                 key={v.name}
                                                                 checked={isObjectSelected(activeObjectSchema, DdlObjectType.View, v.name)}
-                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.View, name: v.name })}
+                                                                onChange={() => {
+                                                                    if (activeObjectSchema) {
+                                                                        handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.View, name: v.name });
+                                                                    }
+                                                                }}
                                                                 label={v.name}
                                                                 className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
                                                             />
@@ -412,18 +471,34 @@ export default function ExportDdlModal({
                                                             <Checkbox
                                                                 key={f.name}
                                                                 checked={isObjectSelected(activeObjectSchema, DdlObjectType.Function, f.name)}
-                                                                onChange={() => handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Function, name: f.name })}
+                                                                onChange={() => {
+                                                                    if (activeObjectSchema) {
+                                                                        handleObjectToggle({ schema: activeObjectSchema, objectType: DdlObjectType.Function, name: f.name });
+                                                                    }
+                                                                }}
                                                                 label={f.name}
                                                                 className="px-2 py-0.5 hover:bg-bg-3 rounded text-xs"
                                                             />
                                                         ))}
                                                     </>
                                                 )}
+
+                                                {tables.length === 0 && views.length === 0 && functions.length === 0 && (
+                                                    <div className="p-4 text-center text-text-tertiary text-xs">
+                                                        No objects found in schema "{activeObjectSchema}"
+                                                    </div>
+                                                )}
                                             </>
                                         ) : (
-                                            <div className="p-4 text-center text-text-tertiary text-xs">Select a schema</div>
+                                            <div className="p-4 text-center text-text-tertiary text-xs">Select a schema to view objects</div>
                                         )}
                                     </div>
+                                    {selectedTables.length > 0 && (
+                                        <div className="px-3 py-2 bg-accent/10 border-t-2 border-accent/30 text-xs">
+                                            <span className="font-semibold text-accent">{selectedTables.length}</span>
+                                            <span className="text-text-secondary"> object{selectedTables.length !== 1 ? 's' : ''} selected</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
