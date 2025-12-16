@@ -405,7 +405,7 @@
 
 ### Schema & Navigation
 
-- [ ] ER diagram (FK graph) + click navigate
+- [x] ER diagram (FK graph) + click navigate
 - [ ] Global search objects (table/view/function/column) + quick open
 - [ ] Object definition viewers đầy đủ (view/function/procedure/trigger) + copy/create/alter
 - [ ] Schema diff + generate ALTER (between two schemas)

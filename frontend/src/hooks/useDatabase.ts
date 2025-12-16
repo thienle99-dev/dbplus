@@ -435,13 +435,25 @@ export const useForeignKeys = (connectionId: string | undefined, schema: string 
         queryKey: ['foreign-keys', connectionId, dbKey, schema],
         queryFn: async () => {
             if (!connectionId || !schema) return [];
-            const { data } = await api.get<ForeignKeyInfo[]>(
+            const { data } = await api.get<SchemaForeignKey[]>(
                 `/api/connections/${connectionId}/foreign-keys`,
                 {
                     params: dbOverride ? { schema, database: dbOverride } : { schema },
                 }
             );
-            return data;
+
+            // Map SchemaForeignKey to ForeignKeyInfo format
+            return data.map((fk): ForeignKeyInfo => ({
+                constraintName: fk.name,
+                tableSchema: fk.source_schema,
+                tableName: fk.source_table,
+                columnName: fk.source_column,
+                referencedTableSchema: fk.target_schema,
+                referencedTableName: fk.target_table,
+                referencedColumnName: fk.target_column,
+                onDelete: 'NO ACTION', // Not provided by existing API
+                onUpdate: 'NO ACTION', // Not provided by existing API
+            }));
         },
         enabled: !!connectionId && !!schema,
     });

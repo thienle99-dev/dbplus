@@ -94,6 +94,22 @@ export default function TableNode({ data, selected }: TableNodeProps) {
                 )}
             </div>
 
+            {/* Default handles for tables without columns */}
+            <Handle
+                type="source"
+                position={Position.Right}
+                id={`${data.tableName}-default-source`}
+                className="!w-3 !h-3 !bg-accent !border-2 !border-white"
+                style={{ top: '50%' }}
+            />
+            <Handle
+                type="target"
+                position={Position.Left}
+                id={`${data.tableName}-default-target`}
+                className="!w-3 !h-3 !bg-accent !border-2 !border-white"
+                style={{ top: '50%' }}
+            />
+
             {/* Footer with column count */}
             {data.columns.length > 0 && (
                 <div className="px-3 py-1 bg-bg-2 border-t border-border rounded-b-md text-[10px] text-text-tertiary">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download } from 'lucide-react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download, Network } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import CreateSchemaModal from './CreateSchemaModal';
 import ObjectDefinitionModal from './ObjectDefinitionModal';
 import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
 import { DdlScope } from '../features/export-ddl/exportDdl.types';
+import ERDiagramModal from './ERDiagramModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 
 interface ObjectFolderProps {
@@ -83,6 +84,9 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
   // Definition Modal State
   const [defModal, setDefModal] = useState<{ open: boolean; name: string; type: 'view' | 'function' }>({ open: false, name: '', type: 'view' });
+
+  // ER Diagram Modal State
+  const [erDiagramOpen, setErDiagramOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -297,6 +301,15 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           >
             Export DDL...
           </ContextMenuItem>
+          <ContextMenuItem
+            icon={<Network size={14} />}
+            onClick={() => {
+              setErDiagramOpen(true);
+              setSchemaContextMenu(null);
+            }}
+          >
+            View ER Diagram
+          </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem icon={<Plus size={14} />}>Create Table...</ContextMenuItem>
           <ContextMenuSeparator />
@@ -337,6 +350,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         schema={schemaName}
         objectName={defModal.name}
         type={defModal.type}
+      />
+
+      <ERDiagramModal
+        isOpen={erDiagramOpen}
+        onClose={() => setErDiagramOpen(false)}
+        connectionId={connectionId}
+        schema={schemaName}
+        onTableClick={(tableName, tableSchema) => {
+          // Navigate to table
+          navigate(`/connections/${connectionId}/table/${tableSchema}/${tableName}`);
+        }}
       />
     </Collapsible.Root>
   );

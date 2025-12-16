@@ -24,18 +24,18 @@
 - [x] Style components with design system
 
 ## Integration
-- [ ] Add "View ER Diagram" to schema context menu
-- [ ] Add state management for ER modal
-- [ ] Implement click-to-navigate logic
-- [ ] Test with sample database
+- [x] Add "View ER Diagram" to schema context menu
+- [x] Add state management for ER modal
+- [x] Implement click-to-navigate logic
+- [x] Test with sample database
 
 ## Polish
-- [ ] Add loading states
-- [ ] Add error handling
-- [ ] Add empty state (no foreign keys)
-- [ ] Optimize layout for large schemas
-- [ ] Add keyboard shortcuts
-- [ ] Test performance with 50+ tables
+- [x] Add loading states
+- [x] Add error handling
+- [x] Add empty state (no foreign keys)
+- [x] Optimize layout for large schemas
+- [x] Add keyboard shortcuts
+- [x] Test performance with 50+ tables
 
 ## Documentation
 - [ ] Update README with ER Diagram feature
