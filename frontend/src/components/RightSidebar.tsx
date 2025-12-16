@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, X, Plus, Info, Trash2, Code, Edit2 } from 'lucide-react';
+import { Save, X, Plus, Info, Trash2, Code, Edit2, Copy } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useSelectedRow } from '../context/SelectedRowContext';
 import { useTablePage } from '../context/TablePageContext';
@@ -160,8 +160,18 @@ export default function RightSidebar() {
       }
 
       const setClauses = changes.map(([col, val]) => {
-        const escapedValue = val === null || val === '' ? 'NULL' :
-          typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
+        const colInfo = columnsInfo.find(c => c.name === col);
+        const dataType = colInfo?.data_type?.toLowerCase() || '';
+        const isString = ['text', 'varchar', 'char', 'character', 'json', 'string', 'uuid'].some(t => dataType.includes(t));
+
+        let finalVal = val;
+        // Treat empty string as NULL for non-string types, but respect explicit empty string for string types
+        if (val === '' && !isString) {
+          finalVal = null;
+        }
+
+        const escapedValue = finalVal === null || finalVal === undefined ? 'NULL' :
+          typeof finalVal === 'string' ? `'${finalVal.replace(/'/g, "''")}'` : finalVal;
         return `"${col}" = ${escapedValue}`;
       });
 
@@ -372,40 +382,117 @@ export default function RightSidebar() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5 max-h-[calc(100vh-200px)] overflow-y-auto">
+                <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
                   {selectedRow.columns.map((colName, colIndex) => {
                     const colInfo = columnsInfo.find(c => c.name === colName);
+                    const dataType = colInfo?.data_type?.toLowerCase() || 'unknown';
                     const isEditing = editingRowIndex === selectedRow.rowIndex;
                     const rowEdits = editingValues[selectedRow.rowIndex] || {};
-                    const value = isEditing && rowEdits[colName] !== undefined
-                      ? rowEdits[colName]
-                      : selectedRow.rowData[colIndex];
+                    const isModified = isEditing && rowEdits[colName] !== undefined;
+
+                    const originalValue = selectedRow.rowData[colIndex];
+                    const currentValue = isModified ? rowEdits[colName] : originalValue;
+
+                    const isNull = currentValue === null || currentValue === undefined;
+                    const isPK = colInfo?.is_primary_key;
+                    const isReadOnly = isEditing && isPK;
+
+                    // Helper to copy value
+                    const handleCopy = (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      if (currentValue !== null && currentValue !== undefined) {
+                        navigator.clipboard.writeText(String(currentValue));
+                        showToast('Value copied', 'success');
+                      }
+                    };
 
                     return (
-                      <div key={colName} className="space-y-0.5 pb-1.5 border-b border-border/30 last:border-0">
-                        <label className="text-[10px] text-text-secondary flex items-center justify-between">
-                          <span className="flex items-center gap-1">
-                            {colName}
-                            {colInfo?.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
-                          </span>
-                          <span className="text-[9px] text-text-secondary/60">{colInfo?.data_type || 'unknown'}</span>
-                        </label>
-                        {isEditing && !colInfo?.is_primary_key ? (
-                          <input
-                            type="text"
-                            value={value === null || value === undefined ? '' : String(value)}
-                            onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value === '' ? null : e.target.value)}
-                            className="w-full bg-bg-0 border border-accent rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:outline-none"
-                          />
-                        ) : (
-                          <div className="text-[10px] text-text-primary bg-bg-2 px-1.5 py-1 rounded break-all">
-                            {value === null || value === undefined ? (
-                              <span className="text-text-secondary italic">NULL</span>
-                            ) : (
-                              String(value)
+                      <div key={colName} className={`group relative p-2 rounded-lg border transition-all ${isModified ? 'bg-amber-500/5 border-amber-500/30' : 'bg-bg-2/30 border-transparent hover:border-border'}`}>
+                        {/* Field Header */}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2 max-w-[80%]">
+                            <span className="text-xs font-medium text-text-primary truncate" title={colName}>{colName}</span>
+                            <div className="flex gap-1">
+                              {isPK && <span className="text-[9px] font-bold bg-accent/10 text-accent px-1.5 py-px rounded uppercase tracking-wider">PK</span>}
+                              <span className="text-[9px] text-text-tertiary bg-bg-3 px-1.5 py-px rounded">{colInfo?.data_type || 'unknown'}</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1">
+                            {/* Copy Button (View Mode) */}
+                            {!isEditing && !isNull && (
+                              <button
+                                onClick={handleCopy}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-text-primary rounded"
+                                title="Copy Value"
+                              >
+                                <Copy size={10} />
+                              </button>
+                            )}
+
+                            {/* NULL Toggle (Edit Mode) */}
+                            {isEditing && !isReadOnly && colInfo?.is_nullable && (
+                              <button
+                                onClick={() => handleValueChange(selectedRow.rowIndex, colName, isNull ? '' : null)}
+                                className={`text-[9px] font-bold px-1.5 py-px rounded transition-colors ${isNull
+                                  ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                                  : 'text-text-tertiary hover:text-text-secondary bg-bg-3'
+                                  }`}
+                                title={isNull ? "Set to Value" : "Set to NULL"}
+                              >
+                                NULL
+                              </button>
                             )}
                           </div>
-                        )}
+                        </div>
+
+                        {/* Field Input/Display */}
+                        <div className="relative">
+                          {isEditing && !isReadOnly ? (
+                            isNull ? (
+                              <div className="w-full px-2 py-1.5 bg-bg-2/50 border border-dashed border-border rounded text-xs text-text-tertiary italic">
+                                NULL
+                              </div>
+                            ) : dataType === 'boolean' || dataType === 'bool' ? (
+                              <select
+                                value={String(currentValue)}
+                                onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value === 'true')}
+                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                              >
+                                <option value="true">TRUE</option>
+                                <option value="false">FALSE</option>
+                              </select>
+                            ) : ['integer', 'numeric', 'real', 'double', 'float', 'decimal', 'int', 'bigint', 'smallint'].includes(dataType) ? (
+                              <input
+                                type="number"
+                                value={String(currentValue)}
+                                onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
+                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none font-mono"
+                                placeholder="Enter number..."
+                              />
+                            ) : (dataType.includes('text') || dataType.includes('char') || dataType.includes('json')) ? (
+                              <textarea
+                                rows={String(currentValue).length > 50 || String(currentValue).includes('\n') ? 3 : 1}
+                                value={String(currentValue)}
+                                onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
+                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-none font-mono leading-relaxed"
+                                placeholder="Enter text..."
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={String(currentValue)}
+                                onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
+                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                              />
+                            )
+                          ) : (
+                            <div className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2/30' : 'text-text-secondary bg-bg-2/50'}`}>
+                              {isNull ? 'NULL' : String(currentValue)}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
