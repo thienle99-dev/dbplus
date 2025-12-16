@@ -27,6 +27,8 @@ export interface ExportDdlOptions {
     includeOwnerPrivileges: boolean;
     includeComments: boolean;
     preferPgDump: boolean;
+    exportMethod?: 'bundled_pg_dump' | 'user_pg_dump' | 'driver';
+    pgDumpPath?: string;
 }
 
 export interface ExportDdlResult {
@@ -38,4 +40,15 @@ export interface PgDumpStatus {
     found: boolean;
     version?: string;
     path?: string;
+}
+
+export interface DriverStatus {
+    available: boolean;
+    supportsFullExport: boolean;
+}
+
+export interface PgDumpStatusResponse {
+    bundled: PgDumpStatus;
+    user: PgDumpStatus;
+    driver: DriverStatus;
 }

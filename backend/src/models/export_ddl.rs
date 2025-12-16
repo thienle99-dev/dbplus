@@ -37,6 +37,8 @@ pub struct ExportDdlOptions {
     pub include_owner_privileges: bool,
     pub include_comments: bool,
     pub prefer_pg_dump: bool,
+    pub export_method: Option<String>, // "bundled_pg_dump", "user_pg_dump", "driver"
+    pub pg_dump_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -52,4 +54,19 @@ pub struct PgDumpStatus {
     pub found: bool,
     pub version: Option<String>,
     pub path: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DriverStatus {
+    pub available: bool,
+    pub supports_full_export: bool,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PgDumpStatusResponse {
+    pub bundled: PgDumpStatus,
+    pub user: PgDumpStatus,
+    pub driver: DriverStatus,
 }

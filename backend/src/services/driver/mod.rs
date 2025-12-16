@@ -1,6 +1,7 @@
 pub mod base;
 pub mod capabilities;
 pub mod column;
+pub mod ddl_export;
 pub mod extension;
 pub mod function;
 pub mod nosql;

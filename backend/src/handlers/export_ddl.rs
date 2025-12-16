@@ -1,6 +1,5 @@
-use crate::models::export_ddl::{DdlObjectType, DdlScope, ExportDdlOptions, ExportDdlResult};
+use crate::models::export_ddl::{ExportDdlOptions, ExportDdlResult};
 use crate::services::connection_service::ConnectionService;
-use crate::services::ddl_generator::DdlGenerator;
 use crate::services::pg_dump::{is_pg_dump_available, run_pg_dump};
 use crate::services::postgres::PostgresDriver;
 use axum::{
@@ -27,12 +26,25 @@ pub async fn export_postgres_ddl(
         return Err("Only PostgreSQL is supported for DDL Export currently".to_string());
     }
 
-    // Determine method: pg_dump or introspection
-    let pg_dump_avail = is_pg_dump_available();
-    let use_pg_dump = options.prefer_pg_dump && pg_dump_avail;
+    // Determine method
+    let method = options.export_method.clone().unwrap_or_else(|| {
+        // Backward compatibility
+        if options.prefer_pg_dump && is_pg_dump_available() {
+            "user_pg_dump".to_string()
+        } else {
+            "driver".to_string()
+        }
+    });
 
-    if use_pg_dump {
+    if method == "bundled_pg_dump" || method == "user_pg_dump" {
+        let path = crate::utils::pg_dump_finder::get_pg_dump_path(
+            &method,
+            options.pg_dump_path.as_deref(),
+        )
+        .map_err(|e| e.to_string())?;
+
         let ddl = run_pg_dump(
+            Some(path),
             &conn.host,
             conn.port,
             &conn.username,
@@ -43,85 +55,70 @@ pub async fn export_postgres_ddl(
         .await
         .map_err(|e| e.to_string())?;
 
-        Ok(Json(ExportDdlResult {
-            ddl,
-            method: "pg_dump".to_string(),
-        }))
+        Ok(Json(ExportDdlResult { ddl, method }))
     } else {
-        // Introspection Fallback
-        // Currently only supported for DdlScope::Objects
-        if options.scope != DdlScope::Objects {
-            return Err(
-                "Full Schema/Database export requires pg_dump. Please install pg_dump or select specific objects.".to_string(),
-            );
-        }
-
         let driver = PostgresDriver::new(&conn, &password)
             .await
             .map_err(|e| e.to_string())?;
 
-        let mut ddl_output = String::new();
-        ddl_output.push_str(&format!("-- DDL Export for database: {}\n", conn.database));
-        ddl_output.push_str(&format!("-- Generated at: {}\n\n", chrono::Utc::now()));
-
-        if let Some(objects) = options.objects {
-            for obj in objects {
-                let res = match obj.object_type {
-                    DdlObjectType::Table => {
-                        DdlGenerator::generate_table_ddl(&driver, &obj.schema, &obj.name).await
-                    }
-                    DdlObjectType::View => {
-                        DdlGenerator::generate_view_ddl(&driver, &obj.schema, &obj.name).await
-                    }
-                    DdlObjectType::Function => {
-                        DdlGenerator::generate_function_ddl(&driver, &obj.schema, &obj.name).await
-                    }
-                    _ => Ok(format!(
-                        "-- Skipping unsupported object type: {:?} ({}.{})",
-                        obj.object_type, obj.schema, obj.name
-                    )),
-                };
-
-                match res {
-                    Ok(sql) => {
-                        ddl_output.push_str(&sql);
-                        ddl_output.push_str("\n\n");
-                    }
-                    Err(e) => {
-                        ddl_output.push_str(&format!(
-                            "-- Error generating DDL for {}.{}: {}\n\n",
-                            obj.schema, obj.name, e
-                        ));
-                    }
-                }
-            }
-        }
+        use crate::services::driver::ddl_export::DdlExportDriver;
+        let ddl = driver
+            .export_ddl(&options)
+            .await
+            .map_err(|e| e.to_string())?;
 
         Ok(Json(ExportDdlResult {
-            ddl: ddl_output,
-            method: "introspection".to_string(),
+            ddl,
+            method: "driver".to_string(),
         }))
     }
 }
 
-pub async fn check_pg_dump() -> Json<crate::models::export_ddl::PgDumpStatus> {
-    let output = std::process::Command::new("pg_dump")
-        .arg("--version")
-        .output();
+pub async fn check_pg_dump_status() -> Json<crate::models::export_ddl::PgDumpStatusResponse> {
+    use crate::models::export_ddl::{DriverStatus, PgDumpStatus, PgDumpStatusResponse};
+    use crate::utils::pg_dump_finder::{find_bundled_pg_dump, find_user_pg_dump, validate_pg_dump};
 
-    match output {
-        Ok(o) if o.status.success() => {
-            let version = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            Json(crate::models::export_ddl::PgDumpStatus {
+    let bundled = match find_bundled_pg_dump() {
+        Some(path) => match validate_pg_dump(&path) {
+            Ok(v) => PgDumpStatus {
                 found: true,
-                version: Some(version),
-                path: None, // Cannot easily determine path across OSes without 'which'
-            })
-        }
-        Ok(_) | Err(_) => Json(crate::models::export_ddl::PgDumpStatus {
+                version: Some(v),
+                path: Some(path.to_string_lossy().to_string()),
+            },
+            Err(_) => PgDumpStatus {
+                found: false,
+                version: None,
+                path: Some(path.to_string_lossy().to_string()),
+            },
+        },
+        None => PgDumpStatus {
             found: false,
             version: None,
             path: None,
-        }),
-    }
+        },
+    };
+
+    let user = match find_user_pg_dump() {
+        Some((path, version)) => PgDumpStatus {
+            found: true,
+            version: Some(version),
+            path: Some(path.to_string_lossy().to_string()),
+        },
+        None => PgDumpStatus {
+            found: false,
+            version: None,
+            path: None,
+        },
+    };
+
+    let driver = DriverStatus {
+        available: true,
+        supports_full_export: false,
+    };
+
+    Json(PgDumpStatusResponse {
+        bundled,
+        user,
+        driver,
+    })
 }

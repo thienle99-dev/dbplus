@@ -243,7 +243,7 @@ async fn main() {
         )
         .route(
             "/api/settings/pg-dump/check",
-            get(handlers::export_ddl::check_pg_dump),
+            get(handlers::export_ddl::check_pg_dump_status),
         )
         // Views and Functions routes
         .route(

@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/ui/Modal';
 import { useSchemas, useTables, useViews, useFunctions } from '../../hooks/useDatabase';
-import { DdlScope, DdlObjectType, ExportDdlOptions, DdlObjectSpec, PgDumpStatus } from './exportDdl.types';
+import {
+    DdlScope,
+    DdlObjectType,
+    ExportDdlOptions,
+    DdlObjectSpec,
+    PgDumpStatusResponse,
+} from './exportDdl.types';
 import { exportPostgresDdl, checkPgDump } from './exportDdl.service';
 import { useToast } from '../../context/ToastContext';
 import { Copy, Download, AlertTriangle, Loader2 } from 'lucide-react';
@@ -12,7 +18,7 @@ interface ExportDdlModalProps {
     connectionId: string;
     initialScope?: DdlScope;
     initialSchema?: string;
-    initialTable?: string; // If scoping to a single table
+    initialTable?: string;
 }
 
 export default function ExportDdlModal({
@@ -30,10 +36,6 @@ export default function ExportDdlModal({
     const [selectedSchemas, setSelectedSchemas] = useState<string[]>(initialSchema ? [initialSchema] : []);
     const [selectedTables, setSelectedTables] = useState<DdlObjectSpec[]>([]);
 
-    // Object selection UI state
-    // We only list objects for ONE schema at a time in the UI to keep it simple, 
-    // but we can accumulate selections across schemas if needed.
-    // For now, let's track the "active" schema being viewed for object selection.
     const [activeObjectSchema, setActiveObjectSchema] = useState<string | null>(initialSchema || null);
 
     // Options state
@@ -41,12 +43,15 @@ export default function ExportDdlModal({
     const [ifExists, setIfExists] = useState(false);
     const [includeOwnerPrivileges, setIncludeOwnerPrivileges] = useState(false);
     const [includeComments, setIncludeComments] = useState(true);
-    const [preferPgDump, setPreferPgDump] = useState(true);
+
+    // Method selection
+    const [exportMethod, setExportMethod] = useState<'bundled_pg_dump' | 'user_pg_dump' | 'driver'>('driver');
+    const [pgDumpPath, setPgDumpPath] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [pgDumpStatus, setPgDumpStatus] = useState<PgDumpStatus | null>(null);
+    const [statusResponse, setStatusResponse] = useState<PgDumpStatusResponse | null>(null);
 
     // Data fetching
     const { data: schemas = [] } = useSchemas(connectionId);
@@ -54,17 +59,21 @@ export default function ExportDdlModal({
     const { data: views = [] } = useViews(connectionId, activeObjectSchema || undefined);
     const { data: functions = [] } = useFunctions(connectionId, activeObjectSchema || undefined);
 
-    // Default active schema if needed
-    useEffect(() => {
-        if (scope === DdlScope.Objects && !activeObjectSchema && schemas.length > 0) {
-            setActiveObjectSchema(schemas[0]);
-        }
-    }, [scope, activeObjectSchema, schemas]);
-
-    // Check pg_dump status
+    // Status check
     useEffect(() => {
         if (isOpen) {
-            checkPgDump().then(setPgDumpStatus).catch(console.error);
+            checkPgDump().then(res => {
+                setStatusResponse(res);
+                // Smart default
+                if (res.bundled.found) {
+                    setExportMethod('bundled_pg_dump');
+                } else if (res.user.found) {
+                    setExportMethod('user_pg_dump');
+                    if (res.user.path) setPgDumpPath(res.user.path);
+                } else {
+                    setExportMethod('driver');
+                }
+            }).catch(console.error);
         }
     }, [isOpen]);
 
@@ -72,7 +81,7 @@ export default function ExportDdlModal({
     useEffect(() => {
         if (initialTable && initialSchema) {
             setScope(DdlScope.Objects);
-            setSelectedSchemas([initialSchema]); // Keep schema selected as context
+            setSelectedSchemas([initialSchema]);
             setActiveObjectSchema(initialSchema);
             setSelectedTables([{
                 objectType: DdlObjectType.Table,
@@ -112,7 +121,9 @@ export default function ExportDdlModal({
                 ifExists,
                 includeOwnerPrivileges,
                 includeComments,
-                preferPgDump
+                preferPgDump: exportMethod !== 'driver', // legacy field, mostly ignored if method is sent
+                exportMethod,
+                pgDumpPath: exportMethod === 'user_pg_dump' && pgDumpPath ? pgDumpPath : undefined,
             };
 
             const res = await exportPostgresDdl(connectionId, options);
@@ -147,19 +158,13 @@ export default function ExportDdlModal({
         URL.revokeObjectURL(url);
     };
 
-    // Reset state on open
+    // Reset on close
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen) {
             setResult(null);
             setError(null);
-            setLoading(false);
-            if (initialScope) setScope(initialScope);
-            if (initialSchema) {
-                setSelectedSchemas([initialSchema]);
-                setActiveObjectSchema(initialSchema);
-            }
         }
-    }, [isOpen, initialScope, initialSchema]);
+    }, [isOpen]);
 
     return (
         <Modal
@@ -174,6 +179,58 @@ export default function ExportDdlModal({
                     {/* Left Panel: Configuration */}
                     <div className="w-1/3 flex flex-col gap-4 overflow-y-auto pr-2 border-r border-border min-w-[250px]">
                         <div>
+                            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Method</label>
+                            <div className="flex flex-col gap-2">
+                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={exportMethod === 'bundled_pg_dump'}
+                                        onChange={() => setExportMethod('bundled_pg_dump')}
+                                        disabled={!statusResponse?.bundled.found}
+                                        className="accent-primary-default"
+                                    />
+                                    <span>Bundled pg_dump</span>
+                                    {statusResponse?.bundled.version && (
+                                        <span className="text-xs text-text-tertiary">({statusResponse.bundled.version})</span>
+                                    )}
+                                </label>
+                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={exportMethod === 'user_pg_dump'}
+                                        onChange={() => setExportMethod('user_pg_dump')}
+                                        className="accent-primary-default"
+                                    />
+                                    <span>System pg_dump</span>
+                                </label>
+                                {exportMethod === 'user_pg_dump' && (
+                                    <div className="ml-6 mb-1">
+                                        <input
+                                            type="text"
+                                            value={pgDumpPath}
+                                            onChange={(e) => setPgDumpPath(e.target.value)}
+                                            placeholder="Path to pg_dump (optional)"
+                                            className="w-full text-xs px-2 py-1 bg-bg-2 border border-border rounded"
+                                        />
+                                        {statusResponse?.user.path && !pgDumpPath && (
+                                            <div className="text-[10px] text-text-tertiary mt-0.5 ml-1">Detected: {statusResponse.user.path}</div>
+                                        )}
+                                    </div>
+                                )}
+                                <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={exportMethod === 'driver'}
+                                        onChange={() => setExportMethod('driver')}
+                                        className="accent-primary-default"
+                                    />
+                                    <span>Driver (Introspection)</span>
+                                    <span className="text-[10px] px-1 bg-warning/20 text-warning rounded">Beta</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-border pt-2">
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Scope</label>
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
@@ -211,7 +268,7 @@ export default function ExportDdlModal({
                                 <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">
                                     Schemas
                                 </label>
-                                <div className="border border-border rounded overflow-y-auto p-1 bg-bg-2 flex-1">
+                                <div className="border border-border rounded overflow-y-auto p-1 bg-bg-2 flex-1 max-h-[150px]">
                                     {schemas.map(s => (
                                         <label key={s} className="flex items-center gap-2 px-2 py-1 hover:bg-bg-3 cursor-pointer text-sm">
                                             <input
@@ -243,7 +300,7 @@ export default function ExportDdlModal({
                                     </select>
                                 </div>
 
-                                <div className="flex-1 border border-border rounded overflow-hidden flex flex-col bg-bg-2">
+                                <div className="flex-1 border border-border rounded overflow-hidden flex flex-col bg-bg-2 max-h-[200px]">
                                     <div className="flex border-b border-border text-xs">
                                         <div className="flex-1 px-2 py-1 font-medium bg-bg-3 text-center">Objects</div>
                                     </div>
@@ -300,10 +357,6 @@ export default function ExportDdlModal({
                                                         ))}
                                                     </>
                                                 )}
-
-                                                {tables.length === 0 && views.length === 0 && functions.length === 0 && (
-                                                    <div className="p-4 text-center text-text-tertiary text-xs">No objects found</div>
-                                                )}
                                             </>
                                         ) : (
                                             <div className="p-4 text-center text-text-tertiary text-xs">Select a schema</div>
@@ -313,7 +366,7 @@ export default function ExportDdlModal({
                             </div>
                         )}
 
-                        <div className="mt-2 text-sm">
+                        <div className="mt-2 text-sm pt-2 border-t border-border">
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 block">Options</label>
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
@@ -332,18 +385,6 @@ export default function ExportDdlModal({
                                     <input type="checkbox" checked={includeComments} onChange={e => setIncludeComments(e.target.checked)} className="rounded border-border" />
                                     Include Comments
                                 </label>
-                                <div className="flex flex-col gap-1">
-                                    <label className="flex items-center gap-2 text-text-primary cursor-pointer select-none">
-                                        <input type="checkbox" checked={preferPgDump} onChange={e => setPreferPgDump(e.target.checked)} className="rounded border-border" />
-                                        Use pg_dump (recommended)
-                                    </label>
-                                    {preferPgDump && pgDumpStatus && !pgDumpStatus.found && (
-                                        <div className="flex items-center gap-1.5 text-warning text-xs ml-6">
-                                            <AlertTriangle size={12} />
-                                            <span>pg_dump not found in PATH</span>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         </div>
 

@@ -1,9 +1,11 @@
 use crate::models::export_ddl::{DdlObjectType, DdlScope, ExportDdlOptions};
 use anyhow::{anyhow, Result};
+use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
 
 pub async fn run_pg_dump(
+    pg_dump_path: Option<PathBuf>,
     host: &str,
     port: i32,
     username: &str,
@@ -12,12 +14,9 @@ pub async fn run_pg_dump(
     options: &ExportDdlOptions,
 ) -> Result<String> {
     // Determine pg_dump path.
-    // In a real app, logic to find pg_dump from settings would go here.
-    // For now, assume it's in PATH.
-    let pg_dump_bin = "pg_dump";
-
-    // Validate pg_dump availability
-    // We can do a quick check or just let it fail.
+    let pg_dump_bin = pg_dump_path
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| "pg_dump".to_string());
 
     let mut cmd = Command::new(pg_dump_bin);
 

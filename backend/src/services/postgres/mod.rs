@@ -1,5 +1,6 @@
 mod column;
 mod connection;
+mod ddl_export;
 mod function;
 mod query;
 mod schema;
@@ -32,6 +33,7 @@ pub struct PostgresDriver {
     column: PostgresColumn,
     view: PostgresView,
     function: PostgresFunction,
+    ddl_export: ddl_export::PostgresDdlExport,
 }
 
 impl PostgresDriver {
@@ -46,7 +48,14 @@ impl PostgresDriver {
             table: PostgresTable::new(pool.clone()),
             column: PostgresColumn::new(pool.clone()),
             view: PostgresView::new(pool.clone()),
-            function: PostgresFunction::new(pool),
+            function: PostgresFunction::new(pool.clone()),
+            ddl_export: ddl_export::PostgresDdlExport::new(
+                pool.clone(),
+                PostgresSchema::new(pool.clone()),
+                PostgresTable::new(pool.clone()),
+                PostgresView::new(pool.clone()),
+                PostgresFunction::new(pool),
+            ),
         })
     }
 
@@ -61,7 +70,14 @@ impl PostgresDriver {
             table: PostgresTable::new(pool.clone()),
             column: PostgresColumn::new(pool.clone()),
             view: PostgresView::new(pool.clone()),
-            function: PostgresFunction::new(pool),
+            function: PostgresFunction::new(pool.clone()),
+            ddl_export: ddl_export::PostgresDdlExport::new(
+                pool.clone(),
+                PostgresSchema::new(pool.clone()),
+                PostgresTable::new(pool.clone()),
+                PostgresView::new(pool.clone()),
+                PostgresFunction::new(pool),
+            ),
         })
     }
 
@@ -488,5 +504,15 @@ impl DatabaseManagementDriver for PostgresDriver {
             )
         })?;
         Ok(())
+    }
+}
+
+use crate::models::export_ddl::ExportDdlOptions;
+use crate::services::driver::ddl_export::DdlExportDriver;
+
+#[async_trait]
+impl DdlExportDriver for PostgresDriver {
+    async fn export_ddl(&self, options: &ExportDdlOptions) -> Result<String> {
+        self.ddl_export.export_ddl(options).await
     }
 }
