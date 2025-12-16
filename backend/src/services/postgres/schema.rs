@@ -1,4 +1,6 @@
-use crate::services::db_driver::{TableColumn, TableInfo, TableMetadata};
+use crate::services::db_driver::{
+    SchemaForeignKey, SearchResult, TableColumn, TableInfo, TableMetadata,
+};
 use crate::services::driver::SchemaIntrospection;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -150,5 +152,88 @@ impl SchemaIntrospection for PostgresSchema {
         }
 
         Ok(result)
+    }
+
+    async fn search_objects(&self, query: &str) -> Result<Vec<SearchResult>> {
+        let client = self.pool.get().await?;
+        let search_pattern = format!("%{}%", query);
+
+        let sql = "
+            SELECT n.nspname as schema, c.relname as name, 
+                   CASE 
+                     WHEN c.relkind = 'r' THEN 'TABLE' 
+                     WHEN c.relkind = 'v' THEN 'VIEW' 
+                     WHEN c.relkind = 'm' THEN 'MATERIALIZED VIEW'
+                   END as type
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname NOT IN ('information_schema', 'pg_catalog')
+              AND n.nspname NOT LIKE 'pg_toast%'
+              AND n.nspname NOT LIKE 'pg_temp%'
+              AND c.relkind IN ('r', 'v', 'm')
+              AND c.relname ILIKE $1
+            
+            UNION ALL
+            
+            SELECT n.nspname as schema, p.proname as name, 'FUNCTION' as type
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname NOT IN ('information_schema', 'pg_catalog')
+              AND n.nspname NOT LIKE 'pg_toast%'
+              AND n.nspname NOT LIKE 'pg_temp%'
+              AND p.proname ILIKE $1
+            
+            LIMIT 50
+       ";
+
+        let rows = client.query(sql, &[&search_pattern]).await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| SearchResult {
+                schema: row.get(0),
+                name: row.get(1),
+                r#type: row.get(2),
+            })
+            .collect())
+    }
+
+    async fn get_schema_foreign_keys(&self, schema: &str) -> Result<Vec<SchemaForeignKey>> {
+        let client = self.pool.get().await?;
+        let rows = client
+            .query(
+                "SELECT
+                    tc.constraint_name,
+                    tc.table_schema,
+                    tc.table_name,
+                    kcu.column_name,
+                    ccu.table_schema AS foreign_schema,
+                    ccu.table_name AS foreign_table,
+                    ccu.column_name AS foreign_column
+                FROM
+                    information_schema.table_constraints AS tc
+                    JOIN information_schema.key_column_usage AS kcu
+                      ON tc.constraint_name = kcu.constraint_name
+                      AND tc.table_schema = kcu.table_schema
+                    JOIN information_schema.constraint_column_usage AS ccu
+                      ON ccu.constraint_name = tc.constraint_name
+                      AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = $1",
+                &[&schema],
+            )
+            .await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| SchemaForeignKey {
+                name: row.get(0),
+                source_schema: row.get(1),
+                source_table: row.get(2),
+                source_column: row.get(3),
+                target_schema: row.get(4),
+                target_table: row.get(5),
+                target_column: row.get(6),
+            })
+            .collect())
     }
 }

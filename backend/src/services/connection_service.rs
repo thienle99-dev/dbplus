@@ -1,5 +1,6 @@
-use crate::models::entities::{connection, connection::Entity as Connection};
 use crate::models::entities::sqlite_attached_db;
+use crate::models::entities::{connection, connection::Entity as Connection};
+use crate::services::driver::SchemaIntrospection;
 use crate::services::encryption_service::EncryptionService;
 use anyhow::Result;
 use chrono::Utc;
@@ -65,7 +66,12 @@ impl ConnectionService {
         password: &str,
     ) -> Result<crate::services::sqlite::SQLiteDriver> {
         let attachments = self.load_sqlite_attachments(connection.id).await?;
-        crate::services::sqlite::SQLiteDriver::new_with_attachments(connection, password, attachments).await
+        crate::services::sqlite::SQLiteDriver::new_with_attachments(
+            connection,
+            password,
+            attachments,
+        )
+        .await
     }
 
     /// Retrieves all connections from the database.
@@ -268,9 +274,7 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support schemas via this API"
             )),
-            _ => Err(anyhow::anyhow!(
-                "Unsupported database type for drop_schema"
-            )),
+            _ => Err(anyhow::anyhow!("Unsupported database type for drop_schema")),
         }
     }
 
@@ -559,7 +563,11 @@ impl ConnectionService {
             .map_err(|e| anyhow::anyhow!(e))
     }
 
-    pub async fn update_connection_database(&self, id: Uuid, database: String) -> Result<connection::Model> {
+    pub async fn update_connection_database(
+        &self,
+        id: Uuid,
+        database: String,
+    ) -> Result<connection::Model> {
         let mut active_model: connection::ActiveModel = Connection::find_by_id(id)
             .one(&self.db)
             .await?
@@ -1212,6 +1220,64 @@ impl ConnectionService {
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.explain(query, analyze).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn search_objects(
+        &self,
+        connection_id: Uuid,
+        query: &str,
+    ) -> Result<Vec<crate::services::db_driver::SearchResult>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.search_objects(query).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                driver.search_objects(query).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn get_schema_foreign_keys(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+    ) -> Result<Vec<crate::services::db_driver::SchemaForeignKey>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_schema_foreign_keys(schema).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                driver.get_schema_foreign_keys(schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }

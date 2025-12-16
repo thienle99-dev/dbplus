@@ -48,46 +48,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
     hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot
 }) => {
-    // ... (rest of implementation) ...
 
-    // Locate toolbar rendering
-    // ...
-                        <div className="flex items-center gap-2">
-                             {/* Snapshot Controls */}
-                            {result && result.rows.length > 0 && onSnapshot && (
-                                <div className="flex items-center gap-1 border-r border-border pr-2 mr-2">
-                                    {!hasSnapshot ? (
-                                        <button
-                                            onClick={() => onSnapshot(result)}
-                                            className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors text-xs"
-                                            title="Save current result as snapshot for comparison"
-                                        >
-                                            📸 Snapshot
-                                        </button>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={onCompareSnapshot}
-                                                className="px-2 py-1 bg-accent/10 text-accent hover:bg-accent/20 rounded flex items-center gap-1 transition-colors text-xs font-medium"
-                                                title="Compare current result with snapshot"
-                                            >
-                                                ⚖️ Compare
-                                            </button>
-                                            <button
-                                                onClick={onClearSnapshot}
-                                                className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary transition-colors text-xs"
-                                                title="Clear snapshot"
-                                            >
-                                                ✕
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Export Menu */}
-                            {result.rows.length > 0 && (
-                                <div className="relative flex items-center border-r border-border pr-2 mr-2 gap-2" ref={exportMenuRef}>
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const editsRef = useRef<Record<number, Record<string, any>>>({});
     const [sorting, setSorting] = React.useState<SortingState>([]);

@@ -62,6 +62,17 @@ pub struct ForeignKey {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemaForeignKey {
+    pub name: String,
+    pub source_schema: String,
+    pub source_table: String,
+    pub source_column: String,
+    pub target_schema: String,
+    pub target_table: String,
+    pub target_column: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CheckConstraint {
     pub constraint_name: String,
     pub check_clause: String,
@@ -105,10 +116,10 @@ pub struct IndexInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriggerInfo {
     pub name: String,
-    pub timing: String, // BEFORE / AFTER / INSTEAD OF
+    pub timing: String,      // BEFORE / AFTER / INSTEAD OF
     pub events: Vec<String>, // INSERT / UPDATE / DELETE / TRUNCATE
-    pub level: String, // ROW / STATEMENT
-    pub enabled: String, // enabled / disabled / replica / always
+    pub level: String,       // ROW / STATEMENT
+    pub enabled: String,     // enabled / disabled / replica / always
     pub function_schema: Option<String>,
     pub function_name: Option<String>,
     pub definition: String,
@@ -208,6 +219,13 @@ pub struct DependentRoutineInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub schema: String,
+    pub name: String,
+    pub r#type: String, // "TABLE", "VIEW", "FUNCTION"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReferencingForeignKeyInfo {
     pub schema: String,
     pub table: String,
@@ -263,7 +281,12 @@ pub trait DatabaseDriver:
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
     async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment>;
-    async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()>;
+    async fn set_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+        comment: Option<String>,
+    ) -> Result<()>;
     async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>>;
     async fn list_roles(&self) -> Result<Vec<RoleInfo>>;
     async fn set_table_permissions(
@@ -376,7 +399,12 @@ where
         <Self as TableOperations>::get_table_comment(self, schema, table).await
     }
 
-    async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()> {
+    async fn set_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+        comment: Option<String>,
+    ) -> Result<()> {
         <Self as TableOperations>::set_table_comment(self, schema, table, comment).await
     }
 

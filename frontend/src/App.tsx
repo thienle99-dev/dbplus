@@ -14,9 +14,43 @@ import { BottomPanel } from './components/BottomPanel';
 import SkipToContent from './components/ui/SkipToContent';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import CommandPalette from './components/CommandPalette';
+import ObjectDefinitionModal from './components/ObjectDefinitionModal';
+
 const WorkspacePage = () => {
-  // Initialize keyboard shortcuts
   useKeyboardShortcuts();
+  const { connectionId } = useParams();
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [defInfo, setDefInfo] = useState<{ open: boolean, name: string, schema: string, type: 'view' | 'function' }>({ 
+      open: false, name: '', schema: '', type: 'view' 
+  });
+
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+              e.preventDefault();
+              setCmdOpen(true);
+          }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+      const handler = (e: CustomEvent) => {
+         // console.log("Open def", e.detail);
+         setDefInfo({ 
+             open: true, 
+             name: e.detail.name, 
+             schema: e.detail.schema, 
+             type: e.detail.type 
+         });
+      };
+      window.addEventListener('dbplus:open-definition' as any, handler);
+      return () => window.removeEventListener('dbplus:open-definition' as any, handler);
+  }, []);
 
   return (
     <SelectedRowProvider>
@@ -45,6 +79,14 @@ const WorkspacePage = () => {
           <RightSidebar />
           <BottomPanel />
         </div>
+        <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} connectionId={connectionId} />
+        <ObjectDefinitionModal 
+            isOpen={defInfo.open}
+            onClose={() => setDefInfo(prev => ({ ...prev, open: false }))}
+            objectName={defInfo.name}
+            schema={defInfo.schema}
+            type={defInfo.type}
+        />
       </TablePageProvider>
     </SelectedRowProvider>
   );

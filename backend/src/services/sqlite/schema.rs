@@ -1,4 +1,6 @@
-use crate::services::db_driver::{TableColumn, TableInfo, TableMetadata};
+use crate::services::db_driver::{
+    SchemaForeignKey, SearchResult, TableColumn, TableInfo, TableMetadata,
+};
 use crate::services::driver::SchemaIntrospection;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -143,6 +145,101 @@ impl SchemaIntrospection for SQLiteSchema {
             });
         }
         Ok(result)
+    }
+
+    async fn search_objects(&self, query: &str) -> Result<Vec<SearchResult>> {
+        let schemas = self.get_schemas().await?;
+        let search_term = format!("%{}%", query);
+        let mut results = Vec::new();
+
+        for schema_name in schemas {
+            let schema = normalize_schema(&schema_name);
+            let ident = quote_ident(&schema);
+
+            let sql = format!(
+                "SELECT CAST($1 AS TEXT) as schema, name, type FROM {}.sqlite_master 
+                 WHERE type IN ('table', 'view', 'trigger') 
+                 AND name NOT LIKE 'sqlite_%' 
+                 AND name LIKE $2
+                 LIMIT 50",
+                ident
+            );
+
+            // We use fetch_all. The error handling loop continues?
+            // If one schema fails (e.g. detached), log and continue?
+            // For now propagate error, but optimally should skip.
+
+            if let Ok(rows) = sqlx::query(&sql)
+                .bind(&schema)
+                .bind(&search_term)
+                .fetch_all(&self.pool)
+                .await
+            {
+                for row in rows {
+                    let type_str: String = row.get(2);
+                    let unified_type = match type_str.as_str() {
+                        "table" => "TABLE",
+                        "view" => "VIEW",
+                        "trigger" => "TRIGGER",
+                        _ => "OTHER",
+                    };
+
+                    results.push(SearchResult {
+                        schema: row.get(0),
+                        name: row.get(1),
+                        r#type: unified_type.to_string(),
+                    });
+                }
+            }
+
+            if results.len() >= 50 {
+                results.truncate(50);
+                break;
+            }
+        }
+
+        Ok(results)
+    }
+
+    async fn get_schema_foreign_keys(&self, schema: &str) -> Result<Vec<SchemaForeignKey>> {
+        let tables = self.get_tables(schema).await?;
+        let schema_name = normalize_schema(schema);
+        let mut fks = Vec::new();
+
+        for table in tables {
+            let unique_table_id = quote_ident(&table.name); // Ensure we format it correctly
+
+            // Skip views if table_type is VIEW, because views don't have FKs in SQLite standard
+            if table.table_type == "VIEW" {
+                continue;
+            }
+
+            let query = format!(
+                "PRAGMA {}.foreign_key_list({})",
+                quote_ident(&schema_name),
+                unique_table_id
+            );
+
+            let rows = sqlx::query(&query).fetch_all(&self.pool).await?;
+
+            for row in rows {
+                // id, seq, table, from, to, on_update, on_delete, match
+                let target_table: String = row.get(2);
+                let source_column: String = row.get(3);
+                let target_column: String = row.get(4);
+
+                fks.push(SchemaForeignKey {
+                    name: format!("fk_{}_{}", table.name, source_column),
+                    source_schema: schema_name.clone(),
+                    source_table: table.name.clone(),
+                    source_column,
+                    target_schema: schema_name.clone(),
+                    target_table,
+                    target_column,
+                });
+            }
+        }
+        Ok(fks)
     }
 }
 

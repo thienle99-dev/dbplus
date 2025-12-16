@@ -104,7 +104,9 @@ pub async fn create_schema(
 
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service.create_schema(connection_id, name).await {
         Ok(_) => (
             StatusCode::CREATED,
@@ -137,7 +139,9 @@ pub async fn drop_schema(
 
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service.drop_schema(connection_id, &name).await {
         Ok(_) => (StatusCode::NO_CONTENT, ()).into_response(),
         Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
@@ -490,7 +494,9 @@ pub async fn list_views(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service.list_views(connection_id, &params.schema).await {
         Ok(views) => {
             tracing::info!("[API] GET /views - SUCCESS - found {} views", views.len());
@@ -517,7 +523,9 @@ pub async fn get_view_definition(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_view_definition(connection_id, &params.schema, &params.view)
         .await
@@ -557,7 +565,9 @@ pub async fn list_functions(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service.list_functions(connection_id, &params.schema).await {
         Ok(functions) => {
             tracing::info!(
@@ -587,7 +597,9 @@ pub async fn get_function_definition(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_function_definition(connection_id, &params.schema, &params.function)
         .await
@@ -598,6 +610,43 @@ pub async fn get_function_definition(
         }
         Err(e) => {
             tracing::error!("[API] GET /function-definition - ERROR: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+pub async fn get_schema_foreign_keys(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /foreign-keys - connection_id: {}, schema: {}",
+        connection_id,
+        params.schema
+    );
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
+    match service
+        .get_schema_foreign_keys(connection_id, &params.schema)
+        .await
+    {
+        Ok(fks) => {
+            tracing::info!(
+                "[API] GET /foreign-keys - SUCCESS - found {} FKs",
+                fks.len()
+            );
+            (StatusCode::OK, Json(fks)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /foreign-keys - ERROR: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }

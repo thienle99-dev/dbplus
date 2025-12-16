@@ -10,6 +10,11 @@ import {
     TableDependencies,
     TableGrant,
     TriggerInfo,
+    ViewInfo,
+    FunctionInfo,
+    TableInfo,
+    SearchResult,
+    SchemaForeignKey,
 } from '../types';
 import { useActiveDatabaseOverride } from './useActiveDatabaseOverride';
 
@@ -50,7 +55,7 @@ export const useTables = (connectionId: string | undefined, schema: string | und
         queryKey: ['tables', connectionId, dbKey, schema],
         queryFn: async () => {
             if (!connectionId || !schema) return [];
-            const { data } = await api.get<string[]>(`/api/connections/${connectionId}/tables`, {
+            const { data } = await api.get<TableInfo[]>(`/api/connections/${connectionId}/tables`, {
                 params: dbOverride ? { schema, database: dbOverride } : { schema },
             });
             return data;
@@ -318,5 +323,105 @@ export const usePartitions = (
             return data;
         },
         enabled: !!connectionId && !!schema && !!table,
+    });
+};
+
+export const useViews = (connectionId: string | undefined, schema: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['views', connectionId, dbKey, schema],
+        queryFn: async () => {
+            if (!connectionId || !schema) return [];
+            const { data } = await api.get<ViewInfo[]>(`/api/connections/${connectionId}/views`, {
+                params: dbOverride ? { schema, database: dbOverride } : { schema },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema,
+    });
+};
+
+export const useFunctions = (connectionId: string | undefined, schema: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['functions', connectionId, dbKey, schema],
+        queryFn: async () => {
+             if (!connectionId || !schema) return [];
+            const { data } = await api.get<FunctionInfo[]>(`/api/connections/${connectionId}/functions`, {
+                params: dbOverride ? { schema, database: dbOverride } : { schema },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema,
+    });
+};
+
+export const useViewDefinition = (connectionId: string | undefined, schema: string | undefined, view: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['viewDef', connectionId, dbKey, schema, view],
+        queryFn: async () => {
+            if (!connectionId || !schema || !view) return null;
+            const { data } = await api.get<ViewInfo>(`/api/connections/${connectionId}/view-definition`, {
+                params: dbOverride ? { schema, view, database: dbOverride } : { schema, view },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!view,
+    });
+};
+
+export const useFunctionDefinition = (connectionId: string | undefined, schema: string | undefined, func: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['funcDef', connectionId, dbKey, schema, func],
+        queryFn: async () => {
+            if (!connectionId || !schema || !func) return null;
+            const { data } = await api.get<FunctionInfo>(`/api/connections/${connectionId}/function-definition`, {
+                params: dbOverride ? { schema, function: func, database: dbOverride } : { schema, function: func },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema && !!func,
+    });
+};
+
+export const useGlobalSearch = (connectionId: string | undefined, query: string) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['search', connectionId, dbKey, query],
+        queryFn: async () => {
+            if (!connectionId || !query || query.length < 2) return [];
+            const { data } = await api.get<SearchResult[]>(`/api/connections/${connectionId}/search`, {
+                params: dbOverride ? { q: query, database: dbOverride } : { q: query },
+            });
+            return data;
+        },
+        enabled: !!connectionId && query.length >= 2,
+        placeholderData: (previousData) => previousData,
+    });
+};
+
+export const useSchemaForeignKeys = (connectionId: string | undefined, schema: string) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+    return useQuery({
+        queryKey: ['foreignKeys', connectionId, dbKey, schema],
+        queryFn: async () => {
+            if (!connectionId) return [];
+            const { data } = await api.get<SchemaForeignKey[]>(`/api/connections/${connectionId}/foreign-keys`, {
+                params: { 
+                    schema,
+                    ...(dbOverride ? { database: dbOverride } : {})
+                },
+            });
+            return data;
+        },
+        enabled: !!connectionId && !!schema,
     });
 };

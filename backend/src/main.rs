@@ -251,8 +251,16 @@ async fn main() {
             get(handlers::schema::list_functions),
         )
         .route(
+            "/api/connections/:id/search",
+            get(handlers::search::search_objects),
+        )
+        .route(
             "/api/connections/:id/function-definition",
             get(handlers::schema::get_function_definition),
+        )
+        .route(
+            "/api/connections/:id/foreign-keys",
+            get(handlers::schema::get_schema_foreign_keys),
         )
         // SQLite-specific tools
         .route(

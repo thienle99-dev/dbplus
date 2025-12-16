@@ -397,7 +397,7 @@
 ### Query Editor
 
 - [x] Autocomplete JOIN/columns theo schema context
-- [ ] Snippet variables + param placeholders + form nhập params
+- [x] Snippet variables + param placeholders + form nhập params
 - [x] Tabs: pin/duplicate + split editor/results (vertical/horizontal)
 - [x] EXPLAIN nâng cao: highlight hotspots, compare plans, toggle ANALYZE
 - [x] Result diff/compare (two queries / snapshots)
