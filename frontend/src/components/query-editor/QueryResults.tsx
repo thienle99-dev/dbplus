@@ -13,7 +13,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus } from 'lucide-react';
+
 import type { ApiErrorDetails } from '../../utils/apiError';
 import {
     buildExportFilename,
@@ -44,7 +45,7 @@ interface QueryResultsProps {
     onClearSnapshot?: () => void;
 }
 
-export const QueryResults: React.FC<QueryResultsProps> = ({ 
+export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
     hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot
 }) => {
@@ -239,28 +240,36 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         const baseColumns: any[] = [
             helper.display({
                 id: '__select__',
-                header: ({ table }) => (
-                    <input
-                        type="checkbox"
-                        className="accent-[var(--color-primary-default)]"
-                        checked={table.getIsAllRowsSelected()}
-                        ref={(el) => {
-                            if (!el) return;
-                            el.indeterminate = table.getIsSomeRowsSelected();
-                        }}
-                        onChange={table.getToggleAllRowsSelectedHandler()}
-                        aria-label="Select all rows"
-                    />
-                ),
+                header: ({ table }) => {
+                    const isAll = table.getIsAllRowsSelected();
+                    const isSome = table.getIsSomeRowsSelected();
+                    return (
+                        <div
+                            onClick={table.getToggleAllRowsSelectedHandler()}
+                            className={`
+                                w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer
+                                ${isAll || isSome
+                                    ? 'bg-accent border-accent text-bg-1'
+                                    : 'border-text-secondary/50 hover:border-text-secondary bg-transparent'}
+                            `}
+                        >
+                            {isAll && !isSome && <Check size={12} strokeWidth={3} />}
+                            {isSome && <Minus size={12} strokeWidth={3} />}
+                        </div>
+                    );
+                },
                 cell: ({ row }) => (
-                    <input
-                        type="checkbox"
-                        className="accent-[var(--color-primary-default)]"
-                        checked={row.getIsSelected()}
-                        disabled={!row.getCanSelect()}
-                        onChange={row.getToggleSelectedHandler()}
-                        aria-label="Select row"
-                    />
+                    <div
+                        onClick={row.getToggleSelectedHandler()}
+                        className={`
+                            w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer
+                            ${row.getIsSelected()
+                                ? 'bg-accent border-accent text-bg-1'
+                                : 'border-text-secondary/50 hover:border-text-secondary bg-transparent'}
+                        `}
+                    >
+                        {row.getIsSelected() && <Check size={12} strokeWidth={3} />}
+                    </div>
                 ),
                 size: 36,
                 enableSorting: false,
@@ -543,67 +552,67 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                         const hint = db?.hint as string | undefined;
                         const position = db?.position as string | undefined;
                         return (
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <div className="text-xs font-semibold text-error uppercase tracking-wider mb-2">Database Error</div>
-                            <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{dbMessage || error}</div>
-                            {formattedDbError && (
-                                <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
-                                    {formattedDbError}
-                                </pre>
-                            )}
-                            {(engine || code || detail || hint || position) && (
-                                <div className="mt-2 space-y-1 text-xs text-text-secondary">
-                                    {(engine || code) && (
-                                        <div>
-                                            {engine ? `${engine.toUpperCase()} ` : ''}
-                                            {code ? `(${code})` : ''}
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="text-xs font-semibold text-error uppercase tracking-wider mb-2">Database Error</div>
+                                    <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{dbMessage || error}</div>
+                                    {formattedDbError && (
+                                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
+                                            {formattedDbError}
+                                        </pre>
+                                    )}
+                                    {(engine || code || detail || hint || position) && (
+                                        <div className="mt-2 space-y-1 text-xs text-text-secondary">
+                                            {(engine || code) && (
+                                                <div>
+                                                    {engine ? `${engine.toUpperCase()} ` : ''}
+                                                    {code ? `(${code})` : ''}
+                                                </div>
+                                            )}
+                                            {position && <div>{`Position: ${position}`}</div>}
+                                            {detail && <div>{`Detail: ${detail}`}</div>}
+                                            {hint && <div>{`Hint: ${hint}`}</div>}
                                         </div>
                                     )}
-                                    {position && <div>{`Position: ${position}`}</div>}
-                                    {detail && <div>{`Detail: ${detail}`}</div>}
-                                    {hint && <div>{`Hint: ${hint}`}</div>}
+                                    {errorDetails?.status && (
+                                        <div className="mt-2 text-xs text-text-secondary">
+                                            {errorDetails.method ? `${errorDetails.method} ` : ''}
+                                            {errorDetails.url ? `${errorDetails.url} ` : ''}
+                                            {errorDetails.status}
+                                            {errorDetails.statusText ? ` ${errorDetails.statusText}` : ''}
+                                            {errorDetails.code ? ` • ${errorDetails.code}` : ''}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            {errorDetails?.status && (
-                                <div className="mt-2 text-xs text-text-secondary">
-                                    {errorDetails.method ? `${errorDetails.method} ` : ''}
-                                    {errorDetails.url ? `${errorDetails.url} ` : ''}
-                                    {errorDetails.status}
-                                    {errorDetails.statusText ? ` ${errorDetails.statusText}` : ''}
-                                    {errorDetails.code ? ` • ${errorDetails.code}` : ''}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    {errorDetails && (
+                                        <>
+                                            <button
+                                                onClick={() => setShowErrorDetails((v) => !v)}
+                                                className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                                title="Toggle raw error details"
+                                            >
+                                                {showErrorDetails ? 'Hide details' : 'Show details'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const payload =
+                                                        typeof errorDetails.responseData === 'string'
+                                                            ? errorDetails.responseData
+                                                            : JSON.stringify(errorDetails, null, 2);
+                                                    void copyToClipboard(payload)
+                                                        .then(() => showToast('Copied error details', 'success'))
+                                                        .catch(() => showToast('Copy failed', 'error'));
+                                                }}
+                                                className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                                title="Copy error details"
+                                            >
+                                                Copy
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            {errorDetails && (
-                                <>
-                                    <button
-                                        onClick={() => setShowErrorDetails((v) => !v)}
-                                        className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
-                                        title="Toggle raw error details"
-                                    >
-                                        {showErrorDetails ? 'Hide details' : 'Show details'}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            const payload =
-                                                typeof errorDetails.responseData === 'string'
-                                                    ? errorDetails.responseData
-                                                    : JSON.stringify(errorDetails, null, 2);
-                                            void copyToClipboard(payload)
-                                                .then(() => showToast('Copied error details', 'success'))
-                                                .catch(() => showToast('Copy failed', 'error'));
-                                        }}
-                                        className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
-                                        title="Copy error details"
-                                    >
-                                        Copy
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                            </div>
                         );
                     })()}
 

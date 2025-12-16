@@ -78,17 +78,65 @@ function PgPlanNodeRow({
     const totalCost = num(node['Total Cost']);
 
     const extraKeys: Array<[string, string]> = [];
-    const add = (label: string, key: string) => {
-        const v = node[key];
-        if (typeof v === 'string' && v.trim()) extraKeys.push([label, v]);
+    const addValue = (label: string, value: any) => {
+        if (value === undefined || value === null) return;
+        if (typeof value === 'string' && value.trim()) extraKeys.push([label, value]);
+        else if (typeof value === 'number') extraKeys.push([label, String(value)]);
+        else if (Array.isArray(value) && value.length > 0) extraKeys.push([label, value.join(', ')]);
     };
-    add('Filter', 'Filter');
-    add('Index Cond', 'Index Cond');
-    add('Recheck Cond', 'Recheck Cond');
-    add('Hash Cond', 'Hash Cond');
-    add('Join Filter', 'Join Filter');
-    add('Sort Key', 'Sort Key');
-    add('Group Key', 'Group Key');
+
+    // Standard fields
+    addValue('Output', node['Output']);
+    addValue('Schema', node['Schema']);
+    addValue('Alias', node['Alias']);
+    addValue('Filter', node['Filter']);
+    addValue('Index Cond', node['Index Cond']);
+    addValue('Recheck Cond', node['Recheck Cond']);
+    addValue('TID Cond', node['TID Cond']);
+    addValue('Hash Cond', node['Hash Cond']);
+    addValue('Merge Cond', node['Merge Cond']);
+    addValue('Join Filter', node['Join Filter']);
+    addValue('Sort Key', node['Sort Key']);
+    addValue('Group Key', node['Group Key']);
+    addValue('Subplan Name', node['Subplan Name']);
+    addValue('Function Call', node['Function Call']);
+    addValue('Loops', node['Actual Loops']);
+
+    // Sort details
+    addValue('Sort Method', node['Sort Method']);
+    addValue('Sort Space Used', node['Sort Space Used']);
+    addValue('Sort Space Type', node['Sort Space Type']);
+
+    // Parallel Worker details
+    addValue('Workers Planned', node['Workers Planned']);
+    addValue('Workers Launched', node['Workers Launched']);
+
+    // Buffer Usage
+    const buffers = node['Buffers'];
+    if (isObject(buffers)) {
+        if (isObject(buffers['Shared'])) {
+            addValue('Shared Hit', buffers['Shared']['Hit Blocks']);
+            addValue('Shared Read', buffers['Shared']['Read Blocks']);
+            addValue('Shared Dirtied', buffers['Shared']['Dirtied Blocks']);
+            addValue('Shared Written', buffers['Shared']['Written Blocks']);
+        }
+        if (isObject(buffers['Temp'])) {
+            addValue('Temp Read', buffers['Temp']['Read Blocks']);
+            addValue('Temp Written', buffers['Temp']['Written Blocks']);
+        }
+        if (isObject(buffers['Local'])) {
+            addValue('Local Hit', buffers['Local']['Hit Blocks']);
+            addValue('Local Read', buffers['Local']['Read Blocks']);
+            addValue('Local Written', buffers['Local']['Written Blocks']);
+        }
+    }
+
+    // I/O Timings
+    const ioCheck = node['I/O Timings'];
+    if (isObject(ioCheck)) {
+        addValue('I/O Read Time', ioCheck['Read Time']);
+        addValue('I/O Write Time', ioCheck['Write Time']);
+    }
 
     return (
         <div className="select-text">
@@ -130,15 +178,15 @@ function PgPlanNodeRow({
 
                     {extraKeys.length > 0 && (
                         <div className="mt-1 space-y-0.5">
-                            {extraKeys.slice(0, 3).map(([k, v]) => (
+                            {extraKeys.slice(0, 6).map(([k, v]) => (
                                 <div key={k} className="text-[11px] text-text-secondary">
                                     <span className="font-semibold">{k}:</span>{' '}
                                     <span className="font-mono break-words">{v}</span>
                                 </div>
                             ))}
-                            {extraKeys.length > 3 && (
+                            {extraKeys.length > 6 && (
                                 <div className="text-[11px] text-text-secondary">
-                                    +{extraKeys.length - 3} more…
+                                    +{extraKeys.length - 6} more…
                                 </div>
                             )}
                         </div>
@@ -310,8 +358,8 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                             type="button"
                             onClick={() => setViewMode('tree')}
                             className={`px-2 py-1 rounded border text-xs ${viewMode === 'tree'
-                                    ? 'bg-bg-2 border-accent text-text-primary'
-                                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                ? 'bg-bg-2 border-accent text-text-primary'
+                                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
                                 }`}
                         >
                             Tree
@@ -320,8 +368,8 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                             type="button"
                             onClick={() => setViewMode('json')}
                             className={`px-2 py-1 rounded border text-xs ${viewMode === 'json'
-                                    ? 'bg-bg-2 border-accent text-text-primary'
-                                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                ? 'bg-bg-2 border-accent text-text-primary'
+                                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
                                 }`}
                         >
                             JSON
@@ -448,7 +496,7 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
                         </button>
                     )}
                     {onClearBaseline && baselinePlan && (
-                         <button
+                        <button
                             onClick={onClearBaseline}
                             className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border rounded text-text-primary flex items-center gap-1"
                             title="Clear baseline plan"
@@ -461,16 +509,16 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
 
             <div className="flex-1 overflow-hidden flex">
                 <div className={`flex-1 overflow-hidden flex flex-col ${showComparison ? 'border-r border-border' : ''}`}>
-                    <PlanAnalysis 
-                        plan={plan} 
+                    <PlanAnalysis
+                        plan={plan}
                         title={showComparison ? "Current Plan" : undefined}
                     />
                 </div>
-                
+
                 {showComparison && (
                     <div className="flex-1 overflow-hidden flex flex-col bg-bg-1/50">
-                        <PlanAnalysis 
-                            plan={baselinePlan} 
+                        <PlanAnalysis
+                            plan={baselinePlan}
                             title="Baseline Plan"
                             extraHeader={<div className="ml-2 text-[10px] text-accent font-bold px-1.5 py-0.5 bg-accent/10 rounded">BASELINE</div>}
                         />
