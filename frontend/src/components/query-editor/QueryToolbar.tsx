@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Play, Save, Eraser, Book, ChevronDown } from 'lucide-react';
+import { Play, Save, Eraser, Book, ChevronDown, AlignLeft } from 'lucide-react';
 
 
 interface QueryToolbarProps {
@@ -8,6 +8,7 @@ interface QueryToolbarProps {
     onExplainAnalyze: () => void;
     onSave: () => void;
     onClear: () => void;
+    onFormat: () => void;
     onOpenSnippets: () => void;
     loading: boolean;
     queryTrimmed: string;
@@ -23,6 +24,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     onExplainAnalyze,
     onSave,
     onClear,
+    onFormat,
     onOpenSnippets,
     loading,
     queryTrimmed,
@@ -131,6 +133,16 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 >
                     <Eraser size={14} />
                     <span>Clear</span>
+                </button>
+
+                <button
+                    onClick={onFormat}
+                    disabled={!queryTrimmed}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-accent hover:bg-bg-2 disabled:opacity-50 transition-all duration-200"
+                    title="Format SQL (Ctrl+Shift+F)"
+                >
+                    <AlignLeft size={14} />
+                    <span>Format</span>
                 </button>
 
                 <div className="w-px h-4 bg-border mx-1" />

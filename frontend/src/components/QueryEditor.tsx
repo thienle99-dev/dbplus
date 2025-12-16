@@ -429,6 +429,7 @@ export default function QueryEditor({
           }
         }}
         onClear={() => setQuery('')}
+        onFormat={handleFormat}
         onOpenSnippets={() => setIsSnippetLibraryOpen(true)}
         loading={loading || explainQuery.isPending}
         queryTrimmed={query.trim()}

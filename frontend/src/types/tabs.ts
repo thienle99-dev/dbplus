@@ -1,3 +1,5 @@
+export type SplitMode = 'none' | 'vertical' | 'horizontal';
+
 export interface Tab {
   id: string;
   title: string;
@@ -10,4 +12,6 @@ export interface Tab {
   savedQueryId?: string;
   lastModified?: number;
   isDirty?: boolean;
+  pinned?: boolean;
+  splitMode?: SplitMode;
 }

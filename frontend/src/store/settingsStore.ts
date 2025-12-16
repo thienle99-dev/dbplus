@@ -25,7 +25,11 @@ export interface AppSettings {
     queryTimeout: number;
 
     // Formatting
+    formatDialect: 'postgresql' | 'mysql' | 'sqlite' | 'sql';
     formatKeywordCase: 'upper' | 'lower' | 'preserve';
+    formatIndentStyle: 'spaces' | 'tabs';
+    formatIndentSize: number;
+    formatOnSave: boolean;
 
     // Table
     defaultPageSize: number;
@@ -62,7 +66,11 @@ const defaultSettings: AppSettings = {
     queryTimeout: 30000,
 
     // Formatting
+    formatDialect: 'postgresql',
     formatKeywordCase: 'upper',
+    formatIndentStyle: 'spaces',
+    formatIndentSize: 2,
+    formatOnSave: false,
 
     // Table
     defaultPageSize: 50,

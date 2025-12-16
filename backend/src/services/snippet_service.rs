@@ -92,6 +92,7 @@ impl SnippetService {
             description: Set(description),
             sql: Set(sql),
             tags: Set(tags.map(|t| serde_json::to_value(t).unwrap())),
+            variables: Set(None),
             created_at: Set(Utc::now().into()),
             updated_at: Set(Utc::now().into()),
         };
@@ -108,18 +109,23 @@ impl SnippetService {
         let now = Utc::now().into();
         let models: Vec<query_snippet::ActiveModel> = default_snippets()
             .into_iter()
-            .map(|(name, description, sql, tags)| query_snippet::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                name: Set(name),
-                description: Set(description),
-                sql: Set(sql),
-                tags: Set(tags.map(|t| serde_json::to_value(t).unwrap())),
-                created_at: Set(now),
-                updated_at: Set(now),
-            })
+            .map(
+                |(name, description, sql, tags)| query_snippet::ActiveModel {
+                    id: Set(Uuid::new_v4()),
+                    name: Set(name),
+                    description: Set(description),
+                    sql: Set(sql),
+                    tags: Set(tags.map(|t| serde_json::to_value(t).unwrap())),
+                    variables: Set(None),
+                    created_at: Set(now),
+                    updated_at: Set(now),
+                },
+            )
             .collect();
 
-        query_snippet::Entity::insert_many(models).exec(&self.db).await?;
+        query_snippet::Entity::insert_many(models)
+            .exec(&self.db)
+            .await?;
         Ok(())
     }
 
