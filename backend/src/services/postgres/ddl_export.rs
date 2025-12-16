@@ -71,12 +71,99 @@ impl PostgresDdlExport {
                 }
             }
             DdlScope::Schema => {
-                // To be implemented: Iterate all tables/views/functions in schemas
-                ddl.push_str("-- Schema export not fully supported in driver mode yet.\n");
+                let schemas = if let Some(s) = &options.schemas {
+                    s.clone()
+                } else {
+                    self.schema
+                        .get_schemas()
+                        .await?
+                        .into_iter()
+                        .filter(|s| !s.starts_with("pg_") && s != "information_schema")
+                        .collect()
+                };
+
+                for schema in schemas {
+                    let schema_ddl = self.export_schema_ddl(&schema).await?;
+                    ddl.push_str(&schema_ddl);
+                }
             }
             DdlScope::Database => {
-                // To be implemented
-                ddl.push_str("-- Database export not fully supported in driver mode yet.\n");
+                let schemas = self
+                    .schema
+                    .get_schemas()
+                    .await?
+                    .into_iter()
+                    .filter(|s| !s.starts_with("pg_") && s != "information_schema")
+                    .collect::<Vec<_>>();
+
+                for schema in schemas {
+                    let schema_ddl = self.export_schema_ddl(&schema).await?;
+                    ddl.push_str(&schema_ddl);
+                }
+            }
+        }
+
+        Ok(ddl)
+    }
+
+    async fn export_schema_ddl(&self, schema_name: &str) -> Result<String> {
+        let mut ddl = String::new();
+        ddl.push_str(&format!("-- Schema: {}\n", schema_name));
+        ddl.push_str(&format!(
+            "CREATE SCHEMA IF NOT EXISTS \"{}\";\n\n",
+            schema_name
+        ));
+
+        // Tables
+        let tables = self.schema.get_tables(schema_name).await?;
+        for table in tables {
+            if table.table_type == "BASE TABLE" {
+                match self.build_table_ddl(schema_name, &table.name).await {
+                    Ok(table_ddl) => {
+                        ddl.push_str(&table_ddl);
+                        ddl.push_str("\n\n");
+                    }
+                    Err(e) => {
+                        ddl.push_str(&format!(
+                            "-- Error exporting table {}.{}: {}\n\n",
+                            schema_name, table.name, e
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Views
+        let views = self.view.list_views(schema_name).await?;
+        for view in views {
+            match self.build_view_ddl(schema_name, &view.name).await {
+                Ok(view_ddl) => {
+                    ddl.push_str(&view_ddl);
+                    ddl.push_str("\n\n");
+                }
+                Err(e) => {
+                    ddl.push_str(&format!(
+                        "-- Error exporting view {}.{}: {}\n\n",
+                        schema_name, view.name, e
+                    ));
+                }
+            }
+        }
+
+        // Functions
+        let functions = self.function.list_functions(schema_name).await?;
+        for func in functions {
+            match self.build_function_ddl(schema_name, &func.name).await {
+                Ok(func_ddl) => {
+                    ddl.push_str(&func_ddl);
+                    ddl.push_str("\n\n");
+                }
+                Err(e) => {
+                    ddl.push_str(&format!(
+                        "-- Error exporting function {}.{}: {}\n\n",
+                        schema_name, func.name, e
+                    ));
+                }
             }
         }
 
