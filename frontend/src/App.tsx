@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { ConnectionsDashboard } from './components/connections/ConnectionsDashboard';
 import Sidebar from './components/Sidebar';
 import TableDataView from './components/TableDataView';
@@ -13,11 +14,11 @@ import { TablePageProvider } from './context/TablePageContext';
 import { BottomPanel } from './components/BottomPanel';
 import SkipToContent from './components/ui/SkipToContent';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import CommandPalette from './components/CommandPalette';
 import ObjectDefinitionModal from './components/ObjectDefinitionModal';
+import ERDiagramView from './components/ERDiagramView';
+import { useSettingsStore } from './store/settingsStore';
+import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
 
 const WorkspacePage = () => {
   useKeyboardShortcuts();
@@ -40,7 +41,6 @@ const WorkspacePage = () => {
 
   useEffect(() => {
       const handler = (e: CustomEvent) => {
-         // console.log("Open def", e.detail);
          setDefInfo({ 
              open: true, 
              name: e.detail.name, 
@@ -73,6 +73,7 @@ const WorkspacePage = () => {
                 <Route path="/query" element={<QueryTabs />} />
                 <Route path="/dashboards" element={<DashboardList />} />
                 <Route path="/dashboards/:dashboardId" element={<DashboardView />} />
+                <Route path="/diagram/:schema" element={<ERDiagramView />} />
               </Routes>
             </div>
           </div>
@@ -80,23 +81,20 @@ const WorkspacePage = () => {
           <BottomPanel />
         </div>
         <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} connectionId={connectionId} />
-        <ObjectDefinitionModal 
-            isOpen={defInfo.open}
-            onClose={() => setDefInfo(prev => ({ ...prev, open: false }))}
-            objectName={defInfo.name}
-            schema={defInfo.schema}
-            type={defInfo.type}
-        />
+        {connectionId && (
+            <ObjectDefinitionModal 
+                isOpen={defInfo.open}
+                onClose={() => setDefInfo(prev => ({ ...prev, open: false }))}
+                objectName={defInfo.name}
+                schema={defInfo.schema}
+                type={defInfo.type}
+                connectionId={connectionId}
+            />
+        )}
       </TablePageProvider>
     </SelectedRowProvider>
   );
 };
-
-import { useEffect } from 'react';
-import { useSettingsStore } from './store/settingsStore';
-import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
-
-// ... other imports ...
 
 function App() {
   const { theme } = useSettingsStore();
