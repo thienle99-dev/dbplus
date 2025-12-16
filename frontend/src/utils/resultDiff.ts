@@ -65,8 +65,6 @@ export function computeResultDiff(oldData: any[], newData: any[], columns: any[]
     if (pk) {
         // PK-based comparison
         const oldMap = new Map(oldData.map(r => [r[pk], r]));
-        const newMap = new Map(newData.map(r => [r[pk], r]));
-        const textEncoder = new TextEncoder(); // For value comparison if needed, or structuredClone
 
         // Iterate through new data to find added, modified, unchanged
         const processedKeys = new Set();

@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
-import { DiffResult, RowDiff, CellDiff } from '../../utils/resultDiff';
-import { ChevronRight, ChevronDown, Filter, Download } from 'lucide-react';
+import { DiffResult, RowDiff } from '../../utils/resultDiff';
+import { Filter } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface ResultComparisonProps {

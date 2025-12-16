@@ -1,4 +1,3 @@
-import React from 'react';
 import Modal from './ui/Modal';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';

@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { X, Settings as SettingsIcon, Palette, Code, Database, Info } from 'lucide-react';
-import { useSettingsStore, Theme } from '../store/settingsStore';
-import { THEME_CONFIGS, getThemeDisplayName } from '../constants/themes';
+import { X, Settings as SettingsIcon, Palette, Code, Database, Info, Keyboard as KeyboardIcon } from 'lucide-react';
+import { useSettingsStore } from '../store/settingsStore';
+import { THEME_CONFIGS } from '../constants/themes';
 import Select from './ui/Select';
+import ThemePreview from './settings/ThemePreview';
+import KeyboardShortcutsTab from './settings/KeyboardShortcutsTab';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type TabType = 'general' | 'editor' | 'theme' | 'query' | 'about';
+type TabType = 'general' | 'editor' | 'theme' | 'query' | 'shortcuts' | 'about';
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -22,6 +24,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         { id: 'editor' as TabType, label: 'Editor', icon: <Code size={16} /> },
         { id: 'theme' as TabType, label: 'Theme', icon: <Palette size={16} /> },
         { id: 'query' as TabType, label: 'Query', icon: <Database size={16} /> },
+        { id: 'shortcuts' as TabType, label: 'Shortcuts', icon: <KeyboardIcon size={16} /> },
         { id: 'about' as TabType, label: 'About', icon: <Info size={16} /> },
     ];
 
@@ -196,40 +199,121 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         )}
 
                         {activeTab === 'theme' && (
-                            <div className="space-y-6">
-                                <h3 className="text-base font-semibold text-text-primary mb-4">Theme Settings</h3>
-
+                            <div className="space-y-8">
                                 <div className="space-y-4">
-                                    <label className="space-y-2">
-                                        <div className="text-sm font-medium text-text-primary">Color Theme</div>
-                                        <Select
-                                            value={settings.theme}
-                                            onChange={(val) => settings.setTheme(val as Theme)}
-                                            options={themes.map((theme) => ({
-                                                value: theme.value,
-                                                label: getThemeDisplayName(theme.value),
-                                            }))}
-                                            searchable
-                                        />
-                                    </label>
+                                    <h3 className="text-base font-semibold text-text-primary">Theme Selection</h3>
 
-                                    <label className="space-y-2">
-                                        <div className="text-sm font-medium text-text-primary">Accent Color</div>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="color"
-                                                value={settings.accentColor}
-                                                onChange={(e) => settings.updateSettings({ accentColor: e.target.value })}
-                                                className="w-12 h-10 rounded cursor-pointer"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={settings.accentColor}
-                                                onChange={(e) => settings.updateSettings({ accentColor: e.target.value })}
-                                                className="flex-1 px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm font-mono"
-                                            />
+                                    {/* Group themes by category */}
+                                    {['standard', 'premium', 'retro', 'anime'].map((category) => {
+                                        const categoryThemes = themes.filter(t => t.category === category);
+                                        if (categoryThemes.length === 0) return null;
+
+                                        return (
+                                            <div key={category} className="space-y-3">
+                                                <h4 className="text-sm font-medium text-text-secondary uppercase tracking-wider text-[10px]">
+                                                    {category}
+                                                </h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                    {categoryThemes.map((theme) => (
+                                                        <button
+                                                            key={theme.value}
+                                                            onClick={() => settings.setTheme(theme.value)}
+                                                            className={`
+                                                                relative group flex flex-col p-2 space-y-2 rounded-lg border text-left transition-all overflow-hidden
+                                                                ${settings.theme === theme.value
+                                                                    ? 'bg-accent/5 border-accent ring-1 ring-accent'
+                                                                    : 'bg-bg-1 border-border hover:bg-bg-2 hover:border-text-secondary'
+                                                                }
+                                                            `}
+                                                        >
+                                                            {/* Preview mock */}
+                                                            <div className="w-full relative pointer-events-none">
+                                                                <ThemePreview theme={theme.value} active={settings.theme === theme.value} />
+
+                                                                {/* Emoji overlay */}
+                                                                {theme.emoji && (
+                                                                    <div className="absolute -bottom-2 -right-1 text-2xl drop-shadow-md transform group-hover:scale-110 transition-transform">
+                                                                        {theme.emoji}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex flex-col px-1">
+                                                                <div className="flex items-center justify-between w-full">
+                                                                    <span className={`text-sm font-medium ${settings.theme === theme.value ? 'text-accent' : 'text-text-primary'}`}>
+                                                                        {theme.label}
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-xs text-text-secondary line-clamp-1">
+                                                                    {theme.description || 'Theme'}
+                                                                </span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="space-y-4 pt-4 border-t border-border">
+                                    <h3 className="text-base font-semibold text-text-primary">Accent Color</h3>
+
+                                    <div className="space-y-4">
+                                        <div className="flex flex-wrap gap-3">
+                                            {[
+                                                '#3b82f6', // Blue
+                                                '#8b5cf6', // Violet
+                                                '#ec4899', // Pink
+                                                '#f43f5e', // Rose
+                                                '#f97316', // Orange
+                                                '#eab308', // Yellow
+                                                '#22c55e', // Green
+                                                '#14b8a6', // Teal
+                                                '#06b6d4', // Cyan
+                                            ].map((color) => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => settings.updateSettings({ accentColor: color })}
+                                                    className={`
+                                                        w-8 h-8 rounded-full border-2 transition-all hover:scale-110
+                                                        ${settings.accentColor.toLowerCase() === color.toLowerCase()
+                                                            ? 'border-text-primary ring-2 ring-offset-2 ring-offset-bg-1 ring-accent'
+                                                            : 'border-transparent hover:border-text-secondary'
+                                                        }
+                                                    `}
+                                                    style={{ backgroundColor: color }}
+                                                    title={color}
+                                                />
+                                            ))}
+
+                                            {/* Custom Color Input */}
+                                            <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-border hover:border-text-secondary transition-colors group">
+                                                <input
+                                                    type="color"
+                                                    value={settings.accentColor}
+                                                    onChange={(e) => settings.updateSettings({ accentColor: e.target.value })}
+                                                    className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 cursor-pointer opacity-0"
+                                                    title="Custom Color"
+                                                />
+                                                <div
+                                                    className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-green-500 to-blue-500 opacity-80 group-hover:opacity-100"
+                                                >
+                                                    <span className="text-[10px] text-white drop-shadow">+</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </label>
+
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className="w-4 h-4 rounded border border-border"
+                                                style={{ backgroundColor: settings.accentColor }}
+                                            />
+                                            <code className="text-xs text-text-secondary bg-bg-2 px-1.5 py-0.5 rounded">
+                                                {settings.accentColor}
+                                            </code>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -295,6 +379,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     </label>
                                 </div>
                             </div>
+                        )}
+
+                        {activeTab === 'shortcuts' && (
+                            <KeyboardShortcutsTab />
                         )}
 
                         {activeTab === 'about' && (

@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:dmg": "mkdir -p src-tauri/binaries && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && chmod +x ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && cd ../frontend && tauri build --target aarch64-apple-darwin",
-    "build:windows": "if not exist src-tauri\\binaries mkdir src-tauri\\binaries && cd ..\\backend && cargo build --release && copy target\\release\\dbplus-backend.exe ..\\frontend\\src-tauri\\binaries\\dbplus-backend-x86_64-pc-windows-msvc.exe && cd ..\\frontend && tauri build",
+    "build:dmg": "mkdir -p src-tauri/binaries && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && chmod +x ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && cd ../frontend && tauri build --target aarch64-apple-darwin && mkdir -p ../output/macos && VERSION=$(node -p \"JSON.parse(require('fs').readFileSync('package.json','utf8')).version\") && cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg ../output/macos/DBPlus-${VERSION}-macos.dmg",
+    "build:windows": "if not exist src-tauri\\binaries mkdir src-tauri\\binaries && cd ..\\backend && cargo build --release && copy target\\release\\dbplus-backend.exe ..\\frontend\\src-tauri\\binaries\\dbplus-backend-x86_64-pc-windows-msvc.exe && cd ..\\frontend && tauri build && if not exist ..\\output\\windows mkdir ..\\output\\windows && copy src-tauri\\target\\release\\bundle\\*\\*.exe ..\\output\\windows\\",
     "preview": "vite preview",
     "tauri": "tauri"
   },
@@ -34,6 +34,7 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.4.2",
     "@tauri-apps/plugin-opener": "^2",
+    "@types/dagre": "^0.7.53",
     "@uiw/react-codemirror": "^4.21.24",
     "axios": "^1.6.7",
     "clsx": "^2.1.0",

@@ -4,22 +4,6 @@ export interface TableInfo {
   table_type?: string;
 }
 
-export interface ViewInfo {
-    name: string;
-    schema: string;
-    owner?: string;
-    definition?: string;
-}
-
-export interface FunctionInfo {
-    name: string;
-    schema: string;
-    owner?: string;
-    language?: string;
-    return_type?: string;
-    definition?: string;
-}
-
 export interface SearchResult {
     schema: string;
     name: string;
