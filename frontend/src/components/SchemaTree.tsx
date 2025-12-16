@@ -14,6 +14,7 @@ import { connectionApi } from '../services/connectionApi';
 import CreateDatabaseModal from './connections/CreateDatabaseModal';
 import { invoke } from '@tauri-apps/api/core';
 import { useConnectionStore } from '../store/connectionStore';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import SqliteToolsModal from './sqlite/SqliteToolsModal';
 import CreateSchemaModal from './CreateSchemaModal';
 import ObjectDefinitionModal from './ObjectDefinitionModal';
@@ -66,6 +67,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const activeDatabase = useWorkspaceTabsStore(state => state.activeDatabase());
   const [contextMenu, setContextMenu] = useState<{
     table: string;
     position: { x: number; y: number };
@@ -314,6 +316,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         initialScope={exportDdlState.scope}
         initialSchema={schemaName}
         initialTable={exportDdlState.initialTable}
+        initialDatabase={activeDatabase}
       />
 
       {dataTools && (

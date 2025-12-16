@@ -30,6 +30,7 @@ pub struct DdlObjectSpec {
 #[serde(rename_all = "camelCase")]
 pub struct ExportDdlOptions {
     pub scope: DdlScope,
+    pub database: Option<String>,
     pub schemas: Option<Vec<String>>,
     pub objects: Option<Vec<DdlObjectSpec>>,
     pub include_drop: bool,

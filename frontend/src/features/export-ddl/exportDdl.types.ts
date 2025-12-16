@@ -20,6 +20,7 @@ export interface DdlObjectSpec {
 
 export interface ExportDdlOptions {
     scope: DdlScope;
+    database?: string;
     schemas?: string[];
     objects?: DdlObjectSpec[];
     includeDrop: boolean;

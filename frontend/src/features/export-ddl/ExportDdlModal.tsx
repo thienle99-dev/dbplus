@@ -10,7 +10,7 @@ import {
 } from './exportDdl.types';
 import { exportPostgresDdl, checkPgDump } from './exportDdl.service';
 import { useToast } from '../../context/ToastContext';
-import { Copy, Download, AlertTriangle, Loader2, Check } from 'lucide-react';
+import { Copy, Download, AlertTriangle, Loader2, Check, Database } from 'lucide-react';
 
 interface ExportDdlModalProps {
     isOpen: boolean;
@@ -19,6 +19,7 @@ interface ExportDdlModalProps {
     initialScope?: DdlScope;
     initialSchema?: string;
     initialTable?: string;
+    initialDatabase?: string;
 }
 
 const Checkbox = ({ checked, onChange, label, disabled, className }: { checked: boolean, onChange: (val: boolean) => void, label?: React.ReactNode, disabled?: boolean, className?: string }) => (
@@ -79,7 +80,8 @@ export default function ExportDdlModal({
     connectionId,
     initialScope = DdlScope.Database,
     initialSchema,
-    initialTable
+    initialTable,
+    initialDatabase
 }: ExportDdlModalProps) {
     const { showToast } = useToast();
     const [scope, setScope] = useState<DdlScope>(initialScope);
@@ -167,6 +169,7 @@ export default function ExportDdlModal({
         try {
             const options: ExportDdlOptions = {
                 scope,
+                database: initialDatabase,
                 schemas: scope === DdlScope.Database ? undefined : selectedSchemas,
                 objects: scope === DdlScope.Objects ? selectedTables : undefined,
                 includeDrop,
@@ -218,6 +221,19 @@ export default function ExportDdlModal({
         }
     }, [isOpen]);
 
+    // Reset selections when database or schema changes
+    useEffect(() => {
+        if (isOpen) {
+            // When modal opens or database/schema changes, reset to initial state
+            setScope(initialScope);
+            setSelectedSchemas(initialSchema ? [initialSchema] : []);
+            setSelectedTables([]);
+            setActiveObjectSchema(initialSchema || null);
+            setResult(null);
+            setError(null);
+        }
+    }, [initialDatabase, initialSchema, isOpen, initialScope]);
+
     return (
         <Modal
             isOpen={isOpen}
@@ -227,6 +243,29 @@ export default function ExportDdlModal({
             footer={null}
         >
             <div className="flex flex-col h-[70vh]">
+                {initialDatabase && (
+                    <div className="mb-4 px-4 py-3 bg-gradient-to-r from-accent/5 to-accent/10 border-l-4 border-accent rounded-r">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Database size={14} className="text-accent" />
+                            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wide">Current Workspace</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-text-tertiary">Database:</span>
+                                <code className="px-2 py-0.5 bg-bg-2 border border-border rounded text-accent font-semibold">{initialDatabase}</code>
+                            </div>
+                            {initialSchema && (
+                                <>
+                                    <span className="text-text-tertiary">•</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-text-tertiary">Schema:</span>
+                                        <code className="px-2 py-0.5 bg-bg-2 border border-border rounded text-accent font-semibold">{initialSchema}</code>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
                 <div className="flex-1 flex gap-4 overflow-hidden">
                     {/* Left Panel: Configuration */}
                     <div className="w-1/3 flex flex-col gap-4 overflow-y-auto pr-2 border-r border-border min-w-[250px]">
@@ -320,10 +359,11 @@ export default function ExportDdlModal({
                                 <div>
                                     <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1 block">Context Schema</label>
                                     <select
-                                        className="w-full bg-bg-2 border border-border rounded px-2 py-1 text-sm outline-none focus:border-accent"
+                                        className="w-full bg-bg-2 border border-border rounded px-2 py-1 text-sm outline-none focus:border-accent hover:border-accent/50 transition-colors cursor-pointer text-text-primary"
                                         value={activeObjectSchema || ''}
                                         onChange={e => setActiveObjectSchema(e.target.value)}
                                     >
+                                        {!activeObjectSchema && <option value="">Select a schema...</option>}
                                         {schemas.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </div>
@@ -395,22 +435,38 @@ export default function ExportDdlModal({
                                     checked={includeDrop}
                                     onChange={setIncludeDrop}
                                     label="Include DROP statements"
+                                    disabled={
+                                        (scope === DdlScope.Schema && selectedSchemas.length === 0) ||
+                                        (scope === DdlScope.Objects && selectedTables.length === 0)
+                                    }
                                 />
                                 <Checkbox
                                     checked={ifExists}
                                     onChange={setIfExists}
                                     label="IF EXISTS"
-                                    disabled={!includeDrop}
+                                    disabled={
+                                        !includeDrop ||
+                                        (scope === DdlScope.Schema && selectedSchemas.length === 0) ||
+                                        (scope === DdlScope.Objects && selectedTables.length === 0)
+                                    }
                                 />
                                 <Checkbox
                                     checked={!includeOwnerPrivileges}
                                     onChange={val => setIncludeOwnerPrivileges(!val)}
                                     label="Exclude Owner/Privileges"
+                                    disabled={
+                                        (scope === DdlScope.Schema && selectedSchemas.length === 0) ||
+                                        (scope === DdlScope.Objects && selectedTables.length === 0)
+                                    }
                                 />
                                 <Checkbox
                                     checked={includeComments}
                                     onChange={setIncludeComments}
                                     label="Include Comments"
+                                    disabled={
+                                        (scope === DdlScope.Schema && selectedSchemas.length === 0) ||
+                                        (scope === DdlScope.Objects && selectedTables.length === 0)
+                                    }
                                 />
                             </div>
                         </div>
@@ -418,7 +474,7 @@ export default function ExportDdlModal({
                         <button
                             onClick={handleExport}
                             disabled={loading || (scope === DdlScope.Schema && selectedSchemas.length === 0) || (scope === DdlScope.Objects && selectedTables.length === 0)}
-                            className="mt-auto px-4 py-2 bg-primary-default text-text-inverse rounded hover:bg-primary-hover disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+                            className="mt-auto px-4 py-2 bg-primary-default text-white rounded hover:bg-primary-hover disabled:opacity-50 font-medium flex items-center justify-center gap-2"
                         >
                             {loading && <Loader2 className="animate-spin" size={16} />}
                             Generate DDL

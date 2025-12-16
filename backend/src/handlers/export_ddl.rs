@@ -43,12 +43,15 @@ pub async fn export_postgres_ddl(
         )
         .map_err(|e| e.to_string())?;
 
+        // Use database from options if provided, otherwise use connection database
+        let database = options.database.as_deref().unwrap_or(&conn.database);
+
         let ddl = run_pg_dump(
             Some(path),
             &conn.host,
             conn.port,
             &conn.username,
-            &conn.database,
+            database,
             &password,
             &options,
         )
@@ -57,7 +60,13 @@ pub async fn export_postgres_ddl(
 
         Ok(Json(ExportDdlResult { ddl, method }))
     } else {
-        let driver = PostgresDriver::new(&conn, &password)
+        // Override connection database if specified in options
+        let mut conn_for_driver = conn.clone();
+        if let Some(ref db) = options.database {
+            conn_for_driver.database = db.clone();
+        }
+
+        let driver = PostgresDriver::new(&conn_for_driver, &password)
             .await
             .map_err(|e| e.to_string())?;
 
