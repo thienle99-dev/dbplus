@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Table, Eye, Code, FileCode, ArrowRight, Database } from 'lucide-react';
+import { Search, Table, Eye, Code, FileCode, ArrowRight, Database, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalSearch, useDatabases } from '../hooks/useDatabase';
 import { useTabContext } from '../context/TabContext';
 import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
+import { useConnectionStore } from '../store/connectionStore';
+import CreateDatabaseModal from './connections/CreateDatabaseModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -14,13 +17,19 @@ interface CommandPaletteProps {
 export default function CommandPalette({ isOpen, onClose, connectionId }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [createDbOpen, setCreateDbOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: searchResults = [] } = useGlobalSearch(connectionId, query);
   const { data: databases = [] } = useDatabases(connectionId);
   const { openTab } = useWorkspaceTabsStore();
+
+  const { connections } = useConnectionStore();
+  const connection = useMemo(() => connections.find(c => c.id === connectionId), [connections, connectionId]);
+  const isPostgres = connection?.type === 'postgres';
 
   // Combine databases and search results
   const results = useMemo(() => {
@@ -142,7 +151,16 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
             placeholder="Search databases, tables, views, functions..."
             className="flex-1 bg-transparent outline-none text-text-primary placeholder:text-text-secondary"
           />
-          <div className="flex gap-1">
+          <div className="flex items-center gap-2">
+            {isPostgres && (
+              <button
+                onClick={() => setCreateDbOpen(true)}
+                className="p-1 hover:bg-bg-3 rounded text-text-secondary hover:text-accent transition-colors"
+                title="Create Database"
+              >
+                <Plus size={16} />
+              </button>
+            )}
             <kbd className="px-1.5 py-0.5 bg-bg-3 rounded text-[10px] text-text-secondary">ESC</kbd>
           </div>
         </div>
@@ -188,6 +206,18 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
           )}
         </div>
       </div>
+
+      {createDbOpen && connectionId && (
+        <CreateDatabaseModal
+          open={createDbOpen}
+          onOpenChange={setCreateDbOpen}
+          connectionId={connectionId}
+          onCreated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+            // Maybe select the new database?
+          }}
+        />
+      )}
     </div>
   );
 }
