@@ -237,6 +237,14 @@ async fn main() {
             "/api/connections/:id/backup/sql",
             get(handlers::data_tools::backup_postgres_sql),
         )
+        .route(
+            "/api/connections/:id/export-ddl",
+            post(handlers::export_ddl::export_postgres_ddl),
+        )
+        .route(
+            "/api/settings/pg-dump/check",
+            get(handlers::export_ddl::check_pg_dump),
+        )
         // Views and Functions routes
         .route(
             "/api/connections/:id/views",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode } from 'lucide-react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,9 @@ import { useConnectionStore } from '../store/connectionStore';
 import SqliteToolsModal from './sqlite/SqliteToolsModal';
 import CreateSchemaModal from './CreateSchemaModal';
 import ObjectDefinitionModal from './ObjectDefinitionModal';
+import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
+import { DdlScope } from '../features/export-ddl/exportDdl.types';
+import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 
 interface ObjectFolderProps {
   title: string;
@@ -30,10 +33,7 @@ interface ObjectFolderProps {
 function ObjectFolder({ title, icon, children, count, defaultOpen, className }: ObjectFolderProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
 
-  // If we have an explicit count of 0, don't show the folder? 
-  // Or simpler: always show. Let's filter in parent if we want to hide empty.
   if (count === 0 && !defaultOpen) {
-    // Optional: render closed and grayed out?
   }
 
   return (
@@ -70,6 +70,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     table: string;
     position: { x: number; y: number };
   } | null>(null);
+  const [schemaContextMenu, setSchemaContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [exportDdlState, setExportDdlState] = useState<{
+    open: boolean;
+    scope: DdlScope;
+    initialTable?: string
+  }>({ open: false, scope: DdlScope.Schema });
+
   const [dataTools, setDataTools] = useState<null | { mode: 'export' | 'import'; format: 'csv' | 'json' | 'sql'; schema: string; table: string }>(null);
 
   // Definition Modal State
@@ -133,8 +140,18 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     setContextMenu({ table: tableName, position: { x: e.clientX, y: e.clientY } });
   };
 
-  const handleDropSchemaClick = async (e: React.MouseEvent) => {
+  const handleSchemaContextMenu = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
+    setSchemaContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleDropSchemaClick = async (e: React.MouseEvent) => {
+    // Only used for button click, not context menu
+    e.preventDefault(); e.stopPropagation();
+    dropSchemaLogic();
+  };
+
+  const dropSchemaLogic = async () => {
     if (connectionType === 'sqlite' && schemaName === 'main') {
       showToast('Cannot detach main database', 'error'); return;
     }
@@ -163,19 +180,15 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   }, [searchTerm, hasItems]);
 
   // Visibility Logic
-  // If searching, hide if no matches found
   if (searchTerm && !shouldShow && hasLoaded) return null;
-
-  // If showing pinned only, hide if no pinned tables found (only after loading to be sure)
   if (showPinnedOnly && hasLoaded && filteredTables.length === 0) return null;
-
-  // Otherwise, always show the schema folder (even if empty, allow user to open)
-  // This fixes the issue where clicking a schema made it disappear because it was "empty" before loading finished or if genuinely empty
-
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Collapsible.Trigger className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors">
+      <Collapsible.Trigger
+        className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors"
+        onContextMenu={handleSchemaContextMenu}
+      >
         <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={12} className="text-text-secondary" />
         </div>
@@ -260,8 +273,48 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           onTogglePin={() => togglePin(schemaName, contextMenu.table)}
           onOpenExport={(format) => setDataTools({ mode: 'export', format, schema: schemaName, table: contextMenu.table })}
           onOpenImport={(format) => setDataTools({ mode: 'import', format, schema: schemaName, table: contextMenu.table })}
+          onExportDdl={() => {
+            setExportDdlState({ open: true, scope: DdlScope.Objects, initialTable: contextMenu.table });
+            setContextMenu(null);
+          }}
         />
       )}
+
+      {schemaContextMenu && (
+        <ContextMenu
+          x={schemaContextMenu.x}
+          y={schemaContextMenu.y}
+          onClose={() => setSchemaContextMenu(null)}
+        >
+          <ContextMenuItem
+            icon={<Download size={14} />}
+            onClick={() => {
+              setExportDdlState({ open: true, scope: DdlScope.Schema, initialTable: undefined });
+              setSchemaContextMenu(null);
+            }}
+          >
+            Export DDL...
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem icon={<Plus size={14} />}>Create Table...</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem icon={<Trash2 size={14} />} onClick={() => {
+            setSchemaContextMenu(null);
+            dropSchemaLogic();
+          }} danger>
+            {connectionType === 'sqlite' ? 'Detach Database' : 'Drop Schema'}
+          </ContextMenuItem>
+        </ContextMenu>
+      )}
+
+      <ExportDdlModal
+        isOpen={exportDdlState.open}
+        onClose={() => setExportDdlState(prev => ({ ...prev, open: false }))}
+        connectionId={connectionId}
+        initialScope={exportDdlState.scope}
+        initialSchema={schemaName}
+        initialTable={exportDdlState.initialTable}
+      />
 
       {dataTools && (
         <DataToolsModal

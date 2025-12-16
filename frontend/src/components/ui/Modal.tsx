@@ -67,7 +67,7 @@ export default function Modal({
           relative
           w-full
           ${sizeClasses[size]}
-          bg-bg-1/95 border border-border/40
+          bg-bg-1 border border-border/40
           rounded-2xl
           shadow-[0_18px_40px_rgba(0,0,0,0.25)]
           flex flex-col

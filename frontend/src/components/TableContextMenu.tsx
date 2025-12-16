@@ -29,6 +29,7 @@ interface TableContextMenuProps {
     onTogglePin: () => void;
     onOpenExport: (format: 'csv' | 'json' | 'sql') => void;
     onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
+    onExportDdl: () => void;
 }
 
 interface MenuItem {
@@ -52,6 +53,7 @@ export default function TableContextMenu({
     onTogglePin,
     onOpenExport,
     onOpenImport,
+    onExportDdl,
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
@@ -253,13 +255,21 @@ export default function TableContextMenu({
             divider: true,
         },
         {
-            label: 'Export',
+            label: 'Export Data',
             icon: <FileDown size={14} />,
             submenu: [
                 { label: 'Export as CSV', icon: <FileDown size={14} />, onClick: () => { onOpenExport('csv'); onClose(); } },
                 { label: 'Export as JSON', icon: <FileDown size={14} />, onClick: () => { onOpenExport('json'); onClose(); } },
                 { label: 'Export as SQL', icon: <FileDown size={14} />, onClick: () => { onOpenExport('sql'); onClose(); } },
             ],
+        },
+        {
+            label: 'Export DDL...',
+            icon: <FileDown size={14} />,
+            onClick: () => {
+                onExportDdl();
+                onClose();
+            },
         },
         {
             label: 'Import',
