@@ -1,19 +1,19 @@
 # ER Diagram - Quick Checklist
 
 ## Backend
-- [ ] Create `backend/src/services/postgres/foreign_key.rs`
-- [ ] Add `ForeignKeyInfo` struct
-- [ ] Implement SQL query for foreign keys
-- [ ] Create `backend/src/handlers/foreign_key.rs`
-- [ ] Add `get_foreign_keys` handler
-- [ ] Add route to `main.rs`: `GET /api/connections/:id/foreign-keys`
-- [ ] Test API with Postman/curl
+- [x] Create `backend/src/services/postgres/foreign_key.rs`
+- [x] Add `ForeignKeyInfo` struct
+- [x] Implement SQL query for foreign keys
+- [x] Create `backend/src/handlers/foreign_key.rs`
+- [x] Add `get_foreign_keys` handler
+- [x] Add route to `main.rs`: `GET /api/connections/:id/foreign-keys`
+- [x] Test API with Postman/curl
 
 ## Frontend - Data
-- [ ] Create `frontend/src/types/foreignKey.ts`
-- [ ] Add `ForeignKeyInfo`, `ERNode`, `EREdge` types
-- [ ] Add `useForeignKeys` hook to `useDatabase.ts`
-- [ ] Test data fetching
+- [x] Create `frontend/src/types/foreignKey.ts`
+- [x] Add `ForeignKeyInfo`, `ERNode`, `EREdge` types
+- [x] Add `useForeignKeys` hook to `useDatabase.ts`
+- [x] Test data fetching
 
 ## Frontend - Components
 - [ ] Install reactflow: `pnpm add reactflow`

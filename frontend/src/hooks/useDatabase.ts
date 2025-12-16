@@ -16,6 +16,7 @@ import {
     SearchResult,
     SchemaForeignKey,
 } from '../types';
+import { ForeignKeyInfo } from '../types/foreignKey';
 import { useActiveDatabaseOverride } from './useActiveDatabaseOverride';
 
 export const useDatabases = (connectionId: string | undefined) => {
@@ -348,7 +349,7 @@ export const useFunctions = (connectionId: string | undefined, schema: string | 
     return useQuery({
         queryKey: ['functions', connectionId, dbKey, schema],
         queryFn: async () => {
-             if (!connectionId || !schema) return [];
+            if (!connectionId || !schema) return [];
             const { data } = await api.get<FunctionInfo[]>(`/api/connections/${connectionId}/functions`, {
                 params: dbOverride ? { schema, database: dbOverride } : { schema },
             });
@@ -415,11 +416,31 @@ export const useSchemaForeignKeys = (connectionId: string | undefined, schema: s
         queryFn: async () => {
             if (!connectionId) return [];
             const { data } = await api.get<SchemaForeignKey[]>(`/api/connections/${connectionId}/foreign-keys`, {
-                params: { 
+                params: {
                     schema,
                     ...(dbOverride ? { database: dbOverride } : {})
                 },
             });
+            return data;
+        },
+        enabled: !!connectionId && !!schema,
+    });
+};
+
+export const useForeignKeys = (connectionId: string | undefined, schema: string | undefined) => {
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
+
+    return useQuery({
+        queryKey: ['foreign-keys', connectionId, dbKey, schema],
+        queryFn: async () => {
+            if (!connectionId || !schema) return [];
+            const { data } = await api.get<ForeignKeyInfo[]>(
+                `/api/connections/${connectionId}/foreign-keys`,
+                {
+                    params: dbOverride ? { schema, database: dbOverride } : { schema },
+                }
+            );
             return data;
         },
         enabled: !!connectionId && !!schema,
