@@ -58,7 +58,7 @@ const defaultSettings: AppSettings = {
     accentColor: '#4f83ff',
 
     // Query
-    defaultLimit: 1000,
+    defaultLimit: 100,
     queryTimeout: 30000,
 
     // Formatting

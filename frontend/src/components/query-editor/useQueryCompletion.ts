@@ -8,6 +8,7 @@ import { sql } from "@codemirror/lang-sql";
 import { EditorState } from "@codemirror/state";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { connectionApi } from "../../services/connectionApi";
+import { ForeignKey } from "../../types";
 import {
   transparentTheme,
   autocompleteTheme,
@@ -80,6 +81,54 @@ export function useQueryCompletion({
   const [schemaCompletion, setSchemaCompletion] = useState<
     Record<string, any> | undefined
   >(undefined);
+  const [foreignKeys, setForeignKeys] = useState<Record<string, ForeignKey[]>>(
+    {}
+  );
+  const [loadingConstraints, setLoadingConstraints] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Lazy load constraints for a specific table
+  const loadConstraintsForTable = useCallback(
+    async (schema: string, table: string) => {
+      if (!connectionId) return;
+
+      const key = `${schema}.${table}`;
+      
+      // Skip if already loaded or loading
+      if (foreignKeys[key] || foreignKeys[table] || loadingConstraints.has(key)) {
+        return;
+      }
+
+      // Mark as loading
+      setLoadingConstraints((prev) => new Set(prev).add(key));
+
+      try {
+        const constraints = await connectionApi.getTableConstraints(
+          connectionId,
+          schema,
+          table
+        );
+
+        if (constraints.foreign_keys && constraints.foreign_keys.length > 0) {
+          setForeignKeys((prev) => ({
+            ...prev,
+            [table]: constraints.foreign_keys,
+            [key]: constraints.foreign_keys,
+          }));
+        }
+      } catch (e) {
+        console.warn(`Failed to load constraints for ${schema}.${table}`, e);
+      } finally {
+        setLoadingConstraints((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [connectionId, foreignKeys, loadingConstraints]
+  );
 
   // Fetch schema metadata for autocomplete
   useEffect(() => {
@@ -177,6 +226,14 @@ export function useQueryCompletion({
         (key) => !key.includes(".")
       );
 
+      // Lazy load constraints for tables in query
+      tablesInQuery.forEach(({ name }) => {
+        // Try to infer schema from qualified name or use 'public' as default
+        const schema = name.includes(".") ? name.split(".")[0] : "public";
+        const tableName = name.includes(".") ? name.split(".")[1] : name;
+        loadConstraintsForTable(schema, tableName);
+      });
+
       // If no tables in query yet, suggest all available tables
       if (tablesInQuery.length === 0) {
         const options = allTables.map((table) => ({
@@ -198,17 +255,71 @@ export function useQueryCompletion({
         };
       }
 
-      // Suggest tables not already in query
+      const options: any[] = [];
+      const seen = new Set<string>();
+
+      // Add FK-aware suggestions
+      tablesInQuery.forEach(({ name: sourceTable, alias: sourceAlias }) => {
+        // Outgoing FKs (this table references others)
+        const outgoing = foreignKeys[sourceTable] || [];
+        outgoing.forEach((fk) => {
+          const targetTable = fk.foreign_table;
+          const label = targetTable;
+          const sourceRef = sourceAlias || sourceTable;
+          const apply = `${targetTable} ON ${sourceRef}.${fk.column_name} = ${targetTable}.${fk.foreign_column}`;
+
+          if (!seen.has(apply)) {
+            seen.add(apply);
+            options.push({
+              label: label,
+              detail: `→ ON ${sourceRef}.${fk.column_name} = ${fk.foreign_column}`,
+              apply: apply,
+              type: "class",
+              boost: 10, // High priority for FK relationships
+            });
+          }
+        });
+
+        // Incoming FKs (other tables reference this table)
+        Object.entries(foreignKeys).forEach(([tableName, fks]) => {
+          fks.forEach((fk) => {
+            if (fk.foreign_table === sourceTable) {
+              const targetTable = tableName;
+              const sourceRef = sourceAlias || sourceTable;
+              const apply = `${targetTable} ON ${targetTable}.${fk.column_name} = ${sourceRef}.${fk.foreign_column}`;
+              if (!seen.has(apply)) {
+                seen.add(apply);
+                options.push({
+                  label: targetTable,
+                  detail: `← ON ${fk.column_name} = ${sourceRef}.${fk.foreign_column}`,
+                  apply: apply,
+                  type: "class",
+                  boost: 9, // Slightly lower priority than outgoing
+                });
+              }
+            }
+          });
+        });
+      });
+
+      // Add all other tables as fallback (without FK relationships)
       const tablesInQueryNames = new Set(tablesInQuery.map((t) => t.name));
-      const options = allTables
+      allTables
         .filter((table) => !tablesInQueryNames.has(table))
-        .map((table) => ({
-          label: table,
-          detail: "Table",
-          apply: table,
-          type: "class",
-          boost: 0,
-        }));
+        .forEach((table) => {
+          const label = table;
+          const apply = table;
+          if (!seen.has(apply)) {
+            seen.add(apply);
+            options.push({
+              label: label,
+              detail: options.length > 0 ? "Table (no FK)" : "Table",
+              apply: apply,
+              type: "class",
+              boost: 0, // Lower priority
+            });
+          }
+        });
 
       return {
         from: joinPattern
@@ -220,7 +331,7 @@ export function useQueryCompletion({
         options,
       };
     },
-    [getTablesInQuery, schemaCompletion]
+    [getTablesInQuery, schemaCompletion, foreignKeys, loadConstraintsForTable]
   );
 
   const aliasCompletionSource = useCallback(

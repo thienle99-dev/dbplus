@@ -347,8 +347,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
     const rowVirtualizer = useVirtualizer({
         count: rowModelRows.length,
         getScrollElement: () => tableScrollRef.current,
-        estimateSize: () => 28,
-        overscan: 16,
+        estimateSize: () => 32, // Increased from 28 for better accuracy
+        overscan: 30, // Increased from 16 for smoother scrolling
     });
 
     const getExportRows = useCallback(() => {
@@ -939,7 +939,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ result, loading, err
                                                     {virtualItems.map((virtualRow) => {
                                                         const row = rowModelRows[virtualRow.index];
                                                         return (
-                                                            <tr key={row.id} className="hover:bg-bg-2/50 group h-7">
+                                                            <tr key={row.id} className="hover:bg-bg-2/50 group h-8">
                                                                 {row.getVisibleCells().map((cell) => (
                                                                     <td
                                                                         key={cell.id}

@@ -11,6 +11,8 @@ pub struct Model {
     pub sql: String,
     #[sea_orm(column_type = "Json", nullable)]
     pub tags: Option<serde_json::Value>,
+    #[sea_orm(column_type = "Json", nullable)]
+    pub variables: Option<serde_json::Value>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
 }
