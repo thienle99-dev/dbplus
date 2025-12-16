@@ -43,8 +43,9 @@ impl FunctionOperations for PostgresFunction {
                 schema: row.get(0),
                 name: row.get(1),
                 definition: row.get(2),
-                return_type: row.get(3),
-                language: row.get(4),
+                language: Some(row.get(4)),
+                return_type: Some(row.get(3)),
+                arguments: None,
                 owner: row.get(5),
             })
             .collect();
@@ -90,8 +91,9 @@ impl FunctionOperations for PostgresFunction {
             schema: row.get(0),
             name: row.get(1),
             definition: row.get(2),
-            return_type: row.get(3),
-            language: row.get(4),
+            language: Some(row.get(4)),
+            return_type: Some(row.get(3)),
+            arguments: None,
             owner: row.get(5),
         })
     }

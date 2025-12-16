@@ -151,6 +151,10 @@ impl SchemaIntrospection for SQLiteDriver {
     ) -> Result<Vec<super::db_driver::SchemaForeignKey>> {
         self.schema.get_schema_foreign_keys(schema).await
     }
+
+    async fn get_extensions(&self) -> Result<Vec<super::db_driver::ExtensionInfo>> {
+        self.schema.get_extensions().await
+    }
 }
 
 #[async_trait]
@@ -352,6 +356,3 @@ impl FunctionOperations for SQLiteDriver {
             .await
     }
 }
-
-
-

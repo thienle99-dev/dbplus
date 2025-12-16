@@ -4,6 +4,7 @@ pub mod data_tools;
 pub mod database;
 pub mod explain;
 pub mod export_ddl;
+pub mod extensions;
 pub mod history;
 pub mod query;
 pub mod query_stream;

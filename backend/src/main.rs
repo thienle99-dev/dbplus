@@ -259,6 +259,10 @@ async fn main() {
             get(handlers::schema::list_functions),
         )
         .route(
+            "/api/connections/:id/extensions",
+            get(handlers::extensions::list_extensions),
+        )
+        .route(
             "/api/connections/:id/search",
             get(handlers::search::search_objects),
         )

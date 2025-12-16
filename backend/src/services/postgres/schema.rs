@@ -236,4 +236,33 @@ impl SchemaIntrospection for PostgresSchema {
             })
             .collect())
     }
+
+    async fn get_extensions(&self) -> Result<Vec<crate::services::db_driver::ExtensionInfo>> {
+        let client = self.pool.get().await?;
+        let rows = client
+            .query(
+                "SELECT 
+                    e.extname as name,
+                    e.extversion as version,
+                    n.nspname as schema,
+                    c.description
+                FROM pg_extension e
+                JOIN pg_namespace n ON n.oid = e.extnamespace
+                LEFT JOIN pg_description c ON c.objoid = e.oid AND c.classoid = 'pg_extension'::regclass
+                WHERE e.extname != 'plpgsql'
+                ORDER BY e.extname",
+                &[],
+            )
+            .await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| crate::services::db_driver::ExtensionInfo {
+                name: row.get(0),
+                version: row.get(1),
+                schema: row.get(2),
+                description: row.get(3),
+            })
+            .collect())
+    }
 }

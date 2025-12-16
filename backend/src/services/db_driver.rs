@@ -198,9 +198,18 @@ pub struct FunctionInfo {
     pub schema: String,
     pub name: String,
     pub definition: String,
-    pub return_type: String,
-    pub language: String,
+    pub language: Option<String>,
+    pub return_type: Option<String>,
+    pub arguments: Option<String>,
     pub owner: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtensionInfo {
+    pub name: String,
+    pub version: String,
+    pub schema: String,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -317,6 +326,7 @@ pub trait DatabaseDriver:
         schema: &str,
         function_name: &str,
     ) -> Result<FunctionInfo>;
+    async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>>;
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value>;
 }
 
@@ -483,6 +493,10 @@ where
         function_name: &str,
     ) -> Result<FunctionInfo> {
         <Self as FunctionOperations>::get_function_definition(self, schema, function_name).await
+    }
+
+    async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>> {
+        <Self as SchemaIntrospection>::get_extensions(self).await
     }
 
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {

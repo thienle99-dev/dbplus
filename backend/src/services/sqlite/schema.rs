@@ -241,6 +241,11 @@ impl SchemaIntrospection for SQLiteSchema {
         }
         Ok(fks)
     }
+
+    async fn get_extensions(&self) -> Result<Vec<crate::services::db_driver::ExtensionInfo>> {
+        // SQLite doesn't have extensions in the same way PostgreSQL does
+        Ok(Vec::new())
+    }
 }
 
 fn normalize_schema(schema: &str) -> String {
@@ -259,6 +264,3 @@ fn quote_ident(s: &str) -> String {
 fn quote_literal(s: &str) -> String {
     format!("'{}'", s.replace('\'', "''"))
 }
-
-
-
