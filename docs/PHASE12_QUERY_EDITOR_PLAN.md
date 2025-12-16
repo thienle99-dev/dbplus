@@ -253,10 +253,12 @@ WHERE id = 123
 
 ---
 
-### 3. Tabs: Pin/Duplicate + Split Editor/Results (Vertical/Horizontal) ⭐⭐⭐⭐
+### 3. Tabs: Pin/Duplicate + Split Editor/Results (Vertical/Horizontal) ⭐⭐⭐⭐ ✅ COMPLETED
 
 **Priority:** MEDIUM  
-**Estimated Time:** 8-10 hours
+**Estimated Time:** 8-10 hours  
+**Actual Time:** ~3 hours  
+**Status:** ✅ Completed on 2025-12-16
 
 #### Backend Changes
 
@@ -264,64 +266,103 @@ WHERE id = 123
 
 #### Frontend Changes
 
-**File:** `frontend/src/stores/workspaceStore.ts`
+**File:** `frontend/src/types/tabs.ts`
 
 **Tasks:**
 
-- [ ] Add `pinned` field to Tab interface
-- [ ] Add `splitMode` field: 'none' | 'vertical' | 'horizontal'
-- [ ] Add actions: `pinTab()`, `duplicateTab()`, `setSplitMode()`
+- [x] ✅ Add `pinned` field to Tab interface
+- [x] ✅ Add `splitMode` field: 'none' | 'vertical' | 'horizontal'
+- [x] ✅ Export SplitMode type
 
-**File:** `frontend/src/components/Workspace.tsx`
+**File:** `frontend/src/components/QueryTabs.tsx`
 
 **Tasks:**
 
-- [ ] Update tab rendering to show pin icon
-- [ ] Prevent closing pinned tabs
-- [ ] Add context menu: Pin, Duplicate, Split
-- [ ] Implement split view layout
+- [x] ✅ Update tab rendering to show pin icon
+- [x] ✅ Prevent closing pinned tabs (with toast notification)
+- [x] ✅ Add context menu: Pin, Duplicate, Split
+- [x] ✅ Implement handlers: `handlePinTab()`, `handleDuplicateTab()`, `handleSetSplitMode()`
+- [x] ✅ Pass splitMode to QueryEditor
 
 **File:** `frontend/src/components/QueryEditor.tsx`
 
 **Tasks:**
 
-- [ ] Support split layout rendering
-- [ ] Vertical split: Editor on left, Results on right
-- [ ] Horizontal split: Editor on top, Results on bottom
-- [ ] Add toggle button for split mode
-- [ ] Save split preference per tab
+- [x] ✅ Support split layout rendering
+- [x] ✅ Vertical split: Editor on left (50%), Results on right (50%)
+- [x] ✅ Horizontal split: Editor on top (50%), Results on bottom (50%)
+- [x] ✅ No split: Traditional layout (editor 300px, results flex)
+- [x] ✅ Dynamic flex container based on splitMode
+- [x] ✅ Save split preference per tab
 
-**Implementation Steps:**
+#### ✅ Implementation Summary
+
+**Files Modified:**
+
+- `frontend/src/types/tabs.ts` - Added pinned and splitMode fields
+- `frontend/src/components/QueryTabs.tsx` - Pin/Duplicate/Split functionality
+- `frontend/src/components/QueryEditor.tsx` - Split view layout
+
+**Key Features:**
+
+1. **Pin Tabs:**
+
+   - Toggle pin/unpin via context menu
+   - Pin icon (📌) displayed on pinned tabs
+   - Pinned tabs cannot be closed (shows toast)
+   - Force Close still works for pinned tabs
+   - Dynamic menu text ("Pin Tab" / "Unpin Tab")
+
+2. **Duplicate Tabs:**
+
+   - Duplicate any tab via context menu
+   - Copies all content (SQL, metadata, type)
+   - Creates new draft (not linked to original saved query)
+   - Auto-switches to duplicated tab
+   - Adds "(Copy)" suffix to title
+
+3. **Split View:**
+   - **Vertical Split:** Editor left, Results right (50/50)
+   - **Horizontal Split:** Editor top, Results bottom (50/50)
+   - **No Split:** Traditional layout (default)
+   - Toggle via context menu
+   - Per-tab split preference
+   - Responsive flex layout
+
+**Context Menu Options:**
+
+- Close Tab
+- Force Close (Discard)
+- Pin Tab / Unpin Tab
+- Duplicate Tab
+- Split Vertical
+- Split Horizontal
+- No Split
+- Close Other Tabs
+- Close All Tabs
+
+**Implementation Details:**
 
 ```typescript
-// 1. Update Tab interface
-interface Tab {
-  // ... existing fields
-  pinned: boolean;
-  splitMode: "none" | "vertical" | "horizontal";
-}
-
-// 2. Split layout component
-<div className={splitMode === "vertical" ? "flex-row" : "flex-col"}>
-  <div className="editor-pane">
+// Split view container adapts based on mode
+<div className={`flex ${splitMode === "vertical" ? "flex-row" : "flex-col"}`}>
+  {/* Editor: 50% width (vertical) or 50% height (horizontal) */}
+  <div className={splitMode === "vertical" ? "w-1/2" : "h-1/2"}>
     <CodeMirror />
   </div>
-  <div className="results-pane">
+
+  {/* Results: Remaining space */}
+  <div className="flex-1">
     <QueryResults />
   </div>
-</div>;
-
-// 3. Context menu items
-const contextMenuItems = [
-  { label: "Pin Tab", action: () => pinTab(tabId) },
-  { label: "Duplicate Tab", action: () => duplicateTab(tabId) },
-  { label: "Split Vertical", action: () => setSplitMode(tabId, "vertical") },
-  {
-    label: "Split Horizontal",
-    action: () => setSplitMode(tabId, "horizontal"),
-  },
-];
+</div>
 ```
+
+**Use Cases:**
+
+- **Vertical Split:** Compare query with results side-by-side (wide screens)
+- **Horizontal Split:** Traditional top-bottom layout (tall result sets)
+- **No Split:** Maximum editor space (default workflow)
 
 ---
 
@@ -742,5 +783,5 @@ ALTER TABLE snippets ADD COLUMN variables TEXT;
 **Created:** 2025-12-16  
 **Phase:** 12 - Query Editor Enhancements  
 **Status:** In Progress 🚧  
-**Progress:** Features #1, #2, #6 ✅ Complete (3/6 = 50%) | Feature #3 (20%) | Features #4-5 ⏳ Pending  
-**Last Updated:** 2025-12-16 16:41
+**Progress:** Features #1, #2, #3, #6 ✅ Complete (4/6 = 67%) | Features #4-5 ⏳ Pending  
+**Last Updated:** 2025-12-16 16:57

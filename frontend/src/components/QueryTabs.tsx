@@ -220,6 +220,14 @@ export default function QueryTabs() {
     setContextMenu(null);
   };
 
+  const handleSetSplitMode = (mode: 'none' | 'vertical' | 'horizontal') => {
+    if (!contextMenu) return;
+    setTabs(prev => prev.map(t => 
+      t.id === contextMenu.tabId ? { ...t, splitMode: mode } : t
+    ));
+    setContextMenu(null);
+  };
+
   const openTableInTab = useCallback((schema: string, table: string, newTab = true) => {
     if (newTab) {
       const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
@@ -597,6 +605,7 @@ export default function QueryTabs() {
                     isDraft={tab.isDraft}
                     savedQueryId={tab.savedQueryId}
                     queryName={tab.title}
+                    splitMode={tab.splitMode}
                     onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
                     onSaveSuccess={() => handleSaveSuccess(tab.id)}
                     onSavedQueryCreated={(savedId, name) => {
@@ -658,6 +667,25 @@ export default function QueryTabs() {
                 onClick={handleDuplicateTab}
               >
                 Duplicate Tab
+              </button>
+              <div className="border-t border-border my-1" />
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={() => handleSetSplitMode('vertical')}
+              >
+                Split Vertical
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={() => handleSetSplitMode('horizontal')}
+              >
+                Split Horizontal
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={() => handleSetSplitMode('none')}
+              >
+                No Split
               </button>
               <div className="border-t border-border my-1" />
               <button

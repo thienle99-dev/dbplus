@@ -34,6 +34,7 @@ interface QueryEditorProps {
   isDraft?: boolean;
   savedQueryId?: string;
   queryName?: string;
+  splitMode?: 'none' | 'vertical' | 'horizontal';
   onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
   onSaveSuccess?: () => void;
   onSavedQueryCreated?: (savedQueryId: string, name: string) => void;
@@ -46,6 +47,7 @@ export default function QueryEditor({
   isDraft,
   savedQueryId,
   queryName,
+  splitMode = 'none',
   onQueryChange,
   onSaveSuccess,
   onSavedQueryCreated
@@ -439,83 +441,92 @@ export default function QueryEditor({
         isDraft={isDraft}
       />
 
-      <div className="h-[300px] border-b border-border flex flex-col shrink-0">
-        <div className="flex-1 overflow-hidden flex relative">
-          {mode === 'sql' ? (
-            <CodeMirror
-              value={query}
-              height="100%"
-              extensions={allExtensions}
-              onChange={handleEditorChange}
-              onCreateEditor={handleCreateEditor}
-              className="text-base w-full h-full"
-            />
-          ) : (
-            <VisualQueryBuilder
-              onSqlChange={setQuery}
-              initialState={visualState}
-            />
-          )}
-        </div>
-
-        <QueryStatusBar
-          mode={mode}
-          setMode={setMode}
-          onFormat={handleFormat}
-          queryTrimmed={query.trim()}
-        />
-      </div>
-
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex items-center border-b border-border bg-bg-1">
-          <button
-            onClick={() => setBottomTab('results')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'results'
-              ? 'border-accent text-text-primary bg-bg-2'
-              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
-              }`}
-          >
-            Results
-          </button>
-          <button
-            onClick={() => setBottomTab('plan')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'plan'
-              ? 'border-accent text-text-primary bg-bg-2'
-              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
-              }`}
-          >
-            Execution Plan
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-hidden relative">
-          <div className={`absolute inset-0 flex flex-col ${bottomTab === 'results' ? 'z-10' : 'z-0 invisible'}`}>
-            <QueryResults
-              result={result}
-              loading={loading}
-              error={error}
-              errorDetails={errorDetails}
-              onRefresh={() => {
-                if (!lastSql) return;
-                const limit = typeof result?.limit === 'number' ? result.limit : undefined;
-                const offset = typeof result?.offset === 'number' ? result.offset : undefined;
-                if (typeof limit === 'number' && typeof offset === 'number') {
-                  fetchPage(limit, offset);
-                } else {
-                  execute(lastSql);
-                }
-              }}
-              lastSql={lastSql || undefined}
-              onPaginate={(limit, offset) => fetchPage(limit, offset)}
-              connectionId={connectionId || ''}
-            />
+      {/* Split View Container */}
+      <div className={`flex-1 flex ${splitMode === 'vertical' ? 'flex-row' : 'flex-col'} min-h-0`}>
+        {/* Editor Section */}
+        <div className={`${
+          splitMode === 'none' ? 'h-[300px]' : 
+          splitMode === 'vertical' ? 'w-1/2' : 
+          'h-1/2'
+        } border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}>
+          <div className="flex-1 overflow-hidden flex relative">
+            {mode === 'sql' ? (
+              <CodeMirror
+                value={query}
+                height="100%"
+                extensions={allExtensions}
+                onChange={handleEditorChange}
+                onCreateEditor={handleCreateEditor}
+                className="text-base w-full h-full"
+              />
+            ) : (
+              <VisualQueryBuilder
+                onSqlChange={setQuery}
+                initialState={visualState}
+              />
+            )}
           </div>
-          <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>
-            <ExecutionPlanView
-              plan={executionPlan}
-              loading={explainQuery.isPending}
-              error={explainQuery.error ? explainQuery.error.message : null}
-            />
+
+          <QueryStatusBar
+            mode={mode}
+            setMode={setMode}
+            onFormat={handleFormat}
+            queryTrimmed={query.trim()}
+          />
+        </div>
+
+        {/* Results Section */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex items-center border-b border-border bg-bg-1">
+            <button
+              onClick={() => setBottomTab('results')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'results'
+                ? 'border-accent text-text-primary bg-bg-2'
+                : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                }`}
+            >
+              Results
+            </button>
+            <button
+              onClick={() => setBottomTab('plan')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'plan'
+                ? 'border-accent text-text-primary bg-bg-2'
+                : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                }`}
+            >
+              Execution Plan
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-hidden relative">
+            <div className={`absolute inset-0 flex flex-col ${bottomTab === 'results' ? 'z-10' : 'z-0 invisible'}`}>
+              <QueryResults
+                result={result}
+                loading={loading}
+                error={error}
+                errorDetails={errorDetails}
+                onRefresh={() => {
+                  if (!lastSql) return;
+                  const limit = typeof result?.limit === 'number' ? result.limit : undefined;
+                  const offset = typeof result?.offset === 'number' ? result.offset : undefined;
+                  if (typeof limit === 'number' && typeof offset === 'number') {
+                    fetchPage(limit, offset);
+                  } else {
+                    execute(lastSql);
+                  }
+                }}
+                lastSql={lastSql || undefined}
+                onPaginate={(limit, offset) => fetchPage(limit, offset)}
+                connectionId={connectionId || ''}
+              />
+            </div>
+            <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>
+              <ExecutionPlanView
+                plan={executionPlan}
+                loading={explainQuery.isPending}
+                error={explainQuery.error ? explainQuery.error.message : null}
+              />
+            </div>
           </div>
         </div>
       </div>
