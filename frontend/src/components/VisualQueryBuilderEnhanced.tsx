@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Plus, Trash2, HelpCircle, Database, Table, Columns, Filter, ArrowUpDown, Settings, Link2, Group, Calculator } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
+import Checkbox from './ui/Checkbox';
 import { useSchemas } from '../hooks/useDatabase';
 
 interface Column {
@@ -468,6 +469,8 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
                                 setAggregates([]);
                                 setGroupByColumns([]);
                                 setHavingFilters([]);
+                                setLimit('100');
+                                setOffset('0');
                             }}
                             options={tableOptions}
                             searchable
@@ -478,22 +481,13 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
                 {selectedSchema && selectedTable && (
                     <>
                         {/* Options Row */}
-                        <div className="flex items-center gap-4 p-4 bg-bg-1 rounded-lg border border-border">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input
-                                    type="checkbox"
-                                    checked={distinct}
-                                    onChange={(e) => setDistinct(e.target.checked)}
-                                    className="w-4 h-4 accent-accent cursor-pointer"
-                                />
-                                <span className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
-                                    Remove Duplicates
-                                </span>
-                                <span title={TOOLTIPS.distinct} className="text-text-secondary cursor-help">
-                                    <HelpCircle size={14} />
-                                </span>
-                            </label>
-                        </div>
+                        <Checkbox
+                            checked={distinct}
+                            onChange={setDistinct}
+                            label="Remove Duplicates"
+                            description={TOOLTIPS.distinct}
+                            className="p-4 bg-bg-1 rounded-lg border border-border"
+                        />
 
                         {/* Columns Selection */}
                         <SectionCard title="Select Columns" icon={Columns}>
@@ -501,8 +495,8 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
                                 <button
                                     onClick={() => setSelectedColumns([])}
                                     className={`px-3 py-1.5 text-sm rounded-md border transition-all ${selectedColumns.length === 0
-                                            ? 'bg-accent text-white border-accent shadow-sm'
-                                            : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                        ? 'bg-accent text-white border-accent shadow-sm'
+                                        : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
                                         }`}
                                 >
                                     All Columns (*)
@@ -512,8 +506,8 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
                                         key={col.name}
                                         onClick={() => toggleColumn(col.name)}
                                         className={`px-3 py-1.5 text-sm rounded-md border transition-all ${selectedColumns.includes(col.name)
-                                                ? 'bg-accent text-white border-accent shadow-sm'
-                                                : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                            ? 'bg-accent text-white border-accent shadow-sm'
+                                            : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
                                             }`}
                                     >
                                         {col.name}
@@ -734,8 +728,8 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, initialState }
                                         key={col.name}
                                         onClick={() => toggleGroupBy(col.name)}
                                         className={`px-3 py-1.5 text-sm rounded-md border transition-all ${groupByColumns.includes(col.name)
-                                                ? 'bg-accent text-white border-accent shadow-sm'
-                                                : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                            ? 'bg-accent text-white border-accent shadow-sm'
+                                            : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
                                             }`}
                                     >
                                         {col.name}
