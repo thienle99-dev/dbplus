@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
+import SearchPanel from './query-editor/SearchPanel';
 
 import { useSettingsStore } from '../store/settingsStore';
 import { useToast } from '../context/ToastContext';
@@ -70,6 +71,7 @@ export default function QueryEditor({
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isSnippetLibraryOpen, setIsSnippetLibraryOpen] = useState(false);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
   // Custom Hooks
@@ -322,6 +324,24 @@ export default function QueryEditor({
   const allExtensions = useMemo(() => [
     ...extensions,
     Prec.highest(keymap.of([
+      // Search
+      {
+        key: "Mod-f",
+        run: () => {
+          setIsSearchPanelOpen(true);
+          return true;
+        },
+        preventDefault: true
+      },
+      // Replace
+      {
+        key: "Mod-h",
+        run: () => {
+          setIsSearchPanelOpen(true);
+          return true;
+        },
+        preventDefault: true
+      },
       // Execute query
       {
         key: "Mod-Enter",
@@ -534,6 +554,13 @@ export default function QueryEditor({
                 initialState={visualState}
               />
             )}
+
+            {/* Custom Search Panel */}
+            <SearchPanel
+              view={editorView}
+              isOpen={isSearchPanelOpen}
+              onClose={() => setIsSearchPanelOpen(false)}
+            />
           </div>
 
           <QueryStatusBar

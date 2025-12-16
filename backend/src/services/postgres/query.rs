@@ -19,7 +19,10 @@ use uuid::Uuid;
 struct PgMoney(Decimal);
 
 impl<'a> FromSql<'a> for PgMoney {
-    fn from_sql(_: &PgType, raw: &'a [u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _: &PgType,
+        raw: &'a [u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         if raw.len() != 8 {
             return Err("invalid money length".into());
         }
@@ -268,7 +271,10 @@ fn format_interval(months: i32, days: i32, microseconds: i64) -> String {
 
     if microseconds != 0 || parts.is_empty() {
         if us == 0 {
-            parts.push(format!("{}{:02}:{:02}:{:02}", sign, hours, minutes, seconds));
+            parts.push(format!(
+                "{}{:02}:{:02}:{:02}",
+                sign, hours, minutes, seconds
+            ));
         } else {
             parts.push(format!(
                 "{}{:02}:{:02}:{:02}.{:06}",
@@ -427,7 +433,10 @@ fn format_range(range: &postgres_protocol::types::Range<'_>, inner: &PgType) -> 
         Some(raw) => decode_range_value_to_string(inner, raw).unwrap_or_else(|_| "?".to_string()),
     };
 
-    format!("{}{},{}{}", lower_bracket, lower_str, upper_str, upper_bracket)
+    format!(
+        "{}{},{}{}",
+        lower_bracket, lower_str, upper_str, upper_bracket
+    )
 }
 
 fn format_multirange(
@@ -530,16 +539,27 @@ fn decode_row_value(
     if *col_type == PgType::MONEY_ARRAY {
         match row.try_get::<_, Option<Vec<PgMoney>>>(idx) {
             Ok(Some(v)) => {
-                return Value::Array(v.into_iter().map(|m| Value::String(m.0.to_string())).collect())
+                return Value::Array(
+                    v.into_iter()
+                        .map(|m| Value::String(m.0.to_string()))
+                        .collect(),
+                )
             }
             Ok(None) => return Value::Null,
-            Err(e) => tracing::warn!("{} Column '{}' failed money[] decode: {}", log_prefix, col_name, e),
+            Err(e) => tracing::warn!(
+                "{} Column '{}' failed money[] decode: {}",
+                log_prefix,
+                col_name,
+                e
+            ),
         }
     }
 
     if *col_type == PgType::TIMETZ_ARRAY {
         match row.try_get::<_, Option<Vec<PgTimeTz>>>(idx) {
-            Ok(Some(v)) => return Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect()),
+            Ok(Some(v)) => {
+                return Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect())
+            }
             Ok(None) => return Value::Null,
             Err(e) => tracing::warn!(
                 "{} Column '{}' failed timetz[] decode: {}",
@@ -552,7 +572,9 @@ fn decode_row_value(
 
     if *col_type == PgType::INTERVAL_ARRAY {
         match row.try_get::<_, Option<Vec<PgInterval>>>(idx) {
-            Ok(Some(v)) => return Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect()),
+            Ok(Some(v)) => {
+                return Value::Array(v.into_iter().map(|t| Value::String(t.0)).collect())
+            }
             Ok(None) => return Value::Null,
             Err(e) => tracing::warn!(
                 "{} Column '{}' failed interval[] decode: {}",
@@ -565,7 +587,9 @@ fn decode_row_value(
 
     if *col_type == PgType::MACADDR_ARRAY {
         match row.try_get::<_, Option<Vec<PgMacAddr>>>(idx) {
-            Ok(Some(v)) => return Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect()),
+            Ok(Some(v)) => {
+                return Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect())
+            }
             Ok(None) => return Value::Null,
             Err(e) => tracing::warn!(
                 "{} Column '{}' failed macaddr[] decode: {}",
@@ -578,7 +602,9 @@ fn decode_row_value(
 
     if *col_type == PgType::MACADDR8_ARRAY {
         match row.try_get::<_, Option<Vec<PgMacAddr8>>>(idx) {
-            Ok(Some(v)) => return Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect()),
+            Ok(Some(v)) => {
+                return Value::Array(v.into_iter().map(|m| Value::String(m.0)).collect())
+            }
             Ok(None) => return Value::Null,
             Err(e) => tracing::warn!(
                 "{} Column '{}' failed macaddr8[] decode: {}",
@@ -591,7 +617,9 @@ fn decode_row_value(
 
     if *col_type == PgType::BIT_ARRAY || *col_type == PgType::VARBIT_ARRAY {
         match row.try_get::<_, Option<Vec<PgBitString>>>(idx) {
-            Ok(Some(v)) => return Value::Array(v.into_iter().map(|b| Value::String(b.0)).collect()),
+            Ok(Some(v)) => {
+                return Value::Array(v.into_iter().map(|b| Value::String(b.0)).collect())
+            }
             Ok(None) => return Value::Null,
             Err(e) => tracing::warn!(
                 "{} Column '{}' failed bit/varbit[] decode: {}",
@@ -782,29 +810,54 @@ fn decode_row_value(
             v.into_iter()
                 .map(|n| {
                     Value::Number(
-                        serde_json::Number::from_f64(n).unwrap_or_else(|| serde_json::Number::from(0)),
+                        serde_json::Number::from_f64(n)
+                            .unwrap_or_else(|| serde_json::Number::from(0)),
                     )
                 })
                 .collect(),
         );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<Decimal>>>(idx) {
-        return Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|d| Value::String(d.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<Uuid>>>(idx) {
-        return Value::Array(v.into_iter().map(|u| Value::String(u.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|u| Value::String(u.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<NaiveDate>>>(idx) {
-        return Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|d| Value::String(d.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<NaiveDateTime>>>(idx) {
-        return Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|d| Value::String(d.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<DateTime<Utc>>>>(idx) {
-        return Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|d| Value::String(d.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<IpAddr>>>(idx) {
-        return Value::Array(v.into_iter().map(|ip| Value::String(ip.to_string())).collect());
+        return Value::Array(
+            v.into_iter()
+                .map(|ip| Value::String(ip.to_string()))
+                .collect(),
+        );
     }
     if let Ok(Some(v)) = row.try_get::<_, Option<Vec<Vec<u8>>>>(idx) {
         return Value::Array(
@@ -968,7 +1021,10 @@ fn build_column_decoders(columns: &[tokio_postgres::Column]) -> Vec<ColumnDecode
                     if <f64 as FromSql>::accepts(inner) {
                         return ColumnDecoder::ArrayF64;
                     }
-                    if *inner == PgType::NUMERIC || inner.name() == "numeric" || inner.name() == "decimal" {
+                    if *inner == PgType::NUMERIC
+                        || inner.name() == "numeric"
+                        || inner.name() == "decimal"
+                    {
                         return ColumnDecoder::ArrayNumeric;
                     }
                     if <Uuid as FromSql>::accepts(inner) {
@@ -1105,7 +1161,13 @@ fn decode_with_decoder(
             .try_get::<_, Option<Vec<PgMoney>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|m| Value::String(m.0.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|m| Value::String(m.0.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::Timetz => row
@@ -1398,42 +1460,78 @@ fn decode_with_decoder(
             .try_get::<_, Option<Vec<Decimal>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|d| Value::String(d.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayUuid => row
             .try_get::<_, Option<Vec<Uuid>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|u| Value::String(u.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|u| Value::String(u.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayDate => row
             .try_get::<_, Option<Vec<NaiveDate>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|d| Value::String(d.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayTimestamp => row
             .try_get::<_, Option<Vec<NaiveDateTime>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|d| Value::String(d.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayTimestamptz => row
             .try_get::<_, Option<Vec<DateTime<Utc>>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|d| Value::String(d.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|d| Value::String(d.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayInet => row
             .try_get::<_, Option<Vec<IpAddr>>>(idx)
             .ok()
             .flatten()
-            .map(|v| Value::Array(v.into_iter().map(|ip| Value::String(ip.to_string())).collect()))
+            .map(|v| {
+                Value::Array(
+                    v.into_iter()
+                        .map(|ip| Value::String(ip.to_string()))
+                        .collect(),
+                )
+            })
             .unwrap_or(Value::Null),
 
         ColumnDecoder::ArrayBytea => row
@@ -1530,7 +1628,11 @@ impl PostgresQuery {
 
         if !is_select {
             let affected = client.execute(trimmed, &[]).await?;
-            let _ = send_line(&tx, serde_json::json!({ "type": "done", "affected_rows": affected })).await;
+            let _ = send_line(
+                &tx,
+                serde_json::json!({ "type": "done", "affected_rows": affected }),
+            )
+            .await;
             return Ok(());
         }
 
@@ -1559,7 +1661,11 @@ impl PostgresQuery {
             };
 
         let statement = client.prepare(&sql_to_run).await?;
-        let columns: Vec<String> = statement.columns().iter().map(|c| c.name().to_string()).collect();
+        let columns: Vec<String> = statement
+            .columns()
+            .iter()
+            .map(|c| c.name().to_string())
+            .collect();
         let decoders = build_column_decoders(statement.columns());
 
         let _ = send_line(
@@ -1583,7 +1689,11 @@ impl PostgresQuery {
             let row = match item {
                 Ok(r) => r,
                 Err(e) => {
-                    let _ = send_line(&tx, serde_json::json!({ "type": "error", "message": e.to_string() })).await;
+                    let _ = send_line(
+                        &tx,
+                        serde_json::json!({ "type": "error", "message": e.to_string() }),
+                    )
+                    .await;
                     break;
                 }
             };
@@ -1599,7 +1709,11 @@ impl PostgresQuery {
             }
         }
 
-        let _ = send_line(&tx, serde_json::json!({ "type": "done", "row_count": row_count })).await;
+        let _ = send_line(
+            &tx,
+            serde_json::json!({ "type": "done", "row_count": row_count }),
+        )
+        .await;
         Ok(())
     }
 
@@ -1745,16 +1859,149 @@ impl QueryDriver for PostgresQuery {
 
     async fn execute_query(&self, query: &str) -> Result<QueryResult> {
         let client = self.pool.get().await?;
-        let statement = client.prepare(query).await?;
 
-        let is_select = query.trim_start().to_uppercase().starts_with("SELECT")
-            || query.trim_start().to_uppercase().starts_with("WITH");
+        // Attempt to prepare statement first (fast path + better types)
+        match client.prepare(query).await {
+            Ok(statement) => {
+                let is_select = query.trim_start().to_uppercase().starts_with("SELECT")
+                    || query.trim_start().to_uppercase().starts_with("WITH");
 
-        if is_select {
-            let rows = client.query(&statement, &[]).await?;
+                if is_select {
+                    let rows = client.query(&statement, &[]).await?;
 
-            if rows.is_empty() {
-                return Ok(QueryResult {
+                    if rows.is_empty() {
+                        return Ok(QueryResult {
+                            columns: vec![],
+                            rows: vec![],
+                            affected_rows: 0,
+                            column_metadata: None,
+                            total_count: None,
+                            limit: None,
+                            offset: None,
+                            has_more: None,
+                        });
+                    }
+
+                    let columns: Vec<String> = rows[0]
+                        .columns()
+                        .iter()
+                        .map(|c| c.name().to_string())
+                        .collect();
+
+                    let decoders = build_column_decoders(rows[0].columns());
+
+                    let mut result_rows = Vec::new();
+                    for row in &rows {
+                        let mut current_row = Vec::new();
+                        for (i, col) in columns.iter().enumerate() {
+                            let value =
+                                decode_with_decoder(&decoders[i], row, i, col, "[execute_query]");
+                            current_row.push(value);
+                        }
+                        result_rows.push(current_row);
+                    }
+
+                    let column_metadata = Self::resolve_metadata(&client, rows[0].columns())
+                        .await
+                        .unwrap_or(None);
+
+                    Ok(QueryResult {
+                        columns,
+                        rows: result_rows,
+                        affected_rows: 0,
+                        column_metadata,
+                        total_count: None,
+                        limit: None,
+                        offset: None,
+                        has_more: None,
+                    })
+                } else {
+                    let affected = client.execute(&statement, &[]).await?;
+                    Ok(QueryResult {
+                        columns: vec![],
+                        rows: vec![],
+                        affected_rows: affected,
+                        column_metadata: None,
+                        total_count: None,
+                        limit: None,
+                        offset: None,
+                        has_more: None,
+                    })
+                }
+            }
+            Err(_) => {
+                // Fallback: Use simple_query for multiple statements or other prepare failures
+                let messages = client.simple_query(query).await?;
+
+                let mut last_result: Option<QueryResult> = None;
+                let mut current_rows: Vec<Vec<Value>> = Vec::new();
+                let mut current_columns: Vec<String> = Vec::new();
+
+                for message in messages {
+                    match message {
+                        tokio_postgres::SimpleQueryMessage::Row(row) => {
+                            if current_columns.is_empty() {
+                                // Initialize columns from the first row of the set
+                                for col in row.columns() {
+                                    current_columns.push(col.name().to_string());
+                                }
+                            }
+
+                            let mut row_values = Vec::new();
+                            for i in 0..row.len() {
+                                let val_str = row.get(i);
+                                let val = match val_str {
+                                    Some(s) => {
+                                        // Simple query protocol returns strings.
+                                        // We attempt basic inference to provide better UX than just all strings.
+                                        if let Ok(n) = s.parse::<i64>() {
+                                            Value::Number(n.into())
+                                        } else if let Ok(n) = s.parse::<f64>() {
+                                            serde_json::Number::from_f64(n)
+                                                .map(Value::Number)
+                                                .unwrap_or(Value::String(s.to_string()))
+                                        } else if s == "t" {
+                                            Value::Bool(true)
+                                        } else if s == "f" {
+                                            Value::Bool(false)
+                                        } else if s.starts_with('{') || s.starts_with('[') {
+                                            if let Ok(v) = serde_json::from_str(s) {
+                                                v
+                                            } else {
+                                                Value::String(s.to_string())
+                                            }
+                                        } else {
+                                            Value::String(s.to_string())
+                                        }
+                                    }
+                                    None => Value::Null,
+                                };
+                                row_values.push(val);
+                            }
+                            current_rows.push(row_values);
+                        }
+                        tokio_postgres::SimpleQueryMessage::CommandComplete(affected) => {
+                            // End of a result set
+                            let result = QueryResult {
+                                columns: std::mem::take(&mut current_columns),
+                                rows: std::mem::take(&mut current_rows),
+                                affected_rows: affected,
+                                column_metadata: None,
+                                total_count: None,
+                                limit: None,
+                                offset: None,
+                                has_more: None,
+                            };
+
+                            // Reset type info for next batch
+
+                            last_result = Some(result);
+                        }
+                        _ => {}
+                    }
+                }
+
+                Ok(last_result.unwrap_or_else(|| QueryResult {
                     columns: vec![],
                     rows: vec![],
                     affected_rows: 0,
@@ -1763,53 +2010,8 @@ impl QueryDriver for PostgresQuery {
                     limit: None,
                     offset: None,
                     has_more: None,
-                });
+                }))
             }
-
-            let columns: Vec<String> = rows[0]
-                .columns()
-                .iter()
-                .map(|c| c.name().to_string())
-                .collect();
-
-            let decoders = build_column_decoders(rows[0].columns());
-
-            let mut result_rows = Vec::new();
-            for row in &rows {
-                let mut current_row = Vec::new();
-                for (i, col) in columns.iter().enumerate() {
-                    let value = decode_with_decoder(&decoders[i], row, i, col, "[execute_query]");
-                    current_row.push(value);
-                }
-                result_rows.push(current_row);
-            }
-
-            let column_metadata = Self::resolve_metadata(&client, rows[0].columns())
-                .await
-                .unwrap_or(None);
-
-            Ok(QueryResult {
-                columns,
-                rows: result_rows,
-                affected_rows: 0,
-                column_metadata,
-                total_count: None,
-                limit: None,
-                offset: None,
-                has_more: None,
-            })
-        } else {
-            let affected = client.execute(&statement, &[]).await?;
-            Ok(QueryResult {
-                columns: vec![],
-                rows: vec![],
-                affected_rows: affected,
-                column_metadata: None,
-                total_count: None,
-                limit: None,
-                offset: None,
-                has_more: None,
-            })
         }
     }
 
