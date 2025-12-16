@@ -39,7 +39,7 @@ impl ConnectionService {
 
     fn apply_database_override(&self, mut connection: connection::Model) -> connection::Model {
         if let Some(ref db_name) = self.database_override {
-            connection.database = Some(db_name.clone());
+            connection.database = db_name.clone();
         }
         connection
     }
