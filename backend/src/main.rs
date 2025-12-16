@@ -1,3 +1,9 @@
+// Hide console window on Windows when running as a sidecar
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
+
 use axum::extract::DefaultBodyLimit;
 use axum::{
     routing::{delete, get, patch, post, put},

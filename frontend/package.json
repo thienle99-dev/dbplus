@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:dmg": "mkdir -p src-tauri/binaries && cd ../backend && cargo build --release && cp target/release/dbplus-backend ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && chmod +x ../frontend/src-tauri/binaries/dbplus-backend-aarch64-apple-darwin && cd ../frontend && tauri build --target aarch64-apple-darwin",
+    "build:windows": "if not exist src-tauri\\binaries mkdir src-tauri\\binaries && cd ..\\backend && cargo build --release && copy target\\release\\dbplus-backend.exe ..\\frontend\\src-tauri\\binaries\\dbplus-backend-x86_64-pc-windows-msvc.exe && cd ..\\frontend && tauri build",
     "preview": "vite preview",
     "tauri": "tauri"
   },
