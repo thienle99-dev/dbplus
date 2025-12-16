@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Database, FileText, Clock, Settings, LogOut, Plus } from 'lucide-react';
+import { Search, Database, FileText, Clock, Settings, LogOut, Pin } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
@@ -26,6 +26,10 @@ export default function Sidebar() {
     return saved ? parseInt(saved, 10) : 320;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [showPinnedOnly, setShowPinnedOnly] = useState(() => {
+    const saved = localStorage.getItem('show-pinned-only');
+    return saved ? JSON.parse(saved) : false;
+  });
   const sidebarWidthRef = useRef(sidebarWidth);
 
   useEffect(() => {
@@ -127,11 +131,10 @@ export default function Sidebar() {
                     queryClient.invalidateQueries({ queryKey: ['tableStats', t.connectionId] }),
                   ]);
                 }}
-                className={`group relative w-full h-10 rounded border flex items-center justify-center text-[10px] font-semibold transition-colors ${
-                  isActive
-                    ? 'bg-bg-2 border-accent text-text-primary'
-                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
+                className={`group relative w-full h-10 rounded border flex items-center justify-center text-[10px] font-semibold transition-colors ${isActive
+                  ? 'bg-bg-2 border-accent text-text-primary'
+                  : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                  }`}
                 title={label}
               >
                 <span className="select-none">{badge}</span>
@@ -194,120 +197,147 @@ export default function Sidebar() {
 
       {/* Main Sidebar Content */}
       <div className="flex-1 flex flex-col min-w-0">
-      {/* Search Header */}
-      <div className="p-3 border-b border-border space-y-3">
-        {/* Global Search Input */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-2.5 top-2.5 text-text-secondary" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
-            />
-          </div>
-          <button
-            onClick={() => setIsCommandPaletteOpen(true)}
-            className="px-2 py-1.5 bg-bg-2 border border-border rounded text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
-            title="Switch Database (Cmd+K)"
-          >
-            <Database size={16} />
-          </button>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex bg-bg-2 p-0.5 rounded border border-border">
-          <button
-            onClick={() => setActiveTab('items')}
-            className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'items' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            title="Items"
-          >
-            <Database size={14} />
-          </button>
-          <button
-            onClick={() => setActiveTab('queries')}
-            className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'queries' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            title="Saved Queries"
-          >
-            <FileText size={14} />
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'history' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            title="History"
-          >
-            <Clock size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'items' && (
-          <div className="flex flex-col">
-            <div className="px-3 py-2 flex justify-between items-center text-xs font-semibold text-text-secondary uppercase tracking-wider">
-              <span>Explorer</span>
-              <button
-                onClick={() => navigate(`/workspace/${connectionId}/query`)}
-                className="p-1 hover:bg-bg-2 rounded text-accent hover:text-accent-hover"
-                title="New Query"
-              >
-                <Plus size={14} />
-              </button>
+        {/* Search Header */}
+        <div className="p-3 border-b border-border space-y-3">
+          {/* Global Search Input */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-text-secondary" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
+              />
             </div>
-            <SchemaTree searchTerm={searchTerm} />
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="px-2 py-1.5 bg-bg-2 border border-border rounded text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
+              title="Switch Database (Cmd+K)"
+            >
+              <Database size={16} />
+            </button>
           </div>
-        )}
 
-        {activeTab === 'queries' && (
-          <SavedQueriesList
-            onSelectQuery={handleSelectQuery}
-            embedded={true}
-            searchTerm={searchTerm}
-          />
-        )}
+          {/* Tab Navigation */}
+          <div className="flex bg-bg-2 p-0.5 rounded border border-border">
+            <button
+              onClick={() => setActiveTab('items')}
+              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'items' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                }`}
+              title="Items"
+            >
+              <Database size={14} />
+            </button>
+            <button
+              onClick={() => setActiveTab('queries')}
+              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'queries' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                }`}
+              title="Saved Queries"
+            >
+              <FileText size={14} />
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 flex items-center justify-center py-1 rounded text-xs font-medium transition-all ${activeTab === 'history' ? 'bg-bg-1 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                }`}
+              title="History"
+            >
+              <Clock size={14} />
+            </button>
+          </div>
+        </div>
 
-        {activeTab === 'history' && (
-          <QueryHistory
-            onSelectQuery={handleSelectQuery}
-            embedded={true}
-            searchTerm={searchTerm}
-          />
-        )}
-      </div>
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'items' && (
+            <div className="flex flex-col">
+              <div className="px-3 py-2 flex justify-between items-center text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                <span>Explorer</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => {
+                      // Refresh schema tree by invalidating queries
+                      void Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] }),
+                        queryClient.invalidateQueries({ queryKey: ['tables', connectionId] }),
+                        queryClient.invalidateQueries({ queryKey: ['columns', connectionId] }),
+                      ]);
+                    }}
+                    className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-text-primary transition-colors"
+                    title="Refresh Schema"
+                    aria-label="Refresh database schema"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const newValue = !showPinnedOnly;
+                      setShowPinnedOnly(newValue);
+                      localStorage.setItem('show-pinned-only', JSON.stringify(newValue));
+                    }}
+                    className={`p-1 hover:bg-bg-2 rounded transition-colors ${showPinnedOnly
+                      ? 'text-accent'
+                      : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    title={showPinnedOnly ? "Show All Tables" : "Show Pinned Tables Only"}
+                    aria-label={showPinnedOnly ? "Show all tables" : "Show pinned tables only"}
+                  >
+                    <Pin size={14} fill={showPinnedOnly ? "currentColor" : "none"} />
+                  </button>
+                </div>
+              </div>
+              <SchemaTree searchTerm={searchTerm} showPinnedOnly={showPinnedOnly} />
+            </div>
+          )}
 
-      {/* Footer */}
-      <div className="p-2 border-t border-border space-y-1 bg-bg-1 z-10">
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <Settings size={16} />
-          Settings
-        </button>
-        <button
-          onClick={() => navigate('/')}
-          className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <LogOut size={16} />
-          Disconnect
-        </button>
-      </div>
+          {activeTab === 'queries' && (
+            <SavedQueriesList
+              onSelectQuery={handleSelectQuery}
+              embedded={true}
+              searchTerm={searchTerm}
+            />
+          )}
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+          {activeTab === 'history' && (
+            <QueryHistory
+              onSelectQuery={handleSelectQuery}
+              embedded={true}
+              searchTerm={searchTerm}
+            />
+          )}
+        </div>
 
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+        {/* Footer */}
+        <div className="p-2 border-t border-border space-y-1 bg-bg-1 z-10">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <Settings size={16} />
+            Settings
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full flex items-center gap-2 p-2 hover:bg-bg-2 rounded text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <LogOut size={16} />
+            Disconnect
+          </button>
+        </div>
+
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+        />
       </div>
     </div>
   );

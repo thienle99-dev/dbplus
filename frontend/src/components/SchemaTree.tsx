@@ -15,6 +15,7 @@ import CreateDatabaseModal from './connections/CreateDatabaseModal';
 import { invoke } from '@tauri-apps/api/core';
 import { useConnectionStore } from '../store/connectionStore';
 import SqliteToolsModal from './sqlite/SqliteToolsModal';
+import CreateSchemaModal from './CreateSchemaModal';
 
 interface SchemaNodeProps {
   schemaName: string;
@@ -22,9 +23,10 @@ interface SchemaNodeProps {
   searchTerm?: string;
   defaultOpen?: boolean;
   connectionType?: string;
+  showPinnedOnly?: boolean;
 }
 
-function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connectionType }: SchemaNodeProps) {
+function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connectionType, showPinnedOnly }: SchemaNodeProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -74,6 +76,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   });
 
   const shouldShow = !searchTerm || filteredTables.length > 0 || schemaName.toLowerCase().includes(searchTerm.toLowerCase());
+
+  // Filter tables if showPinnedOnly is true
+  const displayTables = showPinnedOnly
+    ? sortedTables.filter(t => isPinned(schemaName, t.name))
+    : sortedTables;
+
+  // Don't show schema if showPinnedOnly is true and no pinned tables
+  if (showPinnedOnly && displayTables.length === 0) return null;
 
   // Auto-expand if searching and matches
   useEffect(() => {
@@ -183,25 +193,24 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           <div className="text-[10px] text-text-secondary py-1 pl-4">Loading tables...</div>
         ) : filteredTables.length === 0 && tables.length > 0 ? (
           <div className="text-[10px] text-text-secondary py-1 pl-4">No matching tables</div>
-        ) : (
-          sortedTables.map((table) => {
-            const tablePinned = isPinned(schemaName, table.name);
-            return (
-              <div
-                key={table.name}
-                onClick={() => handleTableClick(table)}
-                onContextMenu={(e) => handleContextMenu(e, table.name)}
-                className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors group"
-              >
-                <Table size={14} className="flex-shrink-0 opacity-70" />
-                <span className="truncate flex-1">{table.name}</span>
-                {tablePinned && (
-                  <Pin size={12} className="flex-shrink-0 text-accent opacity-60" />
-                )}
-              </div>
-            );
-          })
-        )}
+        ) : null}
+        {displayTables.length > 0 && displayTables.map((table) => {
+          const tablePinned = isPinned(schemaName, table.name);
+          return (
+            <div
+              key={table.name}
+              onClick={() => handleTableClick(table)}
+              onContextMenu={(e) => handleContextMenu(e, table.name)}
+              className="flex items-center gap-2 pl-4 py-1.5 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors group"
+            >
+              <Table size={14} className="flex-shrink-0 opacity-70" />
+              <span className="truncate flex-1">{table.name}</span>
+              {tablePinned && (
+                <Pin size={12} className="flex-shrink-0 text-accent opacity-60" />
+              )}
+            </div>
+          );
+        })}
       </Collapsible.Content>
 
       {contextMenu && (
@@ -239,13 +248,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   );
 }
 
-export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
+export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?: string; showPinnedOnly?: boolean }) {
   const { connectionId } = useParams();
   const { data: schemas = [], isLoading: loading } = useSchemas(connectionId);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [createDbOpen, setCreateDbOpen] = useState(false);
   const [sqliteToolsOpen, setSqliteToolsOpen] = useState(false);
+  const [createSchemaOpen, setCreateSchemaOpen] = useState(false);
   const { connections } = useConnectionStore();
   const connectionType = useMemo(
     () => connections.find((c) => c.id === connectionId)?.type,
@@ -259,11 +269,9 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
     setCreateDbOpen(true);
   };
 
-  const handleCreateSchema = async () => {
+  const handleCreateSchema = async (name: string) => {
     if (!connectionId) return;
     if (connectionType === 'sqlite') return;
-    const name = (prompt('Schema name to create:') || '').trim();
-    if (!name) return;
 
     try {
       const result = await connectionApi.createSchema(connectionId, name);
@@ -290,7 +298,7 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
                 <Database size={14} />
               </button>
               <button
-                onClick={handleCreateSchema}
+                onClick={() => setCreateSchemaOpen(true)}
                 className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
                 title="Create schema"
               >
@@ -346,34 +354,45 @@ export default function SchemaTree({ searchTerm }: { searchTerm?: string }) {
           )}
         </div>
       </div>
-      {schemas.map((schema) => (
-        <SchemaNode
-          key={schema}
-          schemaName={schema}
-          connectionId={connectionId!}
-          searchTerm={searchTerm}
-          connectionType={connectionType}
-        />
-      ))}
+      {schemas.map((schema: any) => {
+        const schemaName = typeof schema === 'string' ? schema : schema.name;
+        return (
+          <SchemaNode
+            key={schemaName}
+            schemaName={schemaName}
+            connectionId={connectionId!}
+            searchTerm={searchTerm}
+            defaultOpen={schemas.length === 1}
+            connectionType={connectionType}
+            showPinnedOnly={showPinnedOnly}
+          />
+        );
+      })}
 
-      {connectionId && (
+      {createDbOpen && (
         <CreateDatabaseModal
           open={createDbOpen}
           onOpenChange={setCreateDbOpen}
-          connectionId={connectionId}
+          connectionId={connectionId!}
           onCreated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
           }}
         />
       )}
 
-      {sqliteToolsOpen && connectionId && (
+      {sqliteToolsOpen && (
         <SqliteToolsModal
           isOpen={sqliteToolsOpen}
           onClose={() => setSqliteToolsOpen(false)}
-          connectionId={connectionId}
+          connectionId={connectionId!}
         />
       )}
+
+      <CreateSchemaModal
+        isOpen={createSchemaOpen}
+        onClose={() => setCreateSchemaOpen(false)}
+        onSubmit={handleCreateSchema}
+      />
     </div>
   );
 }
