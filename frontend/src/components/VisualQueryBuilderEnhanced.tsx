@@ -1,11 +1,29 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { format } from 'sql-formatter';
 import { Plus, Trash2, HelpCircle, Database, Table, Columns, Filter, ArrowUpDown, Settings, Link2, Group, Calculator, Copy, Check, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
 import Checkbox from './ui/Checkbox';
 import { useSchemas } from '../hooks/useDatabase';
 import { translations, Language } from '../i18n/queryBuilder';
+
+
+const highlightSql = (sql: string) => {
+    const parts = sql.split(/(\b(?:SELECT|FROM|WHERE|AND|OR|JOIN|LEFT|RIGHT|INNER|FULL|ON|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|DISTINCT|AS|IN|BETWEEN|LIKE|IS|NULL|NOT|COUNT|SUM|AVG|MIN|MAX|INSERT|UPDATE|DELETE|VALUES|SET|CREATE|DROP|ALTER)\b|'[^']*'|\d+)/gi);
+    return parts.map((part, i) => {
+        if (/^(SELECT|FROM|WHERE|AND|OR|JOIN|LEFT|RIGHT|INNER|FULL|ON|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|DISTINCT|AS|IN|BETWEEN|LIKE|IS|NULL|NOT|COUNT|SUM|AVG|MIN|MAX|INSERT|UPDATE|DELETE|VALUES|SET|CREATE|DROP|ALTER)$/i.test(part)) {
+            return <span key={i} className="text-blue-600 dark:text-blue-400 font-bold">{part.toUpperCase()}</span>;
+        }
+        if (/^'[^']*'$/.test(part)) {
+            return <span key={i} className="text-green-600 dark:text-green-400">{part}</span>;
+        }
+        if (/^\d+$/.test(part)) {
+            return <span key={i} className="text-orange-600 dark:text-orange-400">{part}</span>;
+        }
+        return part;
+    });
+};
 
 interface Column {
     name: string;
@@ -618,6 +636,15 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const formattedSqlDisplay = useMemo(() => {
+        if (!generatedSql) return null;
+        try {
+            return highlightSql(format(generatedSql, { language: 'postgresql', keywordCase: 'upper' }));
+        } catch (e) {
+            return generatedSql;
+        }
+    }, [generatedSql]);
+
     return (
         <div className="flex flex-col h-full bg-bg-0">
             <div className="flex-none px-4 py-3 border-b border-border bg-bg-0 z-10 shadow-sm">
@@ -683,10 +710,10 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                         <div className="w-full flex items-start gap-2 bg-bg-1 pl-2 pr-1 py-1.5 rounded-lg border border-border shadow-sm group hover:border-accent/50 transition-colors">
                             <span className="flex-shrink-0 text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded mt-0.5">SQL</span>
                             <div
-                                className="flex-1 font-mono text-xs text-text-secondary break-all whitespace-pre-wrap max-h-20 overflow-y-auto cursor-text selection:bg-accent/20"
+                                className="flex-1 font-mono text-xs text-text-secondary break-all whitespace-pre-wrap max-h-32 overflow-y-auto cursor-text selection:bg-accent/20"
                                 title={generatedSql}
                             >
-                                {generatedSql}
+                                {formattedSqlDisplay}
                             </div>
                             <button
                                 onClick={handleCopySql}
