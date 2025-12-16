@@ -187,6 +187,54 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         }
     };
 
+    const handleCloneRow = useCallback(async (rowIndex: number) => {
+        if (!result || !result.column_metadata) return;
+
+        const tableMeta = result.column_metadata.find(c => c.table_name);
+        if (!tableMeta || !tableMeta.table_name) {
+            showToast('Cannot clone: No table metadata found', 'error');
+            return;
+        }
+
+        const originalRow = result.rows[rowIndex];
+        const rowEdits = edits[rowIndex] || {};
+
+        // Get all column values (use edited values if available)
+        const values = result.columns.map((col, index) => {
+            const value = rowEdits[col] !== undefined ? rowEdits[col] : originalRow[index];
+
+            // Format value for SQL
+            if (value === null || value === undefined) return 'NULL';
+            if (typeof value === 'number') return String(value);
+            if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+            // Escape single quotes in strings
+            return `'${String(value).replace(/'/g, "''")}'`;
+        });
+
+        // Find primary key columns to exclude them (let DB auto-generate)
+        const pkCols = result.column_metadata.filter(c => c.is_primary_key);
+        const pkColNames = new Set(pkCols.map(pk => pk.column_name));
+
+        // Filter out primary key columns
+        const columnsToInsert = result.columns.filter(col => !pkColNames.has(col));
+        const valuesToInsert = result.columns
+            .map((col, index) => pkColNames.has(col) ? null : values[index])
+            .filter((_, index) => !pkColNames.has(result.columns[index]));
+
+        const schema = tableMeta.schema_name || 'public';
+        const table = tableMeta.table_name;
+        const insertSql = `INSERT INTO ${schema}.${table} (${columnsToInsert.join(', ')})\nVALUES (${valuesToInsert.join(', ')});`;
+
+        try {
+            await copyToClipboard(insertSql);
+            showToast('INSERT statement copied! Paste and run to clone row.', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to copy INSERT statement', 'error');
+        }
+    }, [result, edits, showToast]);
+
+
     useEffect(() => {
         if (!exportMenuOpen) return;
         const onDocMouseDown = (e: MouseEvent) => {
@@ -319,22 +367,31 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             );
         }
 
-        // Add Delete Action Column if editable
+        // Add Clone & Delete Action Columns if editable
         if (hasEditableColumns) {
             const helper = createColumnHelper<unknown[]>();
             baseColumns.push(helper.display({
                 id: 'actions',
-                header: () => <div className="w-8"></div>,
+                header: () => <div className="w-16"></div>,
                 cell: (info) => (
-                    <button
-                        onClick={() => handleDeleteRow(info.row.index)}
-                        className="text-text-secondary hover:text-error opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                        title="Delete Row"
-                    >
-                        🗑️
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            onClick={() => handleCloneRow(info.row.index)}
+                            className="text-text-secondary hover:text-accent p-1 transition-colors"
+                            title="Clone Row"
+                        >
+                            📋
+                        </button>
+                        <button
+                            onClick={() => handleDeleteRow(info.row.index)}
+                            className="text-text-secondary hover:text-error p-1 transition-colors"
+                            title="Delete Row"
+                        >
+                            🗑️
+                        </button>
+                    </div>
                 ),
-                size: 40,
+                size: 64,
                 enableSorting: false,
                 enableResizing: false,
             }));
@@ -361,6 +418,68 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const pendingEditsCount = Object.keys(edits).length;
     const selectedCount = useMemo(() => Object.keys(rowSelection).length, [rowSelection]);
     const rowModelRows = tableInstance.getRowModel().rows;
+
+    const handleCloneSelectedRows = useCallback(async () => {
+        if (!result || !result.column_metadata) return;
+
+        const tableMeta = result.column_metadata.find(c => c.table_name);
+        if (!tableMeta || !tableMeta.table_name) {
+            showToast('Cannot clone: No table metadata found', 'error');
+            return;
+        }
+
+        const selectedRows = tableInstance.getSelectedRowModel().rows;
+        if (selectedRows.length === 0) {
+            showToast('No rows selected', 'error');
+            return;
+        }
+
+        // Find primary key columns to exclude them
+        const pkCols = result.column_metadata.filter(c => c.is_primary_key);
+        const pkColNames = new Set(pkCols.map(pk => pk.column_name));
+
+        // Filter out primary key columns
+        const columnsToInsert = result.columns.filter(col => !pkColNames.has(col));
+
+        const schema = tableMeta.schema_name || 'public';
+        const table = tableMeta.table_name;
+
+        // Generate INSERT statements for all selected rows
+        const insertStatements = selectedRows.map(row => {
+            const rowIndex = row.index;
+            const originalRow = result.rows[rowIndex];
+            const rowEdits = edits[rowIndex] || {};
+
+            // Get all column values (use edited values if available)
+            const values = result.columns.map((col, index) => {
+                const value = rowEdits[col] !== undefined ? rowEdits[col] : originalRow[index];
+
+                // Format value for SQL
+                if (value === null || value === undefined) return 'NULL';
+                if (typeof value === 'number') return String(value);
+                if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+                // Escape single quotes in strings
+                return `'${String(value).replace(/'/g, "''")}'`;
+            });
+
+            const valuesToInsert = result.columns
+                .map((col, index) => pkColNames.has(col) ? null : values[index])
+                .filter((_, index) => !pkColNames.has(result.columns[index]));
+
+            return `(${valuesToInsert.join(', ')})`;
+        });
+
+        const insertSql = `INSERT INTO ${schema}.${table} (${columnsToInsert.join(', ')})\nVALUES\n${insertStatements.join(',\n')};`;
+
+        try {
+            await copyToClipboard(insertSql);
+            showToast(`${selectedRows.length} row(s) copied as INSERT! Paste and run to clone.`, 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to copy INSERT statements', 'error');
+        }
+    }, [result, edits, tableInstance, showToast]);
+
 
     const rowVirtualizer = useVirtualizer({
         count: rowModelRows.length,
@@ -793,6 +912,19 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                             </button>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {/* Clone Selected Button */}
+                            {selectedCount > 0 && hasEditableColumns && (
+                                <div className="flex items-center border-r border-border pr-2 mr-2">
+                                    <button
+                                        onClick={handleCloneSelectedRows}
+                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-accent flex items-center gap-1 transition-colors text-xs font-medium"
+                                        title={`Clone ${selectedCount} selected row(s)`}
+                                    >
+                                        📋 Clone ({selectedCount})
+                                    </button>
                                 </div>
                             )}
 
