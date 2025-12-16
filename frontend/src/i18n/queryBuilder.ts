@@ -22,13 +22,13 @@ export const translations = {
             schema: 'Schema',
             table: 'Table',
             selectColumns: 'Select Columns',
-            calculateValues: 'Calculate Values',
-            joinTables: 'Join Tables',
+            calculateValues: 'Calculate Values (AGGREGATE)',
+            joinTables: 'Join Tables (JOIN)',
             filterRows: 'Filter Rows (WHERE)',
-            groupRowsBy: 'Group Rows By',
+            groupRowsBy: 'Group Rows By (GROUP BY)',
             filterGroups: 'Filter Groups (HAVING)',
             sortResults: 'Sort Results (ORDER BY)',
-            pagination: 'Pagination',
+            pagination: 'Pagination (LIMIT/OFFSET)',
         },
 
         // Actions
@@ -84,26 +84,26 @@ export const translations = {
 
         // Sort Directions
         sort: {
-            ascending: 'A → Z (ascending)',
-            descending: 'Z → A (descending)',
+            ascending: 'A → Z (ASC)',
+            descending: 'Z → A (DESC)',
         },
 
         // Join Types
         joins: {
-            inner: 'INNER',
-            left: 'LEFT',
-            right: 'RIGHT',
-            full: 'FULL',
+            inner: 'INNER JOIN',
+            left: 'LEFT JOIN',
+            right: 'RIGHT JOIN',
+            full: 'FULL JOIN',
         },
 
         // Aggregate Functions
         aggregates: {
-            count: 'COUNT',
-            countDistinct: 'COUNT DISTINCT',
-            sum: 'SUM',
-            avg: 'AVG',
-            min: 'MIN',
-            max: 'MAX',
+            count: 'Count (COUNT)',
+            countDistinct: 'Count Distinct (COUNT DISTINCT)',
+            sum: 'Sum (SUM)',
+            avg: 'Average (AVG)',
+            min: 'Minimum (MIN)',
+            max: 'Maximum (MAX)',
         },
 
         // Keyboard Shortcuts
@@ -225,13 +225,13 @@ export const translations = {
             schema: 'Schema',
             table: 'Bảng',
             selectColumns: 'Chọn Cột',
-            calculateValues: 'Tính Toán Giá Trị',
-            joinTables: 'Kết Nối Bảng',
+            calculateValues: 'Tính Toán Giá Trị (AGGREGATE)',
+            joinTables: 'Kết Nối Bảng (JOIN)',
             filterRows: 'Lọc Hàng (WHERE)',
-            groupRowsBy: 'Nhóm Hàng Theo',
+            groupRowsBy: 'Nhóm Hàng Theo (GROUP BY)',
             filterGroups: 'Lọc Nhóm (HAVING)',
             sortResults: 'Sắp Xếp Kết Quả (ORDER BY)',
-            pagination: 'Phân Trang',
+            pagination: 'Phân Trang (LIMIT/OFFSET)',
         },
 
         // Actions
@@ -287,26 +287,26 @@ export const translations = {
 
         // Sort Directions
         sort: {
-            ascending: 'A → Z (tăng dần)',
-            descending: 'Z → A (giảm dần)',
+            ascending: 'A → Z (ASC)',
+            descending: 'Z → A (DESC)',
         },
 
         // Join Types
         joins: {
-            inner: 'TRONG',
-            left: 'TRÁI',
-            right: 'PHẢI',
-            full: 'ĐẦY ĐỦ',
+            inner: 'Nối Trong (INNER JOIN)',
+            left: 'Nối Trái (LEFT JOIN)',
+            right: 'Nối Phải (RIGHT JOIN)',
+            full: 'Nối Đầy Đủ (FULL JOIN)',
         },
 
         // Aggregate Functions
         aggregates: {
-            count: 'ĐẾM',
-            countDistinct: 'ĐẾM RIÊNG BIỆT',
-            sum: 'TỔNG',
-            avg: 'TRUNG BÌNH',
-            min: 'NHỎ NHẤT',
-            max: 'LỚN NHẤT',
+            count: 'Đếm (COUNT)',
+            countDistinct: 'Đếm Riêng Biệt (COUNT DISTINCT)',
+            sum: 'Tổng (SUM)',
+            avg: 'Trung Bình (AVG)',
+            min: 'Nhỏ Nhất (MIN)',
+            max: 'Lớn Nhất (MAX)',
         },
 
         // Keyboard Shortcuts

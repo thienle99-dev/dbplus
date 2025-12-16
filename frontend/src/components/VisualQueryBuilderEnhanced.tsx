@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Trash2, HelpCircle, Database, Table, Columns, Filter, ArrowUpDown, Settings, Link2, Group, Calculator, Copy, Check } from 'lucide-react';
+import { Plus, Trash2, HelpCircle, Database, Table, Columns, Filter, ArrowUpDown, Settings, Link2, Group, Calculator, Copy, Check, ChevronRight } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
 import Checkbox from './ui/Checkbox';
@@ -452,11 +452,14 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
 
     return (
         <div className="flex flex-col h-full bg-bg-0">
-            <div className="flex-none p-6 border-b border-border bg-bg-0 z-10 shadow-sm">
-                <div className="max-w-7xl mx-auto space-y-4">
-                    {/* Header Section */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <SectionCard title={t.sections.schema} icon={Database}>
+            <div className="flex-none px-4 py-3 border-b border-border bg-bg-0 z-10 shadow-sm">
+                <div className="max-w-7xl mx-auto space-y-2">
+                    {/* Row 1: Schema & Table Selection */}
+                    <div className="flex items-center gap-2 bg-bg-1 px-1 py-1 rounded-lg border border-border shadow-sm w-fit">
+                        <div className="flex items-center gap-2 min-w-[140px]">
+                            <div className="pl-2 pr-1 text-text-secondary">
+                                <Database size={14} />
+                            </div>
                             <Select
                                 value={selectedSchema}
                                 onChange={(val) => {
@@ -472,10 +475,18 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 }}
                                 options={schemaOptions}
                                 searchable
+                                size="sm"
+                                className="flex-1 border-none shadow-none bg-transparent"
+                                placeholder={t.sections.schema}
                             />
-                        </SectionCard>
+                        </div>
 
-                        <SectionCard title={t.sections.table} icon={Table}>
+                        <ChevronRight size={14} className="text-text-secondary/30 flex-shrink-0" />
+
+                        <div className="flex items-center gap-2 min-w-[140px]">
+                            <div className="pl-1 pr-1 text-text-secondary">
+                                <Table size={14} />
+                            </div>
                             <Select
                                 value={selectedTable}
                                 onChange={(val) => {
@@ -492,30 +503,31 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 }}
                                 options={tableOptions}
                                 searchable
+                                size="sm"
+                                className="flex-1 border-none shadow-none bg-transparent"
+                                placeholder={t.sections.table}
                             />
-                        </SectionCard>
+                        </div>
                     </div>
 
                     {selectedSchema && selectedTable && (
-                        /* SQL Preview */
-                        <div className="p-4 bg-bg-1 rounded-lg border border-border">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                                    <code className="px-1.5 py-0.5 rounded bg-accent/10 text-accent text-xs">SQL</code>
-                                    Preview
-                                </h3>
-                                <button
-                                    onClick={handleCopySql}
-                                    disabled={!generatedSql}
-                                    className="text-xs flex items-center gap-1.5 px-2 py-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                                    {copied ? 'Copied!' : 'Copy'}
-                                </button>
+                        /* Row 2: SQL Preview */
+                        <div className="w-full flex items-start gap-2 bg-bg-1 pl-2 pr-1 py-1.5 rounded-lg border border-border shadow-sm group hover:border-accent/50 transition-colors">
+                            <span className="flex-shrink-0 text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded mt-0.5">SQL</span>
+                            <div
+                                className="flex-1 font-mono text-xs text-text-secondary break-all whitespace-pre-wrap max-h-20 overflow-y-auto cursor-text selection:bg-accent/20"
+                                title={generatedSql}
+                            >
+                                {generatedSql}
                             </div>
-                            <div className="p-3 bg-bg-0 rounded-md border border-border/50 font-mono text-sm text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
-                                {generatedSql || <span className="text-text-secondary/50 italic">SQL will appear here...</span>}
-                            </div>
+                            <button
+                                onClick={handleCopySql}
+                                disabled={!generatedSql}
+                                className="p-1.5 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors flex-shrink-0 mt-0.5"
+                                title="Copy SQL"
+                            >
+                                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                            </button>
                         </div>
                     )}
                 </div>
