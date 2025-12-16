@@ -1,8 +1,9 @@
 # Database Client Application - Task Breakdown
 
-## Tổng hợp (từ các file docs/*.md)
+## Tổng hợp (từ các file docs/\*.md)
 
 ### Đã làm (gần đây)
+
 - [x] Backend type decoding (Postgres): MONEY/TIMETZ/INTERVAL/MACADDR/MACADDR8/BIT/VARBIT/RANGE/MULTIRANGE + arrays; có unit tests (`backend/src/services/postgres/query.rs`)
 - [x] Backend query streaming cho dataset lớn: NDJSON stream endpoint `POST /api/connections/:id/execute/stream` (`backend/src/handlers/query_stream.rs`, `backend/src/main.rs`)
 - [x] Performance: virtualized result rendering + giảm re-render khi edit cell (`frontend/src/components/query-editor/QueryResults.tsx`)
@@ -11,6 +12,7 @@
 - [x] Fix đóng hết workspace tabs nhưng panel bên phải không unmount (`frontend/src/components/Sidebar.tsx`)
 
 ### Chưa làm / Cần làm tiếp (theo `docs/QUERY_EDITOR_ROADMAP.md`)
+
 - [ ] Frontend: Search/filter history
 - [x] Visualize query plan (tree view)
 - [ ] Infinite scroll option
@@ -197,6 +199,7 @@
   - [x] Smooth animations
   - [x] Responsive design
 - [ ] Performance optimization
+
   - [x] Virtual scrolling (result table)
   - [x] Lazy loading (schema tree + data fetch)
   - [x] Debouncing (auto-save)
@@ -249,6 +252,7 @@
 ### Phase 11.1 - Essential Features (High Priority)
 
 - [x] **Constraints & Foreign Keys** ⭐⭐⭐⭐⭐
+
   - [x] Backend: Create API endpoint `GET /api/connections/:id/constraints`
     - [x] Query foreign keys with ON DELETE/UPDATE actions
     - [x] Query check constraints
@@ -260,6 +264,7 @@
     - [x] Click to navigate to referenced tables
 
 - [x] **Columns Details Table** ⭐⭐⭐⭐
+
   - [x] Frontend: Enhanced columns table component
     - [x] Display all column properties in table format
     - [x] Add icons for Primary Key, Foreign Key, Indexed columns
@@ -284,6 +289,7 @@
 ### Phase 11.2 - Enhanced Features (Medium Priority)
 
 - [x] **Triggers** ⭐⭐⭐
+
   - [x] Backend: Create API endpoint `GET /api/connections/:id/triggers`
     - [x] Query trigger information
     - [x] Get trigger definitions
@@ -294,6 +300,7 @@
     - [x] View trigger definition modal
 
 - [x] **Table Comments & Description** ⭐⭐⭐
+
   - [x] Backend: Create API endpoints for comments
     - [x] GET table comment
     - [x] POST/PUT update table comment
@@ -303,6 +310,7 @@
     - [ ] Markdown support (optional)
 
 - [x] **Permissions & Grants** ⭐⭐⭐
+
   - [x] Backend: Create API endpoint `GET /api/connections/:id/permissions`
     - [x] Query table privileges
     - [x] Get user/role permissions
@@ -325,6 +333,7 @@
 ### Phase 11.3 - Advanced Features (Low Priority - Optional)
 
 - [ ] **Dependencies** ⭐⭐
+
   - [x] Backend: Create API endpoint `GET /api/connections/:id/dependencies`
     - [x] Query views using this table
     - [x] Query functions/procedures referencing table
@@ -334,6 +343,7 @@
     - [x] Navigation to dependent objects
 
 - [x] **Storage & Bloat Information** ⭐⭐
+
   - [x] Backend: Advanced storage queries (PostgreSQL)
     - [x] Dead tuples count
     - [x] Live tuples count
@@ -372,6 +382,7 @@
 ## Phase 12: Next Features Backlog
 
 ### Ưu tiên cao (đáng làm sớm)
+
 - [ ] Search/filter Query History + Saved Queries (tag, time range, connection/db scope)
 - [ ] Column operations (sort/filter/hide/resize/reorder + save prefs theo bảng)
 - [ ] Row Editor modal (form Insert/Edit/Delete + validate kiểu dữ liệu + NULL)
@@ -384,20 +395,23 @@
 - [ ] SQL lint rules (dangerous patterns, missing WHERE on UPDATE/DELETE)
 
 ### Query Editor
-- [ ] Autocomplete JOIN/columns theo schema context
+
+- [x] Autocomplete JOIN/columns theo schema context
 - [ ] Snippet variables + param placeholders + form nhập params
-- [ ] Tabs: pin/duplicate + split editor/results (vertical/horizontal)
-- [ ] EXPLAIN nâng cao: highlight hotspots, compare plans, toggle ANALYZE
-- [ ] Result diff/compare (two queries / snapshots)
-- [ ] Query formatter options per dialect + on-save format
+- [x] Tabs: pin/duplicate + split editor/results (vertical/horizontal)
+- [x] EXPLAIN nâng cao: highlight hotspots, compare plans, toggle ANALYZE
+- [x] Result diff/compare (two queries / snapshots)
+- [x] Query formatter options per dialect + on-save format
 
 ### Schema & Navigation
+
 - [ ] ER diagram (FK graph) + click navigate
 - [ ] Global search objects (table/view/function/column) + quick open
 - [ ] Object definition viewers đầy đủ (view/function/procedure/trigger) + copy/create/alter
 - [ ] Schema diff + generate ALTER (between two schemas)
 
 ### Data Tools (nâng cấp)
+
 - [ ] Import wizard: mapping columns, type coercion, error report, dry-run
 - [ ] Export wizard: chọn columns/format, chunking, progress + cancel
 - [ ] Backup/Restore: custom format + gzip + progress + cancel + logs
@@ -405,6 +419,7 @@
 - [ ] Export to Parquet/Arrow + import from Parquet
 
 ### Settings & UX
+
 - [ ] Preferences window (editor font, theme, result grid behavior)
 - [ ] Customizable shortcuts + keyboard shortcuts map
 - [ ] Accessibility pass (keyboard nav, focus states) + error boundary polish
@@ -412,6 +427,7 @@
 - [ ] Multi-window mode (separate query/data window)
 
 ### SQLite (nâng cấp)
+
 - [x] File picker cho đường dẫn DB + recent DB list
 - [x] Attached databases support (ATTACH) + schema list ngoài `main`
 - [x] PRAGMA editor + integrity check + VACUUM/ANALYZE UI

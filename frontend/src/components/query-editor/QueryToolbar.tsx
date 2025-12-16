@@ -16,6 +16,8 @@ interface QueryToolbarProps {
     savedQueryId?: string;
     queryName?: string;
     isDraft?: boolean;
+    analyzeEnabled?: boolean;
+    onToggleAnalyze?: () => void;
 }
 
 export const QueryToolbar: React.FC<QueryToolbarProps> = ({
@@ -31,7 +33,9 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     hasSelection,
     savedQueryId,
     queryName,
-    isDraft
+    isDraft,
+    analyzeEnabled = false,
+    onToggleAnalyze
 }) => {
     const [isExplainMenuOpen, setIsExplainMenuOpen] = React.useState(false);
     const explainMenuRef = useRef<HTMLDivElement>(null);
@@ -67,15 +71,15 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     <div className="absolute inset-0 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
 
-                <div className="relative" ref={explainMenuRef}>
+                <div className="relative flex items-center gap-2" ref={explainMenuRef}>
                     <div className="flex rounded-md shadow-sm">
                         <button
                             onClick={onExplain}
                             disabled={loading || !queryTrimmed}
                             className="group relative flex items-center gap-1.5 bg-bg-2 hover:bg-bg-3 border border-r-0 border-border text-text-primary px-3 py-1.5 rounded-l-md text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
-                            title="Explain query execution plan (Cmd/Ctrl+E)"
+                            title={`Explain query execution plan (Cmd/Ctrl+E)${analyzeEnabled ? ' - ANALYZE Enabled' : ''}`}
                         >
-                            <div className="text-[10px] font-mono border border-text-secondary/50 text-text-secondary rounded px-0.5">EX</div>
+                            <div className={`text-[10px] font-mono border rounded px-0.5 ${analyzeEnabled ? 'border-accent text-accent' : 'border-text-secondary/50 text-text-secondary'}`}>EX</div>
                             <span>Explain</span>
                         </button>
                         <button
@@ -87,31 +91,41 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                             <ChevronDown size={14} />
                         </button>
                     </div>
+                    {onToggleAnalyze && (
+                        <div 
+                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded cursor-pointer select-none text-xs font-medium border border-transparent hover:bg-bg-2 ${analyzeEnabled ? 'text-accent' : 'text-text-secondary'}`}
+                            onClick={onToggleAnalyze}
+                            title="Toggle ANALYZE option (includes execution statistics)"
+                        >
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${analyzeEnabled ? 'bg-accent border-accent' : 'border-text-secondary'}`}>
+                                {analyzeEnabled && <div className="w-1 h-1 bg-white rounded-full" />}
+                            </div>
+                            <span>Analyze</span>
+                        </div>
+                    )}
 
                     {isExplainMenuOpen && (
-                        <>
-                            <div className="absolute top-full left-0 mt-1 w-40 bg-bg-1 border border-border rounded-md shadow-lg z-40 py-1">
-                                <button
-                                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
-                                    onClick={() => {
-                                        onExplain();
-                                        setIsExplainMenuOpen(false);
-                                    }}
-                                >
-                                    <span>Explain</span>
-                                </button>
-                                <button
-                                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
-                                    onClick={() => {
-                                        onExplainAnalyze();
-                                        setIsExplainMenuOpen(false);
-                                    }}
-                                    title="Run Explain Analyze (Cmd/Ctrl+Shift+E)"
-                                >
-                                    <span>Explain Analyze (+buffers)</span>
-                                </button>
-                            </div>
-                        </>
+                        <div className="absolute top-full left-0 mt-1 w-40 bg-bg-1 border border-border rounded-md shadow-lg z-40 py-1">
+                            <button
+                                className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
+                                onClick={() => {
+                                    onExplain();
+                                    setIsExplainMenuOpen(false);
+                                }}
+                            >
+                                <span>Explain</span>
+                            </button>
+                            <button
+                                className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-bg-2"
+                                onClick={() => {
+                                    onExplainAnalyze();
+                                    setIsExplainMenuOpen(false);
+                                }}
+                                title="Run Explain Analyze (Cmd/Ctrl+Shift+E)"
+                            >
+                                <span>Explain Analyze (+buffers)</span>
+                            </button>
+                        </div>
                     )}
                 </div>
 

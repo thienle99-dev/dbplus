@@ -5,8 +5,11 @@ import { computeExplainInsights } from '../utils/explainInsights';
 
 interface ExecutionPlanViewProps {
     plan: any;
+    baselinePlan?: any;
     loading?: boolean;
     error?: string | null;
+    onSaveBaseline?: (plan: any) => void;
+    onClearBaseline?: () => void;
 }
 
 function isObject(v: any): v is Record<string, any> {
@@ -163,7 +166,7 @@ function PgPlanNodeRow({
     );
 }
 
-export default function ExecutionPlanView({ plan, loading, error }: ExecutionPlanViewProps) {
+function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPlanViewProps & { title?: string, extraHeader?: React.ReactNode }) {
     const { theme } = useSettingsStore();
     const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set<string>());
@@ -233,6 +236,12 @@ export default function ExecutionPlanView({ plan, loading, error }: ExecutionPla
 
     return (
         <div className="h-full overflow-auto p-4 bg-bg-1">
+            {(title || extraHeader) && (
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border">
+                    {title && <span className="font-semibold text-text-primary">{title}</span>}
+                    {extraHeader}
+                </div>
+            )}
             {engine === 'postgres' && insights && (
                 <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div className="p-3 rounded border border-border bg-bg-0">
@@ -386,6 +395,88 @@ export default function ExecutionPlanView({ plan, loading, error }: ExecutionPla
                     )}
                 </div>
             )}
+        </div>
+    );
+}
+
+export default function ExecutionPlanView({ plan, baselinePlan, loading, error, onSaveBaseline, onClearBaseline }: ExecutionPlanViewProps) {
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full text-text-secondary">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mr-2"></div>
+                Generating execution plan...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 text-error">
+                <h3 className="font-bold mb-2">Error generating plan</h3>
+                <pre className="whitespace-pre-wrap font-mono text-sm bg-bg-2 p-2 rounded">
+                    {error}
+                </pre>
+            </div>
+        );
+    }
+
+    if (!plan && !baselinePlan) {
+        return (
+            <div className="flex items-center justify-center h-full text-text-secondary">
+                No execution plan available. Run "Explain" to see the plan.
+            </div>
+        );
+    }
+
+    // Split View logic
+    const showComparison = !!baselinePlan;
+
+    return (
+        <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between p-2 border-b border-border bg-bg-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                    {showComparison ? 'Plan Comparison' : 'Execution Plan Analysis'}
+                </div>
+                <div className="flex gap-2">
+                    {onSaveBaseline && !baselinePlan && plan && (
+                        <button
+                            onClick={() => onSaveBaseline(plan)}
+                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border rounded text-text-primary flex items-center gap-1"
+                            title="Set current plan as baseline for comparison"
+                        >
+                            <span>Set as Baseline</span>
+                        </button>
+                    )}
+                    {onClearBaseline && baselinePlan && (
+                         <button
+                            onClick={onClearBaseline}
+                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border rounded text-text-primary flex items-center gap-1"
+                            title="Clear baseline plan"
+                        >
+                            <span>Clear Baseline</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex">
+                <div className={`flex-1 overflow-hidden flex flex-col ${showComparison ? 'border-r border-border' : ''}`}>
+                    <PlanAnalysis 
+                        plan={plan} 
+                        title={showComparison ? "Current Plan" : undefined}
+                    />
+                </div>
+                
+                {showComparison && (
+                    <div className="flex-1 overflow-hidden flex flex-col bg-bg-1/50">
+                        <PlanAnalysis 
+                            plan={baselinePlan} 
+                            title="Baseline Plan"
+                            extraHeader={<div className="ml-2 text-[10px] text-accent font-bold px-1.5 py-0.5 bg-accent/10 rounded">BASELINE</div>}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

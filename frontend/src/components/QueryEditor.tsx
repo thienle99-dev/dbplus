@@ -26,6 +26,9 @@ import {
   useQueryExecution,
   SnippetLibrary
 } from './query-editor';
+import { QueryResult } from '../types';
+import { computeResultDiff, DiffResult } from '../utils/resultDiff';
+import { ResultComparison } from './query-editor/ResultComparison';
 
 interface QueryEditorProps {
   initialSql?: string;
@@ -97,7 +100,13 @@ export default function QueryEditor({
 
   // Explain State
   const [executionPlan, setExecutionPlan] = useState<any>(null);
-  const [bottomTab, setBottomTab] = useState<'results' | 'plan'>('results');
+  const [baselinePlan, setBaselinePlan] = useState<any>(null);
+  const [analyzeEnabled, setAnalyzeEnabled] = useState(false);
+  const [bottomTab, setBottomTab] = useState<'results' | 'plan' | 'comparison'>('results');
+  
+  // Comparison State
+  const [snapshot, setSnapshot] = useState<QueryResult | null>(null);
+  const [resultDiff, setResultDiff] = useState<DiffResult | null>(null);
 
   const handleEditorChange = useCallback((val: string) => setQuery(val), []);
 
@@ -113,7 +122,8 @@ export default function QueryEditor({
     });
   }, []);
 
-  const handleExplain = useCallback(async (analyze: boolean = false) => {
+  const handleExplain = useCallback(async (analyzeHeader: boolean = false) => {
+    const shouldUseAnalyze = analyzeHeader || analyzeEnabled;
     let sqlToRun = query;
     if (editorView) {
       const selection = editorView.state.selection.main;
@@ -132,14 +142,27 @@ export default function QueryEditor({
     try {
       const data = await explainQuery.mutateAsync({
         query: sqlToRun,
-        analyze
+        analyze: shouldUseAnalyze
       });
       setExecutionPlan(data.plan);
     } catch (err: any) {
       console.error('Explain error:', err);
       // setExplainError handled by mutation
     }
-  }, [query, editorView, connectionId, explainQuery]);
+  }, [query, editorView, connectionId, analyzeEnabled, explainQuery]);
+
+  const handleSnapshot = useCallback((res: QueryResult) => {
+      setSnapshot(res);
+      showToast('Snapshot captured for comparison', 'success');
+  }, [showToast]);
+
+
+
+  const handleClearSnapshot = useCallback(() => {
+      setSnapshot(null);
+      setResultDiff(null);
+      if (bottomTab === 'comparison') setBottomTab('results');
+  }, [bottomTab]);
 
   const isDangerousQuery = useCallback((sql: string) => {
     const dangerousKeywords = /\b(DROP|DELETE|TRUNCATE|UPDATE|ALTER)\b/i;
@@ -350,6 +373,15 @@ export default function QueryEditor({
     ]))
   ], [extensions, handleExecuteRequest, handleExpandStar, handleExecuteSelection, handleExplain]);
 
+  const handleCompareSnapshot = useCallback(() => {
+     if (!snapshot || !result) return;
+     // result.columns is typically string[] for now based on types, map to object for compat
+     const columns = result.columns ? result.columns.map(c => ({name: c})) : [];
+     const diff = computeResultDiff(snapshot.rows, result.rows, columns);
+     setResultDiff(diff);
+     setBottomTab('comparison');
+  }, [snapshot, result]);
+
   // Shortcuts
   useEffect(() => {
     if (!isActive) return;
@@ -423,6 +455,8 @@ export default function QueryEditor({
         onExecute={handleExecuteRequest}
         onExplain={() => handleExplain(false)}
         onExplainAnalyze={() => handleExplain(true)}
+        analyzeEnabled={analyzeEnabled}
+        onToggleAnalyze={() => setAnalyzeEnabled(!analyzeEnabled)}
         onSave={() => {
           if (savedQueryId) {
             handleQuickSave();
@@ -496,6 +530,17 @@ export default function QueryEditor({
             >
               Execution Plan
             </button>
+            {snapshot && (
+                <button
+                onClick={() => setBottomTab('comparison')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${bottomTab === 'comparison'
+                    ? 'border-accent text-text-primary bg-bg-2'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                    }`}
+                >
+                Diff Comparison
+                </button>
+            )}
           </div>
 
           <div className="flex-1 overflow-hidden relative">
@@ -509,23 +554,35 @@ export default function QueryEditor({
                   if (!lastSql) return;
                   const limit = typeof result?.limit === 'number' ? result.limit : undefined;
                   const offset = typeof result?.offset === 'number' ? result.offset : undefined;
-                  if (typeof limit === 'number' && typeof offset === 'number') {
-                    fetchPage(limit, offset);
-                  } else {
-                    execute(lastSql);
-                  }
+                  fetchPage(limit || 1000, offset || 0);
                 }}
-                lastSql={lastSql || undefined}
                 onPaginate={(limit, offset) => fetchPage(limit, offset)}
                 connectionId={connectionId || ''}
+                // Snapshot props
+                hasSnapshot={!!snapshot}
+                onSnapshot={handleSnapshot}
+                onCompareSnapshot={handleCompareSnapshot}
+                onClearSnapshot={handleClearSnapshot}
               />
             </div>
             <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>
               <ExecutionPlanView
                 plan={executionPlan}
+                baselinePlan={baselinePlan}
                 loading={explainQuery.isPending}
                 error={explainQuery.error ? explainQuery.error.message : null}
+                onSaveBaseline={(p) => setBaselinePlan(p)}
+                onClearBaseline={() => setBaselinePlan(null)}
               />
+            </div>
+            <div className={`absolute inset-0 flex flex-col ${bottomTab === 'comparison' ? 'z-10' : 'z-0 invisible'}`}>
+              {resultDiff && snapshot && (
+                <ResultComparison
+                    diff={resultDiff}
+                    columns={result?.columns?.map(c => ({name: c})) || []}
+                    onClose={() => setBottomTab('results')}
+                />
+              )}
             </div>
           </div>
         </div>
