@@ -58,7 +58,7 @@ const WorkspacePage = () => {
         <SkipToContent targetId="main-content" />
         <div className="flex h-screen bg-bg-0 text-text-primary overflow-hidden">
           <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0 bg-bg-0 h-full">
+          <div className="flex-1 flex flex-col min-w-0 bg-bg-0 h-full pb-[60px]">
             <Breadcrumbs />
             <div
               id="main-content"

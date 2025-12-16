@@ -259,6 +259,10 @@ async fn main() {
             get(handlers::schema::list_functions),
         )
         .route(
+            "/api/connections/:id/foreign-keys",
+            get(handlers::foreign_key::get_foreign_keys),
+        )
+        .route(
             "/api/connections/:id/extensions",
             get(handlers::extensions::list_extensions),
         )

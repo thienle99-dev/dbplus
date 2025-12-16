@@ -1,6 +1,7 @@
 mod column;
 mod connection;
 mod ddl_export;
+mod foreign_key;
 mod function;
 mod query;
 mod schema;
@@ -9,6 +10,7 @@ mod view;
 
 pub use column::PostgresColumn;
 pub use connection::PostgresConnection;
+pub use foreign_key::{ForeignKeyInfo, PostgresForeignKey};
 pub use function::PostgresFunction;
 pub use query::PostgresQuery;
 pub use schema::PostgresSchema;
@@ -33,6 +35,7 @@ pub struct PostgresDriver {
     column: PostgresColumn,
     view: PostgresView,
     function: PostgresFunction,
+    foreign_key: PostgresForeignKey,
     ddl_export: ddl_export::PostgresDdlExport,
 }
 
@@ -49,14 +52,19 @@ impl PostgresDriver {
             column: PostgresColumn::new(pool.clone()),
             view: PostgresView::new(pool.clone()),
             function: PostgresFunction::new(pool.clone()),
+            foreign_key: PostgresForeignKey::new(pool.clone()),
             ddl_export: ddl_export::PostgresDdlExport::new(
                 pool.clone(),
                 PostgresSchema::new(pool.clone()),
                 PostgresTable::new(pool.clone()),
                 PostgresView::new(pool.clone()),
-                PostgresFunction::new(pool),
+                PostgresFunction::new(pool.clone()),
             ),
         })
+    }
+
+    pub fn foreign_key(&self) -> &PostgresForeignKey {
+        &self.foreign_key
     }
 
     pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
@@ -71,6 +79,7 @@ impl PostgresDriver {
             column: PostgresColumn::new(pool.clone()),
             view: PostgresView::new(pool.clone()),
             function: PostgresFunction::new(pool.clone()),
+            foreign_key: PostgresForeignKey::new(pool.clone()),
             ddl_export: ddl_export::PostgresDdlExport::new(
                 pool.clone(),
                 PostgresSchema::new(pool.clone()),
