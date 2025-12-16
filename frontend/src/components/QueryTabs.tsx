@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, X, FileCode, BookMarked, History, Database } from 'lucide-react';
+import { Plus, X, FileCode, BookMarked, History, Database, Pin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import QueryEditor from './QueryEditor';
@@ -116,9 +116,15 @@ export default function QueryTabs() {
   const closeTab = useCallback((id: string, e?: React.MouseEvent, force = false) => {
     e?.stopPropagation();
     setTabs(prev => {
-      if (prev.length === 1 && !force) return prev; // Don't close last tab unless forced/clearing all replacement logic elsewhere
+      if (prev.length === 1 && !force) return prev; // Don't close last tab unless forced
 
       const tabToClose = prev.find(t => t.id === id);
+
+      // Prevent closing pinned tabs unless forced
+      if (tabToClose?.pinned && !force) {
+        showToast('Cannot close pinned tab. Unpin it first or use Force Close.', 'info');
+        return prev;
+      }
 
       // If force or not dirty, we can close. 
       // If dirty and not force, we usually keep it (handled by UI confirmation separately if needed, 
@@ -158,7 +164,7 @@ export default function QueryTabs() {
       }
       return newTabs;
     });
-  }, [activeTabId, connectionId, deleteDraft]);
+  }, [activeTabId, connectionId, deleteDraft, showToast]);
 
   const handleCloseOthers = () => {
     if (!contextMenu) return;
@@ -184,6 +190,34 @@ export default function QueryTabs() {
   const handleForceClose = () => {
     if (!contextMenu) return;
     closeTab(contextMenu.tabId, undefined, true);
+  };
+
+  const handlePinTab = () => {
+    if (!contextMenu) return;
+    setTabs(prev => prev.map(t => 
+      t.id === contextMenu.tabId ? { ...t, pinned: !t.pinned } : t
+    ));
+    setContextMenu(null);
+  };
+
+  const handleDuplicateTab = () => {
+    if (!contextMenu) return;
+    const tabToDuplicate = tabs.find(t => t.id === contextMenu.tabId);
+    if (!tabToDuplicate) return;
+
+    const newId = Math.random().toString(36).substr(2, 9);
+    const duplicatedTab: Tab = {
+      ...tabToDuplicate,
+      id: newId,
+      title: `${tabToDuplicate.title} (Copy)`,
+      isDraft: true,
+      savedQueryId: undefined, // Don't link to original saved query
+      lastModified: Date.now(),
+    };
+
+    setTabs(prev => [...prev, duplicatedTab]);
+    setActiveTabId(newId);
+    setContextMenu(null);
   };
 
   const openTableInTab = useCallback((schema: string, table: string, newTab = true) => {
@@ -513,6 +547,13 @@ export default function QueryTabs() {
                   </span>
                 )}
 
+                {tab.pinned && (
+                  <div title="Pinned">
+                    <Pin size={12} className="text-accent" />
+                  </div>
+                )}
+
+
                 {(tab.isDraft || tab.isDirty) && (
                   <span className="w-2 h-2 rounded-full bg-yellow-500" title="Unsaved changes" />
                 )}
@@ -604,6 +645,19 @@ export default function QueryTabs() {
                 onClick={handleForceClose}
               >
                 Force Close (Discard)
+              </button>
+              <div className="border-t border-border my-1" />
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={handlePinTab}
+              >
+                {tabs.find(t => t.id === contextMenu.tabId)?.pinned ? 'Unpin Tab' : 'Pin Tab'}
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
+                onClick={handleDuplicateTab}
+              >
+                Duplicate Tab
               </button>
               <div className="border-t border-border my-1" />
               <button
