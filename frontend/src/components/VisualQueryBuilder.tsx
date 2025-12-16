@@ -15,6 +15,7 @@ interface FilterRule {
   column: string;
   operator: string;
   value: string;
+  value2?: string; // For BETWEEN operator
 }
 
 interface SortRule {
@@ -22,6 +23,23 @@ interface SortRule {
   column: string;
   direction: 'ASC' | 'DESC';
 }
+
+interface JoinRule {
+  id: string;
+  type: 'INNER JOIN' | 'LEFT JOIN' | 'RIGHT JOIN' | 'FULL JOIN';
+  table: string;
+  schema?: string;
+  onColumn: string;
+  targetColumn: string;
+}
+
+interface AggregateColumn {
+  id: string;
+  function: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX' | 'COUNT_DISTINCT';
+  column: string;
+  alias: string;
+}
+
 
 interface VisualQueryBuilderProps {
   onSqlChange: (sql: string) => void;
@@ -56,6 +74,12 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
   const [filters, setFilters] = useState<FilterRule[]>([]);
   const [sorts, setSorts] = useState<SortRule[]>([]);
   const [limit, setLimit] = useState<string>('100');
+  const [offset, setOffset] = useState<string>('0');
+  const [distinct, setDistinct] = useState<boolean>(false);
+  const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
+  const [havingFilters, setHavingFilters] = useState<FilterRule[]>([]);
+  const [aggregates, setAggregates] = useState<AggregateColumn[]>([]);
+  const [joins, setJoins] = useState<JoinRule[]>([]);
 
   // Default schema
   useEffect(() => {

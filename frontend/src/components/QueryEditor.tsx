@@ -16,7 +16,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useToast } from '../context/ToastContext';
 import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
-import VisualQueryBuilder from './VisualQueryBuilder';
+import VisualQueryBuilderModal from './VisualQueryBuilderModal';
 import ExecutionPlanView from './ExecutionPlanView';
 import { useExplainQuery, useUpdateSavedQuery } from '../hooks/useQuery';
 import {
@@ -72,6 +72,7 @@ export default function QueryEditor({
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isSnippetLibraryOpen, setIsSnippetLibraryOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
+  const [isVisualBuilderOpen, setIsVisualBuilderOpen] = useState(false);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
 
   // Custom Hooks
@@ -498,6 +499,16 @@ export default function QueryEditor({
         isDangerous={true}
       />
 
+      <VisualQueryBuilderModal
+        isOpen={isVisualBuilderOpen}
+        onClose={() => setIsVisualBuilderOpen(false)}
+        onSqlChange={(sql) => {
+          setQuery(sql);
+          setMode('sql');
+        }}
+        initialState={visualState}
+      />
+
       <SnippetLibrary
         isOpen={isSnippetLibraryOpen}
         onClose={() => setIsSnippetLibraryOpen(false)}
@@ -539,21 +550,14 @@ export default function QueryEditor({
           className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-border flex flex-col shrink-0`}
         >
           <div className="flex-1 overflow-hidden flex relative">
-            {mode === 'sql' ? (
-              <CodeMirror
-                value={query}
-                height="100%"
-                extensions={allExtensions}
-                onChange={handleEditorChange}
-                onCreateEditor={handleCreateEditor}
-                className="text-base w-full h-full"
-              />
-            ) : (
-              <VisualQueryBuilder
-                onSqlChange={setQuery}
-                initialState={visualState}
-              />
-            )}
+            <CodeMirror
+              value={query}
+              height="100%"
+              extensions={allExtensions}
+              onChange={handleEditorChange}
+              onCreateEditor={handleCreateEditor}
+              className="text-base w-full h-full"
+            />
 
             {/* Custom Search Panel */}
             <SearchPanel
@@ -565,7 +569,13 @@ export default function QueryEditor({
 
           <QueryStatusBar
             mode={mode}
-            setMode={setMode}
+            setMode={(newMode) => {
+              if (newMode === 'visual') {
+                setIsVisualBuilderOpen(true);
+              } else {
+                setMode(newMode);
+              }
+            }}
             onFormat={handleFormat}
             queryTrimmed={query.trim()}
           />
