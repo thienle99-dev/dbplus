@@ -19,8 +19,8 @@ use super::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
     TableOperations, ViewOperations,
 };
-use crate::services::driver::extension::DatabaseManagementDriver;
 use crate::models::entities::connection as ConnectionModel;
+use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 
@@ -130,6 +130,17 @@ impl SchemaIntrospection for PostgresDriver {
         schema: &str,
     ) -> Result<Vec<super::db_driver::TableMetadata>> {
         self.schema.get_schema_metadata(schema).await
+    }
+
+    async fn search_objects(&self, query: &str) -> Result<Vec<super::db_driver::SearchResult>> {
+        self.schema.search_objects(query).await
+    }
+
+    async fn get_schema_foreign_keys(
+        &self,
+        schema: &str,
+    ) -> Result<Vec<super::db_driver::SchemaForeignKey>> {
+        self.schema.get_schema_foreign_keys(schema).await
     }
 }
 
@@ -342,7 +353,11 @@ impl PostgresDriver {
         if let Some(options) = options {
             let mut parts: Vec<String> = Vec::new();
 
-            if let Some(owner) = options.owner.as_deref().map(str::trim).filter(|s| !s.is_empty())
+            if let Some(owner) = options
+                .owner
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
             {
                 parts.push(format!("OWNER = {}", quote_postgres_ident(owner)?));
             }

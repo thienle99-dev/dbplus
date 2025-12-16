@@ -38,6 +38,7 @@
     "axios": "^1.6.7",
     "clsx": "^2.1.0",
     "codemirror": "^6.0.2",
+    "dagre": "^0.8.5",
     "lucide-react": "^0.555.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -40,3 +40,4 @@ impl FunctionOperations for SQLiteFunction {
         Err(anyhow::anyhow!("SQLite does not support user-defined functions in the same way as PostgreSQL"))
     }
 }
+

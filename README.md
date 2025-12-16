@@ -1,97 +1,90 @@
-# DBPlus - Modern Database Client
+# DBPlus
 
-DBPlus is a high-performance, secure, and intuitive database client built with **Rust** (backend) and **React/TypeScript** (frontend), powered by **Tauri**.
+DBPlus là ứng dụng database client (giống TablePlus) chạy local, gồm:
+- Backend: Rust (Axum) chạy ở `http://127.0.0.1:19999`
+- Frontend: Tauri + React/TypeScript
 
-## ✨ Features
+## Tính năng chính
+- Quản lý connections (PostgreSQL, SQLite)
+- Query editor + chạy query + streaming kết quả lớn (NDJSON)
+- Schema explorer + Table viewer + sửa/xóa row từ result
+- Lưu query / lịch sử query / dashboards cơ bản
+- SQLite nâng cấp: chọn file DB, recent list, ATTACH databases, PRAGMA tools (integrity check / vacuum / analyze)
 
-- 🚀 **High Performance** - Built with Rust for maximum speed and efficiency
-- 🔒 **Secure** - Local-first architecture, your data never leaves your machine
-- 🎨 **Modern UI** - Beautiful, intuitive interface with dark/light mode
-- 🔇 **Silent Backend** - Backend runs in the background without console windows (Windows)
-- 💾 **Multi-Database Support** - PostgreSQL, SQLite, and more
-- 📊 **Query Editor** - Advanced SQL editor with syntax highlighting and auto-completion
+## Yêu cầu
+- Node.js `>= 18`
+- `pnpm` (khuyến nghị, repo dùng pnpm workspace)
+- Rust stable (toolchain mới)
+- Tauri prerequisites theo OS:
+  - macOS: `xcode-select --install`
+  - Windows: Visual Studio C++ Build Tools
+  - Linux: xem yêu cầu của Tauri/WebKitGTK (`libwebkit2gtk`, `libgtk-3`, `libssl`, …)
 
-## Prerequisites
+## Cài đặt
+```bash
+pnpm install
+```
 
-Before you begin, ensure you have the following installed:
-
-- **Node.js** (v18 or later)
-- **Rust** (latest stable release)
-- **Build Tools**:
-  - **Windows**: Microsoft Visual Studio C++ Build Tools.
-  - **macOS**: Xcode Command Line Tools (`xcode-select --install`).
-  - **Linux**: `build-essential`, `libwebkit2gtk-4.0-dev`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`.
-
-## Setup & Installation
-
-1.  Clone the repository:
-
-    ```bash
-    git clone https://github.com/yourusername/dbplus.git
-    cd dbplus
-    ```
-
-2.  Install frontend dependencies (pnpm workspace):
-    ```bash
-    pnpm install
-    ```
-
-## Development
-
-To start the application in development mode (with hot-reloading for both frontend and backend):
-
+## Chạy dev (khuyến nghị)
+Chạy full app (frontend + sidecar backend):
 ```bash
 pnpm tauri:dev
 ```
 
-This command will:
+Chạy chỉ frontend (Vite):
+```bash
+pnpm dev
+```
 
-1.  Start the React dev server (Vite).
-2.  Compile the Rust backend.
-3.  Launch the Tauri application window.
+Chạy chỉ backend (dùng khi debug API):
+```bash
+export ENCRYPTION_KEY="$(openssl rand -base64 32)"
+cargo run --manifest-path backend/Cargo.toml -- ./.tmp/dbplus.db
+```
 
-## Building for Production
+Ghi chú:
+- Backend dùng SQLite để lưu metadata (connections, history, saved queries, …) vào file DB mà bạn truyền vào (vd `./.tmp/dbplus.db`).
+- `ENCRYPTION_KEY` là base64 của 32 bytes (AES-256-GCM). Nếu không set, backend sẽ tự generate tạm thời (không phù hợp production vì restart sẽ không decrypt được password cũ).
 
-To build the optimized executable for your operating system:
+## Build release
+Build nhanh (web assets):
+```bash
+pnpm build
+```
 
-### Windows (.exe / .msi)
+Build Tauri bundle (macOS DMG trên Apple Silicon):
+```bash
+pnpm build:dmg
+```
 
-1.  Run the build command:
+Build Tauri bundle theo OS:
+```bash
+pnpm --dir frontend tauri build
+```
 
-    ```bash
-    pnpm --dir frontend build:windows
-    ```
+Output thường nằm ở `frontend/src-tauri/target/release/bundle/`.
 
-2.  **Output**: The installer will be located at:
-    `frontend/src-tauri/target/release/bundle/nsis/` (for .exe)
-    `frontend/src-tauri/target/release/bundle/msi/` (for .msi)
+## Sử dụng SQLite
+- Tạo connection type `SQLite` và chọn file bằng nút `Browse...` (hoặc để trống = `:memory:`).
+- Attach thêm database: trong panel `Schemas`, bấm `+` (SQLite) để chọn file và đặt schema name.
+- Detach database đã attach: bấm icon thùng rác ở schema đó.
+- SQLite tools: bấm icon cờ-lê để chạy `PRAGMA integrity_check`, `VACUUM`, `ANALYZE`, hoặc nhập PRAGMA/SQL tùy ý.
 
-3.  **Note**: The backend will run silently in the background without showing a console window. See [`backend/SIDECAR_CONFIG.md`](./backend/SIDECAR_CONFIG.md) for details.
+## Sử dụng PostgreSQL (dev nhanh bằng Docker)
+Repo có docker compose cho Postgres:
+```bash
+docker compose -f dev/postgres/docker-compose.yml up -d
+```
 
-### macOS (.dmg / .app)
+## Kiểm tra nhanh (Phase 10 verify)
+```bash
+./scripts/phase10_verify.sh
+```
 
-1.  Run the build command (this bundles the backend automatically):
-
-    ```bash
-    pnpm build:dmg
-    ```
-
-2.  **Output**: The disk image will be located at:
-    `frontend/src-tauri/target/release/bundle/dmg/`
-
-### Linux (.deb / .AppImage)
-
-1.  Run the build command:
-
-    ```bash
-    pnpm --dir frontend tauri build
-    ```
-
-2.  **Output**: The bundle will be located at:
-    `frontend/src-tauri/target/release/bundle/deb/` (or AppImage)
+## Tài liệu
+- Các ghi chú/plan nằm trong `docs/` (xem `docs/task.md`, `docs/API.md`, `docs/QUERY_EDITOR_ROADMAP.md`).
 
 ## Troubleshooting
-
-- **"Cannot find module..."**: Ensure you have run `pnpm install` at the repo root (or in `frontend`).
-- **Rust compilation errors**: Ensure your Rust installation is up to date (`rustup update`).
-- **Tauri errors**: Check the [Tauri Documentation](https://tauri.app/v1/guides/) for platform-specific requirements.
+- `Failed to run migrations`: kiểm tra file DB backend và quyền ghi; xoá file DB test trong `./.tmp` để tạo lại.
+- Frontend lỗi type/module: chạy lại `pnpm install`.
+- Rust build lỗi: `rustup update` và đảm bảo đủ prerequisites của Tauri trên OS.

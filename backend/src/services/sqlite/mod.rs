@@ -19,8 +19,8 @@ use super::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
     TableOperations, ViewOperations,
 };
-use crate::services::driver::extension::DatabaseManagementDriver;
 use crate::models::entities::connection as ConnectionModel;
+use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 
@@ -51,7 +51,8 @@ impl SQLiteDriver {
         password: &str,
         attachments: Vec<SqliteAttachedDatabase>,
     ) -> Result<Self> {
-        let conn = SQLiteConnection::new_with_attachments(connection, password, &attachments).await?;
+        let conn =
+            SQLiteConnection::new_with_attachments(connection, password, &attachments).await?;
         let pool = conn.pool().clone();
 
         Ok(Self {
@@ -138,6 +139,17 @@ impl SchemaIntrospection for SQLiteDriver {
         schema: &str,
     ) -> Result<Vec<super::db_driver::TableMetadata>> {
         self.schema.get_schema_metadata(schema).await
+    }
+
+    async fn search_objects(&self, query: &str) -> Result<Vec<super::db_driver::SearchResult>> {
+        self.schema.search_objects(query).await
+    }
+
+    async fn get_schema_foreign_keys(
+        &self,
+        schema: &str,
+    ) -> Result<Vec<super::db_driver::SchemaForeignKey>> {
+        self.schema.get_schema_foreign_keys(schema).await
     }
 }
 
@@ -312,11 +324,15 @@ impl DatabaseManagementDriver for SQLiteDriver {
     }
 
     async fn create_schema(&self, _name: &str) -> Result<()> {
-        Err(anyhow::anyhow!("SQLite does not support schemas via this API"))
+        Err(anyhow::anyhow!(
+            "SQLite does not support schemas via this API"
+        ))
     }
 
     async fn drop_schema(&self, _name: &str) -> Result<()> {
-        Err(anyhow::anyhow!("SQLite does not support schemas via this API"))
+        Err(anyhow::anyhow!(
+            "SQLite does not support schemas via this API"
+        ))
     }
 }
 
@@ -336,3 +352,4 @@ impl FunctionOperations for SQLiteDriver {
             .await
     }
 }
+

@@ -5,7 +5,7 @@ import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
 import SettingsModal from './SettingsModal';
-import { CommandPalette } from './CommandPalette';
+import CommandPalette from './CommandPalette';
 import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import { useConnectionStore } from '../store/connectionStore';
 import { useQueryClient } from '@tanstack/react-query';
@@ -337,6 +337,7 @@ export default function Sidebar() {
         <CommandPalette
           isOpen={isCommandPaletteOpen}
           onClose={() => setIsCommandPaletteOpen(false)}
+          connectionId={connectionId}
         />
       </div>
     </div>

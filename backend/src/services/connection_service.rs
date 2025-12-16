@@ -137,11 +137,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new_for_test(&connection, &password).await?;
-                driver.get_databases().await
+                DatabaseDriver::get_databases(&driver).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.get_databases().await
+                DatabaseDriver::get_databases(&driver).await
             }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for listing databases"
@@ -218,11 +218,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.get_schemas().await
+                DatabaseDriver::get_schemas(&driver).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.get_schemas().await
+                DatabaseDriver::get_schemas(&driver).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -297,11 +297,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.get_tables(schema).await
+                DatabaseDriver::get_tables(&driver, schema).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.get_tables(schema).await
+                DatabaseDriver::get_tables(&driver, schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -327,11 +327,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.get_columns(schema, table).await
+                DatabaseDriver::get_columns(&driver, schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.get_columns(schema, table).await
+                DatabaseDriver::get_columns(&driver, schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -356,11 +356,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.get_schema_metadata(schema).await
+                DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.get_schema_metadata(schema).await
+                DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -839,11 +839,11 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                driver.list_roles().await
+                DatabaseDriver::list_roles(&driver).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                driver.list_roles().await
+                DatabaseDriver::list_roles(&driver).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
