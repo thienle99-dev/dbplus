@@ -1,91 +1,19 @@
 import { X, Lightbulb, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import { translations, Language } from '../i18n/queryBuilder';
 
 interface GuidePanelProps {
     isOpen: boolean;
     onClose: () => void;
+    language: Language;
 }
 
-const GUIDE_STEPS = [
-    {
-        title: '1. Select Your Data Source',
-        description: 'Start by choosing a schema and table from the dropdown menus at the top.',
-        example: 'Schema: public → Table: products',
-        icon: '🗄️',
-    },
-    {
-        title: '2. Choose Columns',
-        description: 'Select which columns you want to see in your results. Click "All (*)" to select everything.',
-        example: 'Select: name, price, category',
-        icon: '📋',
-    },
-    {
-        title: '3. Add Filters (Optional)',
-        description: 'Filter your data using WHERE conditions. Click "+ Add" to add multiple filters.',
-        example: 'price > 100 AND category = "Electronics"',
-        icon: '🔍',
-    },
-    {
-        title: '4. Calculate Values (Optional)',
-        description: 'Use aggregate functions to calculate totals, averages, counts, etc.',
-        example: 'COUNT(id) as total_products, AVG(price) as avg_price',
-        icon: '🧮',
-    },
-    {
-        title: '5. Group Data (Optional)',
-        description: 'Group rows by columns to see aggregated results.',
-        example: 'Group by: category',
-        icon: '📦',
-    },
-    {
-        title: '6. Sort Results (Optional)',
-        description: 'Order your results by one or more columns.',
-        example: 'Sort by: price (descending)',
-        icon: '↕️',
-    },
-    {
-        title: '7. Set Limits',
-        description: 'Control how many rows to display and skip.',
-        example: 'Limit: 100, Offset: 0',
-        icon: '⚙️',
-    },
-];
-
-const COMMON_EXAMPLES = [
-    {
-        title: 'Find Expensive Products',
-        description: 'Get all products over $100',
-        steps: [
-            'Select table: products',
-            'Add filter: price > 100',
-            'Sort by: price (descending)',
-        ],
-    },
-    {
-        title: 'Count by Category',
-        description: 'See how many products in each category',
-        steps: [
-            'Select table: products',
-            'Add calculation: COUNT(*) as total',
-            'Group by: category',
-            'Sort by: total (descending)',
-        ],
-    },
-    {
-        title: 'Average Price Analysis',
-        description: 'Calculate average price per category',
-        steps: [
-            'Select table: products',
-            'Select columns: category',
-            'Add calculation: AVG(price) as avg_price',
-            'Group by: category',
-            'Add HAVING filter: avg_price > 50',
-        ],
-    },
-];
-
-export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
+export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProps) {
     const [activeTab, setActiveTab] = useState<'steps' | 'examples'>('steps');
+    const t = translations[language];
+
+    // Icons mapping for steps
+    const stepIcons = ['🗄️', '📋', '🔍', '🧮', '📦', '↕️', '⚙️'];
 
     if (!isOpen) return null;
 
@@ -107,17 +35,17 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-text-primary">
-                                Quick Start Guide
+                                {t.guide.title}
                             </h2>
                             <p className="text-xs text-text-secondary mt-0.5">
-                                Learn how to build queries visually
+                                {t.guide.subtitle}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2.5 hover:bg-bg-2 rounded-xl transition-all text-text-secondary hover:text-text-primary"
-                        title="Close"
+                        title={t.close}
                     >
                         <X size={22} />
                     </button>
@@ -132,7 +60,7 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                             : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                             }`}
                     >
-                        Step-by-Step Guide
+                        {t.guide.tabs.steps}
                     </button>
                     <button
                         onClick={() => setActiveTab('examples')}
@@ -141,7 +69,7 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                             : 'text-text-secondary hover:text-primary hover:bg-bg-2'
                             }`}
                     >
-                        Common Examples
+                        {t.guide.tabs.examples}
                     </button>
                 </div>
 
@@ -149,13 +77,13 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                 <div className="flex-1 overflow-y-auto p-6">
                     {activeTab === 'steps' ? (
                         <div className="space-y-4">
-                            {GUIDE_STEPS.map((step, index) => (
+                            {t.guide.steps.map((step, index) => (
                                 <div
                                     key={index}
                                     className="p-4 bg-bg-1 rounded-lg border border-border hover:border-accent/50 transition-colors"
                                 >
                                     <div className="flex items-start gap-3">
-                                        <span className="text-2xl flex-shrink-0">{step.icon}</span>
+                                        <span className="text-2xl flex-shrink-0">{stepIcons[index]}</span>
                                         <div className="flex-1">
                                             <h3 className="text-sm font-semibold text-text-primary mb-1">
                                                 {step.title}
@@ -179,25 +107,15 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                                     <Lightbulb size={18} className="text-accent flex-shrink-0 mt-0.5" />
                                     <div>
                                         <h4 className="text-sm font-semibold text-text-primary mb-2">
-                                            💡 Pro Tips
+                                            {t.guide.proTips.title}
                                         </h4>
                                         <ul className="space-y-1.5 text-sm text-text-secondary">
-                                            <li className="flex items-start gap-2">
-                                                <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                                                <span>Hover over <strong>?</strong> icons for detailed explanations</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                                                <span>SQL is generated automatically as you build</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                                                <span>Use GROUP BY with aggregate functions for summaries</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                                                <span>HAVING filters work on grouped data, WHERE filters on rows</span>
-                                            </li>
+                                            {t.guide.proTips.tips.map((tip, index) => (
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <CheckCircle2 size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                                                    <span dangerouslySetInnerHTML={{ __html: tip }} />
+                                                </li>
+                                            ))}
                                         </ul>
                                     </div>
                                 </div>
@@ -205,7 +123,7 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {COMMON_EXAMPLES.map((example, index) => (
+                            {t.guide.examples.map((example, index) => (
                                 <div
                                     key={index}
                                     className="p-4 bg-bg-1 rounded-lg border border-border hover:border-accent/50 transition-colors"
@@ -231,17 +149,6 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                                     </div>
                                 </div>
                             ))}
-
-                            {/* Additional Help */}
-                            <div className="mt-6 p-4 bg-bg-1 rounded-lg border border-border">
-                                <h4 className="text-sm font-semibold text-text-primary mb-2">
-                                    Need More Help?
-                                </h4>
-                                <p className="text-sm text-text-secondary">
-                                    Each section in the builder has a <strong>?</strong> icon with detailed
-                                    explanations. Click on them to learn more about specific features.
-                                </p>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -252,7 +159,7 @@ export default function GuidePanel({ isOpen, onClose }: GuidePanelProps) {
                         onClick={onClose}
                         className="px-6 py-2.5 bg-gradient-to-r from-accent to-accent/90 text-white rounded-xl hover:shadow-lg hover:shadow-accent/25 transition-all font-semibold text-sm"
                     >
-                        Got it, thanks!
+                        {t.guide.cta}
                     </button>
                 </div>
             </div>

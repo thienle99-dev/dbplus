@@ -2,6 +2,8 @@ import { X, Sparkles, HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import VisualQueryBuilderEnhanced from './VisualQueryBuilderEnhanced';
 import GuidePanel from './GuidePanel';
+import LanguageSwitcher from './LanguageSwitcher';
+import { translations, Language } from '../i18n/queryBuilder';
 
 interface VisualQueryBuilderModalProps {
     isOpen: boolean;
@@ -24,6 +26,8 @@ export default function VisualQueryBuilderModal({
     initialState,
 }: VisualQueryBuilderModalProps) {
     const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [language, setLanguage] = useState<Language>('en');
+    const t = translations[language];
 
     // Close on Escape key
     useEffect(() => {
@@ -73,26 +77,31 @@ export default function VisualQueryBuilderModal({
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                                    Visual Query Builder
+                                    {t.title}
                                 </h2>
                                 <p className="text-xs text-text-secondary mt-0.5">
-                                    Build powerful SQL queries without writing code
+                                    {t.subtitle}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* Language Switcher */}
+                            <LanguageSwitcher
+                                currentLanguage={language}
+                                onLanguageChange={setLanguage}
+                            />
                             <button
                                 onClick={() => setIsGuideOpen(true)}
                                 className="p-2.5 hover:bg-bg-2 rounded-xl transition-all text-text-secondary hover:text-accent flex items-center gap-2"
-                                title="Help & Guide"
+                                title={t.help}
                             >
                                 <HelpCircle size={20} />
-                                <span className="text-sm font-medium">Help</span>
+                                <span className="text-sm font-medium">{t.help}</span>
                             </button>
                             <button
                                 onClick={onClose}
                                 className="p-2.5 hover:bg-bg-2 rounded-xl transition-all text-text-secondary hover:text-text-primary hover:rotate-90 duration-200"
-                                title="Close (Esc)"
+                                title={`${t.close} (Esc)`}
                             >
                                 <X size={22} />
                             </button>
@@ -104,6 +113,7 @@ export default function VisualQueryBuilderModal({
                         <VisualQueryBuilderEnhanced
                             onSqlChange={onSqlChange}
                             initialState={initialState}
+                            language={language}
                         />
                     </div>
 
@@ -111,23 +121,23 @@ export default function VisualQueryBuilderModal({
                     <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-gradient-to-r from-bg-1 via-bg-0 to-bg-1">
                         <div className="flex items-center gap-2 text-xs text-text-secondary">
                             <span className="px-2 py-1 bg-bg-2 border border-border rounded-md font-mono">Esc</span>
-                            <span>to close</span>
+                            <span>{t.shortcuts.escToClose}</span>
                             <span className="mx-2 text-border">•</span>
                             <span className="px-2 py-1 bg-bg-2 border border-border rounded-md font-mono">⌘ + Enter</span>
-                            <span>to run query</span>
+                            <span>{t.shortcuts.runQuery}</span>
                         </div>
                         <button
                             onClick={onClose}
                             className="px-6 py-2.5 bg-gradient-to-r from-accent to-accent/90 text-white rounded-xl hover:shadow-lg hover:shadow-accent/25 transition-all font-semibold text-sm hover:scale-105 active:scale-95"
                         >
-                            Apply & Close
+                            {t.applyClose}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Guide Panel */}
-            <GuidePanel isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+            <GuidePanel isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} language={language} />
         </>
     );
 }
