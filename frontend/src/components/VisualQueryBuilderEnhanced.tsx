@@ -14,11 +14,13 @@ interface Column {
 
 interface FilterRule {
     id: string;
-    column: string;
-    operator: string;
-    value: string;
-    value2?: string;
+    type: 'rule' | 'group';
     logic?: 'AND' | 'OR';
+    children?: FilterRule[];
+    column?: string;
+    operator?: string;
+    value?: string;
+    value2?: string;
 }
 
 interface SortRule {
@@ -267,27 +269,38 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
         }
 
         if (filters.length > 0) {
-            let whereClause = '';
-            filters.forEach((f, index) => {
-                const logic = index > 0 ? ` ${f.logic || 'AND'} ` : '';
-                let condition = '';
+            const buildWhereClause = (rules: FilterRule[]): string => {
+                return rules.map((f, index) => {
+                    const logic = index > 0 ? ` ${f.logic || 'AND'} ` : '';
+                    let condition = '';
 
-                if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
-                    condition = `${quoteIdent(f.column)} ${f.operator}`;
-                } else if (f.operator === 'IN' || f.operator === 'NOT IN') {
-                    const values = f.value.split(',').map(v => quoteSqlString(v.trim())).join(', ');
-                    condition = `${quoteIdent(f.column)} ${f.operator} (${values})`;
-                } else if (f.operator === 'BETWEEN') {
-                    condition = `${quoteIdent(f.column)} BETWEEN ${quoteSqlString(f.value)} AND ${quoteSqlString(f.value2 || '')}`;
-                } else {
-                    const asNum = Number(f.value);
-                    const val = !Number.isNaN(asNum) && f.value.trim() !== '' ? String(asNum) : quoteSqlString(f.value);
-                    condition = `${quoteIdent(f.column)} ${f.operator} ${val}`;
-                }
+                    if (f.type === 'group' && f.children && f.children.length > 0) {
+                        const childSql = buildWhereClause(f.children);
+                        // Wrap in parentheses if it's a group
+                        condition = childSql ? `(${childSql})` : '';
+                    } else if (f.type === 'rule' && f.column) { // Valid rule
+                        if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
+                            condition = `${quoteIdent(f.column)} ${f.operator}`;
+                        } else if (f.operator === 'IN' || f.operator === 'NOT IN') {
+                            const values = (f.value || '').split(',').map(v => quoteSqlString(v.trim())).join(', ');
+                            condition = `${quoteIdent(f.column)} ${f.operator} (${values})`;
+                        } else if (f.operator === 'BETWEEN') {
+                            condition = `${quoteIdent(f.column)} BETWEEN ${quoteSqlString(f.value || '')} AND ${quoteSqlString(f.value2 || '')}`;
+                        } else {
+                            const asNum = Number(f.value);
+                            const val = !Number.isNaN(asNum) && (f.value || '').trim() !== '' ? String(asNum) : quoteSqlString(f.value || '');
+                            condition = `${quoteIdent(f.column)} ${f.operator} ${val}`;
+                        }
+                    }
 
-                whereClause += logic + condition;
-            });
-            sql += ` WHERE ${whereClause}`;
+                    return condition ? logic + condition : '';
+                }).join('');
+            };
+
+            const whereClause = buildWhereClause(filters);
+            if (whereClause) {
+                sql += ` WHERE ${whereClause}`;
+            }
         }
 
         if (groupByColumns.length > 0) {
@@ -297,9 +310,11 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
 
         if (havingFilters.length > 0) {
             const havingClause = havingFilters.map(f => {
-                const asNum = Number(f.value);
-                const val = !Number.isNaN(asNum) && f.value.trim() !== '' ? String(asNum) : quoteSqlString(f.value);
-                return `${quoteIdent(f.column)} ${f.operator} ${val}`;
+                const col = f.column || '';
+                const valStr = f.value || '';
+                const asNum = Number(valStr);
+                const val = !Number.isNaN(asNum) && valStr.trim() !== '' ? String(asNum) : quoteSqlString(valStr);
+                return `${quoteIdent(col)} ${f.operator || '='} ${val}`;
             }).join(' AND ');
             sql += ` HAVING ${havingClause}`;
         }
@@ -321,22 +336,175 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
     }, [selectedSchema, selectedTable, selectedColumns, filters, sorts, limit, offset, distinct, groupByColumns, havingFilters, aggregates, joins, onSqlChange]);
 
     // Helper functions
-    const addFilter = () => {
-        setFilters([...filters, {
+    // Recursive Helper Functions
+    const updateFilterRecursive = (rules: FilterRule[], id: string, updates: Partial<FilterRule>): FilterRule[] => {
+        return rules.map(rule => {
+            if (rule.id === id) return { ...rule, ...updates };
+            if (rule.children) return { ...rule, children: updateFilterRecursive(rule.children, id, updates) };
+            return rule;
+        });
+    };
+
+    const removeFilterRecursive = (rules: FilterRule[], id: string): FilterRule[] => {
+        return rules.filter(rule => rule.id !== id).map(rule => {
+            if (rule.children) return { ...rule, children: removeFilterRecursive(rule.children, id) };
+            return rule;
+        });
+    };
+
+    const addFilterToGroupRecursive = (rules: FilterRule[], groupId: string, newRule: FilterRule): FilterRule[] => {
+        return rules.map(rule => {
+            if (rule.id === groupId && rule.type === 'group') {
+                return { ...rule, children: [...(rule.children || []), newRule] };
+            }
+            if (rule.children) {
+                return { ...rule, children: addFilterToGroupRecursive(rule.children, groupId, newRule) };
+            }
+            return rule;
+        });
+    };
+
+    // Handlers
+    const addFilter = (parentId?: string) => {
+        const newFilter: FilterRule = {
             id: Math.random().toString(),
+            type: 'rule',
             column: columns[0]?.name || '',
             operator: '=',
             value: '',
-            logic: filters.length > 0 ? 'AND' : undefined
-        }]);
+            logic: 'AND'
+        };
+        if (parentId) {
+            setFilters(prev => addFilterToGroupRecursive(prev, parentId, newFilter));
+        } else {
+            setFilters(prev => [...prev, newFilter]);
+        }
+    };
+
+    const addGroup = (parentId?: string) => {
+        const newGroup: FilterRule = {
+            id: Math.random().toString(),
+            type: 'group',
+            logic: 'AND',
+            children: [{
+                id: Math.random().toString(),
+                type: 'rule',
+                column: columns[0]?.name || '',
+                operator: '=',
+                value: '',
+                logic: 'AND'
+            }]
+        };
+        if (parentId) {
+            setFilters(prev => addFilterToGroupRecursive(prev, parentId, newGroup));
+        } else {
+            setFilters(prev => [...prev, newGroup]);
+        }
     };
 
     const removeFilter = (id: string) => {
-        setFilters(filters.filter(f => f.id !== id));
+        setFilters(prev => removeFilterRecursive(prev, id));
     };
 
-    const updateFilter = (id: string, field: keyof FilterRule, value: string) => {
-        setFilters(filters.map(f => f.id === id ? { ...f, [field]: value } : f));
+    const updateFilter = (id: string, field: keyof FilterRule, value: any) => {
+        setFilters(prev => updateFilterRecursive(prev, id, { [field]: value }));
+    };
+
+    // Recursively Render Filters
+    const renderFilters = (rules: FilterRule[], depth = 0) => {
+        return (rules || []).map((filter, index) => (
+            <div key={filter.id} className={`flex flex-col gap-2 ${depth > 0 ? 'ml-6' : ''}`}>
+                {/* Logic Connector for items > 0 */}
+                {index > 0 && (
+                    <div className="flex items-center">
+                        <div className={`w-0.5 h-4 ${depth > 0 ? 'bg-border' : 'bg-transparent'} mx-4`}></div>
+                        <button
+                            onClick={() => updateFilter(filter.id, 'logic', filter.logic === 'AND' ? 'OR' : 'AND')}
+                            className={`shrink-0 w-16 h-7 rounded-md text-[10px] font-bold border transition-all flex items-center justify-center z-10
+                                    ${filter.logic === 'OR'
+                                    ? 'bg-orange-500/10 text-orange-500 border-orange-500/30 hover:bg-orange-500/20'
+                                    : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'}
+                                `}
+                        >
+                            {filter.logic === 'OR' ? 'OR' : 'AND'}
+                        </button>
+                    </div>
+                )}
+
+                <div className={`
+                    group flex flex-wrap items-stretch gap-2 p-2 rounded-lg border transition-all
+                    ${filter.type === 'group'
+                        ? 'bg-bg-1/50 border-accent/30 hover:border-accent'
+                        : 'bg-bg-0 border-border/40 hover:border-border hover:bg-bg-1/30'}
+                `}>
+
+                    {filter.type === 'group' ? (
+                        <div className="flex-1 flex flex-col gap-2 w-full">
+                            <div className="flex items-center justify-between border-b border-border/50 pb-1 mb-1">
+                                <span className="text-xs font-bold text-accent px-2">GROUP</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => addFilter(filter.id)} className="text-[10px] bg-bg-2 px-2 py-1 rounded hover:text-accent">+ Rule</button>
+                                    <button onClick={() => addGroup(filter.id)} className="text-[10px] bg-bg-2 px-2 py-1 rounded hover:text-accent">+ Group</button>
+                                    <button onClick={() => removeFilter(filter.id)} className="text-error hover:bg-error/10 p-1 rounded"><Trash2 size={14} /></button>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2 pt-1 pl-1 border-l-2 border-dashed border-border/50">
+                                {renderFilters(filter.children || [], depth + 1)}
+                            </div>
+                        </div>
+                    ) : (
+                        /* Rule Render */
+                        <>
+                            <div className="flex-1 flex flex-wrap md:flex-nowrap gap-2 items-center min-w-0">
+                                <Select
+                                    value={filter.column || ''}
+                                    onChange={(val) => updateFilter(filter.id, 'column', val)}
+                                    options={columns.map(col => ({ value: col.name, label: col.name }))}
+                                    size="sm"
+                                    className="min-w-[150px] flex-1"
+                                />
+                                <Select
+                                    value={filter.operator || '='}
+                                    onChange={(val) => updateFilter(filter.id, 'operator', val)}
+                                    options={operatorOptions}
+                                    size="sm"
+                                    className="min-w-[120px] w-[120px]"
+                                />
+                                {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
+                                    <>
+                                        <input
+                                            type="text"
+                                            value={filter.value || ''}
+                                            onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
+                                            placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'val1, val2' : t.labels.value}
+                                            className="flex-1 min-w-[100px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                        />
+                                        {filter.operator === 'BETWEEN' && (
+                                            <>
+                                                <span className="text-xs text-text-secondary font-medium shrink-0">AND</span>
+                                                <input
+                                                    type="text"
+                                                    value={filter.value2 || ''}
+                                                    onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
+                                                    placeholder={t.labels.value2}
+                                                    className="flex-1 min-w-[100px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
+                                                />
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => removeFilter(filter.id)}
+                                className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+        ));
     };
 
     const addSort = () => {
@@ -408,7 +576,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
     };
 
     const addHavingFilter = () => {
-        setHavingFilters([...havingFilters, { id: Math.random().toString(), column: aggregates[0]?.alias || '', operator: '>', value: '' }]);
+        setHavingFilters([...havingFilters, { id: Math.random().toString(), type: 'rule', column: aggregates[0]?.alias || '', operator: '>', value: '' }]);
     };
 
     const removeHavingFilter = (id: string) => {
@@ -710,83 +878,27 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 title={t.sections.filterRows}
                                 icon={Filter}
                                 action={
-                                    <button
-                                        onClick={addFilter}
-                                        className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
-                                    >
-                                        <Plus size={14} /> {t.actions.add}
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => addFilter()}
+                                            className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                        >
+                                            <Plus size={14} /> Only Filter
+                                        </button>
+                                        <button
+                                            onClick={() => addGroup()}
+                                            className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                        >
+                                            <Copy size={14} /> + Group
+                                        </button>
+                                    </div>
                                 }
                             >
                                 {filters.length === 0 ? (
                                     <p className="text-sm text-text-secondary italic">{t.emptyStates.noFilters}</p>
                                 ) : (
-                                    <div className="space-y-2">
-                                        {filters.map((filter, index) => (
-                                            <div key={filter.id} className="group flex flex-wrap items-stretch gap-2 p-2 rounded-lg border border-border/40 hover:border-border hover:bg-bg-1/30 transition-all">
-                                                {index > 0 && (
-                                                    <button
-                                                        onClick={() => updateFilter(filter.id, 'logic', filter.logic === 'AND' ? 'OR' : 'AND')}
-                                                        className={`shrink-0 w-16 rounded-md text-xs font-bold border transition-all flex items-center justify-center
-                                                            ${filter.logic === 'OR'
-                                                                ? 'bg-orange-500/10 text-orange-500 border-orange-500/30 hover:bg-orange-500/20'
-                                                                : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'}
-                                                        `}
-                                                        title="Click to toggle AND/OR"
-                                                    >
-                                                        {filter.logic === 'OR' ? 'OR' : 'AND'}
-                                                    </button>
-                                                )}
-
-                                                <div className="flex-1 flex flex-wrap md:flex-nowrap gap-2 items-center min-w-0">
-                                                    <Select
-                                                        value={filter.column}
-                                                        onChange={(val) => updateFilter(filter.id, 'column', val)}
-                                                        options={columns.map(col => ({ value: col.name, label: col.name }))}
-                                                        size="sm"
-                                                        className="min-w-[150px] flex-1"
-                                                    />
-                                                    <Select
-                                                        value={filter.operator}
-                                                        onChange={(val) => updateFilter(filter.id, 'operator', val)}
-                                                        options={operatorOptions}
-                                                        size="sm"
-                                                        className="min-w-[140px] w-[140px]"
-                                                    />
-                                                    {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
-                                                        <>
-                                                            <input
-                                                                type="text"
-                                                                value={filter.value}
-                                                                onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-                                                                placeholder={filter.operator === 'IN' || filter.operator === 'NOT IN' ? 'val1, val2, ...' : t.labels.value}
-                                                                className="flex-1 min-w-[120px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
-                                                            />
-                                                            {filter.operator === 'BETWEEN' && (
-                                                                <>
-                                                                    <span className="text-xs text-text-secondary font-medium shrink-0">AND</span>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={filter.value2 || ''}
-                                                                        onChange={(e) => updateFilter(filter.id, 'value2', e.target.value)}
-                                                                        placeholder={t.labels.value2}
-                                                                        className="flex-1 min-w-[120px] bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
-                                                                    />
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-
-                                                <button
-                                                    onClick={() => removeFilter(filter.id)}
-                                                    className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                                    title={t.actions.remove}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        ))}
+                                    <div className="space-y-4">
+                                        {renderFilters(filters)}
                                     </div>
                                 )}
                             </SectionCard>
@@ -835,14 +947,14 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                             {havingFilters.map(filter => (
                                                 <div key={filter.id} className="flex gap-2 items-center">
                                                     <Select
-                                                        value={filter.column}
+                                                        value={filter.column || ''}
                                                         onChange={(val) => updateHavingFilter(filter.id, 'column', val)}
                                                         options={aggregates.map(agg => ({ value: agg.alias, label: agg.alias }))}
                                                         size="sm"
                                                         className="flex-1"
                                                     />
                                                     <Select
-                                                        value={filter.operator}
+                                                        value={filter.operator || '='}
                                                         onChange={(val) => updateHavingFilter(filter.id, 'operator', val)}
                                                         options={[
                                                             { value: '=', label: '=' },
@@ -857,7 +969,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                                     />
                                                     <input
                                                         type="text"
-                                                        value={filter.value}
+                                                        value={filter.value || ''}
                                                         onChange={(e) => updateHavingFilter(filter.id, 'value', e.target.value)}
                                                         placeholder={t.labels.value}
                                                         className="flex-1 bg-bg-2 border border-border rounded-md px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
