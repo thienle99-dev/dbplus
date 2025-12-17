@@ -12,6 +12,7 @@ import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState } from '../../types';
 import Button from '../ui/Button';
+import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
 
 interface TableDataTabProps {
   connectionId?: string;
@@ -74,11 +75,32 @@ export default function TableDataTab({
           const val = info.getValue();
           const rowIndex = info.row.index;
           const isEdited = edits[rowIndex]?.[index] !== undefined;
+          const isComplex = isComplexType(val);
+          const displayValue = formatCellValue(val);
 
+          // For complex types (JSON, arrays, objects), use textarea
+          if (isComplex) {
+            return (
+              <textarea
+                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${
+                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                }`}
+                value={displayValue}
+                onChange={(e) => onEdit(rowIndex, index, e.target.value)}
+                placeholder={val === null ? 'NULL' : ''}
+                rows={Math.min(5, displayValue.split('\n').length)}
+                style={{ minHeight: '20px' }}
+              />
+            );
+          }
+
+          // For simple types, use input
           return (
             <input
-              className={`w-full bg-transparent border-none outline-none p-0 text-sm ${isEdited ? 'text-accent font-medium' : 'text-text-primary'}`}
-              value={val === null ? '' : String(val)}
+              className={`w-full bg-transparent border-none outline-none p-0 text-sm ${
+                isEdited ? 'text-accent font-medium' : 'text-text-primary'
+              }`}
+              value={displayValue}
               onChange={(e) => onEdit(rowIndex, index, e.target.value)}
               placeholder={val === null ? 'NULL' : ''}
             />
