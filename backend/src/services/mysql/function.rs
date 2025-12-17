@@ -20,7 +20,7 @@ impl FunctionOperations for MySqlDriver {
 
         Ok(rows
             .into_iter()
-            .map(|(name, type_, return_type)| FunctionInfo {
+            .map(|(name, _type_, return_type)| FunctionInfo {
                 schema: schema.to_string(),
                 name,
                 definition: "".to_string(),

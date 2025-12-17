@@ -17,7 +17,7 @@ impl QueryDriver for MySqlDriver {
 
     async fn query(&self, query: &str) -> Result<QueryResult> {
         let mut conn = self.pool.get_conn().await?;
-        let result = conn.query_iter(query).await?;
+        let mut result = conn.query_iter(query).await?;
 
         // Capture columns
         let columns = result

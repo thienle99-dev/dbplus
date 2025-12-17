@@ -27,7 +27,7 @@ impl MySqlDriver {
         } else {
             &conn.host
         };
-        opts = opts.ip_or_hostname(Some(host));
+        opts = opts.ip_or_hostname(host);
 
         if conn.port > 0 {
             opts = opts.tcp_port(conn.port as u16);

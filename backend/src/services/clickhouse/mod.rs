@@ -12,7 +12,7 @@ use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
 use async_trait::async_trait;
 use clickhouse::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 
 pub struct ClickHouseDriver {
@@ -358,7 +358,7 @@ impl TableOperations for ClickHouseDriver {
             schema
         };
 
-        let query = format!(
+        let _query = format!(
             "SELECT total_rows, total_bytes, metadata_modification_time FROM system.tables WHERE database = '{}' AND name = '{}'",
             db, table
         );
@@ -619,7 +619,7 @@ impl TableOperations for ClickHouseDriver {
             bytes: u64,
         }
 
-        let mut cursor = self
+        let _cursor = self
             .client
             .query(&query)
             .fetch::<PartRow>()

@@ -4,9 +4,8 @@ use mysql_async::prelude::Queryable;
 
 use super::MySqlDriver;
 use crate::services::db_driver::{
-    CheckConstraint, ForeignKey, IndexInfo, PartitionInfo, QueryResult, RoleInfo, StorageBloatInfo,
-    TableComment, TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
-    UniqueConstraint,
+    ForeignKey, IndexInfo, PartitionInfo, QueryResult, RoleInfo, StorageBloatInfo, TableComment,
+    TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::{QueryDriver, TableOperations};
 

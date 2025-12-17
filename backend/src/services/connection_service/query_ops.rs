@@ -1,7 +1,7 @@
 use super::ConnectionService;
 use crate::services::driver::QueryDriver;
 use anyhow::Result;
-use sqlparser::ast::{Expr, SetExpr, Statement};
+use sqlparser::ast::Statement;
 use sqlparser::dialect::{Dialect, GenericDialect, MySqlDialect, PostgreSqlDialect, SQLiteDialect};
 use sqlparser::parser::Parser;
 use uuid::Uuid;
