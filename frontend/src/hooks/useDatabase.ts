@@ -46,6 +46,11 @@ export const useSchemas = (connectionId: string | undefined) => {
             return data;
         },
         enabled: !!connectionId,
+        staleTime: Infinity, // Cache indefinitely
+        gcTime: Infinity, // Keep in cache forever
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: false, // Don't refetch on component mount
+        refetchOnReconnect: true, // Only refetch when reconnecting
     });
 };
 
@@ -62,6 +67,11 @@ export const useTables = (connectionId: string | undefined, schema: string | und
             return data;
         },
         enabled: !!connectionId && !!schema,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
 };
 
@@ -103,6 +113,11 @@ export const useColumns = (connectionId: string | undefined, schema: string | un
             return data;
         },
         enabled: !!connectionId && !!schema && !!table,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
 };
 
@@ -340,6 +355,11 @@ export const useViews = (connectionId: string | undefined, schema: string | unde
             return data;
         },
         enabled: !!connectionId && !!schema,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
 };
 
@@ -356,6 +376,11 @@ export const useFunctions = (connectionId: string | undefined, schema: string | 
             return data;
         },
         enabled: !!connectionId && !!schema,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
 };
 
