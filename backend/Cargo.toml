@@ -32,6 +32,7 @@ postgres-protocol = "0.6"
 deadpool-postgres = "0.13"
 sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio-native-tls"] }
 migration = { path = "migration" }
+clickhouse = { version = "0.13", features = ["time", "uuid", "test-util"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

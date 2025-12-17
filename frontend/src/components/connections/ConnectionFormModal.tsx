@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 
 const DB_TYPES = [
     { value: 'postgres', label: 'PostgreSQL' },
+    { value: 'clickhouse', label: 'ClickHouse' },
     { value: 'sqlite', label: 'SQLite' },
     { value: 'mysql', label: 'MySQL' },
     { value: 'mongo', label: 'MongoDB' },
@@ -86,8 +87,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     ...DEFAULT_FORM_DATA,
                     type: nextType,
                     host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
-                    port: nextType === 'sqlite' ? '0' : DEFAULT_FORM_DATA.port,
-                    user: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.user,
+                    port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : DEFAULT_FORM_DATA.port),
+                    user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : DEFAULT_FORM_DATA.user),
                     password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
                     environment: DEFAULT_FORM_DATA.environment,
                     safe_mode_level: DEFAULT_FORM_DATA.safe_mode_level,
@@ -101,7 +102,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         name: formData.name,
         type: formData.type,
         host: formData.type === 'sqlite' ? '' : formData.host,
-        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || 5432),
+        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || (formData.type === 'clickhouse' ? 8123 : 5432)),
         database: formData.database,
         username: formData.type === 'sqlite' ? '' : formData.user,
         password: formData.type === 'sqlite' ? '' : formData.password,

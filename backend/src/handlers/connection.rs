@@ -182,7 +182,11 @@ pub async fn create_connection(
     } else {
         (
             payload.host.clone().unwrap_or_default(),
-            payload.port.unwrap_or(5432),
+            payload.port.unwrap_or(if payload.db_type == "clickhouse" {
+                8123
+            } else {
+                5432
+            }),
             payload.username.clone().unwrap_or_default(),
             payload.password.clone().unwrap_or_default(),
         )
@@ -251,7 +255,11 @@ pub async fn update_connection(
     } else {
         (
             payload.host.clone().unwrap_or_default(),
-            payload.port.unwrap_or(5432),
+            payload.port.unwrap_or(if payload.db_type == "clickhouse" {
+                8123
+            } else {
+                5432
+            }),
             payload.username.clone().unwrap_or_default(),
             payload.password.clone().unwrap_or_default(),
         )
@@ -387,7 +395,15 @@ pub async fn test_connection(
     );
     let connection_name = payload.name.clone();
     let host = payload.host.clone().unwrap_or_default();
-    let port = payload.port.unwrap_or(0);
+    let port = if payload.db_type == "sqlite" {
+        0
+    } else {
+        payload.port.unwrap_or(if payload.db_type == "clickhouse" {
+            8123
+        } else {
+            5432
+        })
+    };
 
     // Create a temporary model from request
     let model = connection::Model {

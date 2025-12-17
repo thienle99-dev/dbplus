@@ -14,3 +14,4 @@ pub mod saved_query_service;
 pub mod schema_diff;
 pub mod snippet_service;
 pub mod sqlite;
+pub mod clickhouse;
