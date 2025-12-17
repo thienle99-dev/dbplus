@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download, Network, GitCompare } from 'lucide-react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download, Network, GitCompare, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
 import { DdlScope } from '../features/export-ddl/exportDdl.types';
 import ERDiagramModal from './ERDiagramModal';
 import SchemaDiffModal from './schema-diff/SchemaDiffModal';
+import { MockDataModal } from './mock-data/MockDataModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
@@ -90,6 +91,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
   // ER Diagram Modal State
   const [erDiagramOpen, setErDiagramOpen] = useState(false);
+  const [mockDataModal, setMockDataModal] = useState<{ open: boolean; table: string }>({ open: false, table: '' });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -274,6 +276,10 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             setExportDdlState({ open: true, scope: DdlScope.Objects, initialTable: contextMenu.table });
             setContextMenu(null);
           }}
+          onOpenMockData={() => {
+            setMockDataModal({ open: true, table: contextMenu.table });
+            setContextMenu(null);
+          }}
         />
       )}
 
@@ -353,6 +359,18 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           navigate(`/connections/${connectionId}/table/${tableSchema}/${tableName}`);
         }}
       />
+
+      {mockDataModal.open && (
+        <MockDataModal
+          isOpen={mockDataModal.open}
+          onClose={() => setMockDataModal({ ...mockDataModal, open: false })}
+          connectionId={connectionId}
+          schema={schemaName}
+          table={mockDataModal.table}
+        />
+      )}
+
+
     </Collapsible.Root>
   );
 }
@@ -424,22 +442,48 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
 
   if (error) {
     return (
-      <div className="p-4 flex flex-col items-center justify-center text-center">
-        <div className="text-error text-xs mb-2">Connection failed</div>
-        <div className="text-text-secondary text-[10px] break-all border border-error/20 bg-error/5 p-2 rounded">
-          {(() => {
-            const err = error as any;
-            const data = err.response?.data;
-            if (typeof data === 'string') return data;
-            return data?.message || err.message || 'Unknown error';
-          })()}
+      <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+        <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-3">
+          <AlertTriangle className="w-6 h-6 text-error" />
         </div>
-        <button 
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
-          className="mt-3 px-3 py-1 bg-bg-2 hover:bg-bg-3 border border-border rounded text-xs text-text-primary transition-colors"
-        >
-          Retry
-        </button>
+        
+        <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
+        <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
+          Unable to connect to the database. Please check your connection settings.
+        </p>
+
+        <div className="w-full max-w-[260px] bg-bg-2 border border-border rounded-md p-2.5 mb-4 text-left">
+          <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
+            {(() => {
+              const err = error as any;
+              const data = err.response?.data;
+              if (typeof data === 'string') return data;
+              return data?.message || err.message || 'Unknown error';
+            })()}
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
+            className="gap-2"
+          >
+            <RefreshCw size={14} />
+            Retry
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-2"
+          >
+            <ArrowLeft size={14} />
+            Go Back
+          </Button>
+        </div>
       </div>
     );
   }

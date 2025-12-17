@@ -7,11 +7,11 @@ mod schema_ops;
 mod table_ops;
 mod view_ops;
 
+use crate::models::entities::connection;
 use crate::models::entities::sqlite_attached_db;
-use crate::models::entities::{connection, connection::Entity as Connection};
 use crate::services::encryption_service::EncryptionService;
 use anyhow::Result;
-use chrono::Utc;
+
 use sea_orm::*;
 use uuid::Uuid;
 

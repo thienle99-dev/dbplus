@@ -5,6 +5,7 @@ pub mod ddl_generator;
 pub mod driver;
 pub mod encryption_service;
 pub mod history_service;
+pub mod mock_data;
 pub mod pg_dump;
 pub mod postgres;
 pub mod postgres_driver;

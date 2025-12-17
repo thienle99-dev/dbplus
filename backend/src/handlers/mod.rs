@@ -7,6 +7,7 @@ pub mod export_ddl;
 pub mod extensions;
 pub mod foreign_key;
 pub mod history;
+pub mod mock_data;
 pub mod query;
 pub mod query_stream;
 pub mod result_edit;

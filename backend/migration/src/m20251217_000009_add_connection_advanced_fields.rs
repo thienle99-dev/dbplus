@@ -6,67 +6,81 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Connections::Table)
-                    .add_column(
-                        ColumnDef::new(Connections::SshEnabled)
-                            .boolean()
-                            .not_null()
-                            .default(false),
-                    )
-                    .add_column(ColumnDef::new(Connections::SshHost).string())
-                    .add_column(ColumnDef::new(Connections::SshPort).integer())
-                    .add_column(ColumnDef::new(Connections::SshUser).string())
-                    .add_column(
-                        ColumnDef::new(Connections::SshAuthType)
-                            .string()
-                            .default("password"),
-                    )
-                    .add_column(ColumnDef::new(Connections::SshPassword).string())
-                    .add_column(ColumnDef::new(Connections::SshKeyFile).string())
-                    .add_column(ColumnDef::new(Connections::SshKeyPassphrase).string())
-                    .add_column(
-                        ColumnDef::new(Connections::IsReadOnly)
-                            .boolean()
-                            .not_null()
-                            .default(false),
-                    )
-                    .add_column(
-                        ColumnDef::new(Connections::SslMode)
-                            .string()
-                            .default("disable"),
-                    )
-                    .add_column(ColumnDef::new(Connections::SslCaFile).string())
-                    .add_column(ColumnDef::new(Connections::SslCertFile).string())
-                    .add_column(ColumnDef::new(Connections::SslKeyFile).string())
-                    .to_owned(),
-            )
-            .await
+        let columns = [
+            ColumnDef::new(Connections::SshEnabled)
+                .boolean()
+                .not_null()
+                .default(false)
+                .to_owned(),
+            ColumnDef::new(Connections::SshHost).string().to_owned(),
+            ColumnDef::new(Connections::SshPort).integer().to_owned(),
+            ColumnDef::new(Connections::SshUser).string().to_owned(),
+            ColumnDef::new(Connections::SshAuthType)
+                .string()
+                .default("password")
+                .to_owned(),
+            ColumnDef::new(Connections::SshPassword).string().to_owned(),
+            ColumnDef::new(Connections::SshKeyFile).string().to_owned(),
+            ColumnDef::new(Connections::SshKeyPassphrase)
+                .string()
+                .to_owned(),
+            ColumnDef::new(Connections::IsReadOnly)
+                .boolean()
+                .not_null()
+                .default(false)
+                .to_owned(),
+            ColumnDef::new(Connections::SslMode)
+                .string()
+                .default("disable")
+                .to_owned(),
+            ColumnDef::new(Connections::SslCaFile).string().to_owned(),
+            ColumnDef::new(Connections::SslCertFile).string().to_owned(),
+            ColumnDef::new(Connections::SslKeyFile).string().to_owned(),
+        ];
+
+        for mut col in columns {
+            manager
+                .alter_table(
+                    Table::alter()
+                        .table(Connections::Table)
+                        .add_column(&mut col)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .alter_table(
-                Table::alter()
-                    .table(Connections::Table)
-                    .drop_column(Connections::SshEnabled)
-                    .drop_column(Connections::SshHost)
-                    .drop_column(Connections::SshPort)
-                    .drop_column(Connections::SshUser)
-                    .drop_column(Connections::SshAuthType)
-                    .drop_column(Connections::SshPassword)
-                    .drop_column(Connections::SshKeyFile)
-                    .drop_column(Connections::SshKeyPassphrase)
-                    .drop_column(Connections::IsReadOnly)
-                    .drop_column(Connections::SslMode)
-                    .drop_column(Connections::SslCaFile)
-                    .drop_column(Connections::SslCertFile)
-                    .drop_column(Connections::SslKeyFile)
-                    .to_owned(),
-            )
-            .await
+        let columns = [
+            Connections::SshEnabled,
+            Connections::SshHost,
+            Connections::SshPort,
+            Connections::SshUser,
+            Connections::SshAuthType,
+            Connections::SshPassword,
+            Connections::SshKeyFile,
+            Connections::SshKeyPassphrase,
+            Connections::IsReadOnly,
+            Connections::SslMode,
+            Connections::SslCaFile,
+            Connections::SslCertFile,
+            Connections::SslKeyFile,
+        ];
+
+        for col in columns {
+            manager
+                .alter_table(
+                    Table::alter()
+                        .table(Connections::Table)
+                        .drop_column(col)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 }
 

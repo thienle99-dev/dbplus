@@ -109,15 +109,15 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
 
           {/* Title */}
           <h2 className="text-xl font-semibold text-text-primary mb-2">
-            {status === 'testing' && 'Đang kết nối...'}
-            {status === 'success' && 'Kết nối thành công'}
-            {status === 'error' && 'Kết nối thất bại'}
+            {status === 'testing' && 'Connecting...'}
+            {status === 'success' && 'Connection Successful'}
+            {status === 'error' && 'Connection Failed'}
           </h2>
 
           {/* Message */}
           <p className="text-sm text-text-secondary mb-6">
-            {status === 'testing' && 'Vui lòng đợi trong khi hệ thống kiểm tra kết nối database...'}
-            {status === 'success' && 'Database đã sẵn sàng. Đang tải workspace...'}
+            {status === 'testing' && 'Please wait while we test the database connection...'}
+            {status === 'success' && 'Database is ready. Loading workspace...'}
             {status === 'error' && (
               <span className="block">
                 <span className="block text-error font-medium mb-2">{errorMessage.split('\n')[0]}</span>
@@ -147,13 +147,13 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
                 onClick={() => window.location.reload()}
                 className="flex-1 px-4 py-2.5 bg-accent hover:bg-blue-600 text-white rounded-lg font-medium transition-all hover:shadow-lg hover:scale-105"
               >
-                Thử lại
+                Try Again
               </button>
               <button
                 onClick={() => window.history.back()}
                 className="flex-1 px-4 py-2.5 bg-bg-2 hover:bg-bg-3 text-text-primary rounded-lg font-medium transition-all border border-border hover:border-accent/50"
               >
-                Quay lại
+                Go Back
               </button>
             </div>
           )}
@@ -163,7 +163,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
             <div className="flex items-start gap-2 mt-4 p-3 bg-accent/5 rounded-lg border border-accent/20 text-left w-full">
               <AlertCircle size={16} className="text-accent mt-0.5 flex-shrink-0" />
               <p className="text-xs text-text-secondary">
-                Đảm bảo database có thể truy cập trước khi tải workspace.
+                Ensure the database is accessible before loading the workspace.
               </p>
             </div>
           )}

@@ -14,6 +14,7 @@ import {
     Trash2,
     Scissors,
     ChevronRight,
+    Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTabContext } from '../context/TabContext';
@@ -30,6 +31,7 @@ interface TableContextMenuProps {
     onOpenExport: (format: 'csv' | 'json' | 'sql') => void;
     onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
     onExportDdl: () => void;
+    onOpenMockData: () => void;
 }
 
 interface MenuItem {
@@ -54,6 +56,7 @@ export default function TableContextMenu({
     onOpenExport,
     onOpenImport,
     onExportDdl,
+    onOpenMockData,
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
@@ -233,6 +236,14 @@ export default function TableContextMenu({
             label: 'Open structure',
             icon: <Database size={14} />,
             onClick: handleOpenStructure,
+        },
+        {
+            label: 'Mock Data Studio',
+            icon: <Sparkles size={14} />,
+            onClick: () => {
+                onOpenMockData();
+                onClose();
+            },
         },
         {
             label: 'Item overview',

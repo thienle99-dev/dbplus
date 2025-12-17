@@ -16,12 +16,7 @@ impl SQLiteColumn {
 
 #[async_trait]
 impl ColumnManagement for SQLiteColumn {
-    async fn add_column(
-        &self,
-        schema: &str,
-        table: &str,
-        column: &ColumnDefinition,
-    ) -> Result<()> {
+    async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {
         let schema = normalize_schema(schema);
 
         let mut query = format!(
@@ -40,26 +35,24 @@ impl ColumnManagement for SQLiteColumn {
             query.push_str(&format!(" DEFAULT {}", default));
         }
 
-        sqlx::query(&query)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query(&query).execute(&self.pool).await?;
 
         Ok(())
     }
 
     async fn alter_column(
         &self,
-        schema: &str,
-        table: &str,
-        column_name: &str,
-        new_def: &ColumnDefinition,
+        _schema: &str,
+        _table: &str,
+        _column_name: &str,
+        _new_def: &ColumnDefinition,
     ) -> Result<()> {
         return Err(anyhow::anyhow!(
             "SQLite does not support ALTER COLUMN. You need to recreate the table."
         ));
     }
 
-    async fn drop_column(&self, schema: &str, table: &str, column_name: &str) -> Result<()> {
+    async fn drop_column(&self, _schema: &str, _table: &str, _column_name: &str) -> Result<()> {
         return Err(anyhow::anyhow!(
             "SQLite does not support DROP COLUMN directly. You need to recreate the table."
         ));
@@ -78,6 +71,3 @@ fn normalize_schema(schema: &str) -> String {
 fn quote_ident(s: &str) -> String {
     format!("\"{}\"", s.replace('"', "\"\""))
 }
-
-
-

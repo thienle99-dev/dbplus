@@ -22,7 +22,6 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::driver::QueryDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
@@ -98,7 +97,6 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
@@ -128,7 +126,6 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {

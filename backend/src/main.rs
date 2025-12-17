@@ -98,6 +98,15 @@ async fn main() {
             "/api/connections/:id/databases/:name",
             delete(handlers::database::drop_database),
         )
+        // Mock Data routes
+        .route(
+            "/api/mock/preview",
+            post(handlers::mock_data::preview_mock_data),
+        )
+        .route(
+            "/api/mock/sql",
+            post(handlers::mock_data::generate_mock_data_sql),
+        )
         .route(
             "/api/connections/:id/schemas",
             get(handlers::schema::list_schemas).post(handlers::schema::create_schema),

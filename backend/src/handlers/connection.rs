@@ -387,7 +387,7 @@ pub async fn test_connection(
         username: payload.username.clone().unwrap_or_default(),
         password: payload.password.clone().unwrap_or_default(),
         ssl: payload.ssl.unwrap_or(false),
-        ssl: payload.ssl.unwrap_or(false),
+
         ssl_cert: payload.ssl_cert,
         ssl_mode: payload.ssl_mode,
         ssl_ca_file: payload.ssl_ca_file,
