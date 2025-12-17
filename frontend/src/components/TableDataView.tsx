@@ -21,7 +21,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentPage: page, pageSize } = useTablePage();
-  
+
   const constraintsQuery = useConstraints(connectionId, schema, table);
 
   const [edits, setEdits] = useState<EditState>({});
@@ -248,7 +248,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
         <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
+            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'data'
               ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
               }`}
@@ -258,7 +258,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
           </button>
           <button
             onClick={() => setActiveTab('structure')}
-            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
+            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'structure'
               ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
               }`}
@@ -268,7 +268,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
+            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'info'
               ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
               }`}

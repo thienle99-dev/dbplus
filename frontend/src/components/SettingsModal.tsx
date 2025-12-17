@@ -258,65 +258,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     })}
                                 </div>
 
-                                <div className="space-y-4 pt-4 border-t border-border">
-                                    <h3 className="text-base font-semibold text-text-primary">Accent Color</h3>
-
-                                    <div className="space-y-4">
-                                        <div className="flex flex-wrap gap-3">
-                                            {[
-                                                '#3b82f6', // Blue
-                                                '#8b5cf6', // Violet
-                                                '#ec4899', // Pink
-                                                '#f43f5e', // Rose
-                                                '#f97316', // Orange
-                                                '#eab308', // Yellow
-                                                '#22c55e', // Green
-                                                '#14b8a6', // Teal
-                                                '#06b6d4', // Cyan
-                                            ].map((color) => (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => settings.updateSettings({ accentColor: color })}
-                                                    className={`
-                                                        w-8 h-8 rounded-full border-2 transition-all hover:scale-110
-                                                        ${settings.accentColor.toLowerCase() === color.toLowerCase()
-                                                            ? 'border-text-primary ring-2 ring-offset-2 ring-offset-bg-1 ring-accent'
-                                                            : 'border-transparent hover:border-text-secondary'
-                                                        }
-                                                    `}
-                                                    style={{ backgroundColor: color }}
-                                                    title={color}
-                                                />
-                                            ))}
-
-                                            {/* Custom Color Input */}
-                                            <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-border hover:border-text-secondary transition-colors group">
-                                                <input
-                                                    type="color"
-                                                    value={settings.accentColor}
-                                                    onChange={(e) => settings.updateSettings({ accentColor: e.target.value })}
-                                                    className="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 cursor-pointer opacity-0"
-                                                    title="Custom Color"
-                                                />
-                                                <div
-                                                    className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-green-500 to-blue-500 opacity-80 group-hover:opacity-100"
-                                                >
-                                                    <span className="text-[10px] text-white drop-shadow">+</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className="w-4 h-4 rounded border border-border"
-                                                style={{ backgroundColor: settings.accentColor }}
-                                            />
-                                            <code className="text-xs text-text-secondary bg-bg-2 px-1.5 py-0.5 rounded">
-                                                {settings.accentColor}
-                                            </code>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         )}
 

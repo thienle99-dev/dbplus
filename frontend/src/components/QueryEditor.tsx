@@ -658,7 +658,7 @@ export default function QueryEditor({
             <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
               <button
                 onClick={() => setBottomTab('results')}
-                className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'results'
+                className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'results'
                   ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                   }`}
@@ -667,7 +667,7 @@ export default function QueryEditor({
               </button>
               <button
                 onClick={() => setBottomTab('plan')}
-                className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'plan'
+                className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'plan'
                   ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                   }`}
@@ -677,7 +677,7 @@ export default function QueryEditor({
               {snapshot && (
                 <button
                   onClick={() => setBottomTab('comparison')}
-                  className={`px-4 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'comparison'
+                  className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'comparison'
                     ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
                     }`}

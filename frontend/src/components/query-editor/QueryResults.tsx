@@ -485,7 +485,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const rowVirtualizer = useVirtualizer({
         count: rowModelRows.length,
         getScrollElement: () => tableScrollRef.current,
-        estimateSize: () => 32, // Increased from 28 for better accuracy
+        estimateSize: () => 36, // Balanced size - not too big, not too small
         overscan: 30, // Increased from 16 for smoother scrolling
     });
 
@@ -748,7 +748,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
             {result && (
                 <div className="flex flex-col h-full">
-                    <div className="p-2 bg-bg-2 text-xs border-b border-border flex items-center justify-between">
+                    <div className="p-2.5 bg-bg-2 text-sm border-b border-border flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                                 {result.affected_rows > 0
@@ -756,17 +756,17 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     : `${result.rows.length} rows returned`}
                             </span>
                             {hasEditableColumns && (
-                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
                                     Double-click cells to edit
                                 </span>
                             )}
                             {hasTruncatedRows && (
-                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
                                     Showing first {MAX_RENDER_ROWS.toLocaleString()} of {result.rows.length.toLocaleString()} rows
                                 </span>
                             )}
                             {totalCount !== undefined && limit !== undefined && offset !== undefined && (
-                                <span className="text-text-secondary text-[10px] bg-bg-3 px-1 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
                                     Total {totalCount.toLocaleString()} • Page {currentPage}/{totalPages}
                                 </span>
                             )}
@@ -1050,8 +1050,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     )}
 
                     {result.columns.length > 0 && (
-                        <div 
-                            className="flex-1 overflow-auto rounded-lg border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar" 
+                        <div
+                            className="flex-1 overflow-auto rounded-lg border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
                             ref={tableScrollRef}
                             style={{ scrollbarGutter: 'stable' }}
                         >
@@ -1072,7 +1072,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                 {headerGroup.headers.map((header) => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-4 py-2.5 text-xs font-semibold text-text-secondary/90 tracking-wide select-none border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30 relative"
+                                                        className="px-3 py-2 text-xs font-semibold text-text-secondary/90 tracking-wide select-none border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30 relative"
                                                         style={{
                                                             width: header.getSize(),
                                                         }}
@@ -1121,8 +1121,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                     {virtualItems.map((virtualRow) => {
                                                         const row = rowModelRows[virtualRow.index];
                                                         return (
-                                                            <tr 
-                                                                key={row.id} 
+                                                            <tr
+                                                                key={row.id}
                                                                 className={`
                                                                 
                                                                     hover:bg-bg-2/40 group transition-colors duration-150 ease-out border-b border-transparent hover:border-border/5
@@ -1132,7 +1132,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                                 {row.getVisibleCells().map((cell) => (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className="px-4 py-2 border-r border-border/5 last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                        className="px-3 py-1.5 border-r border-border/5 last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
                                                                         style={{
                                                                             width: cell.column.getSize(),
                                                                             maxWidth: cell.column.getSize(),

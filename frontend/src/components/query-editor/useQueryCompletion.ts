@@ -4,11 +4,13 @@ import {
   completeFromList,
   snippetCompletion,
   completionKeymap,
+  autocompletion,
 } from "@codemirror/autocomplete";
 import { sql } from "@codemirror/lang-sql";
 import { EditorState } from "@codemirror/state";
-import { keymap } from "@codemirror/view";
+import { keymap, EditorView, lineNumbers } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
+import { indentUnit } from "@codemirror/language";
 import { connectionApi } from "../../services/connectionApi";
 import { ForeignKey } from "../../types";
 import {
@@ -16,6 +18,7 @@ import {
   autocompleteTheme,
 } from "../../themes/codemirror-dynamic";
 import { light as lightTheme } from "../../themes/codemirror-light";
+import { useSettingsStore } from "../../store/settingsStore";
 
 // Define SQL Snippets (moved from QueryEditor.tsx)
 const sqlSnippets = [
@@ -467,11 +470,35 @@ export function useQueryCompletion({
       effectiveTheme === "dark" ||
       effectiveTheme === "midnight" ||
       effectiveTheme === "soft-pink" ||
+      effectiveTheme === "macos-dark" ||
       effectiveTheme?.startsWith("wibu") ||
       effectiveTheme?.startsWith("gruvbox-dark");
 
     return isDarkTheme ? oneDark : lightTheme;
   }, [theme]);
+
+  // Get settings from store
+  const {
+    editorFontSize,
+    tabSize,
+    wordWrap,
+    lineNumbers: showLineNumbers,
+    autoComplete,
+  } = useSettingsStore();
+
+  // Create editor settings theme
+  const editorSettingsTheme = useMemo(
+    () =>
+      EditorView.theme({
+        "&": {
+          fontSize: `${editorFontSize}px`,
+        },
+        ".cm-scroller": {
+          fontFamily: "var(--font-mono, monospace)",
+        },
+      }),
+    [editorFontSize]
+  );
 
   const extensions = useMemo(
     () => [
@@ -479,25 +506,56 @@ export function useQueryCompletion({
       ...(codeMirrorTheme ? [codeMirrorTheme] : []),
       transparentTheme,
       autocompleteTheme,
+      editorSettingsTheme,
       keymap.of(completionKeymap),
-      EditorState.languageData.of(() => [
-        {
-          autocomplete: completeFromList(sqlSnippets),
-        },
-        {
-          autocomplete: joinCompletionSource,
-        },
-        {
-          autocomplete: aliasCompletionSource,
-        },
-        {
-          autocomplete: columnCompletionSource,
-        },
-      ]),
+      // Tab size configuration
+      indentUnit.of(" ".repeat(tabSize)),
+      // Word wrap
+      ...(wordWrap ? [EditorView.lineWrapping] : []),
+      // Line numbers
+      ...(showLineNumbers ? [lineNumbers()] : []),
+      // Auto complete
+      ...(autoComplete
+        ? [
+          autocompletion({
+            activateOnTyping: true,
+            override: [
+              completeFromList(sqlSnippets),
+              joinCompletionSource,
+              aliasCompletionSource,
+              columnCompletionSource,
+            ],
+          }),
+        ]
+        : []),
+      // Language data for autocomplete (only if autoComplete is disabled, we still want schema)
+      ...(!autoComplete
+        ? [
+          EditorState.languageData.of(() => [
+            {
+              autocomplete: completeFromList(sqlSnippets),
+            },
+            {
+              autocomplete: joinCompletionSource,
+            },
+            {
+              autocomplete: aliasCompletionSource,
+            },
+            {
+              autocomplete: columnCompletionSource,
+            },
+          ]),
+        ]
+        : []),
     ],
     [
       codeMirrorTheme,
       schemaCompletion,
+      editorSettingsTheme,
+      tabSize,
+      wordWrap,
+      showLineNumbers,
+      autoComplete,
       joinCompletionSource,
       aliasCompletionSource,
       columnCompletionSource,
