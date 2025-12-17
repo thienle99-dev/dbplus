@@ -7,11 +7,13 @@ import { DatabaseSelectorModal } from './DatabaseSelectorModal';
 import { ConnectionFormModal } from './ConnectionFormModal';
 import { useConnectionStore } from '../../store/connectionStore';
 import DataToolsModal from '../DataToolsModal';
+import SettingsModal from '../SettingsModal';
 
 export const ConnectionsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isdbSelectorOpen, setIsDbSelectorOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dataToolsMode, setDataToolsMode] = useState<null | 'backup' | 'restore'>(null);
   const [selectedDbType, setSelectedDbType] = useState<string>('postgres');
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
@@ -54,6 +56,7 @@ export const ConnectionsDashboard: React.FC = () => {
         onBackup={() => setDataToolsMode('backup')}
         onRestore={() => setDataToolsMode('restore')}
         onCreate={() => setIsDbSelectorOpen(true)}
+        onSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -106,6 +109,11 @@ export const ConnectionsDashboard: React.FC = () => {
           connections={connections}
         />
       )}
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </div>
   );
 };

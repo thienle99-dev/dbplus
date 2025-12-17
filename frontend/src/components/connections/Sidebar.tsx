@@ -1,21 +1,23 @@
 import React from 'react';
+import { Settings } from 'lucide-react';
 
 interface SidebarProps {
     onBackup: () => void;
     onRestore: () => void;
     onCreate: () => void;
+    onSettings: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate, onSettings }) => {
     return (
         <div className="w-[280px] h-full bg-bg-1 flex flex-col items-center py-8 px-6 border-r border-border">
             {/* Logo */}
             <div className="mb-6">
                 <div className="w-32 h-32 flex items-center justify-center">
                     <img
-                        src="/cat_logo_square.png"
+                        src="/logo-dbplus.png"
                         alt="App Logo"
-                        className="w-full h-full object-contain filter grayscale invert contrast-150 mix-blend-screen"
+                        className="w-full h-full object-contain"
                     />
                 </div>
             </div>
@@ -52,6 +54,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate 
                     }
                     label="Create connection..."
                     onClick={onCreate}
+                />
+                <ActionButton
+                    icon={<Settings size={16} />}
+                    label="Settings"
+                    onClick={onSettings}
                 />
             </div>
         </div>
