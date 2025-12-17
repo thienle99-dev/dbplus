@@ -8,6 +8,7 @@ import { LogViewer } from './LogViewer';
 import { useColumns, useTableData } from '../hooks/useDatabase';
 import { useExecuteQuery } from '../hooks/useQuery';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatCellValue } from '../utils/cellFormatters';
 
 type EditState = Record<number, Record<string, unknown>>;
 
@@ -473,23 +474,23 @@ export default function RightSidebar() {
                               />
                             ) : (dataType.includes('text') || dataType.includes('char') || dataType.includes('json')) ? (
                               <textarea
-                                rows={String(currentValue).length > 50 || String(currentValue).includes('\n') ? 3 : 1}
-                                value={String(currentValue)}
+                                rows={String(currentValue).length > 50 || String(currentValue).includes('\n') ? 5 : 1}
+                                value={formatCellValue(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-none font-mono leading-relaxed"
+                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-vertical font-mono leading-relaxed"
                                 placeholder="Enter text..."
                               />
                             ) : (
                               <input
                                 type="text"
-                                value={String(currentValue)}
+                                value={formatCellValue(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
                                 className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
                               />
                             )
                           ) : (
                             <div className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2/30' : 'text-text-secondary bg-bg-2/50'}`}>
-                              {isNull ? 'NULL' : String(currentValue)}
+                              {isNull ? 'NULL' : formatCellValue(currentValue)}
                             </div>
                           )}
                         </div>
