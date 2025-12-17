@@ -158,7 +158,7 @@ const WorkspacePage = () => {
 };
 
 function App() {
-  const { theme } = useSettingsStore();
+  const { theme, accentColor } = useSettingsStore();
 
   useEffect(() => {
     // Remove all theme classes using constant
@@ -175,6 +175,24 @@ function App() {
       }
     }
   }, [theme]);
+
+  // Apply Accent Color
+  useEffect(() => {
+    if (accentColor) {
+      const root = document.documentElement;
+
+      // Update primary/accent color variables
+      root.style.setProperty('--color-primary-default', accentColor);
+      root.style.setProperty('--color-primary-hover', accentColor); // Ideally slightly lighter/darker
+      root.style.setProperty('--color-primary-active', accentColor);
+      root.style.setProperty('--color-text-accent', accentColor);
+      root.style.setProperty('--color-border-focus', accentColor);
+      root.style.setProperty('--accent', accentColor);
+
+      // Update specific legacy variables if needed
+      root.style.setProperty('--color-selection-bg', `${accentColor}33`); // ~20% opacity using hex alpha
+    }
+  }, [accentColor]);
 
   return (
     <>

@@ -60,13 +60,38 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                 />
 
                 {/* Database Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 justify-center items-center lg:grid-cols-6 gap-4 max-h-[400px]">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
                     {filteredDatabases.map((db) => {
                         const isSelected = selectedDb === db.id;
                         const isDisabled = !db.isAvailable;
 
+                        // Function to get distinct background color for each DB type
+                        const getBrandColor = (id: string) => {
+                            switch (id) {
+                                case 'postgres': return 'bg-[#fff]'; // Postgres Blue
+                                case 'mysql': return 'bg-[#fff]';    // MySQL Blue
+                                case 'mariadb': return 'bg-[#fff]';  // MariaDB Brown
+                                case 'sqlite': return 'bg-[#fff]';   // SQLite Dark Blue
+                                case 'mongo': return 'bg-[#fff]';    // Mongo Green
+                                case 'redis': return 'bg-[#fff]';    // Redis Red
+                                case 'sqlserver': return 'bg-[#fff]'; // SQL Server Red
+                                case 'oracle': return 'bg-[#fff]';   // Oracle Red
+                                case 'cockroach': return 'bg-[#fff]'; // Cockroach Purple
+                                case 'cassandra': return 'bg-[#fff]'; // Cassandra Blue
+                                case 'clickhouse': return 'bg-[#fff]'; // ClickHouse Yellow
+                                case 'snowflake': return 'bg-[#fff]'; // Snowflake Blue
+                                case 'redshift': return 'bg-[#fff]';  // Redshift Cyan (Simulated)
+                                case 'bigquery': return 'bg-[#fff]';  // Google Blue
+                                case 'duckdb': return 'bg-[#fff]';    // DuckDB Yellow
+                                case 'tidb': return 'bg-[#fff]';      // TiDB dark
+                                default: return 'bg-gray-600';
+                            }
+                        };
+
                         const renderIcon = () => {
-                            const className = "w-full h-full drop-shadow-sm";
+                            const className = "w-full h-full object-contain p-2"; // Add padding to keep logo safe zone
+                            // For icons on colored backgrounds, we might want to ensure they look good.
+                            // Most logos are fine on their brand.
                             switch (db.id) {
                                 case 'postgres': return <PostgresIcon className={className} />;
                                 case 'redshift': return <AmazonRedshiftIcon className={className} />;
@@ -89,7 +114,9 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 default: return null;
                             }
                         };
+
                         const Icon = renderIcon();
+                        const brandBg = getBrandColor(db.id);
 
                         return (
                             <button
@@ -102,25 +129,46 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 disabled={isDisabled}
                                 title={isDisabled ? `${db.name} - Coming Soon` : db.name}
                                 className={`
-                                    flex flex-col items-center gap-3 p-4 rounded-xl transition-all relative
+                                    group flex flex-col items-center gap-3 p-4 rounded-xl transition-all relative outline-none
                                     ${isSelected && db.isAvailable
-                                        ? 'ring-2 ring-accent bg-accent/10'
-                                        : 'ring-1 ring-border/40 hover:bg-bg-2/50'
+                                        ? 'bg-accent/10 shadow-lg shadow-accent/10 scale-105 z-10 ring-1 ring-accent/20'
+                                        : 'bg-bg-1 shadow-sm hover:shadow-md hover:bg-bg-2/80'
                                     }
                                     ${isDisabled
-                                        ? 'opacity-60 cursor-not-allowed'
+                                        ? 'opacity-50 grayscale cursor-not-allowed'
                                         : 'cursor-pointer'
                                     }
                                 `}
                             >
-                                {/* Icon Circle */}
-                                <div className={`w-12 h-12 rounded-2xl ${Icon ? '' : db.color} flex items-center justify-center shadow-sm ${isDisabled ? 'opacity-70' : ''} ${Icon ? '' : 'ring-1 ring-inset ring-black/10'}`}>
-                                    {Icon ? Icon : <span className="text-white text-sm font-bold">{db.abbreviation}</span>}
+                                {/* Icon Container with Specific Brand Color */}
+                                <div className={`w-14 h-14 rounded-2xl ${brandBg} flex items-center justify-center shadow-inner ring-1 ring-black/5 group-hover:scale-105 transition-transform duration-200`}>
+                                    {/* For some logos, we might want a white circle BEHIND them if they clash? 
+                                        Most brand logos work on their brand color if they are white variants.
+                                        But our icons are full color PNGs. 
+                                        Putting a full color PNG on a brand color background might be bad (e.g. Orange Logo on Orange BG). 
+                                        
+                                        User asked for 'background màu đặc trưng' (Specific Color Background).
+                                        TablePlus usually puts a White/Light Logo on Brand Color Background.
+                                        If our icons are colored, we might need a white container inside?
+                                        OR we trust the transparent PNGs to look okay.
+                                        
+                                        Let's stick to the user Request: "Add background distinctive color".
+                                    */}
+                                    <div className="w-full h-full p-0 drop-shadow-sm">
+                                        {Icon ? Icon : <span className="text-black text-lg font-bold">{db.abbreviation}</span>}
+                                    </div>
                                 </div>
                                 {/* Label */}
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-xs font-medium text-text-primary text-center leading-tight">{db.name}</span>
-                                </div>
+                                <span className={`text-xs font-medium text-center transition-colors ${isSelected ? 'text-accent' : 'text-text-secondary group-hover:text-text-primary'}`}>
+                                    {db.name}
+                                </span>
+
+                                {isDisabled && (
+                                    <span className="absolute top-2 right-2 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-border opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-border"></span>
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
