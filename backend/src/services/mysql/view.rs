@@ -33,13 +33,17 @@ impl ViewOperations for MySqlDriver {
     async fn get_view_definition(&self, schema: &str, view_name: &str) -> Result<ViewInfo> {
         let mut conn = self.pool.get_conn().await?;
         let query = format!("SHOW CREATE VIEW `{}`.`{}`", schema, view_name);
-        // Result is (View, Create View, character_set_client, collation_connection) usually
-        // But `query_first` with tuple `(String, String)` maps first two columns.
 
-        // Note: SHOW CREATE VIEW returns columns: View, Create View, ...
-        let row: Option<(String, String)> = conn.query_first(query).await?;
+        // SHOW CREATE VIEW returns columns: View, Create View, character_set_client, collation_connection
+        // We use Row to handle potential extra columns flexibly.
+        let row: Option<mysql_async::Row> = conn.exec_first(&query, ()).await?;
 
-        if let Some((_, definition)) = row {
+        if let Some(row) = row {
+            // "Create View" is usually at index 1
+            let definition: String = row
+                .get(1)
+                .ok_or_else(|| anyhow::anyhow!("Could not extract view definition"))?;
+
             Ok(ViewInfo {
                 schema: schema.to_string(),
                 name: view_name.to_string(),
