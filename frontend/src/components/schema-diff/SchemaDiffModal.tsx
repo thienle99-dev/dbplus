@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import { X, GitCompare, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, GitCompare, Loader2, Database, Table } from 'lucide-react';
 import Button from '../ui/Button';
+import Select from '../ui/Select';
 import DiffViewer from './DiffViewer';
 import MigrationPreview from './MigrationPreview';
+import { useSchemas, useTables } from '../../hooks/useDatabase';
+import { useConnectionStore } from '../../store/connectionStore';
 
 interface SchemaDiffModalProps {
     isOpen: boolean;
@@ -10,12 +13,50 @@ interface SchemaDiffModalProps {
     connectionId: string;
 }
 
+type ComparisonMode = 'schema' | 'table';
+
 export default function SchemaDiffModal({ isOpen, onClose, connectionId }: SchemaDiffModalProps) {
+    const { connections } = useConnectionStore();
+    const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('schema');
+    
+    // Source
+    const [sourceConnectionId, setSourceConnectionId] = useState(connectionId);
     const [sourceSchema, setSourceSchema] = useState('public');
+    const [sourceTable, setSourceTable] = useState('');
+    
+    // Target
+    const [targetConnectionId, setTargetConnectionId] = useState(connectionId);
     const [targetSchema, setTargetSchema] = useState('public');
+    const [targetTable, setTargetTable] = useState('');
+    
+    const { data: sourceSchemas = [] } = useSchemas(sourceConnectionId);
+    const { data: targetSchemas = [] } = useSchemas(targetConnectionId);
+    const { data: sourceTables = [] } = useTables(sourceConnectionId, sourceSchema);
+    const { data: targetTables = [] } = useTables(targetConnectionId, targetSchema);
+    
     const [isComparing, setIsComparing] = useState(false);
     const [diffResult, setDiffResult] = useState<any>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+
+    // Set default schemas when schemas load
+    useEffect(() => {
+        if (sourceSchemas.length > 0 && !sourceSchema) {
+            setSourceSchema(sourceSchemas[0]);
+        }
+        if (targetSchemas.length > 0 && !targetSchema) {
+            setTargetSchema(targetSchemas[0]);
+        }
+    }, [sourceSchemas, targetSchemas]);
+
+    // Set default tables when tables load
+    useEffect(() => {
+        if (sourceTables.length > 0 && !sourceTable) {
+            setSourceTable(sourceTables[0].name);
+        }
+        if (targetTables.length > 0 && !targetTable) {
+            setTargetTable(targetTables[0].name);
+        }
+    }, [sourceTables, targetTables]);
 
     if (!isOpen) return null;
 
@@ -63,8 +104,8 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-bg-0 border-2 border-border rounded-lg shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-bg-0 border-2 border-border rounded-lg shadow-2xl w-full max-w-[95vw] h-[95vh] flex flex-col resize overflow-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                     <div className="flex items-center gap-3">
@@ -84,31 +125,141 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    {/* Source & Target Selection */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">
-                                Source Schema
-                            </label>
-                            <input
-                                type="text"
-                                value={sourceSchema}
-                                onChange={(e) => setSourceSchema(e.target.value)}
-                                className="w-full px-3 py-2 bg-bg-1 border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                                placeholder="public"
-                            />
+                    {/* Comparison Mode */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-text-secondary mb-2">
+                            Comparison Mode
+                        </label>
+                        <div className="flex gap-2">
+                            <Button
+                                variant={comparisonMode === 'schema' ? 'primary' : 'secondary'}
+                                size="sm"
+                                onClick={() => setComparisonMode('schema')}
+                                leftIcon={<Database size={14} />}
+                            >
+                                Compare Schemas
+                            </Button>
+                            <Button
+                                variant={comparisonMode === 'table' ? 'primary' : 'secondary'}
+                                size="sm"
+                                onClick={() => setComparisonMode('table')}
+                                leftIcon={<Table size={14} />}
+                            >
+                                Compare Tables
+                            </Button>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">
-                                Target Schema
-                            </label>
-                            <input
-                                type="text"
-                                value={targetSchema}
-                                onChange={(e) => setTargetSchema(e.target.value)}
-                                className="w-full px-3 py-2 bg-bg-1 border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                                placeholder="public"
-                            />
+                    </div>
+
+                    {/* Source & Target Selection */}
+                    <div className="grid grid-cols-2 gap-6 mb-6">
+                        {/* Source */}
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-text-primary">Source</h3>
+                            
+                            <div>
+                                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                    Connection
+                                </label>
+                                <Select
+                                    value={sourceConnectionId}
+                                    onChange={setSourceConnectionId}
+                                    options={connections.map(conn => ({
+                                        value: conn.id,
+                                        label: conn.name,
+                                    }))}
+                                    placeholder="Select connection"
+                                    searchable
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                    Schema
+                                </label>
+                                <Select
+                                    value={sourceSchema}
+                                    onChange={setSourceSchema}
+                                    options={sourceSchemas.map(schema => ({
+                                        value: schema,
+                                        label: schema,
+                                    }))}
+                                    placeholder="Select schema"
+                                    searchable
+                                />
+                            </div>
+
+                            {comparisonMode === 'table' && (
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                        Table
+                                    </label>
+                                    <Select
+                                        value={sourceTable}
+                                        onChange={setSourceTable}
+                                        options={sourceTables.map(table => ({
+                                            value: table.name,
+                                            label: table.name,
+                                        }))}
+                                        placeholder="Select table"
+                                        searchable
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Target */}
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-text-primary">Target</h3>
+                            
+                            <div>
+                                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                    Connection
+                                </label>
+                                <Select
+                                    value={targetConnectionId}
+                                    onChange={setTargetConnectionId}
+                                    options={connections.map(conn => ({
+                                        value: conn.id,
+                                        label: conn.name,
+                                    }))}
+                                    placeholder="Select connection"
+                                    searchable
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                    Schema
+                                </label>
+                                <Select
+                                    value={targetSchema}
+                                    onChange={setTargetSchema}
+                                    options={targetSchemas.map(schema => ({
+                                        value: schema,
+                                        label: schema,
+                                    }))}
+                                    placeholder="Select schema"
+                                    searchable
+                                />
+                            </div>
+
+                            {comparisonMode === 'table' && (
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                        Table
+                                    </label>
+                                    <Select
+                                        value={targetTable}
+                                        onChange={setTargetTable}
+                                        options={targetTables.map(table => ({
+                                            value: table.name,
+                                            label: table.name,
+                                        }))}
+                                        placeholder="Select table"
+                                        searchable
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
