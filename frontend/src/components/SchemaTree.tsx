@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download, Network } from 'lucide-react';
+import { ChevronRight, Database, Plus, Table, Pin, Trash2, Wrench, Eye, Code, FileCode, Download, Network, GitCompare } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import ObjectDefinitionModal from './ObjectDefinitionModal';
 import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
 import { DdlScope } from '../features/export-ddl/exportDdl.types';
 import ERDiagramModal from './ERDiagramModal';
+import SchemaDiffModal from './schema-diff/SchemaDiffModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
@@ -365,6 +366,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [sqliteToolsOpen, setSqliteToolsOpen] = useState(false);
   const [createSchemaOpen, setCreateSchemaOpen] = useState(false);
   const [showSchemaFilter, setShowSchemaFilter] = useState(false);
+  const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
   const { connections } = useConnectionStore();
   const connectionType = useMemo(
     () => connections.find((c) => c.id === connectionId)?.type,
@@ -473,6 +475,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
             title="Filter schemas"
           >
             <Eye size={14} />
+          </button>
+
+          {/* Schema Diff Button */}
+          <button
+            onClick={() => setSchemaDiffOpen(true)}
+            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
+            title="Schema Diff & Migration"
+          >
+            <GitCompare size={14} />
           </button>
           
           {connectionType !== 'sqlite' ? (
@@ -643,6 +654,13 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           </div>
         </div>
       )}
+
+      {/* Schema Diff Modal */}
+      <SchemaDiffModal
+        isOpen={schemaDiffOpen}
+        onClose={() => setSchemaDiffOpen(false)}
+        connectionId={connectionId || ''}
+      />
     </div>
   );
 }

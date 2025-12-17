@@ -245,6 +245,19 @@ async fn main() {
             "/api/connections/:id/export-ddl",
             post(handlers::export_ddl::export_postgres_ddl),
         )
+        // Schema Diff routes
+        .route(
+            "/api/schema-diff/test",
+            get(handlers::schema_diff::test_schema_diff),
+        )
+        .route(
+            "/api/schema-diff/compare",
+            post(handlers::schema_diff::compare_schemas),
+        )
+        .route(
+            "/api/schema-diff/generate-migration",
+            post(handlers::schema_diff::generate_migration),
+        )
         .route(
             "/api/settings/pg-dump/check",
             get(handlers::export_ddl::check_pg_dump_status),
