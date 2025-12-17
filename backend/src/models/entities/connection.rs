@@ -16,6 +16,23 @@ pub struct Model {
     pub password: String, // Encrypted
     pub ssl: bool,
     pub ssl_cert: Option<String>, // Encrypted
+    pub ssl_mode: Option<String>,
+    pub ssl_ca_file: Option<String>,
+    pub ssl_key_file: Option<String>,
+    pub ssl_cert_file: Option<String>,
+
+    #[sea_orm(default_value = "false")]
+    pub ssh_enabled: bool,
+    pub ssh_host: Option<String>,
+    pub ssh_port: Option<i32>,
+    pub ssh_user: Option<String>,
+    pub ssh_auth_type: Option<String>,
+    pub ssh_password: Option<String>, // Encrypted
+    pub ssh_key_file: Option<String>,
+    pub ssh_key_passphrase: Option<String>, // Encrypted
+
+    #[sea_orm(default_value = "false")]
+    pub is_read_only: bool,
     pub last_used: Option<DateTimeWithTimeZone>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

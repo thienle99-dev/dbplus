@@ -8,6 +8,7 @@ mod m20251213_000005_saved_query_folders;
 mod m20251215_000006_sqlite_attached_dbs;
 mod m20251216_000007_create_user_settings;
 mod m20251216_000008_add_snippet_variables;
+mod m20251217_000009_add_connection_advanced_fields;
 
 pub struct Migrator;
 
@@ -23,6 +24,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251215_000006_sqlite_attached_dbs::Migration),
             Box::new(m20251216_000007_create_user_settings::Migration),
             Box::new(m20251216_000008_add_snippet_variables::Migration),
+            Box::new(m20251217_000009_add_connection_advanced_fields::Migration),
         ]
     }
 }

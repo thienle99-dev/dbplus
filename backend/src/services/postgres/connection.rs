@@ -30,6 +30,18 @@ impl PostgresConnection {
             recycling_method: RecyclingMethod::Fast,
         });
 
+        // Handle Read-Only
+        if connection.is_read_only {
+            cfg.options = Some("-c default_transaction_read_only=on".to_string());
+        }
+
+        // Handle SSL (Placeholder as dependencies are missing)
+        if connection.ssl || connection.ssl_mode.as_deref().unwrap_or("disable") != "disable" {
+            tracing::warn!(
+                "SSL/TLS requested but not fully supported in this build. Proceeding with NoTls."
+            );
+        }
+
         tracing::debug!("[PostgresConnection] Pool config created, attempting to create pool...");
 
         match cfg.create_pool(Some(Runtime::Tokio1), NoTls) {
@@ -76,6 +88,18 @@ impl PostgresConnection {
         cfg.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
         });
+
+        // Handle Read-Only
+        if connection.is_read_only {
+            cfg.options = Some("-c default_transaction_read_only=on".to_string());
+        }
+
+        // Handle SSL
+        if connection.ssl || connection.ssl_mode.as_deref().unwrap_or("disable") != "disable" {
+            tracing::warn!(
+                "SSL/TLS requested but not fully supported in this build. Proceeding with NoTls."
+            );
+        }
 
         match cfg.create_pool(Some(Runtime::Tokio1), NoTls) {
             Ok(pool) => Ok(Self { pool }),

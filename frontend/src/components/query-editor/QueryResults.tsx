@@ -14,7 +14,7 @@ import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
 import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus } from 'lucide-react';
-import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
+
 
 import type { ApiErrorDetails } from '../../utils/apiError';
 import {

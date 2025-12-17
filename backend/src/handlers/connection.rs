@@ -29,6 +29,34 @@ pub struct CreateConnectionRequest {
     #[serde(default)]
     pub ssl: Option<bool>,
     pub ssl_cert: Option<String>,
+    #[serde(default)]
+    pub ssl_mode: Option<String>,
+    #[serde(default)]
+    pub ssl_key_file: Option<String>,
+    #[serde(default)]
+    pub ssl_ca_file: Option<String>,
+    #[serde(default)]
+    pub ssl_cert_file: Option<String>,
+
+    #[serde(default)]
+    pub ssh_enabled: bool,
+    #[serde(default)]
+    pub ssh_host: Option<String>,
+    #[serde(default)]
+    pub ssh_port: Option<i32>,
+    #[serde(default)]
+    pub ssh_user: Option<String>,
+    #[serde(default)]
+    pub ssh_auth_type: Option<String>,
+    #[serde(default)]
+    pub ssh_password: Option<String>,
+    #[serde(default)]
+    pub ssh_key_file: Option<String>,
+    #[serde(default)]
+    pub ssh_key_passphrase: Option<String>,
+
+    #[serde(default)]
+    pub is_read_only: bool,
 }
 
 #[derive(Deserialize)]
@@ -167,6 +195,19 @@ pub async fn create_connection(
         password,
         ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
+        ssl_mode: payload.ssl_mode,
+        ssl_ca_file: payload.ssl_ca_file,
+        ssl_key_file: payload.ssl_key_file,
+        ssl_cert_file: payload.ssl_cert_file,
+        ssh_enabled: payload.ssh_enabled,
+        ssh_host: payload.ssh_host,
+        ssh_port: payload.ssh_port,
+        ssh_user: payload.ssh_user,
+        ssh_auth_type: payload.ssh_auth_type,
+        ssh_password: payload.ssh_password,
+        ssh_key_file: payload.ssh_key_file,
+        ssh_key_passphrase: payload.ssh_key_passphrase,
+        is_read_only: payload.is_read_only,
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),
@@ -218,6 +259,19 @@ pub async fn update_connection(
         password,
         ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
+        ssl_mode: payload.ssl_mode,
+        ssl_ca_file: payload.ssl_ca_file,
+        ssl_key_file: payload.ssl_key_file,
+        ssl_cert_file: payload.ssl_cert_file,
+        ssh_enabled: payload.ssh_enabled,
+        ssh_host: payload.ssh_host,
+        ssh_port: payload.ssh_port,
+        ssh_user: payload.ssh_user,
+        ssh_auth_type: payload.ssh_auth_type,
+        ssh_password: payload.ssh_password,
+        ssh_key_file: payload.ssh_key_file,
+        ssh_key_passphrase: payload.ssh_key_passphrase,
+        is_read_only: payload.is_read_only,
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),
@@ -333,7 +387,21 @@ pub async fn test_connection(
         username: payload.username.clone().unwrap_or_default(),
         password: payload.password.clone().unwrap_or_default(),
         ssl: payload.ssl.unwrap_or(false),
+        ssl: payload.ssl.unwrap_or(false),
         ssl_cert: payload.ssl_cert,
+        ssl_mode: payload.ssl_mode,
+        ssl_ca_file: payload.ssl_ca_file,
+        ssl_key_file: payload.ssl_key_file,
+        ssl_cert_file: payload.ssl_cert_file,
+        ssh_enabled: payload.ssh_enabled,
+        ssh_host: payload.ssh_host,
+        ssh_port: payload.ssh_port,
+        ssh_user: payload.ssh_user,
+        ssh_auth_type: payload.ssh_auth_type,
+        ssh_password: payload.ssh_password,
+        ssh_key_file: payload.ssh_key_file,
+        ssh_key_passphrase: payload.ssh_key_passphrase,
+        is_read_only: payload.is_read_only,
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),
