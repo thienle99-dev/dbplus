@@ -3,8 +3,8 @@ import { DatabaseType } from '../types/database';
 export const DATABASE_TYPES: DatabaseType[] = [
   { id: 'postgres', name: 'PostgreSQL', abbreviation: 'Pg', color: 'bg-blue-600', isAvailable: true },
   // { id: 'redshift', name: 'Amazon Redshift', abbreviation: 'Rs', color: 'bg-blue-800', isAvailable: false },
-  { id: 'mysql', name: 'MySQL', abbreviation: 'Ms', color: 'bg-orange-500', isAvailable: false },
-  { id: 'mariadb', name: 'MariaDB', abbreviation: 'Mb', color: 'bg-blue-700', isAvailable: false },
+  { id: 'mysql', name: 'MySQL', abbreviation: 'Ms', color: 'bg-orange-500', isAvailable: true },
+  { id: 'mariadb', name: 'MariaDB', abbreviation: 'Mb', color: 'bg-blue-700', isAvailable: true },
   { id: 'sqlserver', name: 'SQL Server', abbreviation: 'Ss', color: 'bg-red-600', isAvailable: false },
   { id: 'cassandra', name: 'Cassandra', abbreviation: 'Ca', color: 'bg-cyan-600', isAvailable: false },
   { id: 'clickhouse', name: 'ClickHouse', abbreviation: 'Ch', color: 'bg-yellow-500', isAvailable: true },

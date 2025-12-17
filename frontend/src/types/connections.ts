@@ -30,4 +30,7 @@ export interface Connection {
   username?: string;
   password?: string;
   ssl?: boolean;
+  statusColor?: string;
+  environment?: string;
+  safe_mode_level?: number;
 }

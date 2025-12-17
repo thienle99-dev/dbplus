@@ -34,6 +34,11 @@ impl ConnectionService {
                         .await?;
                 driver.list_functions(schema).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.list_functions(schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -68,6 +73,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                driver.get_function_definition(schema, function_name).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.get_function_definition(schema, function_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),

@@ -172,6 +172,11 @@ impl ConnectionService {
                         .await?;
                 driver.test_connection().await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, password).await?;
+                driver.test_connection().await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }

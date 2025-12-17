@@ -34,6 +34,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_tables(&driver, schema).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_tables(&driver, schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -68,6 +73,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_columns(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
             }
             _ => Ok(vec![]),
@@ -106,6 +116,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
             }
             _ => Ok(crate::services::db_driver::QueryResult {
@@ -154,6 +169,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::add_column(&driver, schema, table, column).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::add_column(&driver, schema, table, column).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -190,6 +210,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -229,6 +254,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::drop_column(&driver, schema, table, column_name).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -263,6 +293,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableConstraints {
@@ -303,6 +338,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableStatistics {
@@ -348,6 +388,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -384,6 +429,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -418,6 +468,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_table_comment(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableComment { comment: None }),
@@ -457,6 +512,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -493,6 +553,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -525,6 +590,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::list_roles(&driver).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::list_roles(&driver).await
             }
             _ => Ok(vec![]),
@@ -590,6 +660,19 @@ impl ConnectionService {
                 )
                 .await
             }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::set_table_permissions(
+                    &driver,
+                    schema,
+                    table,
+                    grantee,
+                    privileges,
+                    grant_option,
+                )
+                .await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -624,6 +707,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableDependencies {
@@ -664,6 +752,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::StorageBloatInfo {
@@ -711,6 +804,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_partitions(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_partitions(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::PartitionInfo {
