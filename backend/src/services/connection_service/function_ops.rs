@@ -34,7 +34,7 @@ impl ConnectionService {
                         .await?;
                 driver.list_functions(schema).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.list_functions(schema).await
@@ -75,7 +75,7 @@ impl ConnectionService {
                         .await?;
                 driver.get_function_definition(schema, function_name).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.get_function_definition(schema, function_name).await

@@ -34,7 +34,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_tables(&driver, schema).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_tables(&driver, schema).await
@@ -75,7 +75,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
@@ -118,7 +118,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
@@ -169,7 +169,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::add_column(&driver, schema, table, column).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::add_column(&driver, schema, table, column).await
@@ -212,7 +212,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
@@ -254,7 +254,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::drop_column(&driver, schema, table, column_name).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::drop_column(&driver, schema, table, column_name).await
@@ -295,7 +295,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
@@ -340,7 +340,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
@@ -388,7 +388,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
@@ -429,7 +429,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
@@ -470,7 +470,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
@@ -512,7 +512,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
@@ -553,7 +553,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
@@ -592,7 +592,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::list_roles(&driver).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::list_roles(&driver).await
@@ -660,7 +660,7 @@ impl ConnectionService {
                 )
                 .await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::set_table_permissions(
@@ -709,7 +709,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
@@ -754,7 +754,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await

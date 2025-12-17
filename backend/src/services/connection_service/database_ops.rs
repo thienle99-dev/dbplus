@@ -29,6 +29,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_databases(&driver).await
             }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_databases(&driver).await
+            }
             _ => Ok(vec![]),
         }
     }

@@ -30,7 +30,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_schemas(&driver).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_schemas(&driver).await
@@ -120,7 +120,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_schema_metadata(&driver, schema).await
@@ -154,7 +154,7 @@ impl ConnectionService {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_schema_foreign_keys(schema).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.get_schema_foreign_keys(schema).await
