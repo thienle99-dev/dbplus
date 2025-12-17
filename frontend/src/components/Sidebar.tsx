@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Database, FileText, Clock, Settings, LogOut, Pin } from 'lucide-react';
+import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
@@ -109,6 +109,17 @@ export default function Sidebar() {
     >
       {/* Vertical Workspace Tabs Rail */}
       <div className="w-[60px] border-r border-border/40 bg-bg-2/50 flex flex-col items-center py-3 gap-2">
+        <button
+          onClick={() => navigate('/')}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${location.pathname === '/'
+            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border/40 hover:border-accent/40'
+            }`}
+          title="Connections Hub"
+        >
+          <LayoutGrid size={20} strokeWidth={1.5} />
+        </button>
+        <div className="w-8 h-px bg-border/40 my-1" />
         <div className="flex-1 overflow-y-auto px-1 space-y-2 w-full no-scrollbar">
           {tabs.map((t) => {
             const meta = connectionById.get(t.connectionId);
