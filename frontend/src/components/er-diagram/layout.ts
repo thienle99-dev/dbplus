@@ -1,6 +1,4 @@
 import { Node, Edge } from 'reactflow';
-import { ERNode, EREdge } from '../../types/foreignKey';
-
 /**
  * Simple grid layout for ER diagram nodes
  */

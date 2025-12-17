@@ -386,6 +386,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [showSchemaFilter, setShowSchemaFilter] = useState(false);
   const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
   const { connections } = useConnectionStore();
+  const navigate = useNavigate();
   const connectionType = useMemo(
     () => connections.find((c) => c.id === connectionId)?.type,
     [connections, connectionId],
@@ -446,7 +447,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-3">
           <AlertTriangle className="w-6 h-6 text-error" />
         </div>
-        
+
         <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
         <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
           Unable to connect to the database. Please check your connection settings.
@@ -464,8 +465,8 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         </div>
 
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
             className="gap-2"
@@ -529,7 +530,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           >
             <GitCompare size={14} />
           </button>
-          
+
           {connectionType !== 'sqlite' ? (
             <>
               <button
@@ -655,7 +656,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
                   className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>

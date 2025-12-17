@@ -409,7 +409,7 @@ pub async fn test_connection(
     let model = connection::Model {
         id: Uuid::new_v4(),
         name: payload.name,
-        db_type: payload.db_type,
+        db_type: payload.db_type.clone(),
         host: host.clone(),
         port,
         database: payload.database,

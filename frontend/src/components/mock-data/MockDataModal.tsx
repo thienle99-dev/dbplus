@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Sparkles, Database, FileCode, Play, Loader2, Settings2 } from 'lucide-react';
+import { X, Sparkles, FileCode, Play, Loader2, Settings2 } from 'lucide-react';
 import { TableColumn } from '../../types';
 import api from '../../services/api';
 import { useColumns } from '../../hooks/useDatabase';
@@ -12,20 +12,6 @@ interface MockDataModalProps {
     schema: string;
     table: string;
     columns?: TableColumn[];
-}
-
-type MockDataType = 
-    | 'Auto' | 'Email' | 'Name' | 'FirstName' | 'LastName' 
-    | 'Address' | 'City' | 'Country' | 'Phone' | 'Company' 
-    | 'Date' | 'Integer' | 'Boolean' | 'UUID' | 'Text' 
-    | 'Custom' | 'Enum';
-
-interface ColumnRule {
-    column_name: string;
-    data_type: MockDataType | { kind: 'Custom', values: string[] } | { kind: 'Integer', min: number, max: number };
-    is_unique: boolean;
-    is_nullable: boolean;
-    null_probability: number;
 }
 
 // Simplified for UI binding, we'll transform before sending
@@ -82,7 +68,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
         if (type.includes('uuid')) return 'UUID';
         if (type.includes('date') || type.includes('time')) return 'Date';
         if (type.includes('enum')) return 'Enum';
-        
+
         return 'Auto';
     }
 
@@ -116,7 +102,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                 connection_id: connectionId,
                 config
             });
-            
+
             if (res.data.success) {
                 // Trigger download
                 const blob = new Blob([res.data.sql], { type: 'text/plain' });
@@ -146,7 +132,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                 } else if (r.type === 'Custom' || r.type === 'Enum') {
                     data_type = { Custom: { values: r.custom_values?.split(',').map(s => s.trim()) || [] } };
                 }
-                
+
                 return {
                     column_name: r.column_name,
                     data_type: data_type,
@@ -163,7 +149,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
                 <Dialog.Content className="fixed top-[5%] left-[5%] right-[5%] bottom-[5%] bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                    
+
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-border">
                         <div className="flex items-center gap-3">
@@ -190,8 +176,8 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                             <div className="p-4 border-b border-border space-y-4">
                                 <div>
                                     <label className="text-xs font-medium text-text-secondary uppercase mb-1 block">Row Count</label>
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
                                         value={rowCount}
                                         onChange={(e) => setRowCount(parseInt(e.target.value) || 0)}
                                         className="w-full px-3 py-2 bg-input-background border border-border rounded-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
@@ -209,8 +195,8 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                             {rule.is_nullable && (
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs text-text-secondary">Null %</span>
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         className="w-12 px-1 py-0.5 text-xs bg-input-background border border-border rounded"
                                                         value={rule.null_percent}
                                                         onChange={(e) => {
@@ -225,7 +211,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
 
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="col-span-2">
-                                                <select 
+                                                <select
                                                     className="w-full px-2 py-1.5 text-sm bg-input-background border border-border rounded focus:border-primary outline-none"
                                                     value={rule.type}
                                                     onChange={(e) => {
@@ -256,52 +242,52 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
 
                                             {rule.type === 'Integer' && (
                                                 <>
-                                                    <input 
+                                                    <input
                                                         type="number" placeholder="Min"
                                                         value={rule.min}
                                                         className="px-2 py-1 text-sm bg-input-background border border-border rounded"
                                                         onChange={(e) => {
-                                                             const newRules = [...rules];
-                                                             newRules[idx].min = parseInt(e.target.value);
-                                                             setRules(newRules);
+                                                            const newRules = [...rules];
+                                                            newRules[idx].min = parseInt(e.target.value);
+                                                            setRules(newRules);
                                                         }}
                                                     />
-                                                    <input 
+                                                    <input
                                                         type="number" placeholder="Max"
                                                         value={rule.max}
                                                         className="px-2 py-1 text-sm bg-input-background border border-border rounded"
                                                         onChange={(e) => {
-                                                             const newRules = [...rules];
-                                                             newRules[idx].max = parseInt(e.target.value);
-                                                             setRules(newRules);
+                                                            const newRules = [...rules];
+                                                            newRules[idx].max = parseInt(e.target.value);
+                                                            setRules(newRules);
                                                         }}
                                                     />
                                                 </>
                                             )}
 
                                             {(rule.type === 'Custom' || rule.type === 'Enum') && (
-                                                <input 
+                                                <input
                                                     type="text" placeholder="val1, val2..."
                                                     value={rule.custom_values}
                                                     className="col-span-2 px-2 py-1 text-sm bg-input-background border border-border rounded"
                                                     onChange={(e) => {
-                                                         const newRules = [...rules];
-                                                         newRules[idx].custom_values = e.target.value;
-                                                         setRules(newRules);
+                                                        const newRules = [...rules];
+                                                        newRules[idx].custom_values = e.target.value;
+                                                        setRules(newRules);
                                                     }}
                                                 />
                                             )}
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 id={`unique-${idx}`}
                                                 checked={rule.is_unique}
                                                 onChange={(e) => {
-                                                     const newRules = [...rules];
-                                                     newRules[idx].is_unique = e.target.checked;
-                                                     setRules(newRules);
+                                                    const newRules = [...rules];
+                                                    newRules[idx].is_unique = e.target.checked;
+                                                    setRules(newRules);
                                                 }}
                                                 className="rounded border-border bg-input-background text-primary focus:ring-primary"
                                             />
@@ -319,7 +305,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                     <Settings2 className="w-4 h-4" />
                                     Data Preview
                                 </h3>
-                                <button 
+                                <button
                                     onClick={handlePreview}
                                     disabled={loading}
                                     className="px-3 py-1.5 bg-background border border-border hover:border-primary text-text-primary text-sm rounded-md flex items-center gap-2 transition-all"
@@ -335,7 +321,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                         {error}
                                     </div>
                                 )}
-                                
+
                                 {previewData.length > 0 ? (
                                     <div className="border border-border rounded-lg overflow-hidden">
                                         <table className="w-full text-sm text-left">
@@ -369,7 +355,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
 
                             {/* Footer Actions */}
                             <div className="p-4 border-t border-border flex justify-end gap-3 bg-background-secondary/10">
-                                <button 
+                                <button
                                     onClick={handleDownloadSql}
                                     disabled={loading}
                                     className="px-4 py-2 bg-primary text-white hover:bg-primary-hover rounded-md text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

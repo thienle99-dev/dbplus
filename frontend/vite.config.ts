@@ -36,4 +36,18 @@ export default defineConfig(async () => ({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'axios', '@tanstack/react-query'],
+          codemirror: ['@uiw/react-codemirror', '@codemirror/state', '@codemirror/view', '@codemirror/commands', '@codemirror/lang-sql'],
+          reactflow: ['reactflow', 'dagre'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', 'lucide-react', 'clsx'],
+          charts: ['recharts'],
+        },
+      },
+    },
+  },
 }));
