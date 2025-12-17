@@ -130,7 +130,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5"
+                className="group flex items-center gap-3 p-3 rounded-xl bg-bg-1 shadow-sm hover:shadow-md hover:bg-bg-2 cursor-pointer transition-all duration-200"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >

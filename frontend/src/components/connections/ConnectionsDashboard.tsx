@@ -66,7 +66,7 @@ export const ConnectionsDashboard: React.FC = () => {
 
         {/* Connection List */}
         <div className="flex-1 overflow-hidden p-4 md:p-6">
-          <div className="h-full flex flex-col rounded-2xl bg-bg-1/95 border border-border/40 shadow-[0_18px_40px_rgba(0,0,0,0.25)] overflow-hidden">
+          <div className="h-full flex flex-col rounded-2xl bg-bg-1/95 shadow-[0_18px_40px_rgba(0,0,0,0.25)] overflow-hidden">
             {error && (
               <div className="m-4 mb-0 p-3 bg-error/10 border border-error/30 rounded text-error text-sm">
                 {error}

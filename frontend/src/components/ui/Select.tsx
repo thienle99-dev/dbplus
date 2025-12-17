@@ -85,15 +85,15 @@ export default function Select({
                 disabled={disabled}
                 className={`
           w-full flex items-center justify-between gap-2
-          rounded-xl bg-bg-1/80 border border-border/60
-          text-text-primary
+          rounded-lg bg-bg-2/50 border border-transparent
+          text-text-primary shadow-sm
           transition-all duration-200
           ${sizeClasses[size]}
           ${disabled
                         ? 'opacity-50 cursor-not-allowed bg-bg-2/80'
-                        : 'hover:border-accent hover:bg-bg-2 focus:outline-none focus:ring-2 focus:ring-accent/70'
+                        : 'hover:bg-bg-2 focus:outline-none focus:bg-bg-0 focus:border-accent/40 focus:ring-4 focus:ring-accent/10'
                     }
-          ${isOpen ? 'ring-2 ring-accent/70 border-accent' : ''}
+          ${isOpen ? 'bg-bg-0 ring-4 ring-accent/10 border-accent/40' : ''}
         `}
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -118,7 +118,7 @@ export default function Select({
                 <div
                     className="
             absolute z-50 w-full mt-1
-            bg-bg-2 border border-border rounded-lg
+            bg-bg-2 border border-border/50 rounded-lg
             shadow-xl
             max-h-64 overflow-hidden
             animate-in fade-in slide-in-from-top-2 duration-200
@@ -126,7 +126,7 @@ export default function Select({
                 >
                     {/* Search Input */}
                     {searchable && (
-                        <div className="p-2 border-b border-border">
+                        <div className="p-2 border-b border-border/50">
                             <input
                                 ref={searchInputRef}
                                 type="text"
@@ -135,9 +135,9 @@ export default function Select({
                                 placeholder="Search..."
                                 className="
                   w-full px-3 py-1.5 text-sm
-                  bg-bg-3 border border-border rounded
+                  bg-bg-3/50 border border-transparent rounded
                   text-text-primary placeholder-text-secondary
-                  focus:outline-none focus:ring-1 focus:ring-accent
+                  focus:outline-none focus:bg-bg-0 focus:ring-2 focus:ring-accent/20
                 "
                                 onClick={(e) => e.stopPropagation()}
                             />
