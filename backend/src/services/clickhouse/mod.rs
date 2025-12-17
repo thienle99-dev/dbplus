@@ -81,22 +81,28 @@ impl QueryDriver for ClickHouseDriver {
 
         let mut cursor = if is_select {
             let clean_query = trimmed.trim_end_matches(';');
-            let wrapped = format!("SELECT toJSONString(*) FROM ({})", clean_query);
+            // Wrap in subquery with alias to be safe and handle limits/offsets correctly
+            // Use formatRow('JSONEachRow', *) to serialize the entire row as a JSON object string
+            let wrapped = format!(
+                "SELECT formatRow('JSONEachRow', *) FROM ({}) AS _data",
+                clean_query
+            );
             self.client
                 .query(&wrapped)
-                .fetch::<String>()
+                .fetch::<Vec<u8>>()
                 .map_err(|e| anyhow::anyhow!(e))?
         } else {
             self.client
                 .query(query)
-                .fetch::<String>()
+                .fetch::<Vec<u8>>()
                 .map_err(|e| anyhow::anyhow!(e))?
         };
 
         let mut rows = Vec::new();
         let mut columns = Vec::new();
 
-        while let Some(row_str) = cursor.next().await.map_err(|e| anyhow::anyhow!(e))? {
+        while let Some(row_bytes) = cursor.next().await.map_err(|e| anyhow::anyhow!(e))? {
+            let row_str = String::from_utf8_lossy(&row_bytes);
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(&row_str) {
                 if let Some(obj) = val.as_object() {
                     if columns.is_empty() {
@@ -117,7 +123,7 @@ impl QueryDriver for ClickHouseDriver {
                 if columns.is_empty() {
                     columns = vec!["Result".to_string()];
                 }
-                rows.push(vec![Value::String(row_str)]);
+                rows.push(vec![Value::String(row_str.to_string())]);
             }
         }
 
@@ -332,7 +338,7 @@ impl TableOperations for ClickHouseDriver {
             schema
         };
         let sql = format!(
-            "SELECT * FROM {}.{} LIMIT {} OFFSET {}",
+            "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",
             db, table, limit, offset
         );
         self.query(&sql).await

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Connection } from '../../types';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator, ContextMenuLabel } from '../ui/CustomContextMenu';
+import { DATABASE_TYPES } from '../../constants/databaseTypes';
 
 import { useConnectionStore } from '../../store/connectionStore';
 import { connectionApi } from '../../services/connectionApi';
@@ -14,18 +15,10 @@ interface ConnectionItemProps {
     index?: number;
 }
 
-const DB_ICONS: Record<Connection['type'], { icon: string; color: string }> = {
-    postgres: { icon: 'Pg', color: 'bg-blue-500' },
-    sqlite: { icon: 'Sq', color: 'bg-blue-400' },
-    mysql: { icon: 'My', color: 'bg-green-500' },
-    mongo: { icon: 'Mg', color: 'bg-green-600' },
-    redis: { icon: 'Re', color: 'bg-red-500' },
-};
-
 export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOpen, onEdit, index = 0 }) => {
     const { deleteConnection, createConnection, connections, setSortOption } = useConnectionStore();
     const isLocal = connection.type === 'sqlite' || connection.host === 'localhost' || connection.host === '127.0.0.1';
-    const dbConfig = DB_ICONS[connection.type] || DB_ICONS['postgres'];
+    const dbType = DATABASE_TYPES.find(t => t.id === connection.type) || DATABASE_TYPES.find(t => t.id === 'postgres')!;
     const { showToast } = useToast();
 
     // UI State
@@ -212,8 +205,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     </button>
 
                     {/* DB Type Icon */}
-                    <div className={`w-10 h-10 rounded-xl ${dbConfig.color} flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-inset ring-black/10`}>
-                        <span className="text-white text-sm font-bold">{dbConfig.icon}</span>
+                    <div className={`w-10 h-10 rounded-xl ${dbType.color} flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-inset ring-black/10`}>
+                        <span className="text-white text-sm font-bold">{dbType.abbreviation}</span>
                     </div>
 
                     {/* Connection Info */}
