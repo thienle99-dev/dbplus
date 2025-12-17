@@ -50,21 +50,46 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
         }
       } catch (error: any) {
         setStatus('error');
-        let errorMsg = 'Failed to connect to database.';
+        let errorMsg = 'Unable to connect to database.';
+        let errorDetail = '';
         
         if (error.response?.data) {
           const data = error.response.data;
-          if (data?.message) {
-            errorMsg = data.message;
-          } else if (typeof data === 'string') {
-            errorMsg = data;
+          const rawError = data?.message || (typeof data === 'string' ? data : '');
+          
+          // Parse and provide user-friendly error messages
+          if (rawError.includes('connection refused') || rawError.includes('Connection refused')) {
+            errorMsg = 'Cannot connect to database server';
+            errorDetail = 'Please check:\n• Is the database server running?\n• Are the host and port correct?\n• Is the connection blocked by a firewall?';
+          } else if (rawError.includes('password authentication failed') || rawError.includes('authentication failed')) {
+            errorMsg = 'Authentication failed';
+            errorDetail = 'The username or password is incorrect. Please verify your credentials.';
+          } else if (rawError.includes('does not exist') || rawError.includes('database') && rawError.includes('not exist')) {
+            errorMsg = 'Database does not exist';
+            errorDetail = 'The specified database does not exist on the server. Please check the database name.';
+          } else if (rawError.includes('timeout') || rawError.includes('timed out')) {
+            errorMsg = 'Connection timeout';
+            errorDetail = 'The database server did not respond in time. Please check your network connection or timeout settings.';
+          } else if (rawError.includes('SSL') || rawError.includes('ssl')) {
+            errorMsg = 'SSL/TLS error';
+            errorDetail = 'There is an issue with the SSL connection. Please check your database SSL configuration.';
+          } else if (rawError.includes('too many connections')) {
+            errorMsg = 'Too many connections';
+            errorDetail = 'The database has reached its connection limit. Please try again later or contact your administrator.';
+          } else if (rawError.includes('host') || rawError.includes('hostname')) {
+            errorMsg = 'Host not found';
+            errorDetail = 'Unable to resolve the hostname. Please check the host address.';
+          } else {
+            errorMsg = 'Database connection error';
+            errorDetail = rawError || 'An unknown error occurred while connecting.';
           }
         } else if (error.message) {
-          errorMsg = error.message;
+          errorMsg = 'Connection error';
+          errorDetail = error.message;
         }
         
-        setErrorMessage(errorMsg);
-        onFailure(errorMsg);
+        setErrorMessage(errorDetail || errorMsg);
+        onFailure(errorDetail || errorMsg);
       }
     };
 
@@ -109,7 +134,16 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
           <p className="text-sm text-text-secondary mb-6">
             {status === 'testing' && 'Vui lòng đợi trong khi hệ thống kiểm tra kết nối database...'}
             {status === 'success' && 'Database đã sẵn sàng. Đang tải workspace...'}
-            {status === 'error' && errorMessage}
+            {status === 'error' && (
+              <span className="block">
+                <span className="block text-error font-medium mb-2">{errorMessage.split('\n')[0]}</span>
+                {errorMessage.includes('\n') && (
+                  <span className="block text-xs text-text-secondary whitespace-pre-line bg-bg-2/50 p-3 rounded border border-border/50 text-left">
+                    {errorMessage.split('\n').slice(1).join('\n')}
+                  </span>
+                )}
+              </span>
+            )}
           </p>
 
           {/* Progress Bar */}
