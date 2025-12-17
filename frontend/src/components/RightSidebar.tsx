@@ -9,6 +9,7 @@ import { useColumns, useTableData } from '../hooks/useDatabase';
 import { useExecuteQuery } from '../hooks/useQuery';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCellValue } from '../utils/cellFormatters';
+import { tryGetDateFromTimestamp } from '../utils/dateUtils';
 
 type EditState = Record<number, Record<string, unknown>>;
 
@@ -489,7 +490,10 @@ export default function RightSidebar() {
                               />
                             )
                           ) : (
-                            <div className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2/30' : 'text-text-secondary bg-bg-2/50'}`}>
+                            <div 
+                              className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2/30' : 'text-text-secondary bg-bg-2/50'}`}
+                              title={tryGetDateFromTimestamp(currentValue) ? `Possible Date: ${tryGetDateFromTimestamp(currentValue)}` : ''}
+                            >
                               {isNull ? 'NULL' : formatCellValue(currentValue)}
                             </div>
                           )}

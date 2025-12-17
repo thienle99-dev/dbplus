@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
+import { tryGetDateFromTimestamp } from '../../utils/dateUtils';
 
 interface EditableCellProps {
     value: any;
@@ -9,6 +10,7 @@ interface EditableCellProps {
 }
 
 export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEditable }) => {
+    // ... (existing state) ...
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(formatCellValue(value));
     const inputRef = useRef<HTMLInputElement>(null);
@@ -27,14 +29,13 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
 
     const handleBlur = () => {
         setIsEditing(false);
-        // Basic check change - proper parsing logic should be in parent or here
         if (currentValue !== formatCellValue(value)) {
             onSave(currentValue);
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) { // Allow shift+enter for new line in textarea
+        if (e.key === 'Enter' && !e.shiftKey) { 
             e.preventDefault(); 
             handleBlur();
         } else if (e.key === 'Escape') {
@@ -43,15 +44,20 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
         }
     };
 
-    // Calculate display value
+    // Calculate display value and tooltip
     const displayValue = formatCellValue(value);
     const isComplex = isComplexType(value);
+    const datePreview = !isComplex ? tryGetDateFromTimestamp(value) : null;
+    const title = datePreview 
+        ? `Possible Date: ${datePreview}\nOriginal Value: ${displayValue}` 
+        : displayValue;
 
-    // If it's a complex type, allow "editing" mode just to view the pretty-printed data
-    // even if isEditable is false.
+    // If it's a complex type, allow "editing" mode just to view the pretty-printed 
+    // data even if isEditable is false.
     const canEnterEditMode = isEditable || isComplex;
 
     if (isEditing) {
+        // ... (existing editing logic) ...
         if (isComplex) {
             return (
                 <textarea
@@ -81,11 +87,12 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
         }
     }
 
+    // Default view state
     return (
         <div
             className={`w-full h-full px-2 py-1 cursor-text hover:bg-bg-3/50 truncate ${isComplex ? 'font-mono text-xs' : ''}`}
             onClick={() => canEnterEditMode && setIsEditing(true)}
-            title={displayValue}
+            title={title}
         >
              {value === null ? <span className="text-gray-400 italic">null</span> : displayValue}
         </div>
