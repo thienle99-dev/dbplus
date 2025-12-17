@@ -20,7 +20,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_tables(&driver, schema).await
             }
@@ -61,7 +61,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
             }
@@ -104,7 +104,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
             }
@@ -155,7 +155,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::add_column(&driver, schema, table, column).await
             }
@@ -198,7 +198,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
             }
@@ -240,7 +240,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::drop_column(&driver, schema, table, column_name).await
             }
@@ -281,7 +281,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
             }
@@ -326,7 +326,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
             }
@@ -374,7 +374,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
             }
@@ -415,7 +415,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
             }
@@ -456,7 +456,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
             }
@@ -498,7 +498,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
             }
@@ -539,7 +539,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
             }
@@ -578,7 +578,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::list_roles(&driver).await
             }
@@ -622,7 +622,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::set_table_permissions(
                     &driver,
@@ -695,7 +695,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
             }
@@ -740,7 +740,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
             }
@@ -792,7 +792,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_partitions(&driver, schema, table).await
             }

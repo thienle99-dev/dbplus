@@ -3,7 +3,7 @@ import { Database, ChevronRight } from 'lucide-react';
 
 export interface ConnectionCardProps {
     name: string;
-    type: 'postgres' | 'mysql' | 'sqlite' | 'mongodb';
+    type: 'postgres' | 'mysql' | 'sqlite' | 'mongodb' | 'clickhouse' | 'mariadb' | 'tidb' | 'cockroach' | 'couchbase';
     host?: string;
     database?: string;
     lastConnected?: string;
@@ -17,6 +17,11 @@ const DB_COLORS = {
     mysql: 'var(--accent-orange)',
     sqlite: 'var(--accent-green)',
     mongodb: 'var(--accent-green)',
+    clickhouse: 'var(--accent-yellow)',
+    mariadb: 'var(--accent-blue)',
+    tidb: 'var(--accent-blue)',
+    cockroach: 'var(--accent-purple)',
+    couchbase: 'var(--accent-red)',
 };
 
 const DB_LABELS = {
@@ -24,6 +29,11 @@ const DB_LABELS = {
     mysql: 'MySQL',
     sqlite: 'SQLite',
     mongodb: 'MongoDB',
+    clickhouse: 'ClickHouse',
+    mariadb: 'MariaDB',
+    tidb: 'TiDB',
+    cockroach: 'CockroachDB',
+    couchbase: 'Couchbase',
 };
 
 export default function ConnectionCard({

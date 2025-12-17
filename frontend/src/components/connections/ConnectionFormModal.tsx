@@ -82,8 +82,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     type: nextType,
                     statusColor: dbColor || DEFAULT_FORM_DATA.statusColor,
                     host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
-                    port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : (nextType === 'tidb' ? '4000' : (nextType === 'mysql' || nextType === 'mariadb' ? '3306' : DEFAULT_FORM_DATA.port))),
-                    user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : (nextType === 'mysql' || nextType === 'mariadb' || nextType === 'tidb' ? 'root' : DEFAULT_FORM_DATA.user)),
+                    port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : (nextType === 'tidb' ? '4000' : (nextType === 'mysql' || nextType === 'mariadb' ? '3306' : (nextType === 'couchbase' ? '8091' : (nextType === 'cockroach' ? '26257' : DEFAULT_FORM_DATA.port))))),
+                    user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : (nextType === 'mysql' || nextType === 'mariadb' || nextType === 'tidb' ? 'root' : (nextType === 'couchbase' ? 'Administrator' : (nextType === 'cockroach' ? 'root' : DEFAULT_FORM_DATA.user)))),
                     password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
                     environment: DEFAULT_FORM_DATA.environment,
                     safe_mode_level: DEFAULT_FORM_DATA.safe_mode_level,
@@ -97,7 +97,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         name: formData.name,
         type: formData.type,
         host: formData.type === 'sqlite' ? '' : formData.host,
-        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || (formData.type === 'clickhouse' ? 8123 : (formData.type === 'tidb' ? 4000 : (formData.type === 'mysql' || formData.type === 'mariadb' ? 3306 : 5432)))),
+        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || (formData.type === 'clickhouse' ? 8123 : (formData.type === 'tidb' ? 4000 : (formData.type === 'mysql' || formData.type === 'mariadb' ? 3306 : (formData.type === 'couchbase' ? 8091 : (formData.type === 'cockroach' ? 26257 : 5432)))))),
         database: formData.database,
         username: formData.type === 'sqlite' ? '' : formData.user,
         password: formData.type === 'sqlite' ? '' : formData.password,
@@ -340,16 +340,16 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
 
                 {/* Database */}
                 <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">{formData.type === 'sqlite' ? 'Database file' : 'Database'}</label>
+                    <label className="text-sm text-text-secondary">{formData.type === 'sqlite' ? 'Database file' : (formData.type === 'couchbase' ? 'Bucket' : 'Database')}</label>
                     <div className="flex gap-3">
                         <Input
                             value={formData.database}
                             onChange={(e) => handleChange('database', e.target.value)}
-                            placeholder={formData.type === 'sqlite' ? '/path/to/db.sqlite (empty = :memory:)' : 'my_database'}
+                            placeholder={formData.type === 'sqlite' ? '/path/to/db.sqlite (empty = :memory:)' : (formData.type === 'couchbase' ? 'my_bucket (optional)' : 'my_database')}
                             autoCapitalize="off"
                             autoCorrect="off"
                             spellCheck={false}
-                            required={!['sqlite', 'tidb', 'mysql', 'mariadb'].includes(formData.type)}
+                            required={!['sqlite', 'tidb', 'mysql', 'mariadb', 'couchbase'].includes(formData.type)}
                             className="flex-1"
                         />
                         {formData.type === 'sqlite' ? (

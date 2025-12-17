@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  couchbase:
+    image: couchbase:community-7.2.0
+    ports:
+      - "8091-8096:8091-8096"
+      - "11210-11211:11210-11211"
+    volumes:
+      - ./data:/opt/couchbase/var
+    environment:
+      - COUCHBASE_ADMINISTRATOR_USERNAME=Administrator
+      - COUCHBASE_ADMINISTRATOR_PASSWORD=password
+      - COUCHBASE_BUCKET=default
+      - COUCHBASE_BUCKET_RAMSIZE=256
+    # This entrypoint wrapper/script would be needed to auto-provision, 
+    # but for now we just spin up the server. User has to setup manually or we add a setup container.
+    # To keep it simple for v1, valid credentials are provided above but bucket creation usually requires API calls after startup.
+    
+  # Configure-node helper (optional, for auto-provisioning)
+  # configure-node:
+  #   image: couchbase:community-7.2.0
+  #   entrypoint: /opt/couchbase/bin/couchbase-cli
+  #   command: >
+  #     cluster-init -c couchbase \
+  #     --cluster-username Administrator \
+  #     --cluster-password password \
+  #     --services data,index,query,fts \
+  #     --cluster-ramsize 1024 \
+  #     --cluster-index-ramsize 256
+  #   depends_on:
+  #     - couchbase

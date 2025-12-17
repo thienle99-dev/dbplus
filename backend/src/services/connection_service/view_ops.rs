@@ -20,7 +20,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.list_views(schema).await
             }
@@ -61,7 +61,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.get_view_definition(schema, view_name).await
             }

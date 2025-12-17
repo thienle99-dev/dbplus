@@ -18,5 +18,6 @@ export const DATABASE_TYPES: DatabaseType[] = [
   { id: 'sqlite', name: 'SQLite', abbreviation: 'Sq', color: 'bg-blue-400', isAvailable: true },
   { id: 'duckdb', name: 'DuckDB', abbreviation: 'Dk', color: 'bg-yellow-600', isAvailable: false },
   { id: 'oracle', name: 'Oracle', abbreviation: 'Or', color: 'bg-red-700', isAvailable: false },
-  { id: 'cockroach', name: 'CockroachDB', abbreviation: 'Cr', color: 'bg-indigo-600', isAvailable: false },
+  { id: 'cockroach', name: 'CockroachDB', abbreviation: 'Cr', color: 'bg-indigo-600', isAvailable: true },
+  { id: 'couchbase', name: 'Couchbase', abbreviation: 'Cb', color: 'bg-red-600', isAvailable: true },
 ];

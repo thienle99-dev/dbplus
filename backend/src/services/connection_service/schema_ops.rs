@@ -16,7 +16,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_schemas(&driver).await
             }
@@ -33,6 +33,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_schemas(&driver).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_schemas(&driver).await
             }
             _ => Ok(vec![]),
@@ -52,7 +58,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.create_schema(name).await
             }
@@ -78,7 +84,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.drop_schema(name).await
             }
@@ -106,7 +112,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
@@ -123,6 +129,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_schema_metadata(&driver, schema).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
             _ => Ok(vec![]),
@@ -146,7 +158,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.get_schema_foreign_keys(schema).await
             }
@@ -157,6 +169,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.get_schema_foreign_keys(schema).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 driver.get_schema_foreign_keys(schema).await
             }
             _ => Ok(vec![]),

@@ -29,7 +29,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 QueryDriver::execute(&driver, script).await
             }
@@ -46,6 +46,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                QueryDriver::execute_script(&driver, script).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 QueryDriver::execute_script(&driver, script).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -76,10 +82,11 @@ impl ConnectionService {
 
         if safe_level > 0 && !confirmed_unsafe {
             let dialect: Box<dyn Dialect> = match connection.db_type.as_str() {
-                "postgres" => Box::new(PostgreSqlDialect {}),
+                "postgres" | "cockroachdb" | "cockroach" => Box::new(PostgreSqlDialect {}),
                 "sqlite" => Box::new(SQLiteDialect {}),
                 "mysql" | "mariadb" | "tidb" => Box::new(MySqlDialect {}),
                 "clickhouse" => Box::new(GenericDialect {}), // Generic for now
+                "couchbase" => Box::new(GenericDialect {}),
                 _ => Box::new(GenericDialect {}),
             };
 
@@ -131,7 +138,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         let mut result = match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::execute_query(&driver, query).await?
             }
@@ -148,6 +155,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::execute_query(&driver, query).await?
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::execute_query(&driver, query).await?
             }
             _ => return Err(anyhow::anyhow!("Unsupported database type")),
@@ -184,7 +197,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 QueryDriver::execute(&driver, query).await
             }
@@ -201,6 +214,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                QueryDriver::execute(&driver, query).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 QueryDriver::execute(&driver, query).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -224,7 +243,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 QueryDriver::explain(&driver, query, analyze).await
             }
@@ -241,6 +260,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                QueryDriver::explain(&driver, query, analyze).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 QueryDriver::explain(&driver, query, analyze).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -264,7 +289,7 @@ impl ConnectionService {
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
-            "postgres" => {
+            "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 driver.search_objects(query).await
             }
@@ -281,6 +306,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.search_objects(query).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 driver.search_objects(query).await
             }
             _ => Ok(vec![]),

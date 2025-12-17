@@ -1,0 +1,48 @@
+use crate::models::entities::connection as ConnectionModel;
+use crate::services::driver::ConnectionDriver;
+use anyhow::Result;
+use async_trait::async_trait;
+use couchbase::authenticator::{Authenticator, PasswordAuthenticator};
+use couchbase::cluster::Cluster;
+use couchbase::options::cluster_options::ClusterOptions;
+
+pub struct CouchbaseDriver {
+    pub cluster: Cluster,
+    pub bucket_name: Option<String>,
+}
+
+impl CouchbaseDriver {
+    pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
+        let connection_string = format!("couchbase://{}:{}", connection.host, connection.port);
+        let username = &connection.username;
+
+        let authenticator = PasswordAuthenticator::new(username, password);
+        let options = ClusterOptions::new(authenticator.into());
+
+        // Timeout configuration could be added here from connection options if available
+
+        let cluster = Cluster::connect(&connection_string, options)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to connect to Couchbase: {}", e))?;
+
+        Ok(Self {
+            cluster,
+            bucket_name: if connection.database.is_empty() {
+                None
+            } else {
+                Some(connection.database.clone())
+            },
+        })
+    }
+}
+
+#[async_trait]
+impl ConnectionDriver for CouchbaseDriver {
+    async fn test_connection(&self) -> Result<()> {
+        self.cluster
+            .ping(None)
+            .await
+            .map_err(|e| anyhow::anyhow!("Ping failed: {}", e))?;
+        Ok(())
+    }
+}

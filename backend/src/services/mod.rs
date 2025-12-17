@@ -1,5 +1,6 @@
 pub mod clickhouse;
 pub mod connection_service;
+pub mod couchbase;
 pub mod dashboard_service;
 pub mod db_driver;
 pub mod ddl_generator;
