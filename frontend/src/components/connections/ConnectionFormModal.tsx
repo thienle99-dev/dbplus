@@ -349,7 +349,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                             autoCapitalize="off"
                             autoCorrect="off"
                             spellCheck={false}
-                            required={formData.type !== 'sqlite'}
+                            required={!['sqlite', 'tidb', 'mysql', 'mariadb'].includes(formData.type)}
                             className="flex-1"
                         />
                         {formData.type === 'sqlite' ? (

@@ -47,7 +47,9 @@ impl MySqlDriver {
 
         opts = opts.user(Some(&conn.username));
         opts = opts.pass(Some(password));
-        opts = opts.db_name(Some(&conn.database));
+        if !conn.database.is_empty() {
+            opts = opts.db_name(Some(&conn.database));
+        }
 
         // SSL/TLS options support (Generic handling, mostly relies on driver defaults or DSN parsing usually)
         if conn.ssl {
