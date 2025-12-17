@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 import Select from '../ui/Select';
 import DiffViewer from './DiffViewer';
 import MigrationPreview from './MigrationPreview';
-import { useSchemas, useTables } from '../../hooks/useDatabase';
+import { useSchemas, useTables, useDatabases } from '../../hooks/useDatabase';
 import { useConnectionStore } from '../../store/connectionStore';
 
 interface SchemaDiffModalProps {
@@ -21,14 +21,18 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
     
     // Source
     const [sourceConnectionId, setSourceConnectionId] = useState(connectionId);
+    const [sourceDatabase, setSourceDatabase] = useState('');
     const [sourceSchema, setSourceSchema] = useState('public');
     const [sourceTable, setSourceTable] = useState('');
     
     // Target
     const [targetConnectionId, setTargetConnectionId] = useState(connectionId);
+    const [targetDatabase, setTargetDatabase] = useState('');
     const [targetSchema, setTargetSchema] = useState('public');
     const [targetTable, setTargetTable] = useState('');
     
+    const { data: sourceDatabases = [] } = useDatabases(sourceConnectionId);
+    const { data: targetDatabases = [] } = useDatabases(targetConnectionId);
     const { data: sourceSchemas = [] } = useSchemas(sourceConnectionId);
     const { data: targetSchemas = [] } = useSchemas(targetConnectionId);
     const { data: sourceTables = [] } = useTables(sourceConnectionId, sourceSchema);
@@ -172,6 +176,24 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
                                 />
                             </div>
 
+                            {sourceDatabases.length > 0 && (
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                        Database
+                                    </label>
+                                    <Select
+                                        value={sourceDatabase}
+                                        onChange={setSourceDatabase}
+                                        options={sourceDatabases.map(db => ({
+                                            value: db,
+                                            label: db,
+                                        }))}
+                                        placeholder="Select database"
+                                        searchable
+                                    />
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1.5">
                                     Schema
@@ -226,6 +248,24 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
                                     searchable
                                 />
                             </div>
+
+                            {targetDatabases.length > 0 && (
+                                <div>
+                                    <label className="block text-xs font-medium text-text-secondary mb-1.5">
+                                        Database
+                                    </label>
+                                    <Select
+                                        value={targetDatabase}
+                                        onChange={setTargetDatabase}
+                                        options={targetDatabases.map(db => ({
+                                            value: db,
+                                            label: db,
+                                        }))}
+                                        placeholder="Select database"
+                                        searchable
+                                    />
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1.5">
