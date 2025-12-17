@@ -18,7 +18,7 @@ type MockDataType =
     | 'Auto' | 'Email' | 'Name' | 'FirstName' | 'LastName' 
     | 'Address' | 'City' | 'Country' | 'Phone' | 'Company' 
     | 'Date' | 'Integer' | 'Boolean' | 'UUID' | 'Text' 
-    | 'Custom';
+    | 'Custom' | 'Enum';
 
 interface ColumnRule {
     column_name: string;
@@ -81,6 +81,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
         if (type.includes('bool')) return 'Boolean';
         if (type.includes('uuid')) return 'UUID';
         if (type.includes('date') || type.includes('time')) return 'Date';
+        if (type.includes('enum')) return 'Enum';
         
         return 'Auto';
     }
@@ -142,7 +143,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                 let data_type: any = r.type;
                 if (r.type === 'Integer') {
                     data_type = { Integer: { min: r.min || 0, max: r.max || 1000 } };
-                } else if (r.type === 'Custom') {
+                } else if (r.type === 'Custom' || r.type === 'Enum') {
                     data_type = { Custom: { values: r.custom_values?.split(',').map(s => s.trim()) || [] } };
                 }
                 
@@ -248,7 +249,8 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                                     <option value="Integer">Number Range</option>
                                                     <option value="UUID">UUID</option>
                                                     <option value="Text">Sentence</option>
-                                                    <option value="Custom">Custom List</option>
+                                                    <option value="Enum">Enum / List</option>
+                                                    <option value="Custom">Custom List (Deprecated)</option>
                                                 </select>
                                             </div>
 
@@ -277,7 +279,7 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                                 </>
                                             )}
 
-                                            {rule.type === 'Custom' && (
+                                            {(rule.type === 'Custom' || rule.type === 'Enum') && (
                                                 <input 
                                                     type="text" placeholder="val1, val2..."
                                                     value={rule.custom_values}

@@ -8,6 +8,7 @@ import TableStructureTab from './TableStructureTab';
 import TableInfoTab from './TableInfoTab';
 import TableDataTab from './table-data/TableDataTab';
 import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../types';
+import { useConstraints } from '../hooks/useDatabase';
 
 export default function TableDataView({ schema: schemaProp, table: tableProp }: TableDataViewProps = {}) {
   const params = useParams();
@@ -20,6 +21,9 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentPage: page, pageSize } = useTablePage();
+  
+  const constraintsQuery = useConstraints(connectionId, schema, table);
+
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
@@ -296,6 +300,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
             onCancelNewRow={handleCancelNewRow}
             onStartAddingRow={handleStartAddingRow}
             onRefresh={fetchData}
+            foreignKeys={constraintsQuery.data?.foreign_keys || []}
           />
         ) : activeTab === 'structure' ? (
           <TableStructureTab schema={schema} table={table} />

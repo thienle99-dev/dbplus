@@ -5,12 +5,13 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 // import api from '../../services/api';
 // import { useToast } from '../../context/ToastContext';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
-import { TableColumn, QueryResult, EditState } from '../../types';
+import { TableColumn, QueryResult, EditState, SchemaForeignKey } from '../../types';
 import Button from '../ui/Button';
 import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
 
@@ -33,10 +34,11 @@ interface TableDataTabProps {
   onCancelNewRow: () => void;
   onStartAddingRow: () => void;
   onRefresh: () => void;
+  foreignKeys?: SchemaForeignKey[];
 }
 
 export default function TableDataTab({
-  // connectionId,
+  connectionId,
   schema,
   table,
   data,
@@ -54,6 +56,7 @@ export default function TableDataTab({
   onCancelNewRow,
   onStartAddingRow,
   onRefresh,
+  foreignKeys = [],
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   // const { showToast } = useToast();
@@ -95,20 +98,33 @@ export default function TableDataTab({
           }
 
           // For simple types, use input
+          const fk = foreignKeys.find(k => k.source_column === col);
+
           return (
-            <input
-              className={`w-full bg-transparent border-none outline-none p-0 text-sm ${
-                isEdited ? 'text-accent font-medium' : 'text-text-primary'
-              }`}
-              value={displayValue}
-              onChange={(e) => onEdit(rowIndex, index, e.target.value)}
-              placeholder={val === null ? 'NULL' : ''}
-            />
+            <div className="flex items-center gap-1 group/cell w-full">
+              <input
+                className={`flex-1 min-w-0 bg-transparent border-none outline-none p-0 text-sm ${
+                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                }`}
+                value={displayValue}
+                onChange={(e) => onEdit(rowIndex, index, e.target.value)}
+                placeholder={val === null ? 'NULL' : ''}
+              />
+              {fk && connectionId && val !== null && (
+                <Link 
+                  to={`/workspace/${connectionId}/tables/${fk.target_schema}/${fk.target_table}`}
+                  className="opacity-0 group-hover/cell:opacity-100 transition-opacity p-0.5 rounded hover:bg-bg-2 text-accent"
+                  title={`Go to ${fk.target_schema}.${fk.target_table}`}
+                >
+                  <ArrowRight size={12} />
+                </Link>
+              )}
+            </div>
           );
         }
       })
     );
-  }, [data?.columns, edits, onEdit]);
+  }, [data?.columns, edits, onEdit, foreignKeys, connectionId]);
 
   const tableInstance = useReactTable({
     data: data?.rows || [],

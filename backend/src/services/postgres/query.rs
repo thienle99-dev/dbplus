@@ -199,10 +199,22 @@ impl<'a> FromSql<'a> for PgUserDefinedValue {
         raw: &'a [u8],
     ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         match ty.kind() {
-            Kind::Enum(_) => Ok(PgUserDefinedValue(Value::String(
-                postgres_protocol::types::text_from_sql(raw)?.to_string(),
-            ))),
-            Kind::Domain(inner) => Ok(PgUserDefinedValue(decode_domain_value(inner, raw)?)),
+            Kind::Enum(_) | Kind::Domain(_) => {
+                // Best effort: try decoding as boolean first for BOOL domains
+                if *ty == PgType::BOOL {
+                    let v = <bool as FromSql>::from_sql(ty, raw)?;
+                    return Ok(PgUserDefinedValue(Value::Bool(v)));
+                }
+                // Try as string
+                if let Ok(s) = postgres_protocol::types::text_from_sql(raw) {
+                    Ok(PgUserDefinedValue(Value::String(s.to_string())))
+                } else {
+                    // Fallback to simpler byte string if text conversion fails
+                    Ok(PgUserDefinedValue(Value::String(
+                        String::from_utf8_lossy(raw).to_string(),
+                    )))
+                }
+            }
             _ => Err("not an enum/domain type".into()),
         }
     }
