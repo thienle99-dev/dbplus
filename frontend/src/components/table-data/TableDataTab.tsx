@@ -57,7 +57,7 @@ export default function TableDataTab({
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   // const { showToast } = useToast();
-  const { setSelectedRow } = useSelectedRow();
+  const { selectedRow, setSelectedRow } = useSelectedRow();
 
   const columns = useMemo(() => {
     if (!data?.columns) return [];
@@ -214,39 +214,57 @@ export default function TableDataTab({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-bg-1/30">
-        <table className="w-full border-collapse text-xs">
-          <thead className="bg-bg-2/80 backdrop-blur sticky top-0 z-10">
+      <div 
+        className="flex-1 overflow-auto rounded-xl border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
+        style={{ scrollbarGutter: 'stable' }}
+      >
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 z-20 bg-bg-1/85 backdrop-blur-md shadow-sm">
             {tableInstance.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-border/60">
+              <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-r border-border/30 px-4 py-2 text-left font-semibold text-text-secondary tracking-wide min-w-[150px] first:pl-6"
+                    className="px-4 py-3 text-xs font-semibold text-text-secondary/90 tracking-wide select-none first:pl-6 border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30"
+                    style={{ width: header.getSize() }}
                   >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                    <div className="flex items-center gap-1.5 cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {{
+                        asc: <span className="text-accent text-[9px] opacity-80">▲</span>,
+                        desc: <span className="text-accent text-[9px] opacity-80">▼</span>,
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
+                    {/* Resizer Handle */}
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={`absolute right-0 top-3 bottom-3 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${
+                        header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
+                      }`}
+                    />
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-border/30">
+          <tbody className="divide-y divide-border/10 font-sans">
             {isAddingRow && (
-              <tr className="bg-accent/5">
+              <tr className="bg-accent/5 transition-all">
                 {data.columns.map((_col, index) => (
                   <td
                     key={`new-row-${index}`}
-                    className="border-r border-border/30 px-4 py-2 first:pl-6"
+                    className="px-4 py-2.5 first:pl-6"
                   >
                     <input
                       autoFocus={index === 0}
-                      className="w-full bg-transparent border-b border-accent/50 outline-none p-0 text-xs text-text-primary placeholder:text-text-secondary/50 focus:border-accent font-medium"
+                      className="w-full bg-transparent border-b border-accent/30 focus:border-accent outline-none py-1 text-xs text-text-primary placeholder:text-text-secondary/40 font-medium transition-colors"
                       value={newRowData[index] === undefined ? '' : String(newRowData[index])}
                       onChange={(e) => onNewRowChange(index, e.target.value)}
-                      placeholder="NULL"
+                      placeholder="Enter value"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           onSaveNewRow();
@@ -259,12 +277,20 @@ export default function TableDataTab({
                 ))}
               </tr>
             )}
-            {tableInstance.getRowModel().rows.map((row) => {
+            {tableInstance.getRowModel().rows.map((row, i) => {
               const isModified = edits[row.index] !== undefined;
+              const isSelected = selectedRow?.rowIndex === row.index;
+              
               return (
                 <tr
                   key={row.id}
-                  className={`group hover:bg-bg-2/50 transition-colors ${isModified ? 'bg-amber-500/5' : 'odd:bg-bg-1/30'}`}
+                  className={`
+                    group transition-colors duration-150 ease-out cursor-pointer
+                    ${isSelected 
+                       ? 'bg-accent/10' 
+                       : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${i % 2 === 1 ? 'bg-gray-500/5' : ''}`
+                    }
+                  `}
                   onClick={() => {
                     setSelectedRow({
                       rowIndex: row.index,
@@ -278,7 +304,11 @@ export default function TableDataTab({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="border-r border-border/20 px-4 py-2 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px] first:pl-6 group-hover:border-border/10"
+                      className={`
+                        px-4 py-2.5 text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px] first:pl-6
+                        border-r border-border/5 last:border-r-0
+                        ${isSelected ? 'text-accent-foreground' : ''}
+                      `}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>

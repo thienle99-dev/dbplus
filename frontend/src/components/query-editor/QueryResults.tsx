@@ -1050,36 +1050,35 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     )}
 
                     {result.columns.length > 0 && (
-                        <div className="flex-1 overflow-auto" ref={tableScrollRef}>
+                        <div 
+                            className="flex-1 overflow-auto rounded-lg border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar" 
+                            ref={tableScrollRef}
+                            style={{ scrollbarGutter: 'stable' }}
+                        >
                             {result.rows.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-text-secondary">
-                                    <div className="text-4xl mb-2">📊</div>
-                                    <div className="text-sm">Query executed successfully</div>
-                                    <div className="text-xs mt-1">No rows returned</div>
+                                <div className="flex flex-col items-center justify-center h-full text-text-secondary/60">
+                                    <div className="text-4xl mb-4 opacity-50">📊</div>
+                                    <div className="text-sm font-medium">Query executed successfully</div>
+                                    <div className="text-xs mt-1 opacity-70">No rows returned</div>
                                 </div>
                             ) : (
                                 <table
-                                    className="w-full border-collapse text-sm"
+                                    className="w-full text-left border-collapse"
                                     style={{ width: tableInstance.getTotalSize(), tableLayout: 'fixed' }}
                                 >
-                                    <thead className="bg-bg-1 sticky top-0 z-10">
+                                    <thead className="sticky top-0 z-20 bg-bg-1/85 backdrop-blur-md shadow-sm">
                                         {tableInstance.getHeaderGroups().map((headerGroup) => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map((header) => (
                                                     <th
                                                         key={header.id}
-                                                        className="border-b border-r border-border px-4 py-2 text-left relative group select-none"
+                                                        className="px-4 py-2.5 text-xs font-semibold text-text-secondary/90 tracking-wide select-none border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30 relative"
                                                         style={{
                                                             width: header.getSize(),
-                                                            color: 'var(--color-text-primary)',
-                                                            fontWeight: '600',
-                                                            fontSize: '0.75rem',
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.05em'
                                                         }}
                                                     >
                                                         <div
-                                                            className={`flex items-center gap-1 cursor-pointer ${header.column.getCanSort() ? 'hover:text-primary-default' : ''}`}
+                                                            className={`flex items-center gap-1.5 cursor-pointer ${header.column.getCanSort() ? '' : ''}`}
                                                             onClick={header.column.getToggleSortingHandler()}
                                                         >
                                                             {flexRender(
@@ -1087,14 +1086,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                                 header.getContext()
                                                             )}
                                                             {{
-                                                                asc: ' 🔼',
-                                                                desc: ' 🔽',
+                                                                asc: <span className="text-accent text-[9px] opacity-80">▲</span>,
+                                                                desc: <span className="text-accent text-[9px] opacity-80">▼</span>,
                                                             }[header.column.getIsSorted() as string] ?? null}
                                                         </div>
                                                         <div
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className={`absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary-default ${header.column.getIsResizing() ? 'bg-primary-default' : 'bg-transparent'
+                                                            className={`absolute right-0 top-2 bottom-2 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
                                                                 }`}
                                                         />
                                                     </th>
@@ -1102,7 +1101,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                             </tr>
                                         ))}
                                     </thead>
-                                    <tbody>
+                                    <tbody className="font-sans">
                                         {(() => {
                                             const virtualItems = rowVirtualizer.getVirtualItems();
                                             const totalSize = rowVirtualizer.getTotalSize();
@@ -1122,15 +1121,21 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                     {virtualItems.map((virtualRow) => {
                                                         const row = rowModelRows[virtualRow.index];
                                                         return (
-                                                            <tr key={row.id} className="hover:bg-bg-2/50 group h-8">
+                                                            <tr 
+                                                                key={row.id} 
+                                                                className={`
+                                                                
+                                                                    hover:bg-bg-2/40 group transition-colors duration-150 ease-out border-b border-transparent hover:border-border/5
+                                                                    ${virtualRow.index % 2 === 1 ? 'bg-gray-500/5' : ''}
+                                                                `}
+                                                            >
                                                                 {row.getVisibleCells().map((cell) => (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className="border-b border-r border-border font-mono text-xs p-0 overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                        className="px-4 py-2 border-r border-border/5 last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
                                                                         style={{
                                                                             width: cell.column.getSize(),
                                                                             maxWidth: cell.column.getSize(),
-                                                                            color: 'var(--color-text-primary)',
                                                                         }}
                                                                     >
                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
