@@ -56,10 +56,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const [moreActionsOpen, setMoreActionsOpen] = useState(false);
     const [showErrorDetails, setShowErrorDetails] = useState(false);
     const [renderAllRows, setRenderAllRows] = useState(false);
     const [pageSize, setPageSize] = useState(1000);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const moreActionsRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
 
@@ -252,6 +254,23 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             window.removeEventListener('keydown', onKeyDown);
         };
     }, [exportMenuOpen]);
+
+    useEffect(() => {
+        if (!moreActionsOpen) return;
+        const onDocMouseDown = (e: MouseEvent) => {
+            if (!moreActionsRef.current) return;
+            if (!moreActionsRef.current.contains(e.target as Node)) setMoreActionsOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setMoreActionsOpen(false);
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown);
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [moreActionsOpen]);
 
     useEffect(() => {
         // Reset potentially heavy rendering & selection when a new result arrives.
@@ -773,53 +792,21 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {/* Snapshot Controls */}
-                            {result && result.rows.length > 0 && onSnapshot && (
-                                <div className="flex items-center gap-1 border-r border-border pr-2 mr-2">
-                                    {!hasSnapshot ? (
-                                        <button
-                                            onClick={() => onSnapshot(result)}
-                                            className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors text-xs"
-                                            title="Save current result as snapshot for comparison"
-                                        >
-                                            📸 Snapshot
-                                        </button>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={onCompareSnapshot}
-                                                className="px-2 py-1 bg-accent/10 text-accent hover:bg-accent/20 rounded flex items-center gap-1 transition-colors text-xs font-medium"
-                                                title="Compare current result with snapshot"
-                                            >
-                                                ⚖️ Compare
-                                            </button>
-                                            <button
-                                                onClick={onClearSnapshot}
-                                                className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary transition-colors text-xs"
-                                                title="Clear snapshot"
-                                            >
-                                                ✕
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Export Menu */}
+                            {/* Export Menu - Keep visible (primary action) */}
                             {result.rows.length > 0 && (
-                                <div className="relative flex items-center border-r border-border pr-2 mr-2 gap-2" ref={exportMenuRef}>
+                                <div className="relative flex items-center gap-2" ref={exportMenuRef}>
                                     <button
                                         onClick={() => setExportMenuOpen((v) => !v)}
-                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+                                        className="px-3 py-1.5 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition-colors text-sm border border-border/50 hover:border-border"
                                         title="Export / Copy"
                                     >
                                         ⬇ Export
+                                        {selectedCount > 0 && (
+                                            <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded">
+                                                {selectedCount}
+                                            </span>
+                                        )}
                                     </button>
-                                    {selectedCount > 0 && (
-                                        <span className="text-xs text-text-secondary bg-bg-3 px-1.5 py-0.5 rounded border border-border">
-                                            {selectedCount} selected
-                                        </span>
-                                    )}
 
                                     {exportMenuOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-64 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
@@ -916,58 +903,131 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 </div>
                             )}
 
-                            {/* Clone Selected Button */}
-                            {selectedCount > 0 && hasEditableColumns && (
-                                <div className="flex items-center border-r border-border pr-2 mr-2">
-                                    <button
-                                        onClick={handleCloneSelectedRows}
-                                        className="px-2 py-1 hover:bg-bg-3 rounded text-text-secondary hover:text-accent flex items-center gap-1 transition-colors text-xs font-medium"
-                                        title={`Clone ${selectedCount} selected row(s)`}
-                                    >
-                                        📋 Clone ({selectedCount})
-                                    </button>
-                                </div>
-                            )}
-
+                            {/* Save Changes - Keep visible (critical action) */}
                             {pendingEditsCount > 0 && (
-                                <>
-                                    <span className="text-primary-default font-bold">{pendingEditsCount} modified rows</span>
+                                <div className="flex items-center gap-2 border-l border-border pl-2">
+                                    <span className="text-accent font-semibold text-sm">{pendingEditsCount} modified</span>
                                     <button
                                         onClick={handleDiscardChanges}
-                                        className="px-2 py-1 text-text-secondary hover:text-text-primary text-xs"
+                                        className="px-2 py-1 text-text-secondary hover:text-text-primary text-xs hover:bg-bg-3 rounded"
                                         disabled={saving}
                                     >
                                         Discard
                                     </button>
                                     <button
                                         onClick={handleSaveChanges}
-                                        className="px-3 py-1 bg-primary-default text-text-inverse rounded hover:bg-primary-hover text-xs font-medium flex items-center gap-1"
+                                        className="px-3 py-1.5 bg-accent text-white rounded hover:bg-accent-hover text-sm font-medium"
                                         disabled={saving}
                                     >
-                                        {saving ? 'Saving...' : 'Save Changes'}
+                                        {saving ? 'Saving...' : 'Save'}
                                     </button>
-                                </>
+                                </div>
                             )}
+
+                            {/* More Actions Dropdown - Secondary actions */}
+                            {result.rows.length > 0 && (onSnapshot || (selectedCount > 0 && hasEditableColumns) || hasTruncatedRows) && (
+                                <div className="relative" ref={moreActionsRef}>
+                                    <button
+                                        onClick={() => {
+                                            setExportMenuOpen(false); // Close export if open
+                                            setMoreActionsOpen(!moreActionsOpen);
+                                        }}
+                                        className="px-2 py-1.5 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary transition-colors border border-border/50 hover:border-border"
+                                        title="More actions"
+                                    >
+                                        ⋯
+                                    </button>
+
+                                    {moreActionsOpen && (
+                                        <div className="absolute right-0 top-full mt-1 w-56 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
+                                            {/* Snapshot actions */}
+                                            {onSnapshot && (
+                                                <>
+                                                    {!hasSnapshot ? (
+                                                        <button
+                                                            onClick={() => {
+                                                                onSnapshot(result);
+                                                                setMoreActionsOpen(false);
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 flex items-center gap-2"
+                                                        >
+                                                            📸 Save Snapshot
+                                                        </button>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => {
+                                                                    onCompareSnapshot?.();
+                                                                    setMoreActionsOpen(false);
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-sm text-accent hover:bg-accent/10 flex items-center gap-2 font-medium"
+                                                            >
+                                                                ⚖️ Compare with Snapshot
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    onClearSnapshot?.();
+                                                                    setMoreActionsOpen(false);
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 flex items-center gap-2"
+                                                            >
+                                                                ✕ Clear Snapshot
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {(selectedCount > 0 && hasEditableColumns) || hasTruncatedRows ? (
+                                                        <div className="border-t border-border my-1" />
+                                                    ) : null}
+                                                </>
+                                            )}
+
+                                            {/* Clone action */}
+                                            {selectedCount > 0 && hasEditableColumns && (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleCloneSelectedRows();
+                                                            setMoreActionsOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 flex items-center gap-2"
+                                                    >
+                                                        📋 Clone {selectedCount} {selectedCount === 1 ? 'Row' : 'Rows'}
+                                                    </button>
+                                                    {hasTruncatedRows ? (
+                                                        <div className="border-t border-border my-1" />
+                                                    ) : null}
+                                                </>
+                                            )}
+
+                                            {/* Render all action */}
+                                            {hasTruncatedRows && (
+                                                <button
+                                                    onClick={() => {
+                                                        setMoreActionsOpen(false);
+                                                        if (window.confirm(`Render all ${result.rows.length.toLocaleString()} rows? This may freeze the UI.`)) {
+                                                            setRenderAllRows(true);
+                                                        }
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 flex items-center gap-2"
+                                                >
+                                                    🔄 Render All Rows
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Row count badge */}
                             {result.rows.length > 0 && (
-                                <span className="bg-accent/20 px-2 py-0.5 rounded-full text-xs font-bold" style={{ color: 'var(--color-primary-default)' }}>
+                                <span className="bg-accent/10 px-2 py-1 rounded text-xs font-medium text-accent border border-accent/20">
                                     {displayRows.length} {displayRows.length === 1 ? 'row' : 'rows'}
                                 </span>
                             )}
-                            {hasTruncatedRows && (
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm(`Render all ${result.rows.length.toLocaleString()} rows? This may freeze the UI.`)) {
-                                            setRenderAllRows(true);
-                                        }
-                                    }}
-                                    className="px-2 py-1 rounded bg-bg-3 border border-border text-[10px] text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
-                                    title="Render all rows (may be slow)"
-                                >
-                                    Render all
-                                </button>
-                            )}
+
+                            {/* Virtualized badge */}
                             {result.rows.length > 2000 && (
-                                <span className="bg-bg-3 px-2 py-0.5 rounded-full text-xs text-text-secondary border border-border">
+                                <span className="bg-bg-3 px-2 py-0.5 rounded text-xs text-text-secondary border border-border">
                                     Virtualized
                                 </span>
                             )}

@@ -94,11 +94,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                         <button
                             onClick={onExplain}
                             disabled={loading || !queryTrimmed}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded-l-full hover:bg-bg-0 text-text-primary text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+                            className="flex items-center gap-1 px-2 py-1 rounded-l-full hover:bg-bg-0 text-text-primary text-xs font-medium disabled:opacity-50 transition-colors"
                             title={`Explain query execution plan (Cmd/Ctrl+E)${analyzeEnabled ? ' - ANALYZE Enabled' : ''}`}
                         >
                             <span className={`text-[10px] font-mono border rounded px-0.5 ${analyzeEnabled ? 'border-accent text-accent' : 'border-text-secondary/50 text-text-secondary'}`}>EX</span>
-                            Explain
                         </button>
                         <div className="w-px bg-border/40 my-1" />
                         <button
@@ -149,7 +148,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 )}
 
                 {databases && databases.length > 0 && onDatabaseChange && (
-                    <div className="w-40 flex-shrink-0">
+                    <div className="w-32 flex-shrink-0">
                         <Select
                             value={selectedDatabase || ''}
                             onChange={onDatabaseChange}
@@ -163,59 +162,21 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
 
                 <div className="w-px h-5 bg-border/40 mx-1 flex-shrink-0" />
 
-                {/* Secondary Actions (Desktop) */}
-                <div className="hidden md:flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onSave}
-                        disabled={!queryTrimmed}
-                        icon={<Save size={14} />}
-                        title={savedQueryId ? `Save changes to "${queryName}"(Cmd / Ctrl + S)` : "Save as new query (Cmd/Ctrl+S)"}
-                        className="flex-shrink-0"
-                    >
-                        <span className="hidden lg:inline">{savedQueryId ? 'Save' : 'Save As'}</span>
-                    </Button>
+                {/* Save As Button - Always visible */}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onSave}
+                    disabled={!queryTrimmed}
+                    icon={<Save size={14} />}
+                    title={savedQueryId ? `Save changes to "${queryName}"(Cmd / Ctrl + S)` : "Save as new query (Cmd/Ctrl+S)"}
+                    className="flex-shrink-0"
+                >
+                    <span className="hidden lg:inline">{savedQueryId ? 'Save' : 'Save As'}</span>
+                </Button>
 
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClear}
-                        icon={<Eraser size={14} />}
-                        className="hover:text-red-500 hover:bg-red-500/10 flex-shrink-0"
-                        title="Clear Editor"
-                    >
-                        <span className="hidden lg:inline">Clear</span>
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onFormat}
-                        disabled={!queryTrimmed}
-                        icon={<AlignLeft size={14} />}
-                        title="Format SQL (Ctrl+Shift+F)"
-                        className="flex-shrink-0"
-                    >
-                        <span className="hidden lg:inline">Format</span>
-                    </Button>
-
-                    <div className="w-px h-5 bg-border/40 mx-1 flex-shrink-0" />
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onOpenSnippets}
-                        icon={<Book size={14} />}
-                        className="flex-shrink-0"
-                        title="Snippets Library"
-                    >
-                        <span className="hidden lg:inline">Snippets</span>
-                    </Button>
-                </div>
-
-                {/* Mobile/Tablet More Dropdown */}
-                <div className="md:hidden relative" ref={moreMenuRef}>
+                {/* More Actions Dropdown - Always visible */}
+                <div className="relative" ref={moreMenuRef}>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -226,26 +187,19 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     />
 
                     {isMoreMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-40 bg-bg-1 border border-border/40 rounded-xl shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/5">
-                            <button
-                                onClick={() => { onSave(); setIsMoreMenuOpen(false); }}
-                                disabled={!queryTrimmed}
-                                className="w-full text-left px-4 py-2 text-xs flex items-center gap-3 hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
-                            >
-                                <Save size={14} />
-                                <span>{savedQueryId ? 'Save' : 'Save As'}</span>
-                            </button>
+                        <div className="absolute top-full right-0 mt-2 w-44 bg-bg-1 border border-border/40 rounded-xl shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/5">
                             <button
                                 onClick={() => { onFormat(); setIsMoreMenuOpen(false); }}
                                 disabled={!queryTrimmed}
-                                className="w-full text-left px-4 py-2 text-xs flex items-center gap-3 hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-bg-2 text-text-primary hover:text-text-primary transition-colors disabled:opacity-50"
+                                title="Format SQL (Ctrl+Shift+F)"
                             >
                                 <AlignLeft size={14} />
-                                <span>Format</span>
+                                <span>Format SQL</span>
                             </button>
                             <button
                                 onClick={() => { onOpenSnippets(); setIsMoreMenuOpen(false); }}
-                                className="w-full text-left px-4 py-2 text-xs flex items-center gap-3 hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-bg-2 text-text-primary hover:text-text-primary transition-colors"
                             >
                                 <Book size={14} />
                                 <span>Snippets</span>
@@ -253,10 +207,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                             <div className="h-px bg-border/40 my-1 mx-2" />
                             <button
                                 onClick={() => { onClear(); setIsMoreMenuOpen(false); }}
-                                className="w-full text-left px-4 py-2 text-xs flex items-center gap-3 hover:bg-error/10 text-text-secondary hover:text-red-500 transition-colors"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-error/10 text-text-secondary hover:text-red-500 transition-colors"
                             >
                                 <Eraser size={14} />
-                                <span>Clear</span>
+                                <span>Clear Editor</span>
                             </button>
                         </div>
                     )}
