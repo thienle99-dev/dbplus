@@ -27,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate,
             <p className="text-sm text-text-secondary mb-12">Version 1.0.0</p>
 
             {/* Action Buttons */}
-            <div className="w-full space-y-2">
+            <div className="w-full space-y-2 mt-auto">
                 <ActionButton
                     icon={
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
