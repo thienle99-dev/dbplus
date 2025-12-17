@@ -102,6 +102,22 @@ export const THEME_CONFIGS: Record<Theme, ThemeConfig> = {
         category: 'anime',
         description: 'Cyberpunk vaporwave theme',
     },
+
+    // macOS Xcode Themes
+    'macos-dark': {
+        value: 'macos-dark',
+        label: 'macOS Dark',
+        emoji: '🍎',
+        category: 'standard',
+        description: 'Xcode dark theme inspired',
+    },
+    'macos-light': {
+        value: 'macos-light',
+        label: 'macOS Light',
+        emoji: '☀️',
+        category: 'standard',
+        description: 'Xcode light theme inspired',
+    },
 };
 
 // Helper to get theme display name with emoji
@@ -132,6 +148,8 @@ export const THEME_CLASS_NAMES: Record<Theme, string> = {
     'wibu-ocean': 'theme-wibu-ocean',
     'wibu-sunset': 'theme-wibu-sunset',
     'wibu-neon': 'theme-wibu-neon',
+    'macos-dark': 'theme-macos-dark',
+    'macos-light': 'theme-macos-light',
     system: '', // System doesn't have a direct class
 };
 

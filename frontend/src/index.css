@@ -370,6 +370,168 @@
   --gruv-orange: #d65d0e;
 }
 
+/* macOS Dark - Xcode Dark Theme Inspired */
+.theme-macos-dark {
+  /* Background - Xcode's dark gray tones */
+  --bg-0: #1F1F24;
+  --bg-1: #292A30;
+  --bg-2: #34353D;
+  --bg-3: #3F4048;
+  --border: rgba(255, 255, 255, 0.1);
+
+  /* Text - Xcode's text colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --accent: #0A84FF;
+  --accent-muted: rgba(10, 132, 255, 0.15);
+
+  /* Semantic colors matching Xcode */
+  --error: #FF453A;
+  --success: #32D74B;
+  --warning: #FFD60A;
+
+  /* === NEW DESIGN SYSTEM MAPPING === */
+  --color-bg-default: #1F1F24;
+  --color-bg-panel: #292A30;
+  --color-bg-hover: #34353D;
+  --color-bg-active: #3F4048;
+  --color-bg-elevated: #292A30;
+  --color-bg-sunken: #1A1A1E;
+
+  --color-surface-raised: #34353D;
+  --color-surface-sunken: #1F1F24;
+  --color-surface-overlay: rgba(31, 31, 36, 0.95);
+
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0A0A0;
+  --color-text-muted: #7C7C80;
+  --color-text-disabled: #545456;
+  --color-text-accent: #0A84FF;
+  --color-text-inverse: #1F1F24;
+
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-light: rgba(255, 255, 255, 0.05);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-focus: #0A84FF;
+
+  --color-primary-default: #0A84FF;
+  --color-primary-hover: #409CFF;
+  --color-primary-active: #0077ED;
+  --color-primary-subtle: rgba(10, 132, 255, 0.1);
+  --color-primary-transparent: rgba(10, 132, 255, 0.15);
+  --color-primary-muted: #1E3A5F;
+
+  --color-success: #32D74B;
+  --color-success-bg: rgba(50, 215, 75, 0.1);
+  --color-warning: #FFD60A;
+  --color-warning-bg: rgba(255, 214, 10, 0.1);
+  --color-error: #FF453A;
+  --color-error-bg: rgba(255, 69, 58, 0.1);
+
+  /* Code Syntax - Xcode Dark colors */
+  --code-keyword: #FC5FA3;
+  --code-string: #FC6A5D;
+  --code-number: #D0BF69;
+  --code-comment: #6C7986;
+  --code-type: #5DD8FF;
+  --code-function: #67B7A4;
+  --code-variable: #ACF2E4;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(10, 132, 255, 0.3);
+
+  --color-accent-glow: rgba(10, 132, 255, 0.3);
+  --color-focus-ring: rgba(10, 132, 255, 0.5);
+  --color-selection-bg: rgba(10, 132, 255, 0.25);
+  --color-selection-text: #FFFFFF;
+}
+
+/* macOS Light - Xcode Light Theme Inspired */
+.theme-macos-light {
+  /* Background - Xcode's light gray tones */
+  --bg-0: #FFFFFF;
+  --bg-1: #F5F5F7;
+  --bg-2: #EBEBED;
+  --bg-3: #D1D1D6;
+  --border: rgba(0, 0, 0, 0.1);
+
+  /* Text - Xcode's light mode text colors */
+  --text-primary: #000000;
+  --text-secondary: #6C6C70;
+  --accent: #007AFF;
+  --accent-muted: rgba(0, 122, 255, 0.1);
+
+  /* Semantic colors matching Xcode light */
+  --error: #FF3B30;
+  --success: #34C759;
+  --warning: #FF9500;
+
+  /* === NEW DESIGN SYSTEM MAPPING === */
+  --color-bg-default: #FFFFFF;
+  --color-bg-panel: #F5F5F7;
+  --color-bg-hover: #EBEBED;
+  --color-bg-active: #D1D1D6;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-sunken: #EBEBED;
+
+  --color-surface-raised: #FFFFFF;
+  --color-surface-sunken: #F5F5F7;
+  --color-surface-overlay: rgba(255, 255, 255, 0.95);
+
+  --color-text-primary: #000000;
+  --color-text-secondary: #6C6C70;
+  --color-text-muted: #8E8E93;
+  --color-text-disabled: #C7C7CC;
+  --color-text-accent: #007AFF;
+  --color-text-inverse: #FFFFFF;
+
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.05);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-focus: #007AFF;
+
+  --color-primary-default: #007AFF;
+  --color-primary-hover: #0051D5;
+  --color-primary-active: #004FC6;
+  --color-primary-subtle: rgba(0, 122, 255, 0.08);
+  --color-primary-transparent: rgba(0, 122, 255, 0.12);
+  --color-primary-muted: #D1E9FF;
+
+  --color-success: #34C759;
+  --color-success-bg: rgba(52, 199, 89, 0.1);
+  --color-warning: #FF9500;
+  --color-warning-bg: rgba(255, 149, 0, 0.1);
+  --color-error: #FF3B30;
+  --color-error-bg: rgba(255, 59, 48, 0.1);
+
+  /* Code Syntax - Xcode Light colors */
+  --code-keyword: #AD3DA4;
+  --code-string: #D12F1B;
+  --code-number: #272AD8;
+  --code-comment: #5D6C79;
+  --code-type: #0F68A0;
+  --code-function: #3E8087;
+  --code-variable: #000000;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(0, 122, 255, 0.2);
+
+  --color-accent-glow: rgba(0, 122, 255, 0.2);
+  --color-focus-ring: rgba(0, 122, 255, 0.4);
+  --color-selection-bg: rgba(0, 122, 255, 0.2);
+  --color-selection-text: #000000;
+}
+
 body {
   background-color: var(--bg-0);
   color: var(--text-primary);
