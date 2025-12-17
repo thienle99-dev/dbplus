@@ -2,6 +2,7 @@ import React from 'react';
 import { Connection } from '../../types';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator, ContextMenuLabel } from '../ui/CustomContextMenu';
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
+import { PostgresIcon, MysqlIcon, ClickHouseIcon, SqliteIcon, MongoIcon, RedisIcon, AmazonRedshiftIcon, MariaDBIcon, SQLServerIcon, CassandraIcon, BigQueryIcon, LibSQLIcon, DuckDBIcon, OracleIcon, CockroachDBIcon, SnowflakeIcon, CouchbaseIcon, TiDBIcon } from '../icons/DatabaseIcons';
 
 import { useConnectionStore } from '../../store/connectionStore';
 import { connectionApi } from '../../services/connectionApi';
@@ -183,6 +184,36 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         e.target.value = ''; // Reset
     };
 
+    const renderIcon = () => {
+        const className = "w-full h-full drop-shadow-sm";
+        switch (connection.type) {
+            case 'postgres': return <PostgresIcon className={className} />;
+            case 'redshift': return <AmazonRedshiftIcon className={className} />;
+            case 'mysql': return <MysqlIcon className={className} />;
+            case 'mariadb': return <MariaDBIcon className={className} />;
+            case 'sqlserver': return <SQLServerIcon className={className} />;
+            case 'cassandra': return <CassandraIcon className={className} />;
+            case 'clickhouse': return <ClickHouseIcon className={className} />;
+            case 'bigquery': return <BigQueryIcon className={className} />;
+            case 'libsql': return <LibSQLIcon className={className} />;
+            case 'duckdb': return <DuckDBIcon className={className} />;
+            case 'oracle': return <OracleIcon className={className} />;
+            case 'cockroach': return <CockroachDBIcon className={className} />;
+            case 'snowflake': return <SnowflakeIcon className={className} />;
+            case 'couchbase': return <CouchbaseIcon className={className} />;
+            case 'tidb': return <TiDBIcon className={className} />;
+            case 'sqlite': return <SqliteIcon className={className} />;
+            case 'mongo': return <MongoIcon className={className} />;
+            case 'redis': return <RedisIcon className={className} />;
+            default:
+                return (
+                    <div className={`w-full h-full rounded-xl ${dbType.color} flex items-center justify-center shadow-sm ring-1 ring-inset ring-black/10`}>
+                        <span className="text-white text-sm font-bold">{dbType.abbreviation}</span>
+                    </div>
+                );
+        }
+    };
+
     return (
         <>
             <div
@@ -205,8 +236,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                     </button>
 
                     {/* DB Type Icon */}
-                    <div className={`w-10 h-10 rounded-xl ${dbType.color} flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-inset ring-black/10`}>
-                        <span className="text-white text-sm font-bold">{dbType.abbreviation}</span>
+                    <div className="w-10 h-10 flex-shrink-0">
+                        {renderIcon()}
                     </div>
 
                     {/* Connection Info */}

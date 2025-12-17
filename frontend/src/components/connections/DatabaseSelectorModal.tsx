@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { DatabaseSelectorModalProps } from '../../types';
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
+import { PostgresIcon, MysqlIcon, ClickHouseIcon, SqliteIcon, MongoIcon, RedisIcon, AmazonRedshiftIcon, MariaDBIcon, SQLServerIcon, CassandraIcon, BigQueryIcon, LibSQLIcon, DuckDBIcon, OracleIcon, CockroachDBIcon, SnowflakeIcon, CouchbaseIcon, TiDBIcon } from '../icons/DatabaseIcons';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -59,10 +60,36 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                 />
 
                 {/* Database Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[400px]">
+                <div className="grid grid-cols-2 md:grid-cols-4 justify-center items-center lg:grid-cols-6 gap-4 max-h-[400px]">
                     {filteredDatabases.map((db) => {
                         const isSelected = selectedDb === db.id;
                         const isDisabled = !db.isAvailable;
+
+                        const renderIcon = () => {
+                            const className = "w-full h-full drop-shadow-sm";
+                            switch (db.id) {
+                                case 'postgres': return <PostgresIcon className={className} />;
+                                case 'redshift': return <AmazonRedshiftIcon className={className} />;
+                                case 'mysql': return <MysqlIcon className={className} />;
+                                case 'mariadb': return <MariaDBIcon className={className} />;
+                                case 'sqlserver': return <SQLServerIcon className={className} />;
+                                case 'cassandra': return <CassandraIcon className={className} />;
+                                case 'clickhouse': return <ClickHouseIcon className={className} />;
+                                case 'bigquery': return <BigQueryIcon className={className} />;
+                                case 'libsql': return <LibSQLIcon className={className} />;
+                                case 'duckdb': return <DuckDBIcon className={className} />;
+                                case 'oracle': return <OracleIcon className={className} />;
+                                case 'cockroach': return <CockroachDBIcon className={className} />;
+                                case 'snowflake': return <SnowflakeIcon className={className} />;
+                                case 'couchbase': return <CouchbaseIcon className={className} />;
+                                case 'tidb': return <TiDBIcon className={className} />;
+                                case 'sqlite': return <SqliteIcon className={className} />;
+                                case 'mongo': return <MongoIcon className={className} />;
+                                case 'redis': return <RedisIcon className={className} />;
+                                default: return null;
+                            }
+                        };
+                        const Icon = renderIcon();
 
                         return (
                             <button
@@ -87,17 +114,12 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 `}
                             >
                                 {/* Icon Circle */}
-                                <div className={`w-12 h-12 rounded-2xl ${db.color} flex items-center justify-center shadow-sm ${isDisabled ? 'opacity-70' : ''}`}>
-                                    <span className="text-white text-sm font-bold">{db.abbreviation}</span>
+                                <div className={`w-12 h-12 rounded-2xl ${Icon ? '' : db.color} flex items-center justify-center shadow-sm ${isDisabled ? 'opacity-70' : ''} ${Icon ? '' : 'ring-1 ring-inset ring-black/10'}`}>
+                                    {Icon ? Icon : <span className="text-white text-sm font-bold">{db.abbreviation}</span>}
                                 </div>
                                 {/* Label */}
                                 <div className="flex flex-col items-center gap-1">
                                     <span className="text-xs font-medium text-text-primary text-center leading-tight">{db.name}</span>
-                                    {!db.isAvailable && (
-                                        <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500 rounded-full border border-yellow-500/20 font-medium whitespace-nowrap">
-                                            Coming Soon
-                                        </span>
-                                    )}
                                 </div>
                             </button>
                         );
