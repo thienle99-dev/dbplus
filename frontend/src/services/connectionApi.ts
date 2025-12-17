@@ -134,4 +134,9 @@ export const connectionApi = {
     deleteSqliteAttachment: async (id: string, name: string): Promise<void> => {
         await api.delete(`/api/connections/${id}/sqlite/attachments/${encodeURIComponent(name)}`);
     },
+
+    getVersion: async (id: string): Promise<string> => {
+        const response = await api.get(`/api/connections/${id}/version`);
+        return response.data.version;
+    },
 };

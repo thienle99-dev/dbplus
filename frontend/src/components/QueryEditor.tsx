@@ -13,6 +13,9 @@ import CodeMirror from '@uiw/react-codemirror';
 import SearchPanel from './query-editor/SearchPanel';
 
 import { useSettingsStore } from '../store/settingsStore';
+import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
+import { useQuery } from '@tanstack/react-query';
+import { connectionApi } from '../services/connectionApi';
 import { useToast } from '../context/ToastContext';
 import SaveQueryModal from './SaveQueryModal';
 import ConfirmationModal from './ConfirmationModal';
@@ -60,6 +63,34 @@ export default function QueryEditor({
   const { showToast } = useToast();
   const { theme } = useSettingsStore();
 
+  // Workspace Tab State for Database Selection
+  const { updateTabDatabase, tabs, activeTabId } = useWorkspaceTabsStore();
+
+  const { data: connection } = useQuery({
+    queryKey: ['connection', connectionId],
+    queryFn: () => connectionId ? connectionApi.getById(connectionId) : Promise.resolve(null),
+    enabled: !!connectionId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: databases } = useQuery({
+    queryKey: ['databases', connectionId],
+    queryFn: () => connectionId ? connectionApi.getDatabases(connectionId) : Promise.resolve([]),
+    enabled: !!connectionId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const currentTab = useMemo(() => tabs.find(t => t.id === activeTabId), [tabs, activeTabId]);
+  const selectedDatabase = currentTab?.database || connection?.database;
+
+  const handleDatabaseChange = useCallback((db: string) => {
+    if (activeTabId) {
+      updateTabDatabase(activeTabId, db);
+      showToast(`Switched to database: ${db}`, 'success');
+    }
+  }, [activeTabId, updateTabDatabase, showToast]);
+
+
   // State
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
@@ -96,10 +127,10 @@ export default function QueryEditor({
   // Handle Safe Mode Error
   useEffect(() => {
     if (error && error.startsWith("UNSAFE_CONFIRMATION_REQUIRED:")) {
-        const reason = error.replace("UNSAFE_CONFIRMATION_REQUIRED: ", "");
-        setUnsafeError(reason);
-        setPendingQuery(lastSql || query);
-        setIsConfirmationOpen(true);
+      const reason = error.replace("UNSAFE_CONFIRMATION_REQUIRED: ", "");
+      setUnsafeError(reason);
+      setPendingQuery(lastSql || query);
+      setIsConfirmationOpen(true);
     }
   }, [error, lastSql, query]);
 
@@ -501,22 +532,22 @@ export default function QueryEditor({
       )}
       <ConfirmationModal
         isOpen={isConfirmationOpen}
-        onClose={() => { 
-            setIsConfirmationOpen(false); 
-            setUnsafeError(null); 
+        onClose={() => {
+          setIsConfirmationOpen(false);
+          setUnsafeError(null);
         }}
         onConfirm={() => {
           if (pendingQuery) {
-              // If this was a server unsafe error, we act as confirming it now
-              execute(pendingQuery, !!unsafeError);
+            // If this was a server unsafe error, we act as confirming it now
+            execute(pendingQuery, !!unsafeError);
           }
           setIsConfirmationOpen(false);
           setUnsafeError(null);
         }}
         title={unsafeError ? "Unsafe Operation Blocked" : "Dangerous Query Detected"}
-        message={unsafeError 
-            ? `Safe Mode active. Reason: ${unsafeError}.` 
-            : "This query contains keywords that may modify or delete data. Are you sure?"
+        message={unsafeError
+          ? `Safe Mode active. Reason: ${unsafeError}.`
+          : "This query contains keywords that may modify or delete data. Are you sure?"
         }
         confirmText={unsafeError ? "Confirm & Execute" : "Execute"}
         requireTyping={unsafeError ? "CONFIRM" : undefined}
@@ -545,6 +576,9 @@ export default function QueryEditor({
         onExplainAnalyze={() => handleExplain(true)}
         analyzeEnabled={analyzeEnabled}
         onToggleAnalyze={() => setAnalyzeEnabled(!analyzeEnabled)}
+        databases={databases}
+        selectedDatabase={selectedDatabase}
+        onDatabaseChange={handleDatabaseChange}
         onSave={() => {
           if (savedQueryId) {
             handleQuickSave();

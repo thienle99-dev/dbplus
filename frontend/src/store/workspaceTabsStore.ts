@@ -16,6 +16,7 @@ interface WorkspaceTabsState {
   setActiveTab: (tabId: string) => void;
   ensureTabForRoute: (connectionId: string, lastPath?: string) => string;
   setTabLastPath: (tabId: string, lastPath: string) => void;
+  updateTabDatabase: (tabId: string, database?: string) => void;
 
   activeDatabase: () => string | undefined;
   activeConnectionId: () => string | undefined;
@@ -95,6 +96,12 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
   setTabLastPath: (tabId, lastPath) => {
     set((state) => ({
       tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, lastPath } : t)),
+    }));
+  },
+
+  updateTabDatabase: (tabId, database) => {
+    set((state) => ({
+      tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, database } : t)),
     }));
   },
 

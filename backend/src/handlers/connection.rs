@@ -1,5 +1,6 @@
 use crate::models::entities::connection;
 use crate::services::connection_service::ConnectionService;
+use crate::services::driver::QueryDriver;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -574,6 +575,93 @@ pub async fn test_connection_by_id(
                 }),
             )
                 .into_response()
+        }
+    }
+}
+
+/// Get database version for a connection by ID
+pub async fn get_connection_version(
+    State(db): State<DatabaseConnection>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let service = match ConnectionService::new(db) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!("Failed to create ConnectionService: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to initialize service: {}", e),
+            )
+                .into_response();
+        }
+    };
+
+    // Retrieve connection with password
+    let (connection, password) = match service.get_connection_with_password(id).await {
+        Ok(res) => res,
+        Err(e) => {
+            tracing::error!("Failed to get connection: {}", e);
+            return (
+                StatusCode::NOT_FOUND,
+                format!("Connection not found: {}", e),
+            )
+                .into_response();
+        }
+    };
+
+    let query_result = match connection.db_type.as_str() {
+        "postgres" => {
+            use crate::services::postgres::PostgresDriver;
+            match PostgresDriver::new(&connection, &password).await {
+                Ok(d) => d.query("SELECT version()").await,
+                Err(e) => Err(anyhow::anyhow!(e)),
+            }
+        }
+        "sqlite" => {
+            use crate::services::sqlite::SQLiteDriver;
+            match SQLiteDriver::new(&connection, &password).await {
+                Ok(d) => d.query("SELECT sqlite_version()").await,
+                Err(e) => Err(anyhow::anyhow!(e)),
+            }
+        }
+        "clickhouse" => {
+            use crate::services::clickhouse::ClickHouseDriver;
+            match ClickHouseDriver::new(&connection, &password).await {
+                Ok(d) => d.query("SELECT version()").await,
+                Err(e) => Err(anyhow::anyhow!(e)),
+            }
+        }
+        "mysql" | "mariadb" | "tidb" => {
+            use crate::services::mysql::MySqlDriver;
+            match MySqlDriver::from_model(&connection, &password).await {
+                Ok(d) => d.query("SELECT VERSION()").await,
+                Err(e) => Err(anyhow::anyhow!(e)),
+            }
+        }
+        _ => Err(anyhow::anyhow!("Unsupported database type")),
+    };
+
+    match query_result {
+        Ok(result) => {
+            let version = if let Some(row) = result.rows.first() {
+                if let Some(val) = row.first() {
+                    val.as_str().unwrap_or("").to_string()
+                } else {
+                    "".to_string()
+                }
+            } else {
+                "".to_string()
+            };
+
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"version": version})),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            tracing::error!("Failed to get version: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }
 }

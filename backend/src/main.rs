@@ -87,6 +87,10 @@ async fn main() {
                 .delete(handlers::connection::delete_connection),
         )
         .route(
+            "/api/connections/:id/version",
+            get(handlers::connection::get_connection_version),
+        )
+        .route(
             "/api/connections/:id/database",
             patch(handlers::connection::switch_database),
         )

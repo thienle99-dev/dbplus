@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Save, Eraser, Book, ChevronDown, AlignLeft, Activity, MoreHorizontal } from 'lucide-react';
 import Button from '../ui/Button';
+import Select from '../ui/Select';
 
 interface QueryToolbarProps {
     onExecute: () => void;
@@ -18,6 +19,9 @@ interface QueryToolbarProps {
     isDraft?: boolean;
     analyzeEnabled?: boolean;
     onToggleAnalyze?: () => void;
+    databases?: string[];
+    selectedDatabase?: string;
+    onDatabaseChange?: (database: string) => void;
 }
 
 export const QueryToolbar: React.FC<QueryToolbarProps> = ({
@@ -35,7 +39,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     queryName,
     isDraft,
     analyzeEnabled = false,
-    onToggleAnalyze
+    onToggleAnalyze,
+    databases,
+    selectedDatabase,
+    onDatabaseChange
 }) => {
     const [isExplainMenuOpen, setIsExplainMenuOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -138,6 +145,19 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                             <Activity size={13} strokeWidth={2} />
                             <span className="hidden lg:inline">Analyze</span>
                         </button>
+                    </div>
+                )}
+
+                {databases && databases.length > 0 && onDatabaseChange && (
+                    <div className="w-40 flex-shrink-0">
+                        <Select
+                            value={selectedDatabase || ''}
+                            onChange={onDatabaseChange}
+                            options={databases.map(db => ({ value: db, label: db }))}
+                            size="sm"
+                            placeholder="Database"
+                            searchable
+                        />
                     </div>
                 )}
 
