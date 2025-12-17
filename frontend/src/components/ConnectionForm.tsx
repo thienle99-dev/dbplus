@@ -57,6 +57,18 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
     e.preventDefault();
     setLoading(true);
     try {
+      // Test connection first
+      try {
+        await api.post('/api/connections/test', formData);
+      } catch (testError: any) {
+        let testMsg = 'Connection failed during test.';
+        if (testError.response?.data?.message) testMsg = testError.response.data.message;
+        else if (typeof testError.response?.data === 'string') testMsg = testError.response.data;
+        else if (testError.message) testMsg = testError.message;
+        
+        throw new Error(`Connection test failed: ${testMsg}`);
+      }
+
       await api.post('/api/connections', formData);
       onSuccess();
       onOpenChange(false);
@@ -70,8 +82,22 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
         password: '',
         ssl: false,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create connection:', error);
+      let errorMessage = 'Failed to create connection.';
+      
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (data?.message) {
+          errorMessage = data.message;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

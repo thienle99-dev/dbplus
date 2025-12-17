@@ -368,7 +368,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
 export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?: string; showPinnedOnly?: boolean }) {
   const { connectionId } = useParams();
-  const { data: schemas = [], isLoading: loading } = useSchemas(connectionId);
+  const { data: schemas = [], isLoading: loading, error } = useSchemas(connectionId);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [createDbOpen, setCreateDbOpen] = useState(false);
@@ -381,6 +381,28 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   );
 
   if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
+
+  if (error) {
+    return (
+      <div className="p-4 flex flex-col items-center justify-center text-center">
+        <div className="text-error text-xs mb-2">Connection failed</div>
+        <div className="text-text-secondary text-[10px] break-all border border-error/20 bg-error/5 p-2 rounded">
+          {(() => {
+            const err = error as any;
+            const data = err.response?.data;
+            if (typeof data === 'string') return data;
+            return data?.message || err.message || 'Unknown error';
+          })()}
+        </div>
+        <button 
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
+          className="mt-3 px-3 py-1 bg-bg-2 hover:bg-bg-3 border border-border rounded text-xs text-text-primary transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const handleOpenCreateDatabase = () => {
     if (!connectionId) return;

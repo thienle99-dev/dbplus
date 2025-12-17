@@ -19,6 +19,7 @@ import ObjectDefinitionModal from './components/ObjectDefinitionModal';
 import ERDiagramView from './components/ERDiagramView';
 import { useSettingsStore } from './store/settingsStore';
 import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
+import ConnectionTestOverlay from './components/ConnectionTestOverlay';
 
 const WorkspacePage = () => {
   useKeyboardShortcuts();
@@ -27,6 +28,8 @@ const WorkspacePage = () => {
   const [defInfo, setDefInfo] = useState<{ open: boolean, name: string, schema: string, type: 'view' | 'function' }>({
     open: false, name: '', schema: '', type: 'view'
   });
+  const [connectionTested, setConnectionTested] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -51,6 +54,56 @@ const WorkspacePage = () => {
     window.addEventListener('dbplus:open-definition' as any, handler);
     return () => window.removeEventListener('dbplus:open-definition' as any, handler);
   }, []);
+
+  // Reset test state when connectionId changes
+  useEffect(() => {
+    setConnectionTested(false);
+    setConnectionError(null);
+  }, [connectionId]);
+
+  if (!connectionId) {
+    return <EmptyState />;
+  }
+
+  // Show overlay while testing connection
+  if (!connectionTested && !connectionError) {
+    return (
+      <ConnectionTestOverlay
+        connectionId={connectionId}
+        onSuccess={() => setConnectionTested(true)}
+        onFailure={(error: string) => setConnectionError(error)}
+      />
+    );
+  }
+
+  // Show error state if connection test failed
+  if (connectionError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-bg-0">
+        <div className="max-w-md text-center p-8">
+          <div className="text-error text-lg font-semibold mb-2">Connection Failed</div>
+          <div className="text-text-secondary text-sm mb-6">{connectionError}</div>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => {
+                setConnectionError(null);
+                setConnectionTested(false);
+              }}
+              className="px-4 py-2 bg-accent hover:bg-blue-600 text-white rounded font-medium transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-bg-2 hover:bg-bg-3 text-text-primary rounded font-medium transition-colors border border-border"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SelectedRowProvider>

@@ -136,6 +136,25 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     if (isLoading && !columns.length) { // Show loading only if no data at all
         return <div className="p-8 text-text-secondary">Loading table info...</div>;
     }
+    
+    // Check for critical errors (e.g. connection lost)
+    const criticalError = columnsQuery.error || indexesQuery.error || constraintsQuery.error;
+    if (criticalError) {
+        return (
+            <div className="p-8 flex flex-col items-center justify-center text-center">
+                 <div className="text-error mb-2">Failed to load table information</div>
+                 <div className="text-text-secondary text-xs mb-4 max-w-sm">
+                    {extractApiErrorDetails(criticalError).message || 'Connection might be lost.'}
+                 </div>
+                 <button
+                    onClick={handleRefreshAll}
+                    className="px-4 py-2 bg-bg-2 hover:bg-bg-3 border border-border rounded text-sm text-text-primary transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
 
     if (!schema || !table) {
         return <div className="p-8 text-text-secondary">Select a table to view info</div>;
