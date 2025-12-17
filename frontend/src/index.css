@@ -9,31 +9,31 @@
   /* === DARK MODE (Default) === */
 
   /* Background */
-  --color-bg-default: #0A0E14;
-  --color-bg-panel: #111827;
-  --color-bg-hover: #1F2937;
-  --color-bg-active: #374151;
-  --color-bg-elevated: #1F2937;
+  --color-bg-default: #1E1E1E;
+  --color-bg-panel: #252526;
+  --color-bg-hover: #2D2D2D;
+  --color-bg-active: #37373D;
+  --color-bg-elevated: #2D2D2D;
   --color-bg-sunken: #000000;
 
   /* Surface */
-  --color-surface-raised: #1F2937;
-  --color-surface-sunken: #0A0E14;
-  --color-surface-overlay: rgba(17, 24, 39, 0.95);
+  --color-surface-raised: #2D2D2D;
+  --color-surface-sunken: #1E1E1E;
+  --color-surface-overlay: rgba(30, 30, 30, 0.95);
 
   /* Text */
-  --color-text-primary: #F9FAFB;
-  --color-text-secondary: #9CA3AF;
-  --color-text-muted: #6B7280;
-  --color-text-disabled: #4B5563;
-  --color-text-accent: #F472B6;
-  --color-text-inverse: #111827;
+  --color-text-primary: #E6E6E6;
+  --color-text-secondary: #A0A0A0;
+  --color-text-muted: #808080;
+  --color-text-disabled: #505050;
+  --color-text-accent: #EC4899;
+  --color-text-inverse: #1E1E1E;
 
   /* Border */
-  --color-border-default: #1F2937;
-  --color-border-light: #374151;
-  --color-border-strong: #4B5563;
-  --color-border-subtle: rgba(31, 41, 55, 0.5);
+  --color-border-default: #333333;
+  --color-border-light: #404040;
+  --color-border-strong: #606060;
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
   --color-border-focus: #EC4899;
 
   /* Primary */
