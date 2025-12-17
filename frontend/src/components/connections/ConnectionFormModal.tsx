@@ -34,6 +34,8 @@ const DEFAULT_FORM_DATA = {
     password: '',
     statusColor: 'bg-blue-500',
     ssl: false,
+    environment: 'development',
+    safe_mode_level: '1', // using string for select
 };
 
 const RECENT_SQLITE_DB_KEY = 'dbplus.recentSqliteDbs';
@@ -75,6 +77,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     ...initialValues,
                     port: String(initialValues.port || '5432'),
                     user: initialValues.username || '',
+                    environment: initialValues.environment || 'development',
+                    safe_mode_level: String(initialValues.safe_mode_level ?? 1),
                 }));
             } else {
                 const nextType = initialType || DEFAULT_FORM_DATA.type;
@@ -85,6 +89,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     port: nextType === 'sqlite' ? '0' : DEFAULT_FORM_DATA.port,
                     user: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.user,
                     password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
+                    environment: DEFAULT_FORM_DATA.environment,
+                    safe_mode_level: DEFAULT_FORM_DATA.safe_mode_level,
                 });
             }
             setRecentSqliteDbs(loadRecentSqliteDbs());
@@ -100,6 +106,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         username: formData.type === 'sqlite' ? '' : formData.user,
         password: formData.type === 'sqlite' ? '' : formData.password,
         ssl: formData.ssl ?? false,
+        environment: formData.environment,
+        safe_mode_level: parseInt(formData.safe_mode_level) || 1,
     });
 
     const handleChange = (field: keyof typeof formData, value: string) => {
@@ -238,6 +246,33 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                         <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
                             Tag
                         </Button>
+                    </div>
+                </div>
+
+                {/* Environment & Safe Mode */}
+                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
+                    <label className="text-sm text-text-secondary">Environment</label>
+                    <div className="flex gap-3">
+                         <select
+                            value={formData.environment}
+                            onChange={(e) => handleChange('environment', e.target.value)}
+                            className="bg-bg-1 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none flex-1"
+                        >
+                            <option value="development">Development</option>
+                            <option value="staging">Staging</option>
+                            <option value="production">Production</option>
+                        </select>
+                         
+                         <label className="text-sm text-text-secondary self-center whitespace-nowrap">Safe Mode</label>
+                         <select
+                            value={formData.safe_mode_level}
+                            onChange={(e) => handleChange('safe_mode_level', e.target.value)}
+                            className="bg-bg-1 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none w-32"
+                        >
+                            <option value="0">Off</option>
+                            <option value="1">Warning</option>
+                            <option value="2">Strict</option>
+                        </select>
                     </div>
                 </div>
 

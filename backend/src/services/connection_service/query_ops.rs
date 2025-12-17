@@ -1,6 +1,9 @@
 use super::ConnectionService;
 use crate::services::driver::QueryDriver;
 use anyhow::Result;
+use sqlparser::ast::{Expr, SetExpr, Statement};
+use sqlparser::dialect::{Dialect, GenericDialect, PostgreSqlDialect, SQLiteDialect};
+use sqlparser::parser::Parser;
 use uuid::Uuid;
 
 impl ConnectionService {
@@ -9,7 +12,7 @@ impl ConnectionService {
         connection_id: Uuid,
         query: &str,
     ) -> Result<crate::services::db_driver::QueryResult> {
-        self.execute_query_with_options(connection_id, query, None, None, false)
+        self.execute_query_with_options(connection_id, query, None, None, false, false)
             .await
     }
 
@@ -45,11 +48,68 @@ impl ConnectionService {
         limit: Option<i64>,
         offset: Option<i64>,
         include_total_count: bool,
+        confirmed_unsafe: bool,
     ) -> Result<crate::services::db_driver::QueryResult> {
         let connection = self
             .get_connection_by_id(connection_id)
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        // Guardrails Logic
+        let is_prod = connection.environment.to_lowercase() == "production";
+        let safe_level = if is_prod && connection.safe_mode_level == 0 {
+            1 // Default to warning for prod if off
+        } else {
+            connection.safe_mode_level
+        };
+
+        if safe_level > 0 && !confirmed_unsafe {
+            let dialect: Box<dyn Dialect> = match connection.db_type.as_str() {
+                "postgres" => Box::new(PostgreSqlDialect {}),
+                "sqlite" => Box::new(SQLiteDialect {}),
+                _ => Box::new(GenericDialect {}),
+            };
+
+            // Non-blocking parse error (if we can't parse, we let DB handle it, or we could be strict)
+            if let Ok(statements) = Parser::parse_sql(&*dialect, query) {
+                for stmt in statements {
+                    let mut warning: Option<String> = None;
+                    match stmt {
+                        Statement::Delete { selection, .. } => {
+                            if selection.is_none() {
+                                warning = Some("DELETE without WHERE clause".to_string());
+                            }
+                        }
+                        Statement::Update { selection, .. } => {
+                            if selection.is_none() {
+                                warning = Some("UPDATE without WHERE clause".to_string());
+                            }
+                        }
+                        Statement::Drop { object_type, .. } => match object_type {
+                            sqlparser::ast::ObjectType::Table => {
+                                warning = Some("DROP TABLE detected".to_string())
+                            }
+                            _ => {}
+                        },
+                        Statement::Truncate { .. } => {
+                            warning = Some("TRUNCATE TABLE detected".to_string());
+                        }
+                        _ => {}
+                    }
+
+                    if let Some(msg) = warning {
+                        if safe_level == 2 {
+                            return Err(anyhow::anyhow!(
+                                "UNSAFE_OPERATION_BLOCKED: {} (Strict Mode)",
+                                msg
+                            ));
+                        } else {
+                            return Err(anyhow::anyhow!("UNSAFE_CONFIRMATION_REQUIRED: {}", msg));
+                        }
+                    }
+                }
+            }
+        }
 
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);

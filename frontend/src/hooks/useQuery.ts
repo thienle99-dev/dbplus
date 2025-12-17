@@ -11,6 +11,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             limit,
             offset,
             include_total_count,
+            confirmed_unsafe,
         }: {
             query: string;
             schema?: string;
@@ -18,6 +19,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             limit?: number;
             offset?: number;
             include_total_count?: boolean;
+            confirmed_unsafe?: boolean;
         }) => {
             if (!connectionId) throw new Error("Connection ID is required");
 
@@ -32,7 +34,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
                 return data;
             }
 
-            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count });
+            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count, confirmed_unsafe });
             return data;
         },
     });

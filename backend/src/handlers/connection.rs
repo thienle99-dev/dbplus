@@ -57,6 +57,11 @@ pub struct CreateConnectionRequest {
 
     #[serde(default)]
     pub is_read_only: bool,
+
+    #[serde(default)]
+    pub environment: Option<String>,
+    #[serde(default)]
+    pub safe_mode_level: Option<i32>,
 }
 
 #[derive(Deserialize)]
@@ -208,6 +213,10 @@ pub async fn create_connection(
         ssh_key_file: payload.ssh_key_file,
         ssh_key_passphrase: payload.ssh_key_passphrase,
         is_read_only: payload.is_read_only,
+        environment: payload
+            .environment
+            .unwrap_or_else(|| "development".to_string()),
+        safe_mode_level: payload.safe_mode_level.unwrap_or(1),
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),
@@ -272,6 +281,10 @@ pub async fn update_connection(
         ssh_key_file: payload.ssh_key_file,
         ssh_key_passphrase: payload.ssh_key_passphrase,
         is_read_only: payload.is_read_only,
+        environment: payload
+            .environment
+            .unwrap_or_else(|| "development".to_string()),
+        safe_mode_level: payload.safe_mode_level.unwrap_or(1),
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),
@@ -402,6 +415,10 @@ pub async fn test_connection(
         ssh_key_file: payload.ssh_key_file,
         ssh_key_passphrase: payload.ssh_key_passphrase,
         is_read_only: payload.is_read_only,
+        environment: payload
+            .environment
+            .unwrap_or_else(|| "development".to_string()),
+        safe_mode_level: payload.safe_mode_level.unwrap_or(1),
         last_used: None,
         created_at: Utc::now().into(),
         updated_at: Utc::now().into(),

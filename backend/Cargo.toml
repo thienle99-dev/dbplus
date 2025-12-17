@@ -60,6 +60,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 fake = "4.4.0"
 rand = "0.9.2"
+sqlparser = "0.43"
 
 [workspace]
 members = [".", "migration"]

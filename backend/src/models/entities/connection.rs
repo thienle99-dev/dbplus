@@ -33,6 +33,10 @@ pub struct Model {
 
     #[sea_orm(default_value = "false")]
     pub is_read_only: bool,
+    #[sea_orm(default_value = "development")]
+    pub environment: String,
+    #[sea_orm(default_value = "1")]
+    pub safe_mode_level: i32,
     pub last_used: Option<DateTimeWithTimeZone>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

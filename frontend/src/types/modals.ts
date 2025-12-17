@@ -7,6 +7,7 @@ export interface ConfirmationModalProps {
   confirmText?: string;
   cancelText?: string;
   isDangerous?: boolean;
+  requireTyping?: string;
 }
 
 export interface SaveQueryModalProps {

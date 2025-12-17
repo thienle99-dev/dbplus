@@ -74,6 +74,7 @@ export default function QueryEditor({
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isVisualBuilderOpen, setIsVisualBuilderOpen] = useState(false);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
+  const [unsafeError, setUnsafeError] = useState<string | null>(null);
 
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
@@ -91,6 +92,16 @@ export default function QueryEditor({
       setMode('sql');
     }
   }, [initialSql, initialMetadata]);
+
+  // Handle Safe Mode Error
+  useEffect(() => {
+    if (error && error.startsWith("UNSAFE_CONFIRMATION_REQUIRED:")) {
+        const reason = error.replace("UNSAFE_CONFIRMATION_REQUIRED: ", "");
+        setUnsafeError(reason);
+        setPendingQuery(lastSql || query);
+        setIsConfirmationOpen(true);
+    }
+  }, [error, lastSql, query]);
 
   // Debounced auto-save
   useEffect(() => {
@@ -227,6 +238,7 @@ export default function QueryEditor({
 
     if (isDangerousQuery(sqlToRun)) {
       setPendingQuery(sqlToRun);
+      setUnsafeError(null); // Reset server error state for client check
       setIsConfirmationOpen(true);
       return;
     }
@@ -248,6 +260,7 @@ export default function QueryEditor({
     if (sqlToRun.trim()) {
       if (isDangerousQuery(sqlToRun)) {
         setPendingQuery(sqlToRun);
+        setUnsafeError(null);
         setIsConfirmationOpen(true);
       } else {
         setBottomTab('results'); // Switch to results on execute
@@ -488,14 +501,25 @@ export default function QueryEditor({
       )}
       <ConfirmationModal
         isOpen={isConfirmationOpen}
-        onClose={() => setIsConfirmationOpen(false)}
-        onConfirm={() => {
-          if (pendingQuery) execute(pendingQuery);
-          setIsConfirmationOpen(false);
+        onClose={() => { 
+            setIsConfirmationOpen(false); 
+            setUnsafeError(null); 
         }}
-        title="Dangerous Query Detected"
-        message="This query contains keywords that may modify or delete data. Are you sure?"
-        confirmText="Execute"
+        onConfirm={() => {
+          if (pendingQuery) {
+              // If this was a server unsafe error, we act as confirming it now
+              execute(pendingQuery, !!unsafeError);
+          }
+          setIsConfirmationOpen(false);
+          setUnsafeError(null);
+        }}
+        title={unsafeError ? "Unsafe Operation Blocked" : "Dangerous Query Detected"}
+        message={unsafeError 
+            ? `Safe Mode active. Reason: ${unsafeError}.` 
+            : "This query contains keywords that may modify or delete data. Are you sure?"
+        }
+        confirmText={unsafeError ? "Confirm & Execute" : "Execute"}
+        requireTyping={unsafeError ? "CONFIRM" : undefined}
         isDangerous={true}
       />
 

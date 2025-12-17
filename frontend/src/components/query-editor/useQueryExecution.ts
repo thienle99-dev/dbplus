@@ -26,7 +26,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         return upper.startsWith('SELECT') || upper.startsWith('WITH');
     };
 
-    const execute = useCallback(async (queryOverride?: string) => {
+    const execute = useCallback(async (queryOverride?: string, confirmedUnsafe: boolean = false) => {
         const sqlToExecute = queryOverride !== undefined ? queryOverride : query;
         const startTime = Date.now();
 
@@ -45,6 +45,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                         include_total_count: true,
                     }
                     : {}),
+                confirmed_unsafe: confirmedUnsafe,
             });
             const executionTime = Date.now() - startTime;
 

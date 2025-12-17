@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { ConfirmationModalProps } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import Input from './ui/Input';
 
 export default function ConfirmationModal({
   isOpen,
@@ -12,7 +14,15 @@ export default function ConfirmationModal({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   isDangerous = false,
+  requireTyping,
 }: ConfirmationModalProps) {
+  const [typedValue, setTypedValue] = useState('');
+
+  useEffect(() => {
+    if (isOpen) setTypedValue('');
+  }, [isOpen]);
+
+  const isConfirmed = !requireTyping || typedValue === requireTyping;
 
   const footer = (
     <div className="flex w-full justify-end gap-2">
@@ -25,6 +35,7 @@ export default function ConfirmationModal({
           onConfirm();
           onClose();
         }}
+        disabled={!isConfirmed}
       >
         {confirmText}
       </Button>
@@ -44,7 +55,25 @@ export default function ConfirmationModal({
       size="sm"
       footer={footer}
     >
-      <p className="text-sm text-text-secondary">{message}</p>
+      <div className="space-y-4">
+        <p className="text-sm text-text-secondary">{message}</p>
+        
+        {requireTyping && (
+          <div>
+            <p className="text-xs text-text-secondary mb-2">
+              Type <span className="font-mono font-bold text-text-primary select-all">{requireTyping}</span> to confirm:
+            </p>
+            <Input
+              value={typedValue}
+              onChange={(e) => setTypedValue(e.target.value)}
+              placeholder={requireTyping}
+              className="w-full font-mono text-sm"
+              autoFocus
+              onPaste={(e) => e.preventDefault()} // Force typing? User requested "typing a keyword". Maybe allowing paste is fine. I'll allow paste for now unless strict.
+            />
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }

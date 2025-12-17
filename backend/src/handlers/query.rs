@@ -16,6 +16,7 @@ pub struct ExecuteQueryParams {
     limit: Option<i64>,
     offset: Option<i64>,
     include_total_count: Option<bool>,
+    confirmed_unsafe: Option<bool>,
 }
 
 fn find_postgres_db_error<'a>(
@@ -40,7 +41,9 @@ pub async fn execute_query(
 ) -> impl IntoResponse {
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .execute_query_with_options(
@@ -49,6 +52,7 @@ pub async fn execute_query(
             payload.limit,
             payload.offset,
             payload.include_total_count.unwrap_or(false),
+            payload.confirmed_unsafe.unwrap_or(false),
         )
         .await
     {
