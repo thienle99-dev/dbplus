@@ -43,7 +43,7 @@ impl ConnectionService {
                         .await?;
                 QueryDriver::execute_script(&driver, script).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 QueryDriver::execute_script(&driver, script).await
@@ -78,7 +78,7 @@ impl ConnectionService {
             let dialect: Box<dyn Dialect> = match connection.db_type.as_str() {
                 "postgres" => Box::new(PostgreSqlDialect {}),
                 "sqlite" => Box::new(SQLiteDialect {}),
-                "mysql" | "mariadb" => Box::new(MySqlDialect {}),
+                "mysql" | "mariadb" | "tidb" => Box::new(MySqlDialect {}),
                 "clickhouse" => Box::new(GenericDialect {}), // Generic for now
                 _ => Box::new(GenericDialect {}),
             };
@@ -145,7 +145,7 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::execute_query(&driver, query).await?
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::execute_query(&driver, query).await?
@@ -198,7 +198,7 @@ impl ConnectionService {
                         .await?;
                 QueryDriver::execute(&driver, query).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 QueryDriver::execute(&driver, query).await
@@ -238,7 +238,7 @@ impl ConnectionService {
                         .await?;
                 QueryDriver::explain(&driver, query, analyze).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 QueryDriver::explain(&driver, query, analyze).await
@@ -278,7 +278,7 @@ impl ConnectionService {
                         .await?;
                 driver.search_objects(query).await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.search_objects(query).await

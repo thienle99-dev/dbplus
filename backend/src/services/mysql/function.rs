@@ -9,6 +9,9 @@ use crate::services::driver::FunctionOperations;
 #[async_trait]
 impl FunctionOperations for MySqlDriver {
     async fn list_functions(&self, schema: &str) -> Result<Vec<FunctionInfo>> {
+        if self.flavor == super::MySqlFamilyFlavor::TiDb {
+            return Ok(vec![]);
+        }
         let mut conn = self.pool.get_conn().await?;
         let query = r#"
             SELECT ROUTINE_NAME, ROUTINE_TYPE, DTD_IDENTIFIER

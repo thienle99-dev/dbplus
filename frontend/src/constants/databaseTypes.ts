@@ -14,7 +14,7 @@ export const DATABASE_TYPES: DatabaseType[] = [
   { id: 'mongo', name: 'MongoDB', abbreviation: 'Mg', color: 'bg-green-600', isAvailable: false },
   // { id: 'snowflake', name: 'Snowflake', abbreviation: 'Sf', color: 'bg-cyan-500', isAvailable: false },
   { id: 'redis', name: 'Redis', abbreviation: 'Re', color: 'bg-red-500', isAvailable: false },
-  { id: 'tidb', name: 'TiDB', abbreviation: 'Td', color: 'bg-blue-500', isAvailable: false },
+  { id: 'tidb', name: 'TiDB', abbreviation: 'Td', color: 'bg-blue-500', isAvailable: true },
   { id: 'sqlite', name: 'SQLite', abbreviation: 'Sq', color: 'bg-blue-400', isAvailable: true },
   { id: 'duckdb', name: 'DuckDB', abbreviation: 'Dk', color: 'bg-yellow-600', isAvailable: false },
   { id: 'oracle', name: 'Oracle', abbreviation: 'Or', color: 'bg-red-700', isAvailable: false },

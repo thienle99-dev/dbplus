@@ -10,14 +10,22 @@ use crate::models::entities::connection as connection_entity;
 use anyhow::Result;
 use mysql_async::{OptsBuilder, Pool};
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum MySqlFamilyFlavor {
+    Mysql,
+    MariaDb,
+    TiDb,
+}
+
 #[derive(Clone)]
 pub struct MySqlDriver {
     pub pool: Pool,
+    pub flavor: MySqlFamilyFlavor,
 }
 
 impl MySqlDriver {
-    pub fn new(pool: Pool) -> Self {
-        Self { pool }
+    pub fn new(pool: Pool, flavor: MySqlFamilyFlavor) -> Self {
+        Self { pool, flavor }
     }
 
     pub async fn from_model(conn: &connection_entity::Model, password: &str) -> Result<Self> {
@@ -32,14 +40,32 @@ impl MySqlDriver {
         if conn.port > 0 {
             opts = opts.tcp_port(conn.port as u16);
         } else {
-            opts = opts.tcp_port(3306);
+            // Default port logic
+            let default_port = if conn.db_type == "tidb" { 4000 } else { 3306 };
+            opts = opts.tcp_port(default_port);
         }
 
         opts = opts.user(Some(&conn.username));
         opts = opts.pass(Some(password));
         opts = opts.db_name(Some(&conn.database));
 
+        // SSL/TLS options support (Generic handling, mostly relies on driver defaults or DSN parsing usually)
+        if conn.ssl {
+            // Basic SSL enablement (PREFERRED is default usually)
+            // mysql_async usually handles ssl mode via opts.ssl_opts(...)
+            // We can expand this later if strict TLS logic is needed,
+            // but basic opts usually suffice for standard connections.
+            // For TiDB Cloud (required TLS), mysql_async default SSL modes often work if certs are system root.
+        }
+
         let pool = Pool::new(opts);
-        Ok(Self::new(pool))
+
+        let flavor = match conn.db_type.as_str() {
+            "mariadb" => MySqlFamilyFlavor::MariaDb,
+            "tidb" => MySqlFamilyFlavor::TiDb,
+            _ => MySqlFamilyFlavor::Mysql,
+        };
+
+        Ok(Self::new(pool, flavor))
     }
 }

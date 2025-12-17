@@ -172,7 +172,7 @@ impl ConnectionService {
                         .await?;
                 driver.test_connection().await
             }
-            "mysql" | "mariadb" => {
+            "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, password).await?;
                 driver.test_connection().await

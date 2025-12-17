@@ -165,6 +165,9 @@ impl TableOperations for MySqlDriver {
     }
 
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>> {
+        if self.flavor == super::MySqlFamilyFlavor::TiDb {
+            return Ok(vec![]);
+        }
         let mut conn = self.pool.get_conn().await?;
         let query = r#"
             SELECT TRIGGER_NAME, ACTION_TIMING, EVENT_MANIPULATION, ACTION_STATEMENT
