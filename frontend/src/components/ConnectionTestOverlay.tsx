@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import api from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 interface ConnectionTestOverlayProps {
   connectionId: string;
@@ -12,23 +13,20 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
   const [status, setStatus] = useState<'testing' | 'success' | 'error'>('testing');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [progress, setProgress] = useState(0);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const testConnection = async () => {
       try {
         setProgress(30);
-        
+
         // Test the connection using secure endpoint (no password exposure)
         const { data: testResult } = await api.post(`/api/connections/${connectionId}/test`);
         setProgress(80);
 
         if (testResult.success) {
-          setStatus('success');
-          setProgress(100);
-          // Wait a bit to show success state
-          setTimeout(() => {
-            onSuccess();
-          }, 800);
+          showToast('Connection Successful', 'success');
+          onSuccess();
         } else {
           throw new Error(testResult.message || 'Connection test failed');
         }
@@ -36,11 +34,11 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
         setStatus('error');
         let errorMsg = 'Unable to connect to database.';
         let errorDetail = '';
-        
+
         if (error.response?.data) {
           const data = error.response.data;
           const rawError = data?.message || (typeof data === 'string' ? data : '');
-          
+
           // Parse and provide user-friendly error messages
           if (rawError.includes('connection refused') || rawError.includes('Connection refused')) {
             errorMsg = 'Cannot connect to database server';
@@ -71,14 +69,14 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
           errorMsg = 'Connection error';
           errorDetail = error.message;
         }
-        
+
         setErrorMessage(errorDetail || errorMsg);
         onFailure(errorDetail || errorMsg);
       }
     };
 
     testConnection();
-  }, [connectionId, onSuccess, onFailure]);
+  }, [connectionId, onSuccess, onFailure, showToast]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
@@ -133,7 +131,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
           {/* Progress Bar */}
           {status === 'testing' && (
             <div className="w-full bg-bg-2 rounded-full h-2.5 mb-6 overflow-hidden shadow-inner">
-              <div 
+              <div
                 className="bg-gradient-to-r from-accent to-blue-400 h-full transition-all duration-500 ease-out rounded-full"
                 style={{ width: `${progress}%` }}
               />
