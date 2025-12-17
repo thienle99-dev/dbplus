@@ -22,6 +22,7 @@ import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
 import { DdlScope } from '../features/export-ddl/exportDdl.types';
 import ERDiagramModal from './ERDiagramModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
+import Checkbox from './ui/Checkbox';
 
 interface ObjectFolderProps {
   title: string;
@@ -464,6 +465,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       <div className="px-3 py-2 flex items-center justify-between">
         <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">Schemas</div>
         <div className="flex items-center gap-1">
+          {/* Schema Filter Button */}
+          <button
+            onClick={() => setShowSchemaFilter(true)}
+            className={`p-1 rounded hover:bg-bg-2 transition-colors ${showSchemaFilter ? 'bg-bg-2 text-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            title="Filter schemas"
+          >
+            <Eye size={14} />
+          </button>
+          
           {connectionType !== 'sqlite' ? (
             <>
               <button
@@ -530,8 +540,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           )}
         </div>
       </div>
-      {schemas.map((schema: any) => {
-        const schemaName = typeof schema === 'string' ? schema : schema.name;
+      {filteredSchemas.map((schemaName: string) => {
         return (
           <SchemaNode
             key={schemaName}
@@ -569,6 +578,69 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         onClose={() => setCreateSchemaOpen(false)}
         onSubmit={handleCreateSchema}
       />
+
+      {/* Schema Filter Modal */}
+      {showSchemaFilter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-bg-1 border border-border rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-text-primary">Visible Schemas</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleAllSchemas}
+                  className="text-xs text-accent hover:text-accent-hover font-medium px-3 py-1.5 hover:bg-accent/10 rounded transition-colors"
+                >
+                  {visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={() => setShowSchemaFilter(false)}
+                  className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 p-3">
+              {schemas.length === 0 ? (
+                <div className="text-center py-8 text-sm text-text-secondary">
+                  No schemas available
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {schemas.map(schema => (
+                    <div
+                      key={schema}
+                      className="px-2 py-1 hover:bg-bg-2 rounded-lg transition-colors"
+                    >
+                      <Checkbox
+                        checked={visibleSchemas.has(schema)}
+                        onChange={() => toggleSchemaVisibility(schema)}
+                        label={schema}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-border flex items-center justify-between text-xs text-text-secondary">
+              <span>{visibleSchemas.size} of {schemas.length} selected</span>
+              <button
+                onClick={() => setShowSchemaFilter(false)}
+                className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
