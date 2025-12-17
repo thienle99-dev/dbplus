@@ -25,7 +25,7 @@ interface ERDiagramProps {
     onTableClick?: (tableName: string, schema: string) => void;
 }
 
-export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiagramProps) {
+export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
     const { data: foreignKeys = [], isLoading: fkLoading } = useForeignKeys(connectionId, schema);
     const { data: tables = [], isLoading: tablesLoading } = useTables(connectionId, schema);
     const [layoutType, setLayoutType] = useState<'grid' | 'smart'>('smart');
@@ -38,7 +38,55 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     const [loadingColumns, setLoadingColumns] = useState<Set<string>>(new Set());
     const fetchedTablesRef = useRef<Set<string>>(new Set());
 
-    // Lazy fetch columns for a specific table
+    // Fetch all columns immediately when tables are loaded
+    const [allColumnsLoaded, setAllColumnsLoaded] = useState(false);
+    
+    useEffect(() => {
+        if (tables.length === 0) {
+            setAllColumnsLoaded(false);
+            return;
+        }
+
+        setAllColumnsLoaded(false);
+        
+        const fetchAllColumns = async () => {
+            const fetchPromises = tables.map(async (table) => {
+                if (fetchedTablesRef.current.has(table.name)) return;
+
+                setLoadingColumns(prev => new Set(prev).add(table.name));
+
+                try {
+                    const response = await fetch(
+                        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table.name}`
+                    );
+                    if (response.ok) {
+                        const cols = await response.json();
+                        setTableColumns(prev => {
+                            const newMap = new Map(prev);
+                            newMap.set(table.name, cols);
+                            return newMap;
+                        });
+                        fetchedTablesRef.current.add(table.name);
+                    }
+                } catch (error) {
+                    console.error(`Failed to fetch columns for ${table.name}:`, error);
+                } finally {
+                    setLoadingColumns(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(table.name);
+                        return newSet;
+                    });
+                }
+            });
+
+            await Promise.all(fetchPromises);
+            setAllColumnsLoaded(true);
+        };
+
+        fetchAllColumns();
+    }, [tables, connectionId, schema]);
+
+    // Lazy fetch columns for a specific table (kept for manual refresh if needed)
     const fetchColumnsForTable = useCallback(async (tableName: string) => {
         // Skip if already fetched or currently loading
         if (fetchedTablesRef.current.has(tableName) || loadingColumns.has(tableName)) {
@@ -207,35 +255,39 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-    // Only update nodes when tables or layout actually change (not on hover)
+    // Update nodes when tables, layout, or columns change
     const prevTablesRef = useRef<string>('');
     const prevLayoutRef = useRef<string>(layoutType);
+    const prevColumnsCountRef = useRef<number>(0);
 
     useEffect(() => {
         const tablesKey = tables.map(t => t.name).join(',');
         const layoutChanged = prevLayoutRef.current !== layoutType;
         const tablesChanged = prevTablesRef.current !== tablesKey;
+        const columnsCountChanged = prevColumnsCountRef.current !== tableColumns.size;
 
-        if (tablesChanged || layoutChanged) {
+        if (tablesChanged || layoutChanged || columnsCountChanged) {
             setNodes(initialNodes);
             prevTablesRef.current = tablesKey;
             prevLayoutRef.current = layoutType;
+            prevColumnsCountRef.current = tableColumns.size;
         }
-    }, [initialNodes, layoutType, tables, setNodes]);
+    }, [initialNodes, layoutType, tables, tableColumns, setNodes]);
 
     // Always update edges (for highlighting)
     useEffect(() => {
         setEdges(initialEdges);
     }, [initialEdges, setEdges]);
 
-    const onNodeClick = useCallback(
-        (_event: React.MouseEvent, node: Node) => {
-            if (onTableClick) {
-                onTableClick(node.data.tableName, node.data.schema);
-            }
-        },
-        [onTableClick]
-    );
+    // Disabled to prevent navigation errors
+    // const onNodeClick = useCallback(
+    //     (_event: React.MouseEvent, node: Node) => {
+    //         if (onTableClick) {
+    //             onTableClick(node.data.tableName, node.data.schema);
+    //         }
+    //     },
+    //     [onTableClick]
+    // );
 
     const onNodeMouseEnter = useCallback((_event: React.MouseEvent, node: Node) => {
         setHoveredNode(node.id);
@@ -291,12 +343,14 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [toggleFullscreen]);
 
-    if (tablesLoading || fkLoading) {
+    if (tablesLoading || fkLoading || !allColumnsLoaded) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-bg-0">
                 <div className="flex flex-col items-center gap-3">
                     <Loader2 className="animate-spin text-accent" size={32} />
-                    <div className="text-sm text-text-secondary">Loading ER Diagram...</div>
+                    <div className="text-sm text-text-secondary">
+                        {tablesLoading || fkLoading ? 'Loading ER Diagram...' : 'Loading columns...'}
+                    </div>
                 </div>
             </div>
         );
@@ -379,7 +433,6 @@ export default function ERDiagram({ connectionId, schema, onTableClick }: ERDiag
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onNodeClick={onNodeClick}
                 onNodeMouseEnter={onNodeMouseEnter}
                 onNodeMouseLeave={onNodeMouseLeave}
                 nodeTypes={nodeTypes}
