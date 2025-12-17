@@ -7,7 +7,7 @@ export const DATABASE_TYPES: DatabaseType[] = [
   { id: 'mariadb', name: 'MariaDB', abbreviation: 'Mb', color: 'bg-blue-700', isAvailable: false },
   { id: 'sqlserver', name: 'SQL Server', abbreviation: 'Ss', color: 'bg-red-600', isAvailable: false },
   { id: 'cassandra', name: 'Cassandra', abbreviation: 'Ca', color: 'bg-cyan-600', isAvailable: false },
-  { id: 'clickhouse', name: 'ClickHouse', abbreviation: 'Ch', color: 'bg-yellow-500', isAvailable: false },
+  { id: 'clickhouse', name: 'ClickHouse', abbreviation: 'Ch', color: 'bg-yellow-500', isAvailable: true },
   { id: 'bigquery', name: 'BigQuery', abbreviation: 'Bq', color: 'bg-blue-500', isAvailable: false },
   { id: 'libsql', name: 'LibSQL', abbreviation: 'Ls', color: 'bg-purple-600', isAvailable: false },
   { id: 'd1', name: 'Cloudflare D1', abbreviation: 'D1', color: 'bg-orange-600', isAvailable: false },

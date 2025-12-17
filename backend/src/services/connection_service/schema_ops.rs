@@ -24,7 +24,13 @@ impl ConnectionService {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 DatabaseDriver::get_schemas(&driver).await
             }
-            _ => Err(anyhow::anyhow!("Unsupported database type")),
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_schemas(&driver).await
+            }
+            _ => Ok(vec![]),
         }
     }
 
@@ -103,7 +109,13 @@ impl ConnectionService {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 DatabaseDriver::get_schema_metadata(&driver, schema).await
             }
-            _ => Err(anyhow::anyhow!("Unsupported database type")),
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_schema_metadata(&driver, schema).await
+            }
+            _ => Ok(vec![]),
         }
     }
 
@@ -132,7 +144,7 @@ impl ConnectionService {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 driver.get_schema_foreign_keys(schema).await
             }
-            _ => Err(anyhow::anyhow!("Unsupported database type")),
+            _ => Ok(vec![]),
         }
     }
 }

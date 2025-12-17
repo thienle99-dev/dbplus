@@ -10,7 +10,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDb, setSelectedDb] = useState('postgres');
 
-    const filteredDatabases = DATABASE_TYPES.filter(db =>
+    const filteredDatabases = DATABASE_TYPES.sort(db => db.isAvailable ? -1 : 1).filter(db =>
         db.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 

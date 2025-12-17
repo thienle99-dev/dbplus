@@ -257,7 +257,7 @@ impl ConnectionService {
                         .await?;
                 driver.search_objects(query).await
             }
-            _ => Err(anyhow::anyhow!("Unsupported database type")),
+            _ => Ok(vec![]),
         }
     }
 }

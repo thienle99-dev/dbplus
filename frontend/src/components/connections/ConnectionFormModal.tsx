@@ -7,14 +7,7 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
-const DB_TYPES = [
-    { value: 'postgres', label: 'PostgreSQL' },
-    { value: 'clickhouse', label: 'ClickHouse' },
-    { value: 'sqlite', label: 'SQLite' },
-    { value: 'mysql', label: 'MySQL' },
-    { value: 'mongo', label: 'MongoDB' },
-    { value: 'redis', label: 'Redis' },
-] as const;
+import { DATABASE_TYPES } from '../../constants/databaseTypes';
 
 const STATUS_COLORS = [
     { name: 'Gray', class: 'bg-gray-500' },
@@ -83,9 +76,11 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 }));
             } else {
                 const nextType = initialType || DEFAULT_FORM_DATA.type;
+                const dbColor = DATABASE_TYPES.find(t => t.id === nextType)?.color;
                 setFormData({
                     ...DEFAULT_FORM_DATA,
                     type: nextType,
+                    statusColor: dbColor || DEFAULT_FORM_DATA.statusColor,
                     host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
                     port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : DEFAULT_FORM_DATA.port),
                     user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : DEFAULT_FORM_DATA.user),
@@ -167,7 +162,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         }
     };
 
-    const dbLabel = DB_TYPES.find(t => t.value === formData.type)?.label || 'PostgreSQL';
+    const dbLabel = DATABASE_TYPES.find(t => t.id === formData.type)?.name || 'PostgreSQL';
 
     const footer = (
         <div className="flex w-full items-center justify-between">

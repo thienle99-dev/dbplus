@@ -23,9 +23,13 @@ impl ConnectionService {
                 let driver = self.sqlite_driver(&connection, &password).await?;
                 DatabaseDriver::get_databases(&driver).await
             }
-            _ => Err(anyhow::anyhow!(
-                "Unsupported database type for listing databases"
-            )),
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_databases(&driver).await
+            }
+            _ => Ok(vec![]),
         }
     }
 

@@ -169,10 +169,10 @@ pub async fn create_connection(
             )
                 .into_response();
         }
-        if payload.password.as_deref().unwrap_or("").is_empty() {
+        if payload.db_type != "clickhouse" && payload.password.as_deref().unwrap_or("").is_empty() {
             return (StatusCode::BAD_REQUEST, "Missing password").into_response();
         }
-        if payload.database.trim().is_empty() {
+        if payload.db_type != "clickhouse" && payload.database.trim().is_empty() {
             return (StatusCode::BAD_REQUEST, "Missing database").into_response();
         }
     }
