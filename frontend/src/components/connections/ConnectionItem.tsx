@@ -146,7 +146,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                             {connection.name}
                         </span>
                         {isLocal && (
-                            <span className="text-[10px] font-semibold text-green-500 tracking-wide uppercase">(local)</span>
+                            <span className="text-xs font-semibold text-green-500 tracking-wide uppercase">(local)</span>
                         )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-text-muted truncate">

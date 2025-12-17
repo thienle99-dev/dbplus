@@ -816,14 +816,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                         ⬇ Export
                                     </button>
                                     {selectedCount > 0 && (
-                                        <span className="text-[10px] text-text-secondary bg-bg-3 px-1 rounded border border-border">
+                                        <span className="text-xs text-text-secondary bg-bg-3 px-1.5 py-0.5 rounded border border-border">
                                             {selectedCount} selected
                                         </span>
                                     )}
 
                                     {exportMenuOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-64 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
-                                            <div className="px-3 py-2 text-[10px] font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
                                                 Download
                                             </div>
                                             <button
@@ -884,7 +884,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                 INSERT statements (.sql)
                                             </button>
 
-                                            <div className="px-3 py-2 text-[10px] font-semibold text-text-secondary uppercase tracking-wider border-y border-border">
+                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-y border-border">
                                                 Copy To Clipboard
                                             </div>
                                             <button
@@ -949,7 +949,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 </>
                             )}
                             {result.rows.length > 0 && (
-                                <span className="bg-accent/20 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ color: 'var(--color-primary-default)' }}>
+                                <span className="bg-accent/20 px-2 py-0.5 rounded-full text-xs font-bold" style={{ color: 'var(--color-primary-default)' }}>
                                     {displayRows.length} {displayRows.length === 1 ? 'row' : 'rows'}
                                 </span>
                             )}
@@ -967,7 +967,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 </button>
                             )}
                             {result.rows.length > 2000 && (
-                                <span className="bg-bg-3 px-2 py-0.5 rounded-full text-[10px] text-text-secondary border border-border">
+                                <span className="bg-bg-3 px-2 py-0.5 rounded-full text-xs text-text-secondary border border-border">
                                     Virtualized
                                 </span>
                             )}
