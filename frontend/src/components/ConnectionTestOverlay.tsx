@@ -16,26 +16,10 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
   useEffect(() => {
     const testConnection = async () => {
       try {
-        setProgress(20);
+        setProgress(30);
         
-        // Get connection details
-        const { data: connection } = await api.get(`/api/connections/${connectionId}`);
-        setProgress(40);
-
-        // Test the connection - map fields to match test endpoint expectations
-        const testPayload = {
-          name: connection.name,
-          type: connection.type, // Backend expects 'type', not 'db_type'
-          host: connection.host,
-          port: connection.port,
-          database: connection.database,
-          username: connection.username,
-          password: connection.password,
-          ssl: connection.ssl,
-        };
-
-        setProgress(60);
-        const { data: testResult } = await api.post('/api/connections/test', testPayload);
+        // Test the connection using secure endpoint (no password exposure)
+        const { data: testResult } = await api.post(`/api/connections/${connectionId}/test`);
         setProgress(80);
 
         if (testResult.success) {

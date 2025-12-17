@@ -151,12 +151,6 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     setSchemaContextMenu({ x: e.clientX, y: e.clientY });
   };
 
-  const handleDropSchemaClick = async (e: React.MouseEvent) => {
-    // Only used for button click, not context menu
-    e.preventDefault(); e.stopPropagation();
-    dropSchemaLogic();
-  };
-
   const dropSchemaLogic = async () => {
     if (connectionType === 'sqlite' && schemaName === 'main') {
       showToast('Cannot detach main database', 'error'); return;
@@ -200,12 +194,6 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         </div>
         <Database size={14} className="text-accent/80" />
         <span className="truncate font-medium flex-1 text-left">{schemaName}</span>
-        {!(connectionType === 'sqlite' && schemaName === 'main') && (
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-text-secondary hover:text-red-400"
-            onClick={handleDropSchemaClick}>
-            <Trash2 size={14} />
-          </span>
-        )}
       </Collapsible.Trigger>
 
       <Collapsible.Content className="ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
@@ -374,11 +362,59 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [createDbOpen, setCreateDbOpen] = useState(false);
   const [sqliteToolsOpen, setSqliteToolsOpen] = useState(false);
   const [createSchemaOpen, setCreateSchemaOpen] = useState(false);
+  const [showSchemaFilter, setShowSchemaFilter] = useState(false);
   const { connections } = useConnectionStore();
   const connectionType = useMemo(
     () => connections.find((c) => c.id === connectionId)?.type,
     [connections, connectionId],
   );
+
+  // Visible schemas state (stored in localStorage)
+  const [visibleSchemas, setVisibleSchemas] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(`visible-schemas:${connectionId}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set(schemas);
+    } catch {
+      return new Set(schemas);
+    }
+  });
+
+  // Update visible schemas when schemas change (for new connections)
+  useEffect(() => {
+    if (schemas.length > 0 && visibleSchemas.size === 0) {
+      setVisibleSchemas(new Set(schemas));
+    }
+  }, [schemas]);
+
+  // Save to localStorage when visibleSchemas changes
+  useEffect(() => {
+    if (connectionId && visibleSchemas.size > 0) {
+      localStorage.setItem(`visible-schemas:${connectionId}`, JSON.stringify([...visibleSchemas]));
+    }
+  }, [visibleSchemas, connectionId]);
+
+  const toggleSchemaVisibility = (schema: string) => {
+    setVisibleSchemas(prev => {
+      const next = new Set(prev);
+      if (next.has(schema)) {
+        next.delete(schema);
+      } else {
+        next.add(schema);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllSchemas = () => {
+    if (visibleSchemas.size === schemas.length) {
+      setVisibleSchemas(new Set());
+    } else {
+      setVisibleSchemas(new Set(schemas));
+    }
+  };
+
+  // Filter schemas based on visibility
+  const filteredSchemas = schemas.filter(schema => visibleSchemas.has(schema));
 
   if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
 

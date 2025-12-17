@@ -77,6 +77,10 @@ async fn main() {
             axum::routing::post(handlers::connection::test_connection),
         )
         .route(
+            "/api/connections/:id/test",
+            axum::routing::post(handlers::connection::test_connection_by_id),
+        )
+        .route(
             "/api/connections/:id",
             get(handlers::connection::get_connection)
                 .put(handlers::connection::update_connection)
