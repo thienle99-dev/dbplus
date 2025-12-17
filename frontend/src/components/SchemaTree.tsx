@@ -23,6 +23,7 @@ import { DdlScope } from '../features/export-ddl/exportDdl.types';
 import ERDiagramModal from './ERDiagramModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
+import Button from './ui/Button';
 
 interface ObjectFolderProps {
   title: string;
@@ -468,7 +469,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           {/* Schema Filter Button */}
           <button
             onClick={() => setShowSchemaFilter(true)}
-            className={`p-1 rounded hover:bg-bg-2 transition-colors ${showSchemaFilter ? 'bg-bg-2 text-accent' : 'text-text-secondary hover:text-text-primary'}`}
+            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
             title="Filter schemas"
           >
             <Eye size={14} />
@@ -587,12 +588,13 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-semibold text-text-primary">Visible Schemas</h3>
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={toggleAllSchemas}
-                  className="text-xs text-accent hover:text-accent-hover font-medium px-3 py-1.5 hover:bg-accent/10 rounded transition-colors"
                 >
                   {visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
-                </button>
+                </Button>
                 <button
                   onClick={() => setShowSchemaFilter(false)}
                   className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
@@ -628,15 +630,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
               )}
             </div>
 
-            {/* Footer */}
             <div className="px-4 py-3 border-t border-border flex items-center justify-between text-xs text-text-secondary">
               <span>{visibleSchemas.size} of {schemas.length} selected</span>
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => setShowSchemaFilter(false)}
-                className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
               >
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>

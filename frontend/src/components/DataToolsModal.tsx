@@ -6,6 +6,8 @@ import type { Connection } from '../types';
 import { parseCsv } from '../utils/csv';
 import { buildExportFilename, downloadTextFile, toDelimitedText, toInsertStatements, toJsonObjects } from '../utils/queryResultExport';
 import { extractApiErrorDetails } from '../utils/apiError';
+import Checkbox from './ui/Checkbox';
+import Button from './ui/Button';
 
 type Mode = 'export' | 'import' | 'backup' | 'restore';
 
@@ -357,14 +359,15 @@ export default function DataToolsModal({
                 />
               </div>
               <div className="flex justify-end">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   disabled={loading || !canUseTableTools}
                   onClick={() => void handleExport()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
+                  leftIcon={<Download size={14} />}
                 >
-                  <Download size={14} />
                   Export
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -389,28 +392,26 @@ export default function DataToolsModal({
                 </select>
               </div>
 
-              <label className="flex items-center gap-2 text-xs text-text-secondary">
-                <input
-                  type="checkbox"
-                  checked={truncateFirst}
-                  onChange={(e) => setTruncateFirst(e.target.checked)}
-                />
-                Clear table before import (TRUNCATE/DELETE)
-              </label>
+              <Checkbox
+                checked={truncateFirst}
+                onChange={(checked) => setTruncateFirst(checked)}
+                label="Clear table before import (TRUNCATE/DELETE)"
+                className="text-xs"
+              />
 
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs text-text-secondary truncate">
                   {importFileName ? `File: ${importFileName}` : 'Choose a file to import'}
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={loading || !canUseTableTools}
                   onClick={handleChooseImportFile}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border disabled:opacity-50"
+                  leftIcon={<Upload size={14} />}
                 >
-                  <Upload size={14} />
                   Choose file
-                </button>
+                </Button>
                 <input
                   ref={importFileInputRef}
                   type="file"
@@ -438,13 +439,14 @@ export default function DataToolsModal({
               )}
 
               <div className="flex justify-end">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   disabled={loading || !canUseTableTools || !importScript.trim()}
                   onClick={() => void handleImportRun()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   Run import
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -455,14 +457,15 @@ export default function DataToolsModal({
                 Postgres only. Uses local <span className="font-mono">pg_dump</span> with <span className="font-mono">--column-inserts</span>.
               </div>
               <div className="flex justify-end">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   disabled={loading || !connectionId}
                   onClick={() => void handleBackupDownload()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-accent hover:opacity-90 text-white rounded disabled:opacity-50"
+                  leftIcon={<Download size={14} />}
                 >
-                  <Download size={14} />
                   Download SQL backup
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -476,15 +479,15 @@ export default function DataToolsModal({
                 <div className="text-xs text-text-secondary truncate">
                   {importFileName ? `File: ${importFileName}` : 'Choose a .sql file to restore'}
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={loading || !connectionId}
                   onClick={handleChooseRestoreFile}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border disabled:opacity-50"
+                  leftIcon={<Upload size={14} />}
                 >
-                  <Upload size={14} />
                   Choose file
-                </button>
+                </Button>
               </div>
               <input
                 ref={restoreFileInputRef}
@@ -506,13 +509,14 @@ export default function DataToolsModal({
                 }}
               />
               <div className="flex justify-end">
-                <button
+                <Button
+                  variant="danger"
+                  size="sm"
                   disabled={loading || !connectionId || !importScript.trim()}
                   onClick={() => void handleRestoreSql()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-error hover:opacity-90 text-white rounded disabled:opacity-50"
                 >
                   Restore
-                </button>
+                </Button>
               </div>
             </div>
           )}

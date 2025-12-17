@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { connectionApi } from '../../services/connectionApi';
 import { CreateDatabaseOptions, CreateDatabaseRequest } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import Checkbox from '../ui/Checkbox';
 
 interface CreateDatabaseModalProps {
   open: boolean;
@@ -185,22 +186,16 @@ export default function CreateDatabaseModal({
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-text-secondary">Flags</label>
-                  <label className="flex items-center gap-2 text-sm text-text-primary">
-                    <input
-                      type="checkbox"
-                      checked={options.allowConnections ?? true}
-                      onChange={(e) => setOptions((o) => ({ ...o, allowConnections: e.target.checked }))}
-                    />
-                    Allow connections
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-text-primary">
-                    <input
-                      type="checkbox"
-                      checked={options.isTemplate ?? false}
-                      onChange={(e) => setOptions((o) => ({ ...o, isTemplate: e.target.checked }))}
-                    />
-                    Is template
-                  </label>
+                  <Checkbox
+                    checked={options.allowConnections ?? true}
+                    onChange={(checked) => setOptions((o) => ({ ...o, allowConnections: checked }))}
+                    label="Allow connections"
+                  />
+                  <Checkbox
+                    checked={options.isTemplate ?? false}
+                    onChange={(checked) => setOptions((o) => ({ ...o, isTemplate: checked }))}
+                    label="Is template"
+                  />
                 </div>
               </div>
             )}

@@ -3,6 +3,8 @@ import { X, Settings as SettingsIcon, Palette, Code, Database, Info, Keyboard as
 import { useSettingsStore } from '../store/settingsStore';
 import { THEME_CONFIGS } from '../constants/themes';
 import Select from './ui/Select';
+import Checkbox from './ui/Checkbox';
+import Button from './ui/Button';
 import ThemePreview from './settings/ThemePreview';
 import KeyboardShortcutsTab from './settings/KeyboardShortcutsTab';
 
@@ -73,31 +75,31 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 <h3 className="text-base font-semibold text-text-primary mb-4">General Settings</h3>
 
                                 <div className="space-y-4">
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Auto Save</div>
                                             <div className="text-xs text-text-secondary">Automatically save changes</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.autoSave}
-                                            onChange={(e) => settings.updateSettings({ autoSave: e.target.checked })}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.autoSave}
+                                                onChange={(checked) => settings.updateSettings({ autoSave: checked })}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Confirm Before Delete</div>
                                             <div className="text-xs text-text-secondary">Show confirmation dialog for destructive actions</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.confirmBeforeDelete}
-                                            onChange={(e) => settings.updateSettings({ confirmBeforeDelete: e.target.checked })}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.confirmBeforeDelete}
+                                                onChange={(checked) => settings.updateSettings({ confirmBeforeDelete: checked })}
+                                            />
+                                        </div>
+                                    </div>
 
                                     <label className="space-y-2">
                                         <div className="text-sm font-medium text-text-primary">Max Recent Connections</div>
@@ -143,44 +145,44 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         />
                                     </label>
 
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Word Wrap</div>
                                             <div className="text-xs text-text-secondary">Wrap long lines</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.wordWrap}
-                                            onChange={() => settings.toggleWordWrap()}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.wordWrap}
+                                                onChange={() => settings.toggleWordWrap()}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Line Numbers</div>
                                             <div className="text-xs text-text-secondary">Show line numbers in editor</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.lineNumbers}
-                                            onChange={(e) => settings.updateSettings({ lineNumbers: e.target.checked })}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.lineNumbers}
+                                                onChange={(checked) => settings.updateSettings({ lineNumbers: checked })}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Auto Complete</div>
                                             <div className="text-xs text-text-secondary">Enable auto-completion suggestions</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.autoComplete}
-                                            onChange={(e) => settings.updateSettings({ autoComplete: e.target.checked })}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.autoComplete}
+                                                onChange={(checked) => settings.updateSettings({ autoComplete: checked })}
+                                            />
+                                        </div>
+                                    </div>
 
                                     <label className="space-y-2">
                                         <div className="text-sm font-medium text-text-primary">SQL Keyword Case</div>
@@ -365,18 +367,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         />
                                     </label>
 
-                                    <label className="flex items-center justify-between">
-                                        <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1">
                                             <div className="text-sm font-medium text-text-primary">Show NULL as Text</div>
                                             <div className="text-xs text-text-secondary">Display NULL values as "NULL" text</div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showNullAsText}
-                                            onChange={(e) => settings.updateSettings({ showNullAsText: e.target.checked })}
-                                            className="w-4 h-4 accent-accent"
-                                        />
-                                    </label>
+                                        <div className="flex-shrink-0">
+                                            <Checkbox
+                                                checked={settings.showNullAsText}
+                                                onChange={(checked) => settings.updateSettings({ showNullAsText: checked })}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -433,24 +435,26 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-6 py-4 border-t border-border">
-                    <button
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                             if (confirm('Are you sure you want to reset all settings to defaults?')) {
                                 settings.resetSettings();
                             }
                         }}
-                        className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
                     >
                         Reset to Defaults
-                    </button>
+                    </Button>
                     <div className="flex gap-2">
-                        <button
+                        <Button
+                            variant="primary"
+                            size="md"
                             onClick={onClose}
-                            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90 transition-colors text-sm"
                         >
                             Done
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
