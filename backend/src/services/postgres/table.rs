@@ -1,7 +1,7 @@
 use crate::services::db_driver::{
-    IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
-    DependentRoutineInfo, DependentViewInfo, PartitionChildInfo, PartitionInfo, ReferencingForeignKeyInfo,
-    StorageBloatInfo, TableDependencies, TriggerInfo,
+    DependentRoutineInfo, DependentViewInfo, IndexInfo, PartitionChildInfo, PartitionInfo,
+    QueryResult, ReferencingForeignKeyInfo, RoleInfo, StorageBloatInfo, TableComment,
+    TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -72,24 +72,37 @@ impl TableOperations for PostgresTable {
             .map(|c| c.name().to_string())
             .collect();
 
+        // Use the comprehensive type decoder from query module
         let mut result_rows = Vec::new();
         for row in rows {
             let mut current_row = Vec::new();
-            for (i, _) in columns.iter().enumerate() {
-                let value: Value = if let Ok(v) = row.try_get::<_, i32>(i) {
-                    Value::Number(v.into())
-                } else if let Ok(v) = row.try_get::<_, String>(i) {
-                    Value::String(v)
-                } else if let Ok(v) = row.try_get::<_, bool>(i) {
-                    Value::Bool(v)
+            for i in 0..columns.len() {
+                let col_type = row.columns()[i].type_();
+                let type_name = col_type.name();
+
+                let value: Value = if type_name == "json" || type_name == "jsonb" {
+                    row.try_get::<_, Option<Value>>(i)
+                        .ok()
+                        .flatten()
+                        .unwrap_or(Value::Null)
                 } else if let Ok(v) = row.try_get::<_, i64>(i) {
+                    Value::Number(v.into())
+                } else if let Ok(v) = row.try_get::<_, i32>(i) {
                     Value::Number(v.into())
                 } else if let Ok(v) = row.try_get::<_, f64>(i) {
                     serde_json::Number::from_f64(v)
                         .map(Value::Number)
                         .unwrap_or(Value::Null)
+                } else if let Ok(v) = row.try_get::<_, bool>(i) {
+                    Value::Bool(v)
+                } else if let Ok(v) = row.try_get::<_, String>(i) {
+                    Value::String(v)
                 } else {
-                    Value::Null
+                    // Fallback for other types
+                    match row.try_get::<_, Option<Value>>(i) {
+                        Ok(Some(v)) => v,
+                        _ => Value::Null,
+                    }
                 };
                 current_row.push(value);
             }
@@ -608,7 +621,10 @@ impl TableOperations for PostgresTable {
         let tx = client.transaction().await?;
 
         // Revoke all explicit grants first (idempotent)
-        let revoke_all = format!("REVOKE ALL PRIVILEGES ON TABLE {} FROM {}", target, grantee_ident);
+        let revoke_all = format!(
+            "REVOKE ALL PRIVILEGES ON TABLE {} FROM {}",
+            target, grantee_ident
+        );
         tx.execute(&revoke_all, &[]).await?;
         let revoke_go = format!(
             "REVOKE GRANT OPTION FOR ALL PRIVILEGES ON TABLE {} FROM {}",
@@ -623,7 +639,11 @@ impl TableOperations for PostgresTable {
                 priv_list,
                 target,
                 grantee_ident,
-                if grant_option { " WITH GRANT OPTION" } else { "" }
+                if grant_option {
+                    " WITH GRANT OPTION"
+                } else {
+                    ""
+                }
             );
             tx.execute(&grant, &[]).await?;
         }
@@ -861,7 +881,12 @@ impl TableOperations for PostgresTable {
                 st.and_then(|s| {
                     s.duration_since(std::time::UNIX_EPOCH)
                         .ok()
-                        .and_then(|d| chrono::DateTime::<chrono::Utc>::from_timestamp(d.as_secs() as i64, d.subsec_nanos()))
+                        .and_then(|d| {
+                            chrono::DateTime::<chrono::Utc>::from_timestamp(
+                                d.as_secs() as i64,
+                                d.subsec_nanos(),
+                            )
+                        })
                         .map(|dt| dt.to_string())
                 })
             };
