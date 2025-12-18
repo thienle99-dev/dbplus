@@ -13,7 +13,9 @@ pub struct CouchbaseDriver {
 
 impl CouchbaseDriver {
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
-        let connection_string = format!("couchbase://{}:{}", connection.host, connection.port);
+        // Couchbase connection string format: couchbase://host (port is not supported in URL)
+        // The SDK will use default ports (8091 for HTTP, 11210 for memcached)
+        let connection_string = format!("couchbase://{}", connection.host);
         let username = &connection.username;
 
         let authenticator = PasswordAuthenticator::new(username, password);

@@ -174,6 +174,7 @@ pub async fn create_connection(
             && payload.db_type != "tidb"
             && payload.db_type != "mysql"
             && payload.db_type != "mariadb"
+            && payload.db_type != "couchbase"
             && payload.database.trim().is_empty()
         {
             return (StatusCode::BAD_REQUEST, "Missing database").into_response();
@@ -185,10 +186,12 @@ pub async fn create_connection(
     } else {
         (
             payload.host.clone().unwrap_or_default(),
-            payload.port.unwrap_or(if payload.db_type == "clickhouse" {
-                8123
-            } else {
-                5432
+            payload.port.unwrap_or(match payload.db_type.as_str() {
+                "clickhouse" => 8123,
+                "mysql" | "mariadb" | "tidb" => 3306,
+                "couchbase" => 8091,
+                "cockroach" | "cockroachdb" => 26257,
+                _ => 5432,
             }),
             payload.username.clone().unwrap_or_default(),
             payload.password.clone().unwrap_or_default(),
@@ -258,10 +261,12 @@ pub async fn update_connection(
     } else {
         (
             payload.host.clone().unwrap_or_default(),
-            payload.port.unwrap_or(if payload.db_type == "clickhouse" {
-                8123
-            } else {
-                5432
+            payload.port.unwrap_or(match payload.db_type.as_str() {
+                "clickhouse" => 8123,
+                "mysql" | "mariadb" | "tidb" => 3306,
+                "couchbase" => 8091,
+                "cockroach" | "cockroachdb" => 26257,
+                _ => 5432,
             }),
             payload.username.clone().unwrap_or_default(),
             payload.password.clone().unwrap_or_default(),
@@ -401,10 +406,12 @@ pub async fn test_connection(
     let port = if payload.db_type == "sqlite" {
         0
     } else {
-        payload.port.unwrap_or(if payload.db_type == "clickhouse" {
-            8123
-        } else {
-            5432
+        payload.port.unwrap_or(match payload.db_type.as_str() {
+            "clickhouse" => 8123,
+            "mysql" | "mariadb" | "tidb" => 3306,
+            "couchbase" => 8091,
+            "cockroach" | "cockroachdb" => 26257,
+            _ => 5432,
         })
     };
 
