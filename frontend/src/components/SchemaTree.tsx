@@ -100,7 +100,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
   const handleCreateCollection = async (name: string) => {
     try {
-      await connectionApi.createTable(connectionId, schemaName, name);
+      await connectionApi.createTable(connectionId, schemaName, name, database);
       // isCouchbase is defined later, so I'll move this function or use connectionType check
       const isCouch = connectionType === 'couchbase';
       showToast(`${isCouch ? 'Collection' : 'Table'} '${name}' created`, 'success');
@@ -114,7 +114,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
   const handleDropTable = async (tableName: string) => {
     try {
-      await connectionApi.dropTable(connectionId, schemaName, tableName);
+      await connectionApi.dropTable(connectionId, schemaName, tableName, database);
       showToast(`${connectionType === 'couchbase' ? 'Collection' : 'Table'} '${tableName}' dropped`, 'success');
       await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
       setContextMenu(null);

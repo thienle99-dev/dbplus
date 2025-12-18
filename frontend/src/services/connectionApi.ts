@@ -104,12 +104,17 @@ export const connectionApi = {
         await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`);
     },
 
-    createTable: async (id: string, schema: string, name: string): Promise<void> => {
-        await api.post(`/api/connections/${id}/tables`, { schema, name });
+    createTable: async (id: string, schema: string, name: string, database?: string): Promise<void> => {
+        const config = database ? { headers: { 'x-dbplus-database': database } } : {};
+        await api.post(`/api/connections/${id}/tables`, { schema, name }, config);
     },
 
-    dropTable: async (id: string, schema: string, name: string): Promise<void> => {
-        await api.delete(`/api/connections/${id}/tables/${encodeURIComponent(name)}`, { params: { schema } });
+    dropTable: async (id: string, schema: string, name: string, database?: string): Promise<void> => {
+        const config: any = { params: { schema } };
+        if (database) {
+            config.headers = { 'x-dbplus-database': database };
+        }
+        await api.delete(`/api/connections/${id}/tables/${encodeURIComponent(name)}`, config);
     },
 
     getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {
