@@ -44,22 +44,37 @@ impl QueryDriver for CouchbaseDriver {
         let sample_size = rows.len().min(50);
 
         // Check for "nested select *" pattern: all rows have exactly one identical key which is an object
-        let mut first_key: Option<String> = None;
+        // OR two keys where one is "_id" and the other is an object.
+        let mut unwrap_candidate: Option<String> = None;
         let mut is_nested_select_star = !rows.is_empty();
 
         for i in 0..sample_size {
             if let Some(obj) = rows[i].as_object() {
-                if obj.len() == 1 {
-                    let key = obj.keys().next().unwrap().clone();
-                    if let Some(ref fk) = first_key {
-                        if fk != &key {
+                let keys: Vec<_> = obj.keys().collect();
+                let (key, is_nested) = if keys.len() == 1 {
+                    (
+                        Some(keys[0].clone()),
+                        obj.get(keys[0]).map(|v| v.is_object()).unwrap_or(false),
+                    )
+                } else if keys.len() == 2 && keys.iter().any(|&k| k == "_id") {
+                    let other_key = keys.iter().find(|&&k| k != "_id").unwrap();
+                    (
+                        Some((*other_key).clone()),
+                        obj.get(*other_key).map(|v| v.is_object()).unwrap_or(false),
+                    )
+                } else {
+                    (None, false)
+                };
+
+                if let Some(k) = key {
+                    if !is_nested {
+                        is_nested_select_star = false;
+                    } else if let Some(ref uc) = unwrap_candidate {
+                        if uc != &k {
                             is_nested_select_star = false;
                         }
                     } else {
-                        first_key = Some(key);
-                    }
-                    if !obj.values().next().unwrap().is_object() {
-                        is_nested_select_star = false;
+                        unwrap_candidate = Some(k);
                     }
                 } else {
                     is_nested_select_star = false;
@@ -73,7 +88,7 @@ impl QueryDriver for CouchbaseDriver {
         }
 
         let unwrapped_key = if is_nested_select_star {
-            first_key
+            unwrap_candidate
         } else {
             None
         };
@@ -81,6 +96,9 @@ impl QueryDriver for CouchbaseDriver {
         if let Some(ref uk) = unwrapped_key {
             for i in 0..sample_size {
                 if let Some(obj) = rows[i].as_object() {
+                    if obj.contains_key("_id") {
+                        column_set.insert("_id".to_string());
+                    }
                     if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {
                         for key in inner.keys() {
                             column_set.insert(key.clone());
@@ -105,7 +123,13 @@ impl QueryDriver for CouchbaseDriver {
                 vec![]
             }
         } else {
-            column_set.into_iter().collect()
+            // Keep _id at the front if present
+            let mut cols: Vec<String> = column_set.into_iter().collect();
+            if let Some(pos) = cols.iter().position(|c| c == "_id") {
+                let id_col = cols.remove(pos);
+                cols.insert(0, id_col);
+            }
+            cols
         };
 
         let mut grid_rows = Vec::new();
@@ -113,12 +137,13 @@ impl QueryDriver for CouchbaseDriver {
             if let Some(obj) = row.as_object() {
                 let mut row_values = Vec::new();
                 if let Some(ref uk) = unwrapped_key {
-                    if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {
-                        for col in &columns {
+                    let inner_obj = obj.get(uk).and_then(|v| v.as_object());
+                    for col in &columns {
+                        if col == "_id" && obj.contains_key("_id") {
+                            row_values.push(obj.get("_id").cloned().unwrap_or(Value::Null));
+                        } else if let Some(inner) = inner_obj {
                             row_values.push(inner.get(col).cloned().unwrap_or(Value::Null));
-                        }
-                    } else {
-                        for col in &columns {
+                        } else {
                             row_values.push(Value::Null);
                         }
                     }
