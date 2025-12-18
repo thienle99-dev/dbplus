@@ -166,10 +166,10 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
   const handleTableClick = (table: TableInfo) => {
     if (shouldUseTabs && tabContext) {
-      tabContext.openTableInTab(schemaName, table.name, true);
+      tabContext.openTableInTab(schemaName, table.name, true, database);
     } else {
       navigate(`/workspace/${connectionId}/query`, {
-        state: { openTable: { schema: schemaName, table: table.name } }
+        state: { openTable: { schema: schemaName, table: table.name, database } }
       });
     }
   };

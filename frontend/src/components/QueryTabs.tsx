@@ -194,7 +194,7 @@ export default function QueryTabs() {
 
   const handlePinTab = () => {
     if (!contextMenu) return;
-    setTabs(prev => prev.map(t => 
+    setTabs(prev => prev.map(t =>
       t.id === contextMenu.tabId ? { ...t, pinned: !t.pinned } : t
     ));
     setContextMenu(null);
@@ -222,15 +222,15 @@ export default function QueryTabs() {
 
   const handleSetSplitMode = (mode: 'none' | 'vertical' | 'horizontal') => {
     if (!contextMenu) return;
-    setTabs(prev => prev.map(t => 
+    setTabs(prev => prev.map(t =>
       t.id === contextMenu.tabId ? { ...t, splitMode: mode } : t
     ));
     setContextMenu(null);
   };
 
-  const openTableInTab = useCallback((schema: string, table: string, newTab = true) => {
+  const openTableInTab = useCallback((schema: string, table: string, newTab = true, database?: string) => {
     if (newTab) {
-      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
+      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table && t.database === database);
       if (existing) {
         setActiveTabId(existing.id);
         return;
@@ -242,6 +242,7 @@ export default function QueryTabs() {
         type: 'table',
         schema,
         table,
+        database,
         lastModified: Date.now(),
       };
       setTabs(prev => [...prev, tableTab]);
@@ -250,7 +251,7 @@ export default function QueryTabs() {
       // Open in current tab
       setTabs(prev => prev.map(t =>
         t.id === activeTabId
-          ? { ...t, type: 'table' as const, schema, table, title: `${schema}.${table}`, isDraft: false }
+          ? { ...t, type: 'table' as const, schema, table, database, title: `${schema}.${table}`, isDraft: false }
           : t
       ));
     }
@@ -262,8 +263,8 @@ export default function QueryTabs() {
 
     // Handle opening a table
     if (state?.openTable) {
-      const { schema, table } = state.openTable;
-      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
+      const { schema, table, database } = state.openTable;
+      const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table && t.database === database);
       if (existing) {
         setActiveTabId(existing.id);
       } else {
@@ -273,6 +274,7 @@ export default function QueryTabs() {
           type: 'table',
           schema,
           table,
+          database,
           lastModified: Date.now(),
         };
         setTabs(prev => [...prev, tableTab]);
@@ -282,7 +284,6 @@ export default function QueryTabs() {
       // Clear the state properly using navigate
       navigate(location.pathname, { replace: true, state: {} });
     }
-
     // Handle loading a query (from Saved Queries or History in Sidebar)
     if (state?.sql) {
       const { sql, metadata, name, id } = state;
@@ -596,7 +597,7 @@ export default function QueryTabs() {
                 )}
               >
                 {tab.type === 'table' ? (
-                  <TableDataView schema={tab.schema} table={tab.table} />
+                  <TableDataView schema={tab.schema!} table={tab.table!} database={tab.database} />
                 ) : (
                   <QueryEditor
                     initialSql={tab.sql}

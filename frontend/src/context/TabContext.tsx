@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode } from 'react';
 
 interface TabContextType {
-    openTableInTab: (schema: string, table: string, newTab?: boolean) => void;
+    openTableInTab: (schema: string, table: string, newTab?: boolean, database?: string) => void;
 }
 
 const TabContext = createContext<TabContextType | null>(null);
@@ -16,7 +16,7 @@ export const useTabContext = () => {
 
 interface TabProviderProps {
     children: ReactNode;
-    openTableInTab: (schema: string, table: string, newTab?: boolean) => void;
+    openTableInTab: (schema: string, table: string, newTab?: boolean, database?: string) => void;
 }
 
 export function TabProvider({ children, openTableInTab }: TabProviderProps) {

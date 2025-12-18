@@ -7,6 +7,7 @@ export interface Tab {
   sql?: string;
   schema?: string;
   table?: string;
+  database?: string;
   metadata?: Record<string, any>;
   isDraft?: boolean;
   savedQueryId?: string;

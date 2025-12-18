@@ -8,7 +8,7 @@ interface ExtendedTableStructureTabProps extends TableStructureTabProps {
     isCouchbase?: boolean;
 }
 
-export default function TableStructureTab({ schema: schemaProp, table: tableProp, isCouchbase = false }: ExtendedTableStructureTabProps) {
+export default function TableStructureTab({ schema: schemaProp, table: tableProp, isCouchbase = false, database }: ExtendedTableStructureTabProps) {
     const params = useParams();
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
@@ -22,8 +22,10 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
         const fetchColumns = async () => {
             setLoading(true);
             try {
+                const config = database ? { headers: { 'x-dbplus-database': database } } : {};
                 const response = await api.get(
-                    `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
+                    `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`,
+                    config
                 );
                 setColumns(response.data);
             } catch (err) {
@@ -34,7 +36,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
         };
 
         fetchColumns();
-    }, [connectionId, schema, table]);
+    }, [connectionId, schema, table, database]);
 
     if (loading) {
         return <div className="p-8 text-text-secondary">Loading structure...</div>;

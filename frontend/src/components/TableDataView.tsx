@@ -12,7 +12,7 @@ import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../type
 import { useConstraints } from '../hooks/useDatabase';
 import { useConnectionStore } from '../store/connectionStore';
 
-export default function TableDataView({ schema: schemaProp, table: tableProp }: TableDataViewProps = {}) {
+export default function TableDataView({ schema: schemaProp, table: tableProp, database }: TableDataViewProps = {}) {
   const params = useParams();
   // Use props if provided, otherwise fall back to URL params
   const schema = schemaProp || params.schema;
@@ -49,9 +49,13 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a {isCouchbase ? 'collection' : 'table'} to view data</div>;
   }
 
+  const getRequestConfig = useCallback(() => {
+    return database ? { headers: { 'x-dbplus-database': database } } : {};
+  }, [database]);
+
   const fetchColumns = useCallback(async () => {
     if (!connectionId || !schema || !table || fetchingColumnsRef.current) return;
-    const cacheKey = `${connectionId}-${schema}-${table}`;
+    const cacheKey = `${connectionId}-${schema}-${table}-${database || ''}`;
     if (columnsCacheKeyRef.current === cacheKey) {
       return;
     }
@@ -59,7 +63,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     columnsCacheKeyRef.current = cacheKey;
     try {
       const response = await api.get(
-        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`
+        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table}`,
+        getRequestConfig()
       );
       setColumnsInfo(response.data);
     } catch (err) {
@@ -68,7 +73,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     } finally {
       fetchingColumnsRef.current = false;
     }
-  }, [connectionId, schema, table]);
+  }, [connectionId, schema, table, database, getRequestConfig]);
 
   const fetchData = useCallback(async () => {
     if (!connectionId || !schema || !table || fetchingRef.current) return;
@@ -78,7 +83,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     try {
       const offset = page * pageSize;
       const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`
+        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`,
+        getRequestConfig()
       );
       setData(response.data);
       setEdits({}); // Clear edits on page change/refresh
@@ -89,22 +95,22 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [connectionId, schema, table, page, pageSize]);
+  }, [connectionId, schema, table, page, pageSize, database, getRequestConfig]);
 
   useEffect(() => {
-    const cacheKey = `${connectionId}-${schema}-${table}`;
+    const cacheKey = `${connectionId}-${schema}-${table}-${database || ''}`;
     if (columnsCacheKeyRef.current !== cacheKey) {
       columnsCacheKeyRef.current = '';
       setColumnsInfo([]);
     }
-  }, [connectionId, schema, table]);
+  }, [connectionId, schema, table, database]);
 
   useEffect(() => {
     if (connectionId && schema && table) {
       fetchColumns();
       fetchData();
     }
-  }, [connectionId, schema, table, page, pageSize]);
+  }, [connectionId, schema, table, page, pageSize, database]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -165,7 +171,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
           table,
           primary_key: pk,
           updates,
-        });
+        }, getRequestConfig());
       });
 
       await Promise.all(updatePromises);
@@ -177,7 +183,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     } finally {
       setSaving(false);
     }
-  }, [data, edits, getRowPK, schema, table, connectionId, fetchData, showToast]);
+  }, [data, edits, getRowPK, schema, table, connectionId, fetchData, showToast, getRequestConfig]);
 
   const handleNewRowChange = useCallback((colIndex: number, value: string) => {
     setNewRowData(prev => ({
@@ -207,7 +213,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
         schema,
         table,
         row,
-      });
+      }, getRequestConfig());
 
       await fetchData();
       showToast(`${rowTerm} added successfully`, 'success');
@@ -218,7 +224,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     } finally {
       setSaving(false);
     }
-  }, [data, newRowData, schema, table, connectionId, fetchData, showToast]);
+  }, [data, newRowData, schema, table, connectionId, fetchData, showToast, getRequestConfig]);
 
   const handleCancelNewRow = useCallback(() => {
     setIsAddingRow(false);
@@ -247,20 +253,23 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     }
 
     try {
-      await api.delete(`/api/connections/${connectionId}/query-results`, {
+      const config: any = {
         data: {
           schema,
           table,
           primary_key: pk
-        }
-      });
+        },
+        ...getRequestConfig()
+      };
+
+      await api.delete(`/api/connections/${connectionId}/query-results`, config);
       await fetchData();
       setSelectedRow(null);
       showToast(`${rowTerm} deleted successfully`, 'success');
     } catch (err: unknown) {
       showToast(`Failed to delete ${rowTerm.toLowerCase()}: ${(err as Error).message}`, 'error');
     }
-  }, [selectedRow, getRowPK, schema, table, connectionId, fetchData, setSelectedRow, showToast, rowTerm]);
+  }, [selectedRow, getRowPK, schema, table, connectionId, fetchData, setSelectedRow, showToast, rowTerm, getRequestConfig]);
 
   if (loading && !data) {
     return <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>;
@@ -338,9 +347,9 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
             isCouchbase={isCouchbase}
           />
         ) : activeTab === 'structure' ? (
-          <TableStructureTab schema={schema} table={table} isCouchbase={isCouchbase} />
+          <TableStructureTab schema={schema} table={table} isCouchbase={isCouchbase} database={database} />
         ) : (
-          <TableInfoTab schema={schema} table={table} />
+          <TableInfoTab schema={schema} table={table} database={database} />
         )}
       </div>
     </div>

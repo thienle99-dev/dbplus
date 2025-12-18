@@ -1,16 +1,19 @@
 export interface TableDataViewProps {
   schema?: string;
   table?: string;
+  database?: string;
 }
 
 export interface TableInfoTabProps {
   schema?: string;
   table?: string;
+  database?: string;
 }
 
 export interface TableStructureTabProps {
   schema?: string;
   table?: string;
+  database?: string;
 }
 
 export interface RightSidebarProps {

@@ -124,42 +124,51 @@ export const useColumns = (connectionId: string | undefined, schema: string | un
     });
 };
 
-export const useIndexes = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+export const useIndexes = (connectionId: string | undefined, schema: string | undefined, table: string | undefined, database?: string) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['indexes', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return [];
-            const { data } = await api.get<any[]>(`/api/connections/${connectionId}/indexes?schema=${schema}&table=${table}`);
+            const { data } = await api.get<any[]>(`/api/connections/${connectionId}/indexes`, {
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table }
+            });
             return data;
         },
         enabled: !!connectionId && !!schema && !!table,
     });
 };
 
-export const useConstraints = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+export const useConstraints = (connectionId: string | undefined, schema: string | undefined, table: string | undefined, database?: string) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['constraints', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return { foreign_keys: [], check_constraints: [], unique_constraints: [] };
-            const { data } = await api.get<any>(`/api/connections/${connectionId}/constraints?schema=${schema}&table=${table}`);
+            const { data } = await api.get<any>(`/api/connections/${connectionId}/constraints`, {
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table }
+            });
             return data;
         },
         enabled: !!connectionId && !!schema && !!table,
     });
 };
 
-export const useTableStats = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+export const useTableStats = (connectionId: string | undefined, schema: string | undefined, table: string | undefined, database?: string) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['tableStats', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return null;
-            const { data } = await api.get<any>(`/api/connections/${connectionId}/table-stats?schema=${schema}&table=${table}`);
+            const { data } = await api.get<any>(`/api/connections/${connectionId}/table-stats`, {
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table }
+            });
             console.log('[DEBUG] Table stats response:', data);
             return data;
         },
@@ -168,15 +177,16 @@ export const useTableStats = (connectionId: string | undefined, schema: string |
     });
 };
 
-export const useTriggers = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+export const useTriggers = (connectionId: string | undefined, schema: string | undefined, table: string | undefined, database?: string) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['triggers', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return [];
             const { data } = await api.get<TriggerInfo[]>(`/api/connections/${connectionId}/triggers`, {
-                params: { schema, table },
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table },
             });
             return data;
         },
@@ -219,15 +229,16 @@ export const useSetTableComment = (connectionId: string | undefined) => {
     });
 };
 
-export const usePermissions = (connectionId: string | undefined, schema: string | undefined, table: string | undefined) => {
+export const usePermissions = (connectionId: string | undefined, schema: string | undefined, table: string | undefined, database?: string) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['permissions', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return [] as TableGrant[];
             const { data } = await api.get<TableGrant[]>(`/api/connections/${connectionId}/permissions`, {
-                params: { schema, table },
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table },
             });
             return data;
         },
@@ -239,15 +250,17 @@ export const useDependencies = (
     connectionId: string | undefined,
     schema: string | undefined,
     table: string | undefined,
+    database?: string
 ) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['dependencies', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return null as TableDependencies | null;
             const { data } = await api.get<TableDependencies>(`/api/connections/${connectionId}/dependencies`, {
-                params: { schema, table },
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table },
             });
             return data;
         },
@@ -307,9 +320,11 @@ export const useStorageBloatInfo = (
     connectionId: string | undefined,
     schema: string | undefined,
     table: string | undefined,
+    database?: string
 ) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['storageInfo', connectionId, dbKey, schema, table],
         queryFn: async () => {
@@ -317,7 +332,7 @@ export const useStorageBloatInfo = (
                 return null as StorageBloatInfo | null;
             }
             const { data } = await api.get<StorageBloatInfo>(`/api/connections/${connectionId}/storage-info`, {
-                params: { schema, table },
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table },
             });
             return data;
         },
@@ -329,15 +344,17 @@ export const usePartitions = (
     connectionId: string | undefined,
     schema: string | undefined,
     table: string | undefined,
+    database?: string
 ) => {
     const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+    const targetDb = database || dbOverride;
+    const dbKey = targetDb ?? '__default__';
     return useQuery({
         queryKey: ['partitions', connectionId, dbKey, schema, table],
         queryFn: async () => {
             if (!connectionId || !schema || !table) return null as PartitionInfo | null;
             const { data } = await api.get<PartitionInfo>(`/api/connections/${connectionId}/partitions`, {
-                params: { schema, table },
+                params: targetDb ? { schema, table, database: targetDb } : { schema, table },
             });
             return data;
         },

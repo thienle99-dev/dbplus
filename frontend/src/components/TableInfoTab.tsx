@@ -58,7 +58,7 @@ function loadJson<T>(key: string, fallback: T): T {
     }
 }
 
-export default function TableInfoTab({ schema: schemaProp, table: tableProp }: TableInfoTabProps) {
+export default function TableInfoTab({ schema: schemaProp, table: tableProp, database }: TableInfoTabProps) {
     const params = useParams();
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
@@ -88,15 +88,15 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     }, [storageBaseKey, collapsed]);
 
     // Data Fetching Hooks
-    const columnsQuery = useColumns(connectionId, schema, table);
-    const indexesQuery = useIndexes(connectionId, schema, table);
-    const constraintsQuery = useConstraints(connectionId, schema, table);
-    const statsQuery = useTableStats(connectionId, schema, table);
-    const triggersQuery = useTriggers(connectionId, schema, table);
-    const permissionsQuery = usePermissions(connectionId, schema, table);
-    const storageQuery = useStorageBloatInfo(connectionId, schema, table);
-    const partitionsQuery = usePartitions(connectionId, schema, table);
-    const dependenciesQuery = useDependencies(connectionId, schema, table);
+    const columnsQuery = useColumns(connectionId, schema, table, database);
+    const indexesQuery = useIndexes(connectionId, schema, table, database);
+    const constraintsQuery = useConstraints(connectionId, schema, table, database);
+    const statsQuery = useTableStats(connectionId, schema, table, database);
+    const triggersQuery = useTriggers(connectionId, schema, table, database);
+    const permissionsQuery = usePermissions(connectionId, schema, table, database);
+    const storageQuery = useStorageBloatInfo(connectionId, schema, table, database);
+    const partitionsQuery = usePartitions(connectionId, schema, table, database);
+    const dependenciesQuery = useDependencies(connectionId, schema, table, database);
 
     const isLoading =
         columnsQuery.isLoading ||
