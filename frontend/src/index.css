@@ -100,12 +100,12 @@
   /* === COMPONENT SIZING SYSTEM === */
 
   /* Typography Scale */
-  --text-2xs: 10px;
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-base: 16px;
-  --text-lg: 18px;
-  --text-xl: 20px;
+  --text-2xs: 9px;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
 
   /* Line Heights */
   --leading-tight: 1.25;
@@ -596,6 +596,7 @@ body {
   background-color: var(--bg-0);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

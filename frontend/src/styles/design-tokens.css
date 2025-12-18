@@ -82,12 +82,12 @@
     --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
     --font-family-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
 
-    --font-size-xs: 11px;
-    --font-size-sm: 12px;
-    --font-size-base: 13px;
-    --font-size-md: 14px;
-    --font-size-lg: 16px;
-    --font-size-xl: 18px;
+    --font-size-xs: 10px;
+    --font-size-sm: 11px;
+    --font-size-base: 12px;
+    --font-size-md: 13px;
+    --font-size-lg: 14px;
+    --font-size-xl: 16px;
 
     --font-weight-normal: 400;
     --font-weight-medium: 500;
