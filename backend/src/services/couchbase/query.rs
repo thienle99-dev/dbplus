@@ -10,17 +10,16 @@ use super::connection::CouchbaseDriver;
 #[async_trait]
 impl QueryDriver for CouchbaseDriver {
     async fn execute(&self, query: &str) -> Result<u64> {
-        let _result = self
+        let result = self
             .cluster
             .query(query, None)
             .await
             .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
 
-        // Couchbase SDK might return metrics in metadata
-        // For now return 0 or implement metrics parsing if available in the crate
-        // let metrics = result.meta_data().metrics();
-        // Ok(metrics.mutation_count())
-        Ok(0)
+        let meta = result
+            .metadata()
+            .map_err(|e| anyhow::anyhow!("Failed to get metadata: {}", e))?;
+        Ok(meta.metrics.map(|m| m.mutation_count).unwrap_or(0) as u64)
     }
 
     async fn query(&self, query: &str) -> Result<QueryResult> {
@@ -134,11 +133,48 @@ impl QueryDriver for CouchbaseDriver {
             }
         }
 
+        let meta_data = result
+            .metadata()
+            .map_err(|e| anyhow::anyhow!("Failed to get metadata: {}", e))?;
+        let affected_rows = meta_data.metrics.map(|m| m.mutation_count).unwrap_or(0) as u64;
+
+        // Try to infer table metadata for editing
+        let mut column_metadata = None;
+        let query_upper = query.to_uppercase();
+        if query_upper.starts_with("SELECT") {
+            if let Some(from_pos) = query_upper.find("FROM") {
+                let rest = &query[from_pos + 4..].trim();
+                if let Some(keyspace) = rest.split_whitespace().next() {
+                    let parts: Vec<&str> = keyspace.split('.').collect();
+                    let (schema, table) = match parts.len() {
+                        3 => (Some(parts[1].trim_matches('`')), parts[2].trim_matches('`')),
+                        2 => (Some(parts[0].trim_matches('`')), parts[1].trim_matches('`')),
+                        1 => (None, parts[0].trim_matches('`')),
+                        _ => (None, ""),
+                    };
+
+                    if !table.is_empty() {
+                        let mut meta_list = Vec::new();
+                        for col in &columns {
+                            meta_list.push(crate::services::db_driver::ColumnMetadata {
+                                table_name: Some(table.to_string()),
+                                column_name: col.clone(),
+                                is_primary_key: col == "_id" || col == "id",
+                                is_editable: true,
+                                schema_name: schema.map(|s| s.to_string()),
+                            });
+                        }
+                        column_metadata = Some(meta_list);
+                    }
+                }
+            }
+        }
+
         Ok(QueryResult {
             columns,
             rows: grid_rows,
-            affected_rows: 0,
-            column_metadata: None,
+            affected_rows,
+            column_metadata,
             total_count: None,
             limit: None,
             offset: None,

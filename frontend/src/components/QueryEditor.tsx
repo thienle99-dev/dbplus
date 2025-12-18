@@ -703,6 +703,7 @@ export default function QueryEditor({
                 }}
                 onPaginate={(limit, offset) => fetchPage(limit, offset)}
                 connectionId={connectionId || ''}
+                connectionType={connection?.type}
                 // Snapshot props
                 hasSnapshot={!!snapshot}
                 onSnapshot={handleSnapshot}

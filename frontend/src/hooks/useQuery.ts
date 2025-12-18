@@ -12,6 +12,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             offset,
             include_total_count,
             confirmed_unsafe,
+            database,
         }: {
             query: string;
             schema?: string;
@@ -20,6 +21,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             offset?: number;
             include_total_count?: boolean;
             confirmed_unsafe?: boolean;
+            database?: string;
         }) => {
             if (!connectionId) throw new Error("Connection ID is required");
 
@@ -27,14 +29,13 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             // Sticking to the existing pattern: POST /execute with query body
             let url = `/api/connections/${connectionId}/execute`;
 
-            // Should check if we need to use GET /query endpoint for table data browsing or POST /execute for SQL
-            // Based on previous code, GET /query was used for table browsing with limit/offset
+            const config = database ? { headers: { 'x-dbplus-database': database } } : {};
             if (limit !== undefined && offset !== undefined && schema && table) {
-                const { data } = await api.get<QueryResult>(`/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${limit}&offset=${offset}`);
+                const { data } = await api.get<QueryResult>(`/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${limit}&offset=${offset}`, config);
                 return data;
             }
 
-            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count, confirmed_unsafe });
+            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count, confirmed_unsafe }, config);
             return data;
         },
     });
@@ -167,9 +168,10 @@ export const useDeleteSavedQueryFolder = (connectionId: string | undefined) => {
 export const useUpdateQueryResult = (connectionId: string | undefined) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ schema, table, primary_key, updates }: { schema: string; table: string; primary_key: Record<string, any>; updates: Record<string, any> }) => {
+        mutationFn: async ({ schema, table, primary_key, updates, database }: { schema: string; table: string; primary_key: Record<string, any>; updates: Record<string, any>; database?: string }) => {
             if (!connectionId) throw new Error("Connection ID is required");
-            const response = await api.patch(`/api/connections/${connectionId}/query-results`, { schema, table, primary_key, updates });
+            const config = database ? { headers: { 'x-dbplus-database': database } } : {};
+            const response = await api.patch(`/api/connections/${connectionId}/query-results`, { schema, table, primary_key, updates }, config);
             return response.data;
         },
         onSuccess: () => {
@@ -181,9 +183,13 @@ export const useUpdateQueryResult = (connectionId: string | undefined) => {
 export const useDeleteQueryResult = (connectionId: string | undefined) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ schema, table, primary_key }: { schema: string; table: string; primary_key: Record<string, any> }) => {
+        mutationFn: async ({ schema, table, primary_key, database }: { schema: string; table: string; primary_key: Record<string, any>; database?: string }) => {
             if (!connectionId) throw new Error("Connection ID is required");
-            const response = await api.delete(`/api/connections/${connectionId}/query-results`, { data: { schema, table, primary_key } });
+            const config = {
+                data: { schema, table, primary_key },
+                ...(database ? { headers: { 'x-dbplus-database': database } } : {})
+            };
+            const response = await api.delete(`/api/connections/${connectionId}/query-results`, config);
             return response.data;
         },
         onSuccess: () => {

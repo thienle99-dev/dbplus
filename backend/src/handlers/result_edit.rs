@@ -73,7 +73,7 @@ pub async fn update_result_row(
         if i > 0 {
             set_str.push_str(", ");
         }
-        let val_str = escape_value(value);
+        let val_str = escape_value(value, is_couchbase);
         if is_couchbase {
             set_str.push_str(&format!("`{}` = {}", key, val_str));
         } else {
@@ -86,12 +86,12 @@ pub async fn update_result_row(
         if i > 0 {
             where_str.push_str(" AND ");
         }
-        let val_str = escape_value(value);
+        let val_str = escape_value(value, is_couchbase);
         if is_couchbase && key == "_id" {
             // Use meta().id for Couchbase document ID
             where_str.push_str(&format!("meta().id = {}", val_str));
         } else {
-            where_str.push_str(&format!("\"{}\" = {}", key, val_str));
+            where_str.push_str(&format!("{0}{1}{0} = {2}", quote, key, val_str));
         }
     }
 
@@ -128,7 +128,7 @@ pub async fn update_result_row(
     }
 }
 
-fn escape_value(v: &Value) -> String {
+fn escape_value(v: &Value, is_couchbase: bool) -> String {
     match v {
         Value::Null => "NULL".to_string(),
         Value::Bool(b) => {
@@ -139,8 +139,28 @@ fn escape_value(v: &Value) -> String {
             }
         }
         Value::Number(n) => n.to_string(),
-        Value::String(s) => format!("'{}'", s.replace("'", "''")), // Basic SQL escaping
-        Value::Array(_) | Value::Object(_) => format!("'{}'", v.to_string().replace("'", "''")),
+        Value::String(s) => {
+            if is_couchbase {
+                // For Couchbase, if it looks like JSON object or array, try parsing it
+                // to avoid storing it as a quoted string if the user intended a JSON value.
+                let trimmed = s.trim();
+                if (trimmed.starts_with('{') && trimmed.ends_with('}'))
+                    || (trimmed.starts_with('[') && trimmed.ends_with(']'))
+                {
+                    if let Ok(_parsed) = serde_json::from_str::<Value>(trimmed) {
+                        return trimmed.to_string();
+                    }
+                }
+            }
+            format!("'{}'", s.replace("'", "''"))
+        }
+        Value::Array(_) | Value::Object(_) => {
+            if is_couchbase {
+                v.to_string()
+            } else {
+                format!("'{}'", v.to_string().replace("'", "''"))
+            }
+        }
     }
 }
 
@@ -177,7 +197,7 @@ pub async fn delete_result_row(
         if i > 0 {
             where_str.push_str(" AND ");
         }
-        let val_str = escape_value(value);
+        let val_str = escape_value(value, is_couchbase);
         if is_couchbase && key == "_id" {
             where_str.push_str(&format!("meta().id = {}", val_str));
         } else {
@@ -269,7 +289,7 @@ pub async fn insert_result_row(
             values_str.push_str(", ");
         }
         columns_str.push_str(&format!("{}{}{}", quote, key, quote));
-        values_str.push_str(&escape_value(value));
+        values_str.push_str(&escape_value(value, is_couchbase));
         i += 1;
     }
 

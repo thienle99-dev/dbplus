@@ -29,6 +29,7 @@ import {
     toJsonObjects,
     toJsonRows,
 } from '../../utils/queryResultExport';
+import { useActiveDatabaseOverride } from '../../hooks/useActiveDatabaseOverride';
 
 interface QueryResultsProps {
     result: QueryResult | null;
@@ -44,11 +45,12 @@ interface QueryResultsProps {
     onSnapshot?: (result: QueryResult) => void;
     onCompareSnapshot?: () => void;
     onClearSnapshot?: () => void;
+    connectionType?: string;
 }
 
 export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
-    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot
+    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, connectionType
 }) => {
 
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
@@ -64,6 +66,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const moreActionsRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
+    const database = useActiveDatabaseOverride(connectionId);
 
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
@@ -122,11 +125,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     }
                 });
 
+                const defaultSchema = connectionType === 'couchbase' ? '_default' : 'public';
+
                 return {
-                    schema: tableMeta.schema_name || 'public',
+                    schema: tableMeta.schema_name || defaultSchema,
                     table: tableMeta.table_name!,
                     primary_key: primaryKey,
-                    updates: rowUpdates
+                    updates: rowUpdates,
+                    database,
                 };
             });
 
@@ -175,10 +181,13 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             }
         });
 
+        const defaultSchema = connectionType === 'couchbase' ? '_default' : 'public';
+
         const deleteRequest = {
-            schema: tableMeta.schema_name || 'public',
+            schema: tableMeta.schema_name || defaultSchema,
             table: tableMeta.table_name!,
             primary_key: primaryKey,
+            database,
         };
 
         try {

@@ -7,11 +7,13 @@ import { historyApi } from '../../services/historyApi';
 import { useExecuteQuery } from '../../hooks/useQuery';
 import { QueryResult } from '../../types';
 import { ApiErrorDetails, extractApiErrorDetails } from '../../utils/apiError';
+import { useActiveDatabaseOverride } from '../../hooks/useActiveDatabaseOverride';
 
 export function useQueryExecution(query: string, setQuery: (q: string) => void) {
     const { connectionId } = useParams();
     const { showToast } = useToast();
     const { formatKeywordCase, defaultLimit } = useSettingsStore();
+    const database = useActiveDatabaseOverride(connectionId);
     const executeMutation = useExecuteQuery(connectionId);
 
     const [result, setResult] = useState<QueryResult | null>(null);
@@ -46,6 +48,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     }
                     : {}),
                 confirmed_unsafe: confirmedUnsafe,
+                database,
             });
             const executionTime = Date.now() - startTime;
 
@@ -113,6 +116,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     limit,
                     offset,
                     include_total_count: true,
+                    database,
                 });
                 setResult(data);
                 const executionTime = Date.now() - startTime;
