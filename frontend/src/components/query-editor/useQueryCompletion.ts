@@ -18,6 +18,7 @@ import {
   autocompleteTheme,
 } from "../../themes/codemirror-dynamic";
 import { light as lightTheme } from "../../themes/codemirror-light";
+import { getN1QLCompletions } from "./n1qlCompletions";
 import { useSettingsStore } from "../../store/settingsStore";
 
 // Define SQL Snippets (moved from QueryEditor.tsx)
@@ -76,12 +77,14 @@ const sqlSnippets = [
 
 interface UseQueryCompletionProps {
   connectionId?: string;
-  theme?: string; // Expect a theme name string now
+  theme?: string;
+  connectionType?: string;
 }
 
 export function useQueryCompletion({
   connectionId,
   theme,
+  connectionType,
 }: UseQueryCompletionProps) {
   const [schemaCompletion, setSchemaCompletion] = useState<
     Record<string, any> | undefined
@@ -458,6 +461,14 @@ export function useQueryCompletion({
     [schemaCompletion, getTablesInQuery]
   );
 
+  const n1qlCompletionSource = useCallback(
+    async (context: CompletionContext) => {
+      if (!connectionId) return null;
+      return await getN1QLCompletions(connectionId, context);
+    },
+    [connectionId]
+  );
+
   const codeMirrorTheme = useMemo(() => {
     let effectiveTheme = theme;
     if (theme === "system") {
@@ -519,7 +530,9 @@ export function useQueryCompletion({
         ? [
           autocompletion({
             activateOnTyping: true,
-            override: [
+            override: connectionType === 'couchbase' ? [
+              n1qlCompletionSource
+            ] : [
               completeFromList(sqlSnippets),
               joinCompletionSource,
               aliasCompletionSource,
@@ -531,7 +544,9 @@ export function useQueryCompletion({
       // Language data for autocomplete (only if autoComplete is disabled, we still want schema)
       ...(!autoComplete
         ? [
-          EditorState.languageData.of(() => [
+          EditorState.languageData.of(() => connectionType === 'couchbase' ? [
+            { autocomplete: n1qlCompletionSource }
+          ] : [
             {
               autocomplete: completeFromList(sqlSnippets),
             },
@@ -559,6 +574,8 @@ export function useQueryCompletion({
       joinCompletionSource,
       aliasCompletionSource,
       columnCompletionSource,
+      n1qlCompletionSource,
+      connectionType
     ]
   );
 

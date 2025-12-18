@@ -4,7 +4,11 @@ import api from '../services/api';
 import { Database } from 'lucide-react';
 import { TableColumn, TableStructureTabProps } from '../types';
 
-export default function TableStructureTab({ schema: schemaProp, table: tableProp }: TableStructureTabProps) {
+interface ExtendedTableStructureTabProps extends TableStructureTabProps {
+    isCouchbase?: boolean;
+}
+
+export default function TableStructureTab({ schema: schemaProp, table: tableProp, isCouchbase = false }: ExtendedTableStructureTabProps) {
     const params = useParams();
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
@@ -45,7 +49,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
             <div className="p-4 border-b border-border bg-bg-1">
                 <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                     <Database size={16} />
-                    Table Structure: {schema}.{table}
+                    {isCouchbase ? 'Collection' : 'Table'} Structure: {schema}.{table}
                 </h3>
             </div>
 
@@ -54,7 +58,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
                     <thead className="bg-bg-1 sticky top-0 z-10">
                         <tr>
                             <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary w-8">#</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Column Name</th>
+                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">{isCouchbase ? 'Field Name' : 'Column Name'}</th>
                             <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Data Type</th>
                             <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Nullable</th>
                             <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Default</th>
@@ -87,7 +91,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
                     </tbody>
                 </table>
                 {columns.length === 0 && (
-                    <div className="p-8 text-center text-text-secondary">No columns found</div>
+                    <div className="p-8 text-center text-text-secondary">No {isCouchbase ? 'fields' : 'columns'} found</div>
                 )}
             </div>
         </div>

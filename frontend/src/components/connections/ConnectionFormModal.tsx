@@ -30,6 +30,8 @@ const DEFAULT_FORM_DATA = {
     ssl: false,
     environment: 'development',
     safe_mode_level: '1', // using string for select
+    tls_enabled: false,
+    tls_ca_cert: '',
 };
 
 const RECENT_SQLITE_DB_KEY = 'dbplus.recentSqliteDbs';
@@ -73,6 +75,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     user: initialValues.username || '',
                     environment: initialValues.environment || 'development',
                     safe_mode_level: String(initialValues.safe_mode_level ?? 1),
+                    tls_enabled: initialValues.tls_enabled ?? false,
+                    tls_ca_cert: initialValues.tls_ca_cert ?? '',
                 }));
             } else {
                 const nextType = initialType || DEFAULT_FORM_DATA.type;
@@ -87,6 +91,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
                     environment: DEFAULT_FORM_DATA.environment,
                     safe_mode_level: DEFAULT_FORM_DATA.safe_mode_level,
+                    tls_enabled: DEFAULT_FORM_DATA.tls_enabled,
+                    tls_ca_cert: DEFAULT_FORM_DATA.tls_ca_cert,
                 });
             }
             setRecentSqliteDbs(loadRecentSqliteDbs());
@@ -104,6 +110,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         ssl: formData.ssl ?? false,
         environment: formData.environment,
         safe_mode_level: parseInt(formData.safe_mode_level) || 1,
+        tls_enabled: formData.type === 'couchbase' ? formData.tls_enabled : undefined,
+        tls_ca_cert: formData.type === 'couchbase' ? formData.tls_ca_cert : undefined,
     });
 
     const handleChange = (field: keyof typeof formData, value: string) => {
@@ -379,14 +387,36 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     )}
                 </div>
 
-                {/* SSL Mode */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">SSL mode</label>
-                    <Button variant="secondary" className="justify-between" rightIcon={<ChevronDown size={12} />}>
-                        PREFERRED
-                    </Button>
-                </div>
+                {/* Couchbase TLS Options */}
+                {formData.type === 'couchbase' && (
+                    <div className="grid grid-cols-[120px_1fr] gap-4 items-start border-t border-border pt-4">
+                        <label className="text-sm text-text-secondary pt-2">TLS / SSL</label>
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.tls_enabled}
+                                    onChange={(e) => handleChange('tls_enabled', e.target.checked as any)}
+                                    className="rounded border-border bg-bg-1 text-accent focus:ring-accent"
+                                />
+                                <span className="text-sm text-text-primary">Enable TLS</span>
+                            </label>
+
+                            {formData.tls_enabled && (
+                                <div className="space-y-1">
+                                    <label className="text-xs text-text-secondary">CA Certificate (PEM)</label>
+                                    <textarea
+                                        value={formData.tls_ca_cert}
+                                        onChange={(e) => handleChange('tls_ca_cert', e.target.value)}
+                                        placeholder="-----BEGIN CERTIFICATE-----..."
+                                        className="w-full h-24 bg-bg-1 border border-border rounded px-3 py-2 text-sm font-mono text-text-primary focus:border-accent outline-none resize-none"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </form>
-        </Modal>
+        </Modal >
     );
 };

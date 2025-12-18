@@ -67,7 +67,7 @@ impl SQLiteDriver {
     }
 
     pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
-        let conn = SQLiteConnection::new_for_test(connection, password).await?;
+        let conn = SQLiteConnection::new(connection, password).await?;
         let pool = conn.pool().clone();
 
         Ok(Self {

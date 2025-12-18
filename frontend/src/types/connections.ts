@@ -33,4 +33,9 @@ export interface Connection {
   statusColor?: string;
   environment?: string;
   safe_mode_level?: number;
+  tls_enabled?: boolean;
+  tls_verify?: boolean;
+  tls_ca_cert?: string;
+  query_timeout?: number;
+  kv_timeout?: number;
 }

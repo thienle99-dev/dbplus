@@ -65,7 +65,8 @@ async fn main() {
         .route(
             "/api/connections/:id/query-results",
             patch(handlers::result_edit::update_result_row)
-                .delete(handlers::result_edit::delete_result_row),
+                .delete(handlers::result_edit::delete_result_row)
+                .post(handlers::result_edit::insert_result_row),
         )
         .route(
             "/api/connections",

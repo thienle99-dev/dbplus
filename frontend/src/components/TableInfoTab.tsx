@@ -31,6 +31,7 @@ import {
     usePartitions,
     useDependencies,
 } from '../hooks/useDatabase';
+import { useConnectionStore } from '../store/connectionStore';
 
 type InfoTabKey =
     | 'overview'
@@ -62,6 +63,10 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     const schema = schemaProp || params.schema;
     const table = tableProp || params.table;
     const connectionId = params.connectionId;
+    const { connections } = useConnectionStore();
+    const connection = useMemo(() => connections.find(c => c.id === connectionId), [connections, connectionId]);
+    const isCouchbase = connection?.type === 'couchbase';
+
     const { showToast } = useToast();
     const storageBaseKey = useMemo(
         () => `dbplus.tableInfo:${connectionId || 'no-conn'}:${schema || ''}.${table || ''}`,
@@ -136,17 +141,17 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     if (isLoading && !columns.length) { // Show loading only if no data at all
         return <div className="p-8 text-text-secondary">Loading table info...</div>;
     }
-    
+
     // Check for critical errors (e.g. connection lost)
     const criticalError = columnsQuery.error || indexesQuery.error || constraintsQuery.error;
     if (criticalError) {
         return (
             <div className="p-8 flex flex-col items-center justify-center text-center">
-                 <div className="text-error mb-2">Failed to load table information</div>
-                 <div className="text-text-secondary text-xs mb-4 max-w-sm">
+                <div className="text-error mb-2">Failed to load table information</div>
+                <div className="text-text-secondary text-xs mb-4 max-w-sm">
                     {extractApiErrorDetails(criticalError).message || 'Connection might be lost.'}
-                 </div>
-                 <button
+                </div>
+                <button
                     onClick={handleRefreshAll}
                     className="px-4 py-2 bg-bg-2 hover:bg-bg-3 border border-border rounded text-sm text-text-primary transition-colors"
                 >
@@ -192,17 +197,24 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
         );
     };
 
-    const tabs: Array<{ key: InfoTabKey; label: string }> = [
-        { key: 'overview', label: 'Overview' },
-        { key: 'columns', label: 'Columns' },
-        { key: 'constraints', label: 'Constraints' },
-        { key: 'indexes', label: 'Indexes' },
-        { key: 'triggers', label: 'Triggers' },
-        { key: 'stats', label: 'Stats' },
-        { key: 'partitions', label: 'Partitions' },
-        { key: 'dependencies', label: 'Dependencies' },
-        { key: 'permissions', label: 'Permissions' },
-    ];
+    const tabs: Array<{ key: InfoTabKey; label: string }> = isCouchbase
+        ? [
+            { key: 'overview', label: 'Overview' },
+            { key: 'columns', label: 'Inferred Schema' }, // Couchbase columns = inferred fields
+            { key: 'indexes', label: 'Indexes' },
+            { key: 'stats', label: 'Stats' },
+        ]
+        : [
+            { key: 'overview', label: 'Overview' },
+            { key: 'columns', label: 'Columns' },
+            { key: 'constraints', label: 'Constraints' },
+            { key: 'indexes', label: 'Indexes' },
+            { key: 'triggers', label: 'Triggers' },
+            { key: 'stats', label: 'Stats' },
+            { key: 'partitions', label: 'Partitions' },
+            { key: 'dependencies', label: 'Dependencies' },
+            { key: 'permissions', label: 'Permissions' },
+        ];
 
     return (
         <div className="flex flex-col h-full overflow-auto">
@@ -298,11 +310,10 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             key={t.key}
                             type="button"
                             onClick={() => setActiveTab(t.key)}
-                            className={`px-3 py-1.5 rounded text-xs border transition-colors ${
-                                activeTab === t.key
-                                    ? 'bg-bg-2 border-accent text-text-primary'
-                                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                            }`}
+                            className={`px-3 py-1.5 rounded text-xs border transition-colors ${activeTab === t.key
+                                ? 'bg-bg-2 border-accent text-text-primary'
+                                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                }`}
                         >
                             {t.label}
                         </button>
@@ -312,16 +323,18 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 {/* Tab Content */}
                 {activeTab === 'overview' && (
                     <div className="space-y-3 md:space-y-4">
-                        <Section id="overview.definition" title="SQL Definition">
-                            <SqlDefinitionView
-                                schema={schema || ''}
-                                table={table || ''}
-                                columns={columns}
-                                indexes={indexes}
-                                constraints={constraints}
-                                sqlDefinition={sqlDefinition}
-                            />
-                        </Section>
+                        {!isCouchbase && (
+                            <Section id="overview.definition" title="SQL Definition">
+                                <SqlDefinitionView
+                                    schema={schema || ''}
+                                    table={table || ''}
+                                    columns={columns}
+                                    indexes={indexes}
+                                    constraints={constraints}
+                                    sqlDefinition={sqlDefinition}
+                                />
+                            </Section>
+                        )}
 
                         <Section id="overview.comment" title="Comment">
                             <TableCommentEditor connectionId={connectionId} schema={schema || ''} table={table || ''} />
@@ -334,7 +347,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 )}
 
                 {activeTab === 'columns' && (
-                    <Section id="columns.table" title={`Columns (${columns.length})`}>
+                    <Section id="columns.table" title={isCouchbase ? `Inferred Fields (${columns.length})` : `Columns (${columns.length})`}>
                         {columns.length > 0 && constraints ? (
                             <ColumnsDetailsTable
                                 columns={columns}

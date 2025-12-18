@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import Select from './ui/Select';
 import { useSchemas } from '../hooks/useDatabase';
+import { useConnectionStore } from '../store/connectionStore';
 
 interface Column {
   name: string;
@@ -48,6 +49,13 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
   const { connectionId } = useParams();
   const schemasQuery = useSchemas(connectionId);
   const schemas = schemasQuery.data || [];
+
+  const { connections } = useConnectionStore();
+  const connection = useMemo(() => connections.find((c) => c.id === connectionId), [connections, connectionId]);
+  const isCouchbase = connection?.type === 'couchbase';
+
+  const schemaTerm = isCouchbase ? 'Scope' : 'Schema';
+  const tableTerm = isCouchbase ? 'Collection' : 'Table';
 
   const [selectedSchema, setSelectedSchema] = useState<string>('');
   const [tables, setTables] = useState<string[]>([]);
@@ -130,13 +138,13 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
   }, [initialState]);
 
   const schemaOptions = useMemo(
-    () => [{ value: '', label: 'Select schema...' }, ...schemas.map((s) => ({ value: s, label: s }))],
-    [schemas],
+    () => [{ value: '', label: `Select ${schemaTerm.toLowerCase()}...` }, ...schemas.map((s) => ({ value: s, label: s }))],
+    [schemas, schemaTerm],
   );
 
   const tableOptions = useMemo(
-    () => [{ value: '', label: 'Select a table...' }, ...tables.map((t) => ({ value: t, label: t }))],
-    [tables],
+    () => [{ value: '', label: `Select a ${tableTerm.toLowerCase()}...` }, ...tables.map((t) => ({ value: t, label: t }))],
+    [tables, tableTerm],
   );
 
   // Generate SQL whenever state changes
@@ -211,7 +219,7 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
     <div className="flex flex-col h-full bg-bg-1 p-4 gap-4 overflow-y-auto">
       {/* Schema Selection */}
       <div>
-        <label className="block text-xs font-medium text-text-secondary mb-1">Schema</label>
+        <label className="block text-xs font-medium text-text-secondary mb-1">{schemaTerm}</label>
         <Select
           value={selectedSchema}
           onChange={(val) => {
@@ -228,7 +236,7 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
 
       {/* Table Selection */}
       <div>
-        <label className="block text-xs font-medium text-text-secondary mb-1">Table</label>
+        <label className="block text-xs font-medium text-text-secondary mb-1">{tableTerm}</label>
         <Select
           value={selectedTable}
           onChange={(val) => {
@@ -246,7 +254,7 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
         <>
           {/* Columns */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Columns</label>
+            <label className="block text-xs font-medium text-text-secondary mb-1">{isCouchbase ? 'Fields' : 'Columns'}</label>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedColumns([])}

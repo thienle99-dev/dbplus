@@ -11,6 +11,7 @@ interface CreateDatabaseModalProps {
   onOpenChange: (open: boolean) => void;
   connectionId: string;
   onCreated?: () => void;
+  isCouchbase?: boolean;
 }
 
 const ENCODINGS = ['UTF8', 'SQL_ASCII', 'LATIN1', 'WIN1252'] as const;
@@ -20,6 +21,7 @@ export default function CreateDatabaseModal({
   onOpenChange,
   connectionId,
   onCreated,
+  isCouchbase = false,
 }: CreateDatabaseModalProps) {
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +46,8 @@ export default function CreateDatabaseModal({
     reset();
   };
 
+  const term = isCouchbase ? 'Bucket' : 'Database';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
@@ -57,12 +61,12 @@ export default function CreateDatabaseModal({
     setSubmitting(true);
     try {
       const result = await connectionApi.createDatabase(connectionId, request);
-      showToast(result.message || `Database '${trimmed}' created`, result.success ? 'success' : 'error');
+      showToast(result.message || `${term} '${trimmed}' created`, result.success ? 'success' : 'error');
       onCreated?.();
       handleClose();
     } catch (err: any) {
-      console.error('Failed to create database', err);
-      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create database', 'error');
+      console.error(`Failed to create ${term.toLowerCase()}`, err);
+      showToast(err?.response?.data?.message || err?.response?.data || `Failed to create ${term.toLowerCase()}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +79,7 @@ export default function CreateDatabaseModal({
         <Dialog.Content className="fixed left-[50%] top-[50%] z-[101] max-h-[85vh] w-[90vw] max-w-[560px] translate-x-[-50%] translate-y-[-50%] rounded-[10px] bg-bg-1 p-5 shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none data-[state=open]:animate-contentShow border border-border">
           <div className="flex justify-between items-center mb-4">
             <Dialog.Title className="text-lg font-semibold text-text-primary">
-              Create Database
+              Create {term}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button className="text-text-secondary hover:text-text-primary" aria-label="Close" onClick={handleClose}>
@@ -86,7 +90,7 @@ export default function CreateDatabaseModal({
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid gap-2">
-              <label className="text-sm font-medium text-text-secondary">Name</label>
+              <label className="text-sm font-medium text-text-secondary">{isCouchbase ? 'Bucket Name' : 'Name'}</label>
               <input
                 className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                 value={name}
@@ -94,20 +98,22 @@ export default function CreateDatabaseModal({
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="my_new_db"
+                placeholder={isCouchbase ? "my_bucket" : "my_new_db"}
                 required
               />
             </div>
 
-            <button
-              type="button"
-              className="text-xs text-text-secondary hover:text-text-primary self-start"
-              onClick={() => setShowAdvanced((v) => !v)}
-            >
-              {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
-            </button>
+            {!isCouchbase && (
+              <button
+                type="button"
+                className="text-xs text-text-secondary hover:text-text-primary self-start"
+                onClick={() => setShowAdvanced((v) => !v)}
+              >
+                {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
+              </button>
+            )}
 
-            {showAdvanced && (
+            {showAdvanced && !isCouchbase && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <label className="text-sm font-medium text-text-secondary">Owner</label>

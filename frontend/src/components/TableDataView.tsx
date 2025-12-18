@@ -1,14 +1,16 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Database, Info, Table } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useTablePage } from '../context/TablePageContext';
+import { useSelectedRow } from '../context/SelectedRowContext';
 import TableStructureTab from './TableStructureTab';
 import TableInfoTab from './TableInfoTab';
 import TableDataTab from './table-data/TableDataTab';
 import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../types';
 import { useConstraints } from '../hooks/useDatabase';
+import { useConnectionStore } from '../store/connectionStore';
 
 export default function TableDataView({ schema: schemaProp, table: tableProp }: TableDataViewProps = {}) {
   const params = useParams();
@@ -21,6 +23,13 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentPage: page, pageSize } = useTablePage();
+  const { selectedRow, setSelectedRow } = useSelectedRow();
+  const { connections } = useConnectionStore();
+  const connection = useMemo(() => connections.find((c) => c.id === connectionId), [connections, connectionId]);
+  const isCouchbase = connection?.type === 'couchbase';
+
+  const rowTerm = isCouchbase ? 'Document' : 'Row';
+
 
   const constraintsQuery = useConstraints(connectionId, schema, table);
 
@@ -35,8 +44,9 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
 
   // Guard: Return early if schema or table is not defined
+  // Guard: Return early if schema or table is not defined
   if (!schema || !table) {
-    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
+    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a {isCouchbase ? 'collection' : 'table'} to view data</div>;
   }
 
   const fetchColumns = useCallback(async () => {
@@ -134,33 +144,31 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     if (!data) return;
     setSaving(true);
     try {
-      const updates = Object.entries(edits).map(([rowIndexStr, rowEdits]) => {
+      const updatePromises = Object.entries(edits).map(async ([rowIndexStr, rowEdits]) => {
         const rowIndex = parseInt(rowIndexStr);
         const originalRow = data.rows[rowIndex];
         const pk = getRowPK(originalRow);
 
         if (!pk) {
-          throw new Error(`Row ${rowIndex} has no primary key. Cannot update.`);
+          throw new Error(`${rowTerm} ${rowIndex} has no primary key. Cannot update.`);
         }
 
-        const setClauses = Object.entries(rowEdits).map(([colIndexStr, value]) => {
+        const updates: Record<string, any> = {};
+        Object.entries(rowEdits).forEach(([colIndexStr, value]) => {
           const colIndex = parseInt(colIndexStr);
           const colName = data.columns[colIndex];
-          const escapedValue = value === null ? 'NULL' : `'${String(value).replace(/'/g, "''")}'`;
-          return `"${colName}" = ${escapedValue}`;
+          updates[colName] = value;
         });
 
-        const whereClauses = Object.entries(pk).map(([col, val]) => {
-          const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
-          return `"${col}" = ${escapedVal}`;
+        return api.patch(`/api/connections/${connectionId}/query-results`, {
+          schema,
+          table,
+          primary_key: pk,
+          updates,
         });
-
-        return `UPDATE "${schema}"."${table}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`;
       });
 
-      for (const query of updates) {
-        await api.post(`/api/connections/${connectionId}/execute`, { query });
-      }
+      await Promise.all(updatePromises);
 
       await fetchData();
       showToast('Changes saved successfully', 'success');
@@ -181,34 +189,32 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const handleSaveNewRow = useCallback(async () => {
     if (!data) return;
     setSaving(true);
+    const entries = Object.entries(newRowData);
+    if (entries.length === 0) {
+      showToast('No data to insert', 'error');
+      setSaving(false);
+      return;
+    }
     try {
-      const entries = Object.entries(newRowData);
-      if (entries.length === 0) {
-        showToast('No data to insert', 'error');
-        setSaving(false);
-        return;
-      }
-
-      const columns: string[] = [];
-      const values: string[] = [];
-
+      const row: Record<string, any> = {};
       entries.forEach(([colIndexStr, value]) => {
         const colIndex = parseInt(colIndexStr);
         const colName = data.columns[colIndex];
-        columns.push(`"${colName}"`);
-        values.push(`'${String(value).replace(/'/g, "''")}'`);
+        row[colName] = value;
       });
 
-      const query = `INSERT INTO "${schema}"."${table}" (${columns.join(', ')}) VALUES (${values.join(', ')});`;
-
-      await api.post(`/api/connections/${connectionId}/execute`, { query });
+      await api.post(`/api/connections/${connectionId}/query-results`, {
+        schema,
+        table,
+        row,
+      });
 
       await fetchData();
-      showToast('Row added successfully', 'success');
+      showToast(`${rowTerm} added successfully`, 'success');
       setIsAddingRow(false);
       setNewRowData({});
     } catch (err: unknown) {
-      showToast(`Failed to add row: ${(err as Error).message}`, 'error');
+      showToast(`Failed to add ${rowTerm.toLowerCase()}: ${(err as Error).message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -229,6 +235,33 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     setEdits({});
   }, []);
 
+  const handleDelete = useCallback(async () => {
+    if (!selectedRow) return;
+    if (!confirm(`Are you sure you want to delete this ${rowTerm.toLowerCase()}?`)) return;
+
+    const pk = getRowPK(selectedRow.rowData as unknown[]);
+
+    if (!pk) {
+      showToast(`Cannot delete ${rowTerm.toLowerCase()} without primary key`, 'error');
+      return;
+    }
+
+    try {
+      await api.delete(`/api/connections/${connectionId}/query-results`, {
+        data: {
+          schema,
+          table,
+          primary_key: pk
+        }
+      });
+      await fetchData();
+      setSelectedRow(null);
+      showToast(`${rowTerm} deleted successfully`, 'success');
+    } catch (err: unknown) {
+      showToast(`Failed to delete ${rowTerm.toLowerCase()}: ${(err as Error).message}`, 'error');
+    }
+  }, [selectedRow, getRowPK, schema, table, connectionId, fetchData, setSelectedRow, showToast, rowTerm]);
+
   if (loading && !data) {
     return <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>;
   }
@@ -238,7 +271,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   }
 
   if (!data) {
-    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
+    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a {isCouchbase ? 'collection' : 'table'} to view data</div>;
   }
 
   return (
@@ -300,10 +333,12 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
             onCancelNewRow={handleCancelNewRow}
             onStartAddingRow={handleStartAddingRow}
             onRefresh={fetchData}
+            onDelete={handleDelete}
             foreignKeys={constraintsQuery.data?.foreign_keys || []}
+            isCouchbase={isCouchbase}
           />
         ) : activeTab === 'structure' ? (
-          <TableStructureTab schema={schema} table={table} />
+          <TableStructureTab schema={schema} table={table} isCouchbase={isCouchbase} />
         ) : (
           <TableInfoTab schema={schema} table={table} />
         )}

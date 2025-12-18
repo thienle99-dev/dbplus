@@ -68,7 +68,7 @@ impl SchemaIntrospection for CouchbaseDriver {
             _ => return Err(anyhow::anyhow!("No bucket selected")),
         };
         let query = format!(
-            "SELECT * FROM `{}`.`{}`.`{}` LIMIT 1",
+            "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT 1",
             bucket, schema, table
         );
 

@@ -108,7 +108,7 @@ export default function QueryEditor({
   const [unsafeError, setUnsafeError] = useState<string | null>(null);
 
   // Custom Hooks
-  const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
+  const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme, connectionType: connection?.type });
   const { execute, fetchPage, handleFormat, result, loading, error, errorDetails, lastSql } = useQueryExecution(query, setQuery);
   const explainQuery = useExplainQuery(connectionId);
   const updateSavedQuery = useUpdateSavedQuery(connectionId);

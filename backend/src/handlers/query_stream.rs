@@ -101,12 +101,36 @@ pub async fn execute_query_stream(
                         .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
 
                     let mut rows = result.rows::<serde_json::Value>();
+                    let mut columns: Option<Vec<String>> = None;
+
                     while let Some(row) = rows
                         .try_next()
                         .await
                         .map_err(|e| anyhow::anyhow!("Failed to decode row: {}", e))?
                     {
-                        send_line(&tx, serde_json::json!({ "type": "row", "row": row })).await;
+                        let obj = row.as_object();
+                        if columns.is_none() {
+                            if let Some(o) = obj {
+                                let cols: Vec<String> = o.keys().cloned().collect();
+                                send_line(
+                                    &tx,
+                                    serde_json::json!({ "type": "columns", "columns": cols }),
+                                )
+                                .await;
+                                columns = Some(cols);
+                            }
+                        }
+
+                        if let Some(cols) = &columns {
+                            if let Some(o) = obj {
+                                let vals: Vec<serde_json::Value> = cols
+                                    .iter()
+                                    .map(|k| o.get(k).cloned().unwrap_or(serde_json::Value::Null))
+                                    .collect();
+                                send_line(&tx, serde_json::json!({ "type": "row", "row": vals }))
+                                    .await;
+                            }
+                        }
                     }
                     Ok(())
                 }

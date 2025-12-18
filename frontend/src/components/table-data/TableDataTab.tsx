@@ -5,7 +5,7 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 // import api from '../../services/api';
 // import { useToast } from '../../context/ToastContext';
@@ -34,7 +34,9 @@ interface TableDataTabProps {
   onCancelNewRow: () => void;
   onStartAddingRow: () => void;
   onRefresh: () => void;
+  onDelete?: () => Promise<void>;
   foreignKeys?: SchemaForeignKey[];
+  isCouchbase?: boolean;
 }
 
 export default function TableDataTab({
@@ -56,11 +58,15 @@ export default function TableDataTab({
   onCancelNewRow,
   onStartAddingRow,
   onRefresh,
+  onDelete,
   foreignKeys = [],
+  isCouchbase = false,
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   // const { showToast } = useToast();
   const { selectedRow, setSelectedRow } = useSelectedRow();
+
+  const rowTerm = isCouchbase ? 'Document' : 'Row';
 
   const columns = useMemo(() => {
     if (!data?.columns) return [];
@@ -85,9 +91,8 @@ export default function TableDataTab({
           if (isComplex) {
             return (
               <textarea
-                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${
-                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
-                }`}
+                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                  }`}
                 value={displayValue}
                 onChange={(e) => onEdit(rowIndex, index, e.target.value)}
                 placeholder={val === null ? 'NULL' : ''}
@@ -103,15 +108,14 @@ export default function TableDataTab({
           return (
             <div className="flex items-center gap-1 group/cell w-full">
               <input
-                className={`flex-1 min-w-0 bg-transparent border-none outline-none p-0 text-sm ${
-                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
-                }`}
+                className={`flex-1 min-w-0 bg-transparent border-none outline-none p-0 text-sm ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                  }`}
                 value={displayValue}
                 onChange={(e) => onEdit(rowIndex, index, e.target.value)}
                 placeholder={val === null ? 'NULL' : ''}
               />
               {fk && connectionId && val !== null && (
-                <Link 
+                <Link
                   to={`/workspace/${connectionId}/tables/${fk.target_schema}/${fk.target_table}`}
                   className="opacity-0 group-hover/cell:opacity-100 transition-opacity p-0.5 rounded hover:bg-bg-2 text-accent"
                   title={`Go to ${fk.target_schema}.${fk.target_table}`}
@@ -150,7 +154,7 @@ export default function TableDataTab({
                 disabled={saving}
                 icon={<Save size={14} />}
               >
-                Save Row
+                Save {rowTerm}
               </Button>
               <Button
                 variant="ghost"
@@ -184,6 +188,18 @@ export default function TableDataTab({
                 Discard
               </Button>
             </div>
+
+          )}
+          {selectedRow && !hasChanges && !isAddingRow && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              icon={<Trash2 size={14} />}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50/10"
+            >
+              Delete {rowTerm}
+            </Button>
           )}
         </div>
         <div className="flex gap-2 items-center">
@@ -194,7 +210,7 @@ export default function TableDataTab({
             icon={<Plus size={14} />}
             className="h-8"
           >
-            Row
+            {rowTerm}
           </Button>
           <div className="h-4 w-px bg-border/40 mx-1 self-center" />
           <Button
@@ -228,9 +244,9 @@ export default function TableDataTab({
             </button>
           </div>
         </div>
-      </div>
+      </div >
 
-      <div 
+      <div
         className="flex-1 overflow-auto rounded-xl border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
         style={{ scrollbarGutter: 'stable' }}
       >
@@ -258,9 +274,8 @@ export default function TableDataTab({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`absolute right-0 top-3 bottom-3 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${
-                        header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
-                      }`}
+                      className={`absolute right-0 top-3 bottom-3 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
+                        }`}
                     />
                   </th>
                 ))}
@@ -296,15 +311,15 @@ export default function TableDataTab({
             {tableInstance.getRowModel().rows.map((row, i) => {
               const isModified = edits[row.index] !== undefined;
               const isSelected = selectedRow?.rowIndex === row.index;
-              
+
               return (
                 <tr
                   key={row.id}
                   className={`
                     group transition-colors duration-150 ease-out cursor-pointer
-                    ${isSelected 
-                       ? 'bg-accent/10' 
-                       : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${i % 2 === 1 ? 'bg-gray-500/5' : ''}`
+                    ${isSelected
+                      ? 'bg-accent/10'
+                      : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${i % 2 === 1 ? 'bg-gray-500/5' : ''}`
                     }
                   `}
                   onClick={() => {
@@ -336,7 +351,7 @@ export default function TableDataTab({
         </table>
         {data.rows.length === 0 && (
           <div className="flex flex-col items-center justify-center p-12 text-text-secondary/60">
-            <p>No rows found</p>
+            <p>No {rowTerm.toLowerCase()}s found</p>
           </div>
         )}
       </div>
