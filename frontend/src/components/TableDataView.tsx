@@ -31,7 +31,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, da
   const rowTerm = isCouchbase ? 'Document' : 'Row';
 
 
-  const constraintsQuery = useConstraints(connectionId, schema, table);
+  const constraintsQuery = useConstraints(connectionId, schema, table, database);
 
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);

@@ -39,7 +39,7 @@ interface ObjectFolderProps {
 }
 
 
-function ObjectFolder({ title, icon, children, count, defaultOpen, className }: ObjectFolderProps) {
+function ObjectFolder({ title, icon, children, count, defaultOpen, className, onContextMenu }: ObjectFolderProps & { onContextMenu?: (e: React.MouseEvent) => void }) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
 
   if (count === 0 && !defaultOpen) {
@@ -47,7 +47,10 @@ function ObjectFolder({ title, icon, children, count, defaultOpen, className }: 
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Collapsible.Trigger className={`flex items-center gap-1.5 w-full pl-6 pr-3 py-1 hover:bg-bg-2 text-xs text-text-secondary select-none transition-colors group ${className}`}>
+      <Collapsible.Trigger
+        className={`flex items-center gap-1.5 w-full pl-6 pr-3 py-1 hover:bg-bg-2 text-xs text-text-secondary select-none transition-colors group ${className}`}
+        onContextMenu={onContextMenu}
+      >
         <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={10} className="text-text-tertiary group-hover:text-text-secondary" />
         </div>
@@ -243,7 +246,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           <>
             {/* Tables Folder */}
             {filteredTables.length > 0 && (
-              <ObjectFolder title={isCouchbase ? 'Collections' : 'Tables'} icon={<Table size={12} className="text-blue-400" />} count={filteredTables.length} defaultOpen={true}>
+              <ObjectFolder
+                title={isCouchbase ? 'Collections' : 'Tables'}
+                icon={<Table size={12} className="text-blue-400" />}
+                count={filteredTables.length}
+                defaultOpen={true}
+                onContextMenu={handleSchemaContextMenu}
+              >
                 {filteredTables.map(table => {
                   const tablePinned = isPinned(schemaName, table.name);
                   return (
@@ -428,7 +437,27 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
 function BucketNode({ bucketName, connectionId, searchTerm, connectionType, showPinnedOnly }: { bucketName: string, connectionId: string, searchTerm?: string, connectionType?: string, showPinnedOnly?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
+  const [createScopeOpen, setCreateScopeOpen] = useState(false);
   const { data: scopes = [], isLoading } = useSchemas(connectionId, bucketName);
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
+  const handleCreateScope = async (name: string) => {
+    try {
+      await connectionApi.createSchema(connectionId, name);
+      showToast(`Scope '${name}' created`, 'success');
+      await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId, bucketName] });
+      if (!isOpen) setIsOpen(true);
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'Failed to create scope', 'error');
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
 
   // Auto-expand if search term matches bucket or child
   const hasMatchingChild = scopes.some(s => searchTerm && s.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -444,6 +473,7 @@ function BucketNode({ bucketName, connectionId, searchTerm, connectionType, show
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <Collapsible.Trigger
         className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors"
+        onContextMenu={handleContextMenu}
       >
         <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={12} className="text-text-secondary" />
@@ -451,6 +481,26 @@ function BucketNode({ bucketName, connectionId, searchTerm, connectionType, show
         <Database size={14} className="text-red-500" />
         <span className="truncate font-medium flex-1 text-left">{bucketName}</span>
       </Collapsible.Trigger>
+
+      {contextMenu && (
+        <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu(null)}>
+          <ContextMenuItem
+            icon={<Plus size={14} />}
+            onClick={() => {
+              setCreateScopeOpen(true);
+              setContextMenu(null);
+            }}
+          >
+            Create Scope...
+          </ContextMenuItem>
+        </ContextMenu>
+      )}
+
+      <CreateSchemaModal
+        isOpen={createScopeOpen}
+        onClose={() => setCreateScopeOpen(false)}
+        onSubmit={handleCreateScope}
+      />
 
       <Collapsible.Content className="ml-2 border-l border-border/50 overflow-hidden pl-1">
         {isLoading ? (

@@ -528,13 +528,17 @@ pub async fn drop_column(
 
 #[derive(Deserialize)]
 pub struct ViewParams {
-    schema: String,
+    pub schema: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct ViewDefinitionParams {
-    schema: String,
-    view: String,
+    pub schema: String,
+    pub view: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 pub async fn list_views(
@@ -550,9 +554,12 @@ pub async fn list_views(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(
-            &headers,
-        ));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.list_views(connection_id, &params.schema).await {
         Ok(views) => {
             tracing::info!("[API] GET /views - SUCCESS - found {} views", views.len());
@@ -579,9 +586,12 @@ pub async fn get_view_definition(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(
-            &headers,
-        ));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service
         .get_view_definition(connection_id, &params.schema, &params.view)
         .await
@@ -599,13 +609,17 @@ pub async fn get_view_definition(
 
 #[derive(Deserialize)]
 pub struct FunctionParams {
-    schema: String,
+    pub schema: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct FunctionDefinitionParams {
-    schema: String,
-    function: String,
+    pub schema: String,
+    pub function: String,
+    #[serde(default)]
+    pub database: Option<String>,
 }
 
 pub async fn list_functions(
@@ -621,9 +635,12 @@ pub async fn list_functions(
     );
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(
-            &headers,
-        ));
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.list_functions(connection_id, &params.schema).await {
         Ok(functions) => {
             tracing::info!(
