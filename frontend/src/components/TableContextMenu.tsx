@@ -23,7 +23,9 @@ import { useToast } from '../context/ToastContext';
 interface TableContextMenuProps {
     table: string;
     schema: string;
+    database?: string;
     connectionId: string;
+    connectionType?: string;
     position: { x: number; y: number };
     onClose: () => void;
     isPinned: boolean;
@@ -49,7 +51,9 @@ interface MenuItem {
 export default function TableContextMenu({
     table,
     schema,
+    database,
     connectionId,
+    connectionType,
     position,
     onClose,
     isPinned,
@@ -68,12 +72,24 @@ export default function TableContextMenu({
     const navigate = useNavigate();
     const { showToast } = useToast();
 
-    let tabContext;
+    let tabContext: any;
     try {
         tabContext = useTabContext();
     } catch {
         tabContext = null;
     }
+
+    const isCouchbase = connectionType === 'couchbase';
+
+    const getFullIdentifier = () => {
+        if (isCouchbase) {
+            if (database) {
+                return `\`${database}\`.\`${schema}\`.\`${table}\``;
+            }
+            return `\`${schema}\`.\`${table}\``;
+        }
+        return `"${schema}"."${table}"`;
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -133,10 +149,22 @@ export default function TableContextMenu({
 
     const handleOpenInNewTab = () => {
         if (tabContext) {
-            tabContext.openTableInTab(schema, table, true);
+            tabContext.openTableInTab(schema, table, true, database);
         } else {
             navigate(`/workspace/${connectionId}/query`, {
-                state: { openTable: { schema, table } },
+                state: { openTable: { schema, table, database } },
+            });
+        }
+        onClose();
+    };
+
+    const handleQueryCollection = () => {
+        const sql = `SELECT * FROM ${getFullIdentifier()} LIMIT 1000;`;
+        if (tabContext?.openQueryInTab) {
+            tabContext.openQueryInTab(sql, `Query ${table}`);
+        } else {
+            navigate(`/workspace/${connectionId}/query`, {
+                state: { sql },
             });
         }
         onClose();
@@ -144,11 +172,11 @@ export default function TableContextMenu({
 
     const handleOpenStructure = () => {
         if (tabContext) {
-            const tabId = tabContext.openTableInTab(schema, table, false);
+            const tabId = tabContext.openTableInTab(schema, table, false, database);
             window.dispatchEvent(new CustomEvent('switch-table-tab', { detail: { tabId, tab: 'structure' } }));
         } else {
             navigate(`/workspace/${connectionId}/query`, {
-                state: { openTable: { schema, table, tab: 'structure' } },
+                state: { openTable: { schema, table, database, tab: 'structure' } },
             });
         }
         onClose();
@@ -156,11 +184,11 @@ export default function TableContextMenu({
 
     const handleItemOverview = () => {
         if (tabContext) {
-            const tabId = tabContext.openTableInTab(schema, table, false);
+            const tabId = tabContext.openTableInTab(schema, table, false, database);
             window.dispatchEvent(new CustomEvent('switch-table-tab', { detail: { tabId, tab: 'info' } }));
         } else {
             navigate(`/workspace/${connectionId}/query`, {
-                state: { openTable: { schema, table, tab: 'info' } },
+                state: { openTable: { schema, table, database, tab: 'info' } },
             });
         }
         onClose();
@@ -174,7 +202,7 @@ export default function TableContextMenu({
 
     const handleCopyCreateTable = async () => {
         try {
-            const createStatement = `-- CREATE TABLE statement for ${schema}.${table}\n-- (Full DDL generation requires backend support)`;
+            const createStatement = `-- CREATE TABLE statement for ${getFullIdentifier()}\n-- (Full DDL generation requires backend support)`;
             navigator.clipboard.writeText(createStatement);
             showToast('CREATE TABLE statement copied', 'success');
         } catch (error) {
@@ -184,55 +212,60 @@ export default function TableContextMenu({
     };
 
     const handleCopySelect = () => {
-        const selectStatement = `SELECT * FROM "${schema}"."${table}";`;
+        const selectStatement = `SELECT * FROM ${getFullIdentifier()};`;
         navigator.clipboard.writeText(selectStatement);
         showToast('SELECT statement copied', 'success');
         onClose();
     };
 
     const handleCopyInsert = () => {
-        const insertStatement = `INSERT INTO "${schema}"."${table}" (column1, column2) VALUES (value1, value2);`;
+        const insertStatement = `INSERT INTO ${getFullIdentifier()} (column1, column2) VALUES (value1, value2);`;
         navigator.clipboard.writeText(insertStatement);
         showToast('INSERT template copied', 'success');
         onClose();
     };
 
     const handleCopyUpdate = () => {
-        const updateStatement = `UPDATE "${schema}"."${table}" SET column1 = value1 WHERE condition;`;
+        const updateStatement = `UPDATE ${getFullIdentifier()} SET column1 = value1 WHERE condition;`;
         navigator.clipboard.writeText(updateStatement);
         showToast('UPDATE template copied', 'success');
         onClose();
     };
 
     const handleCopyDelete = () => {
-        const deleteStatement = `DELETE FROM "${schema}"."${table}" WHERE condition;`;
+        const deleteStatement = `DELETE FROM ${getFullIdentifier()} WHERE condition;`;
         navigator.clipboard.writeText(deleteStatement);
         showToast('DELETE template copied', 'success');
         onClose();
     };
 
     const handleTruncate = () => {
-        if (confirm(`Are you sure you want to truncate table "${table}"? This will delete all rows and cannot be undone.`)) {
+        if (confirm(`Are you sure you want to truncate ${isCouchbase ? 'collection' : 'table'} "${table}"? This will delete all rows and cannot be undone.`)) {
             showToast('Truncate functionality coming soon', 'info');
         }
         onClose();
     };
 
     const handleDelete = () => {
-        const userInput = prompt(`To delete table "${table}", please type the table name to confirm:`);
+        const userInput = prompt(`To delete ${isCouchbase ? 'collection' : 'table'} "${table}", please type the name to confirm:`);
         if (userInput === table) {
             onDrop();
         } else if (userInput !== null) {
-            showToast('Table name did not match', 'error');
+            showToast('Name did not match', 'error');
         }
         onClose();
     };
 
     const menuItems: MenuItem[] = [
         {
-            label: 'Open in new tab',
+            label: `Open ${isCouchbase ? 'collection' : 'table'}`,
             icon: <ExternalLink size={14} />,
             onClick: handleOpenInNewTab,
+        },
+        {
+            label: `Query ${isCouchbase ? 'collection' : 'table'}`,
+            icon: <Code size={14} />,
+            onClick: handleQueryCollection,
         },
         {
             label: 'Open structure',

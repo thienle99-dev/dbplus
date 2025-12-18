@@ -298,7 +298,9 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         <TableContextMenu
           table={contextMenu.table}
           schema={schemaName}
+          database={database}
           connectionId={connectionId}
+          connectionType={connectionType}
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           isPinned={isPinned(schemaName, contextMenu.table)}

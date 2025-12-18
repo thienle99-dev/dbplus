@@ -43,10 +43,58 @@ impl QueryDriver for CouchbaseDriver {
         // Scan up to 50 rows to infer column names from all keys present
         let mut column_set = std::collections::BTreeSet::new();
         let sample_size = rows.len().min(50);
+
+        // Check for "nested select *" pattern: all rows have exactly one identical key which is an object
+        let mut first_key: Option<String> = None;
+        let mut is_nested_select_star = !rows.is_empty();
+
         for i in 0..sample_size {
             if let Some(obj) = rows[i].as_object() {
-                for key in obj.keys() {
-                    column_set.insert(key.clone());
+                if obj.len() == 1 {
+                    let key = obj.keys().next().unwrap().clone();
+                    if let Some(ref fk) = first_key {
+                        if fk != &key {
+                            is_nested_select_star = false;
+                        }
+                    } else {
+                        first_key = Some(key);
+                    }
+                    if !obj.values().next().unwrap().is_object() {
+                        is_nested_select_star = false;
+                    }
+                } else {
+                    is_nested_select_star = false;
+                }
+            } else {
+                is_nested_select_star = false;
+            }
+            if !is_nested_select_star {
+                break;
+            }
+        }
+
+        let unwrapped_key = if is_nested_select_star {
+            first_key
+        } else {
+            None
+        };
+
+        if let Some(ref uk) = unwrapped_key {
+            for i in 0..sample_size {
+                if let Some(obj) = rows[i].as_object() {
+                    if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {
+                        for key in inner.keys() {
+                            column_set.insert(key.clone());
+                        }
+                    }
+                }
+            }
+        } else {
+            for i in 0..sample_size {
+                if let Some(obj) = rows[i].as_object() {
+                    for key in obj.keys() {
+                        column_set.insert(key.clone());
+                    }
                 }
             }
         }
@@ -65,8 +113,20 @@ impl QueryDriver for CouchbaseDriver {
         for row in rows {
             if let Some(obj) = row.as_object() {
                 let mut row_values = Vec::new();
-                for col in &columns {
-                    row_values.push(obj.get(col).cloned().unwrap_or(Value::Null));
+                if let Some(ref uk) = unwrapped_key {
+                    if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {
+                        for col in &columns {
+                            row_values.push(inner.get(col).cloned().unwrap_or(Value::Null));
+                        }
+                    } else {
+                        for col in &columns {
+                            row_values.push(Value::Null);
+                        }
+                    }
+                } else {
+                    for col in &columns {
+                        row_values.push(obj.get(col).cloned().unwrap_or(Value::Null));
+                    }
                 }
                 grid_rows.push(row_values);
             } else {

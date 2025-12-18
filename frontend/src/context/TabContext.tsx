@@ -2,6 +2,7 @@ import { createContext, useContext, ReactNode } from 'react';
 
 interface TabContextType {
     openTableInTab: (schema: string, table: string, newTab?: boolean, database?: string) => void;
+    openQueryInTab: (sql: string, title?: string) => void;
 }
 
 const TabContext = createContext<TabContextType | null>(null);
@@ -17,11 +18,12 @@ export const useTabContext = () => {
 interface TabProviderProps {
     children: ReactNode;
     openTableInTab: (schema: string, table: string, newTab?: boolean, database?: string) => void;
+    openQueryInTab: (sql: string, title?: string) => void;
 }
 
-export function TabProvider({ children, openTableInTab }: TabProviderProps) {
+export function TabProvider({ children, openTableInTab, openQueryInTab }: TabProviderProps) {
     return (
-        <TabContext.Provider value={{ openTableInTab }}>
+        <TabContext.Provider value={{ openTableInTab, openQueryInTab }}>
             {children}
         </TabContext.Provider>
     );

@@ -466,9 +466,22 @@ export default function QueryTabs() {
     };
   }, []);
 
+  const openQueryInTab = useCallback((sql: string, title?: string) => {
+    const newId = Math.random().toString(36).substr(2, 9);
+    const queryTab: Tab = {
+      id: newId,
+      title: title || `Query ${tabs.length + 1}`,
+      type: 'query',
+      sql,
+      isDraft: true,
+      lastModified: Date.now(),
+    };
+    setTabs(prev => [...prev, queryTab]);
+    setActiveTabId(newId);
+  }, [tabs.length]);
 
   return (
-    <TabProvider openTableInTab={openTableInTab}>
+    <TabProvider openTableInTab={openTableInTab} openQueryInTab={openQueryInTab}>
       <div className="flex h-full bg-bg-0">
         {/* Left Sidebar for Saved Queries / History */}
         <div className={clsx(
