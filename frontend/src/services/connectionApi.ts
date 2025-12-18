@@ -104,6 +104,14 @@ export const connectionApi = {
         await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`);
     },
 
+    createTable: async (id: string, schema: string, name: string): Promise<void> => {
+        await api.post(`/api/connections/${id}/tables`, { schema, name });
+    },
+
+    dropTable: async (id: string, schema: string, name: string): Promise<void> => {
+        await api.delete(`/api/connections/${id}/tables/${encodeURIComponent(name)}`, { params: { schema } });
+    },
+
     getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {
         const response = await api.get(`/api/connections/${id}/schema-metadata`, { params: { schema } });
         return response.data;

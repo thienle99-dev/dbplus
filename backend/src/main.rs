@@ -126,7 +126,11 @@ async fn main() {
         )
         .route(
             "/api/connections/:id/tables",
-            get(handlers::schema::list_tables),
+            get(handlers::schema::list_tables).post(handlers::schema::create_table),
+        )
+        .route(
+            "/api/connections/:id/tables/:name",
+            delete(handlers::schema::drop_table),
         )
         .route(
             "/api/connections/:id/columns",

@@ -32,6 +32,7 @@ interface TableContextMenuProps {
     onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
     onExportDdl: () => void;
     onOpenMockData: () => void;
+    onDrop: () => void;
 }
 
 interface MenuItem {
@@ -57,6 +58,7 @@ export default function TableContextMenu({
     onOpenImport,
     onExportDdl,
     onOpenMockData,
+    onDrop,
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
@@ -219,7 +221,7 @@ export default function TableContextMenu({
     const handleDelete = () => {
         const userInput = prompt(`To delete table "${table}", please type the table name to confirm:`);
         if (userInput === table) {
-            showToast('Delete functionality coming soon', 'info');
+            onDrop();
         } else if (userInput !== null) {
             showToast('Table name did not match', 'error');
         }

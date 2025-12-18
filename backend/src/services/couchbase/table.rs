@@ -209,6 +209,49 @@ impl TableOperations for CouchbaseDriver {
             partitions: vec![],
         })
     }
+
+    async fn create_table(&self, schema: &str, name: &str) -> Result<()> {
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
+        let bucket = self.cluster.bucket(bucket_name);
+        let mgr = bucket.collections();
+
+        use couchbase::management::collections::collection_settings::CreateCollectionSettings;
+        // create_collection(scope, collection, settings, options)
+        mgr.create_collection(schema, name, CreateCollectionSettings::default(), None)
+            .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to create collection '{}.{}.{}': {}",
+                    bucket_name,
+                    schema,
+                    name,
+                    e
+                )
+            })
+    }
+
+    async fn drop_table(&self, schema: &str, name: &str) -> Result<()> {
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
+        let bucket = self.cluster.bucket(bucket_name);
+        let mgr = bucket.collections();
+
+        // drop_collection(scope, collection, options)
+        mgr.drop_collection(schema, name, None).await.map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to drop collection '{}.{}.{}': {}",
+                bucket_name,
+                schema,
+                name,
+                e
+            )
+        })
+    }
 }
 
 #[async_trait]

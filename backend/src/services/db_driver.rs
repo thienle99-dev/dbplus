@@ -328,6 +328,8 @@ pub trait DatabaseDriver:
     ) -> Result<FunctionInfo>;
     async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>>;
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value>;
+    async fn create_table(&self, schema: &str, name: &str) -> Result<()>;
+    async fn drop_table(&self, schema: &str, name: &str) -> Result<()>;
 }
 
 #[async_trait]
@@ -501,6 +503,14 @@ where
 
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {
         <Self as QueryDriver>::explain(self, query, analyze).await
+    }
+
+    async fn create_table(&self, schema: &str, name: &str) -> Result<()> {
+        <Self as TableOperations>::create_table(self, schema, name).await
+    }
+
+    async fn drop_table(&self, schema: &str, name: &str) -> Result<()> {
+        <Self as TableOperations>::drop_table(self, schema, name).await
     }
 }
 

@@ -16,6 +16,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useConnectionStore } from '../store/connectionStore';
 import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import SqliteToolsModal from './sqlite/SqliteToolsModal';
+import CreateCollectionModal from './CreateCollectionModal';
 import CreateSchemaModal from './CreateSchemaModal';
 import ObjectDefinitionModal from './ObjectDefinitionModal';
 import ExportDdlModal from '../features/export-ddl/ExportDdlModal';
@@ -27,6 +28,7 @@ import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomC
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
 
+
 interface ObjectFolderProps {
   title: string;
   icon: React.ReactNode;
@@ -35,6 +37,7 @@ interface ObjectFolderProps {
   defaultOpen?: boolean;
   className?: string;
 }
+
 
 function ObjectFolder({ title, icon, children, count, defaultOpen, className }: ObjectFolderProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
@@ -93,6 +96,33 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   // ER Diagram Modal State
   const [erDiagramOpen, setErDiagramOpen] = useState(false);
   const [mockDataModal, setMockDataModal] = useState<{ open: boolean; table: string }>({ open: false, table: '' });
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
+
+  const handleCreateCollection = async (name: string) => {
+    try {
+      await connectionApi.createTable(connectionId, schemaName, name);
+      // isCouchbase is defined later, so I'll move this function or use connectionType check
+      const isCouch = connectionType === 'couchbase';
+      showToast(`${isCouch ? 'Collection' : 'Table'} '${name}' created`, 'success');
+      await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+      if (!isOpen) setIsOpen(true);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create collection', 'error');
+    }
+  };
+
+  const handleDropTable = async (tableName: string) => {
+    try {
+      await connectionApi.dropTable(connectionId, schemaName, tableName);
+      showToast(`${connectionType === 'couchbase' ? 'Collection' : 'Table'} '${tableName}' dropped`, 'success');
+      await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+      setContextMenu(null);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to drop table', 'error');
+    }
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -283,6 +313,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             setMockDataModal({ open: true, table: contextMenu.table });
             setContextMenu(null);
           }}
+          onDrop={() => handleDropTable(contextMenu.table)}
         />
       )}
 
@@ -311,7 +342,15 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             View ER Diagram
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem icon={<Plus size={14} />}>Create {isCouchbase ? 'Collection' : 'Table'}...</ContextMenuItem>
+          <ContextMenuItem
+            icon={<Plus size={14} />}
+            onClick={() => {
+              setCreateCollectionOpen(true);
+              setSchemaContextMenu(null);
+            }}
+          >
+            Create {isCouchbase ? 'Collection' : 'Table'}...
+          </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem icon={<Trash2 size={14} />} onClick={() => {
             setSchemaContextMenu(null);
@@ -358,7 +397,6 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         connectionId={connectionId}
         schema={schemaName}
         onTableClick={(tableName, tableSchema) => {
-          // Navigate to table
           navigate(`/connections/${connectionId}/table/${tableSchema}/${tableName}`);
         }}
       />
@@ -372,6 +410,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           table={mockDataModal.table}
         />
       )}
+
+      <CreateCollectionModal
+        isOpen={createCollectionOpen}
+        onClose={() => setCreateCollectionOpen(false)}
+        onSubmit={handleCreateCollection}
+        schemaName={schemaName}
+        isCouchbase={isCouchbase}
+      />
 
 
     </Collapsible.Root>
