@@ -10,12 +10,9 @@ impl DatabaseManagementDriver for CouchbaseDriver {
         // Minimal default settings for a bucket: 100MB RAM, Couchbase type
         // Note: The specific API for BucketSettings in the Rust SDK beta
         // might require using a builder or struct. Trying a common pattern:
-        use couchbase::management::bucket::{BucketSettings, BucketType};
+        use couchbase::management::buckets::bucket_settings::BucketSettings;
 
-        let settings = BucketSettings::default()
-            .name(name.to_string())
-            .ram_quota_mb(100)
-            .bucket_type(BucketType::Couchbase);
+        let settings = BucketSettings::new(name.to_string()).ram_quota_mb(100);
 
         mgr.create_bucket(settings, None)
             .await
