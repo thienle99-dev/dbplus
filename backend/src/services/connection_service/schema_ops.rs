@@ -65,6 +65,9 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support schemas via this API"
             )),
+            "couchbase" => Err(anyhow::anyhow!(
+                "Couchbase does not support creating scopes via this API yet"
+            )),
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_schema"
             )),
@@ -90,6 +93,9 @@ impl ConnectionService {
             }
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support schemas via this API"
+            )),
+            "couchbase" => Err(anyhow::anyhow!(
+                "Couchbase does not support dropping scopes via this API yet"
             )),
             _ => Err(anyhow::anyhow!("Unsupported database type for drop_schema")),
         }

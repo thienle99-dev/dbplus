@@ -31,7 +31,9 @@ pub async fn execute_query_stream(
 ) -> impl IntoResponse {
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     let (connection, password) = match service.get_connection_with_password(connection_id).await {
         Ok(v) => v,
@@ -52,7 +54,9 @@ pub async fn execute_query_stream(
 
     tokio::spawn(async move {
         async fn send_line(tx: &mpsc::Sender<Bytes>, value: serde_json::Value) {
-            let mut buf = serde_json::to_vec(&value).unwrap_or_else(|_| b"{\"type\":\"error\",\"message\":\"serialization failed\"}".to_vec());
+            let mut buf = serde_json::to_vec(&value).unwrap_or_else(|_| {
+                b"{\"type\":\"error\",\"message\":\"serialization failed\"}".to_vec()
+            });
             buf.push(b'\n');
             let _ = tx.send(Bytes::from(buf)).await;
         }
@@ -81,6 +85,30 @@ pub async fn execute_query_stream(
                     query
                         .stream_ndjson(&sql, limit, offset, include_total_count, tx.clone())
                         .await
+                }
+                .await
+            }
+            "couchbase" => {
+                use crate::services::couchbase::CouchbaseDriver;
+                use futures_util::TryStreamExt;
+
+                async {
+                    let driver = CouchbaseDriver::new(&connection, &password).await?;
+                    let mut result = driver
+                        .cluster
+                        .query(&sql, None)
+                        .await
+                        .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
+
+                    let mut rows = result.rows::<serde_json::Value>();
+                    while let Some(row) = rows
+                        .try_next()
+                        .await
+                        .map_err(|e| anyhow::anyhow!("Failed to decode row: {}", e))?
+                    {
+                        send_line(&tx, serde_json::json!({ "type": "row", "row": row })).await;
+                    }
+                    Ok(())
                 }
                 .await
             }

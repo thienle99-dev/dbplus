@@ -39,6 +39,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 driver.list_functions(schema).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                driver.list_functions(schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -78,6 +84,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.get_function_definition(schema, function_name).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 driver.get_function_definition(schema, function_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),

@@ -10,7 +10,7 @@ use super::connection::CouchbaseDriver;
 #[async_trait]
 impl QueryDriver for CouchbaseDriver {
     async fn execute(&self, query: &str) -> Result<u64> {
-        let result = self
+        let _result = self
             .cluster
             .query(query, None)
             .await

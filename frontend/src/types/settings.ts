@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     theme: 'system',
     language: 'en',
     autoSave: true,
-    autoSaveInterval: 30000, // 30 seconds
+    autoSaveInterval: 10000, // 10 seconds
 
     fontSize: 14,
     fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',

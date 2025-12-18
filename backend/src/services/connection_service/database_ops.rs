@@ -34,6 +34,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_databases(&driver).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_databases(&driver).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -61,6 +67,9 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support creating separate databases via this API"
             )),
+            "couchbase" => Err(anyhow::anyhow!(
+                "Couchbase does not support creating buckets via this API yet"
+            )),
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_database"
             )),
@@ -85,6 +94,9 @@ impl ConnectionService {
             }
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support dropping databases via this API"
+            )),
+            "couchbase" => Err(anyhow::anyhow!(
+                "Couchbase does not support dropping buckets via this API yet"
             )),
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for drop_database"

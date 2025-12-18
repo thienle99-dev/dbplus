@@ -39,6 +39,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_tables(&driver, schema).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_tables(&driver, schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -78,6 +84,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_columns(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
             }
             _ => Ok(vec![]),
@@ -121,6 +133,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
             }
             _ => Ok(crate::services::db_driver::QueryResult {
@@ -174,6 +192,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::add_column(&driver, schema, table, column).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::add_column(&driver, schema, table, column).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -215,6 +239,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -259,6 +289,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::drop_column(&driver, schema, table, column_name).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -298,6 +334,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableConstraints {
@@ -343,6 +385,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableStatistics {
@@ -393,6 +441,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -434,6 +488,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -473,6 +533,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_comment(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableComment { comment: None }),
@@ -517,6 +583,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -558,6 +630,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -595,6 +673,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::list_roles(&driver).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::list_roles(&driver).await
             }
             _ => Ok(vec![]),
@@ -673,6 +757,20 @@ impl ConnectionService {
                 )
                 .await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::set_table_permissions(
+                    &driver,
+                    schema,
+                    table,
+                    grantee,
+                    privileges,
+                    grant_option,
+                )
+                .await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -712,6 +810,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableDependencies {
@@ -757,6 +861,12 @@ impl ConnectionService {
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::StorageBloatInfo {
@@ -809,6 +919,12 @@ impl ConnectionService {
             "mysql" | "mariadb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::get_partitions(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
                 DatabaseDriver::get_partitions(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::PartitionInfo {

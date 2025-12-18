@@ -109,7 +109,7 @@ impl SchemaIntrospection for CouchbaseDriver {
         Ok(vec![])
     }
 
-    async fn search_objects(&self, query: &str) -> Result<Vec<SearchResult>> {
+    async fn search_objects(&self, _query: &str) -> Result<Vec<SearchResult>> {
         // Simple search in buckets/scopes/collections
         // Note: Full hierarchy search is expensive, maybe just match bucket names or basic collections if we cache them.
         // For now, this is a placeholder.
