@@ -26,24 +26,28 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_schemas(&self) -> Result<Vec<String>> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = match self.bucket_name.as_deref() {
+            Some(name) if !name.is_empty() => name,
+            _ => return Ok(vec![]),
+        };
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        let scopes = mgr
-            .get_all_scopes(None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
+        let scopes = mgr.get_all_scopes(None).await.map_err(|e| {
+            anyhow::anyhow!("Failed to list scopes for bucket '{}': {}", bucket_name, e)
+        })?;
         Ok(scopes.iter().map(|s| s.name().to_string()).collect())
     }
 
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = match self.bucket_name.as_deref() {
+            Some(name) if !name.is_empty() => name,
+            _ => return Ok(vec![]),
+        };
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        let scopes = mgr
-            .get_all_scopes(None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to list collections: {}", e))?;
+        let scopes = mgr.get_all_scopes(None).await.map_err(|e| {
+            anyhow::anyhow!("Failed to list scopes for bucket '{}': {}", bucket_name, e)
+        })?;
 
         let mut tables = Vec::new();
         if let Some(scope) = scopes.iter().find(|s| s.name() == schema) {
@@ -59,7 +63,10 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket = match self.bucket_name.as_deref() {
+            Some(name) if !name.is_empty() => name,
+            _ => return Err(anyhow::anyhow!("No bucket selected")),
+        };
         let query = format!(
             "SELECT * FROM `{}`.`{}`.`{}` LIMIT 1",
             bucket, schema, table

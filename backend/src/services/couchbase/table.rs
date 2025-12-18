@@ -15,7 +15,10 @@ impl TableOperations for CouchbaseDriver {
         limit: i64,
         offset: i64,
     ) -> Result<QueryResult> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
         // N1QL syntax for collection: keyspace is bucket.scope.collection
         let query = format!(
             "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT {} OFFSET {}",
@@ -33,7 +36,10 @@ impl TableOperations for CouchbaseDriver {
     }
 
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
         let query = format!(
             "SELECT count(*) as count FROM `{}`.`{}`.`{}`",
             bucket, schema, table
@@ -59,7 +65,10 @@ impl TableOperations for CouchbaseDriver {
     }
 
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
         // Query system:indexes
         // Filter by bucket, scope (schema), collection (table)
         // Need to pass raw N1QL query to extract index info
