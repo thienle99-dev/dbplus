@@ -86,9 +86,16 @@ export default function QueryEditor({
   const handleDatabaseChange = useCallback((db: string) => {
     if (activeTabId) {
       updateTabDatabase(activeTabId, db);
-      showToast(`Switched to database: ${db}`, 'success');
+      showToast(`Switched to ${connection?.type === 'couchbase' ? 'bucket' : 'database'}: ${db}`, 'success');
     }
-  }, [activeTabId, updateTabDatabase, showToast]);
+  }, [activeTabId, updateTabDatabase, showToast, connection?.type]);
+
+  // Auto-select first bucket for Couchbase if none selected
+  useEffect(() => {
+    if (connection?.type === 'couchbase' && databases && databases.length > 0 && !selectedDatabase) {
+      handleDatabaseChange(databases[0]);
+    }
+  }, [connection?.type, databases, selectedDatabase, handleDatabaseChange]);
 
 
   // State
@@ -212,6 +219,11 @@ export default function QueryEditor({
 
     if (!sqlToRun.trim() || !connectionId) return;
 
+    if (connection?.type === 'couchbase' && !selectedDatabase) {
+      showToast('Please select a bucket first', 'error');
+      return;
+    }
+
     // setExplaining(true); // Handled by mutation status
     // setExplainError(null);
     setExecutionPlan(null);
@@ -220,7 +232,8 @@ export default function QueryEditor({
     try {
       const data = await explainQuery.mutateAsync({
         query: sqlToRun,
-        analyze: shouldUseAnalyze
+        analyze: shouldUseAnalyze,
+        database: selectedDatabase
       });
       setExecutionPlan(data.plan);
     } catch (err: any) {
@@ -263,6 +276,11 @@ export default function QueryEditor({
 
     if (!sqlToRun.trim()) return;
 
+    if (connection?.type === 'couchbase' && !selectedDatabase) {
+      showToast('Please select a bucket first', 'error');
+      return;
+    }
+
     if (isSelection) {
       showToast('Executing selected query...', 'info');
     }
@@ -276,7 +294,7 @@ export default function QueryEditor({
 
     setBottomTab('results'); // Switch to results on execute
     execute(sqlToRun);
-  }, [query, isDangerousQuery, execute, editorView, showToast]);
+  }, [query, isDangerousQuery, execute, editorView, showToast, connection?.type, selectedDatabase]);
 
   const handleExecuteSelection = useCallback(() => {
     if (!editorView) return false;
@@ -289,6 +307,11 @@ export default function QueryEditor({
 
     const sqlToRun = editorView.state.sliceDoc(selection.from, selection.to);
     if (sqlToRun.trim()) {
+      if (connection?.type === 'couchbase' && !selectedDatabase) {
+        showToast('Please select a bucket first', 'error');
+        return false;
+      }
+
       if (isDangerousQuery(sqlToRun)) {
         setPendingQuery(sqlToRun);
         setUnsafeError(null);
@@ -300,7 +323,7 @@ export default function QueryEditor({
       return true;
     }
     return false;
-  }, [editorView, execute, showToast, isDangerousQuery]);
+  }, [editorView, execute, showToast, isDangerousQuery, connection?.type, selectedDatabase]);
 
   const handleQuickSave = async () => {
     if (!savedQueryId || !connectionId) return;

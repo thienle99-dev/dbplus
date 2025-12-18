@@ -148,13 +148,13 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 )}
 
                 {databases && databases.length > 0 && onDatabaseChange && (
-                    <div className="w-32 flex-shrink-0">
+                    <div className={`w-36 flex-shrink-0 transition-all ${!selectedDatabase ? 'ring-2 ring-error/30 rounded-lg animate-pulse' : ''}`}>
                         <Select
                             value={selectedDatabase || ''}
                             onChange={onDatabaseChange}
                             options={databases.map(db => ({ value: db, label: db }))}
                             size="sm"
-                            placeholder="Database"
+                            placeholder="Select Bucket"
                             searchable
                         />
                     </div>

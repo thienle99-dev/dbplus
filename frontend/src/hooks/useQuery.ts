@@ -43,10 +43,10 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
 
 export const useExplainQuery = (connectionId: string | undefined) => {
     return useMutation({
-        mutationFn: async ({ query, analyze }: { query: string; analyze?: boolean }) => {
+        mutationFn: async ({ query, analyze, database }: { query: string; analyze?: boolean; database?: string }) => {
             if (!connectionId) throw new Error("Connection ID is required");
-            // Backend expects 'sql' for explain endpoint based on QueryEditor code
-            const { data } = await api.post<any>(`/api/connections/${connectionId}/explain`, { sql: query, analyze });
+            const config = database ? { headers: { 'x-dbplus-database': database } } : {};
+            const { data } = await api.post<any>(`/api/connections/${connectionId}/explain`, { sql: query, analyze }, config);
             return data;
         }
     });
