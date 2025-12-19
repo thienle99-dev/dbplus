@@ -139,4 +139,14 @@ export const connectionApi = {
         const response = await api.get(`/api/connections/${id}/version`);
         return response.data.version;
     },
+    getAutocompleteSuggestions: async (data: {
+        sql: string;
+        cursor_pos: number;
+        connection_id: string;
+        database_name: string;
+        active_schema?: string;
+    }): Promise<Array<{ label: string, insert_text: string, kind: string, detail?: string, score: number }>> => {
+        const response = await api.post('/api/autocomplete', data);
+        return response.data;
+    },
 };

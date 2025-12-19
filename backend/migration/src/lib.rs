@@ -10,6 +10,7 @@ mod m20251216_000007_create_user_settings;
 mod m20251216_000008_add_snippet_variables;
 mod m20251217_000009_add_connection_advanced_fields;
 mod m20251217_000010_add_connection_environment;
+mod m20251219_000011_schema_cache;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251216_000008_add_snippet_variables::Migration),
             Box::new(m20251217_000009_add_connection_advanced_fields::Migration),
             Box::new(m20251217_000010_add_connection_environment::Migration),
+            Box::new(m20251219_000011_schema_cache::Migration),
         ]
     }
 }

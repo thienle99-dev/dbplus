@@ -1,3 +1,4 @@
+pub mod autocomplete;
 pub mod clickhouse;
 pub mod connection_service;
 pub mod couchbase;

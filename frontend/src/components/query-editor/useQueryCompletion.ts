@@ -19,6 +19,7 @@ import {
 } from "../../themes/codemirror-dynamic";
 import { light as lightTheme } from "../../themes/codemirror-light";
 import { useSettingsStore } from "../../store/settingsStore";
+import { useConnectionStore } from "../../store/connectionStore";
 
 // Define SQL Snippets (moved from QueryEditor.tsx)
 const sqlSnippets = [
@@ -86,6 +87,9 @@ export function useQueryCompletion({
   const [schemaCompletion, setSchemaCompletion] = useState<
     Record<string, any> | undefined
   >(undefined);
+  const { connections } = useConnectionStore();
+  const activeConnection = connections.find(c => c.id === connectionId);
+  
   const [foreignKeys, setForeignKeys] = useState<Record<string, ForeignKey[]>>(
     {}
   );
@@ -475,6 +479,49 @@ export function useQueryCompletion({
     [getColumnsForTable, getTablesInQuery]
   );
 
+  const backendCompletionSource = useCallback(
+    async (context: CompletionContext) => {
+      if (!connectionId || !activeConnection) return null;
+
+      const word = context.matchBefore(/[\w\.]*/);
+      if (!word && !context.explicit) return null;
+
+      try {
+        const sqlText = context.state.doc.toString();
+        const suggestions = await connectionApi.getAutocompleteSuggestions({
+          sql: sqlText,
+          cursor_pos: context.pos,
+          connection_id: connectionId,
+          database_name: activeConnection.database,
+          active_schema: "public",
+        });
+
+        if (suggestions.length === 0) return null;
+
+        // If after a dot, we need to handle the replacement correctly
+        const isAfterDot = word?.text.endsWith('.');
+        const from = isAfterDot ? context.pos : (word?.from ?? context.pos);
+
+        return {
+          from,
+          options: suggestions.map((s) => ({
+            label: s.label,
+            displayLabel: s.label,
+            apply: s.insert_text,
+            type: s.kind === "column" ? "property" : s.kind === "table" ? "class" : s.kind === "function" ? "function" : "keyword",
+            detail: s.detail,
+            boost: s.score / 10,
+          })),
+          filter: false, // We let the backend handle filtering if needed, or let CM filter results
+        };
+      } catch (e) {
+        console.warn("Backend autocomplete failed", e);
+        return null;
+      }
+    },
+    [connectionId, activeConnection]
+  );
+
   const columnCompletionSource = useCallback(
     (context: CompletionContext) => {
       // Trigger only if we are matched a word (not dot)
@@ -622,6 +669,7 @@ export function useQueryCompletion({
             activateOnTyping: true,
             override: [
               completeFromList(sqlSnippets),
+              backendCompletionSource,
               fromCompletionSource,
               joinCompletionSource,
               aliasCompletionSource,

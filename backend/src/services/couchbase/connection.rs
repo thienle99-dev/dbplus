@@ -2,7 +2,7 @@ use crate::models::entities::connection as ConnectionModel;
 use crate::services::driver::ConnectionDriver;
 use anyhow::Result;
 use async_trait::async_trait;
-use couchbase::authenticator::{Authenticator, PasswordAuthenticator};
+use couchbase::authenticator::PasswordAuthenticator;
 use couchbase::cluster::Cluster;
 use couchbase::options::cluster_options::ClusterOptions;
 

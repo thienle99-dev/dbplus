@@ -5,5 +5,6 @@ pub mod query_history;
 pub mod query_snippet;
 pub mod saved_query;
 pub mod saved_query_folder;
+pub mod schema_cache;
 pub mod sqlite_attached_db;
 pub mod user_settings;

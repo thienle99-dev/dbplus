@@ -58,6 +58,10 @@ async fn main() {
     let app = Router::new()
         .route("/", get(handler))
         .route("/api/queries/cancel", post(handlers::query::cancel_query))
+        .route(
+            "/api/autocomplete",
+            post(handlers::autocomplete::get_suggestions),
+        )
         // Snippet routes
         .route(
             "/api/snippets",

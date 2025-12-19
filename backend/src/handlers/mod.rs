@@ -1,3 +1,4 @@
+pub mod autocomplete;
 pub mod connection;
 pub mod dashboard;
 pub mod data_tools;
