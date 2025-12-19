@@ -5,10 +5,38 @@ export function generateSqlDefinition(
   table: string,
   columns: TableColumn[],
   indexes: IndexInfo[],
-  constraints: TableConstraints | null
+  constraints: TableConstraints | null,
+  isCouchbase: boolean = false
 ): string {
-  if (!schema || !table || columns.length === 0) {
+  if (!schema || !table) {
     return '-- No table definition available';
+  }
+
+  if (isCouchbase) {
+    let n1ql = `-- N1QL Definition for ${schema}.${table}\n`;
+    n1ql += `-- Note: Couchbase collections are schemaless. Field names are inferred.\n\n`;
+    n1ql += `CREATE COLLECTION \`${schema}\`.\`${table}\`;\n\n`;
+
+    // Add Primary Index
+    const hasPrimary = indexes.some(idx => idx.is_primary);
+    if (hasPrimary) {
+      n1ql += `CREATE PRIMARY INDEX ON \`${schema}\`.\`${table}\`;\n`;
+    }
+
+    // Add other indexes
+    const secondaryIndexes = indexes.filter(idx => !idx.is_primary);
+    secondaryIndexes.forEach(idx => {
+      const cols = idx.columns.map(c => `\`${c}\``).join(', ');
+      n1ql += `CREATE INDEX \`${idx.name}\` ON \`${schema}\`.\`${table}\`(${cols})`;
+      if (idx.condition) n1ql += ` WHERE ${idx.condition}`;
+      n1ql += `;\n`;
+    });
+
+    return n1ql;
+  }
+
+  if (columns.length === 0) {
+    return '-- No columns found for table definition';
   }
 
   let sql = `-- Table Definition for ${schema}.${table}\n`;

@@ -87,7 +87,7 @@ pub async fn update_result_row(
             where_str.push_str(" AND ");
         }
         let val_str = escape_value(value, is_couchbase);
-        if is_couchbase && key == "_id" {
+        if is_couchbase && (key == "_id" || key == "id") {
             // Use meta().id for Couchbase document ID
             where_str.push_str(&format!("meta().id = {}", val_str));
         } else {
@@ -198,7 +198,7 @@ pub async fn delete_result_row(
             where_str.push_str(" AND ");
         }
         let val_str = escape_value(value, is_couchbase);
-        if is_couchbase && key == "_id" {
+        if is_couchbase && (key == "_id" || key == "id") {
             where_str.push_str(&format!("meta().id = {}", val_str));
         } else {
             where_str.push_str(&format!("{0}{1}{0} = {2}", quote, key, val_str));
@@ -271,10 +271,10 @@ pub async fn insert_result_row(
     let mut row_data = payload.row;
     let mut explicit_id = None;
 
-    // Extract _id if present for Couchbase
+    // Extract id or _id if present for Couchbase
     if is_couchbase {
-        if let Some(id_val) = row_data.remove("_id") {
-            // If user provided _id, we use it as Key.
+        if let Some(id_val) = row_data.remove("id").or_else(|| row_data.remove("_id")) {
+            // If user provided id/_id, we use it as Key.
             // But we need to check if it's string.
             if let Value::String(s) = id_val {
                 explicit_id = Some(s);

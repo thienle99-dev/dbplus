@@ -21,7 +21,7 @@ impl TableOperations for CouchbaseDriver {
             .ok_or_else(|| anyhow::anyhow!("No bucket selected"))?;
         // N1QL syntax for collection: keyspace is bucket.scope.collection
         let query = format!(
-            "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT {} OFFSET {}",
+            "SELECT meta().id as id, t.* FROM `{}`.`{}`.`{}` t LIMIT {} OFFSET {}",
             bucket, schema, table, limit, offset
         );
         QueryDriver::execute_query(self, &query).await

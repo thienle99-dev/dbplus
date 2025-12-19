@@ -68,7 +68,7 @@ impl SchemaIntrospection for CouchbaseDriver {
             _ => return Err(anyhow::anyhow!("No bucket selected")),
         };
         let query = format!(
-            "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT 1",
+            "SELECT meta().id as id, t.* FROM `{}`.`{}`.`{}` t LIMIT 1",
             bucket, schema, table
         );
 
@@ -82,7 +82,7 @@ impl SchemaIntrospection for CouchbaseDriver {
                 name: col_name.clone(),
                 data_type: "JSON".to_string(), // Generic type for now
                 is_nullable: true,
-                is_primary_key: col_name == "id" || col_name == "_id",
+                is_primary_key: col_name == "id",
                 default_value: None,
             });
         }
@@ -90,7 +90,7 @@ impl SchemaIntrospection for CouchbaseDriver {
         if columns.is_empty() {
             // Fallback for empty collections
             columns.push(TableColumn {
-                name: "_id".to_string(),
+                name: "id".to_string(),
                 data_type: "STRING".to_string(),
                 is_nullable: false,
                 is_primary_key: true,
@@ -108,8 +108,18 @@ impl SchemaIntrospection for CouchbaseDriver {
         Ok(columns)
     }
 
-    async fn get_schema_metadata(&self, _schema: &str) -> Result<Vec<TableMetadata>> {
-        Ok(vec![])
+    async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>> {
+        let tables = self.get_tables(schema).await?;
+        let mut metadata = Vec::new();
+        for t in tables {
+            // Since Couchbase is schemaless, we don't have a fixed list of columns.
+            // We'll provide _id and id as standard fields for all collections.
+            metadata.push(TableMetadata {
+                table_name: t.name,
+                columns: vec!["id".to_string()],
+            });
+        }
+        Ok(metadata)
     }
 
     async fn get_extensions(&self) -> Result<Vec<ExtensionInfo>> {

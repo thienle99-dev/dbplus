@@ -62,6 +62,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const [showErrorDetails, setShowErrorDetails] = useState(false);
     const [renderAllRows, setRenderAllRows] = useState(false);
     const [pageSize, setPageSize] = useState(1000);
+    const [saving, setSaving] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const moreActionsRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -71,9 +72,6 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
     const deleteQueryResult = useDeleteQueryResult(connectionId);
-
-    // Check if saving is in progress
-    const saving = updateQueryResult.isPending || deleteQueryResult.isPending;
 
     const hasEditableColumns = useMemo(() => {
         return result?.column_metadata?.some(c => c.is_editable) ?? false;
@@ -95,21 +93,29 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
     const handleSaveChanges = async () => {
         if (!result || !result.column_metadata) return;
+        setSaving(true);
 
         try {
             // Group edits by table if needed, but for now typical query is single table
             // We need to find the PK for the edited rows.
 
-            // Assume single table context for current row
-            const tableMeta = result.column_metadata.find(c => c.table_name);
-            if (!tableMeta || !tableMeta.table_name) {
-                console.error("No table metadata found, cannot save");
+            // Fallback: If no PK marked, check for _id or id columns
+            let pkCols = result.column_metadata.filter(c => c.is_primary_key);
+            if (pkCols.length === 0) {
+                const idCol = result.column_metadata.find(c => c.column_name === '_id' || c.column_name === 'id');
+                if (idCol) {
+                    pkCols = [idCol];
+                }
+            }
+
+            if (pkCols.length === 0) {
+                showToast("Cannot save changes: No primary key found for this table.", "error");
                 return;
             }
 
-            const pkCols = result.column_metadata.filter(c => c.is_primary_key);
-            if (pkCols.length === 0) {
-                alert("Cannot save changes: No primary key found for this table.");
+            const tableMeta = result.column_metadata.find(c => c.table_name);
+            if (!tableMeta || !tableMeta.table_name) {
+                showToast("No table metadata found, cannot save. Please ensure your query includes the table name clearly.", "error");
                 return;
             }
 
@@ -140,11 +146,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             await Promise.all(updates.map(u => updateQueryResult.mutateAsync(u)));
 
             setEdits({});
+            showToast("Changes saved successfully", "success");
             if (onRefresh) onRefresh();
 
         } catch (err) {
             console.error("Failed to save changes", err);
-            alert("Failed to save changes. Check console for details.");
+            showToast(`Failed to save changes: ${(err as Error).message}`, "error");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -162,13 +171,20 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         const tableMeta = result.column_metadata.find(c => c.table_name);
         if (!tableMeta || !tableMeta.table_name) {
-            console.error("No table metadata found, cannot delete");
+            showToast("No table metadata found, cannot delete", "error");
             return;
         }
 
-        const pkCols = result.column_metadata.filter(c => c.is_primary_key);
+        let pkCols = result.column_metadata.filter(c => c.is_primary_key);
         if (pkCols.length === 0) {
-            alert("Cannot delete row: No primary key found for this table.");
+            const idCol = result.column_metadata.find(c => c.column_name === '_id' || c.column_name === 'id');
+            if (idCol) {
+                pkCols = [idCol];
+            }
+        }
+
+        if (pkCols.length === 0) {
+            showToast("Cannot delete row: No primary key found for this table.", "error");
             return;
         }
 
@@ -192,10 +208,11 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         try {
             await deleteQueryResult.mutateAsync(deleteRequest);
+            showToast("Row deleted successfully", "success");
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to delete row", err);
-            alert("Failed to delete row. Check console for details.");
+            showToast(`Failed to delete row: ${(err as Error).message}`, "error");
         }
     };
 
@@ -362,16 +379,19 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
                     return helper.accessor((row) => row[index], {
                         id: col,
-                        header: () => (
-                            <div className="flex items-center gap-1">
-                                {metadata?.is_primary_key && (
-                                    <span title="Primary Key" className="text-yellow-500">
-                                        🔑
-                                    </span>
-                                )}
-                                {col}
-                            </div>
-                        ),
+                        header: () => {
+                            const isPk = metadata?.is_primary_key || (connectionType === 'couchbase' && col === 'id');
+                            return (
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    {isPk && (
+                                        <span title="Primary Key" className="text-yellow-500 flex-shrink-0 drop-shadow-sm">
+                                            🔑
+                                        </span>
+                                    )}
+                                    <span className="truncate">{col}</span>
+                                </div>
+                            );
+                        },
                         cell: (info) => {
                             const rowIndex = info.row.index;
                             const rowEdits = editsRef.current[rowIndex];

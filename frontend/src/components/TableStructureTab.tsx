@@ -84,8 +84,8 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
                                     {col.default_value || <span className="italic">NULL</span>}
                                 </td>
                                 <td className="border-b border-r border-border px-4 py-2">
-                                    {col.is_primary_key && (
-                                        <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">PK</span>
+                                    {(col.is_primary_key || (isCouchbase && col.name === 'id')) && (
+                                        <span title="Primary Key" className="text-yellow-500 text-sm">🔑</span>
                                     )}
                                 </td>
                             </tr>

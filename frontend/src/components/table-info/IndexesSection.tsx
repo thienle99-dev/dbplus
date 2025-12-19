@@ -12,6 +12,7 @@ interface IndexesSectionProps {
   columns: TableColumn[];
   indexes: IndexInfo[];
   onIndexCreated: (newIndex: IndexInfo) => void;
+  isCouchbase?: boolean;
 }
 
 export default function IndexesSection({
@@ -20,6 +21,7 @@ export default function IndexesSection({
   columns,
   indexes,
   onIndexCreated,
+  isCouchbase = false,
 }: IndexesSectionProps) {
   const params = useParams();
   const connectionId = params.connectionId;
@@ -58,29 +60,38 @@ export default function IndexesSection({
 
     setCreating(true);
     try {
-      const indexType = newIndexUnique ? 'UNIQUE INDEX' : 'INDEX';
-      const columnList = newIndexColumns.map(col => `"${col}"`).join(', ');
+      let sql = '';
+      if (isCouchbase) {
+        const columnList = newIndexColumns.map(col => `\`${col}\``).join(', ');
+        sql = `CREATE INDEX \`${newIndexName}\` ON \`${schema}\`.\`${table}\`(${columnList})`;
+        if (newIndexCondition.trim()) {
+          sql += ` WHERE ${newIndexCondition}`;
+        }
+      } else {
+        const indexType = newIndexUnique ? 'UNIQUE INDEX' : 'INDEX';
+        const columnList = newIndexColumns.map(col => `"${col}"`).join(', ');
 
-      let sql = `CREATE ${indexType} "${newIndexName}" ON "${schema}"."${table}"`;
+        sql = `CREATE ${indexType} "${newIndexName}" ON "${schema}"."${table}"`;
 
-      if (newIndexAlgorithm && newIndexAlgorithm !== 'BTREE') {
-        sql += ` USING ${newIndexAlgorithm}`;
-      }
+        if (newIndexAlgorithm && newIndexAlgorithm !== 'BTREE') {
+          sql += ` USING ${newIndexAlgorithm}`;
+        }
 
-      sql += ` (${columnList})`;
+        sql += ` (${columnList})`;
 
-      if (newIndexInclude.length > 0) {
-        const includeList = newIndexInclude.map(col => `"${col}"`).join(', ');
-        sql += ` INCLUDE (${includeList})`;
-      }
+        if (newIndexInclude.length > 0) {
+          const includeList = newIndexInclude.map(col => `"${col}"`).join(', ');
+          sql += ` INCLUDE (${includeList})`;
+        }
 
-      if (newIndexCondition.trim()) {
-        sql += ` WHERE ${newIndexCondition}`;
+        if (newIndexCondition.trim()) {
+          sql += ` WHERE ${newIndexCondition}`;
+        }
       }
 
       sql += ';';
 
-      if (newIndexComment.trim()) {
+      if (!isCouchbase && newIndexComment.trim()) {
         sql += `\nCOMMENT ON INDEX "${newIndexName}" IS '${newIndexComment.replace(/'/g, "''")}';`;
       }
 
@@ -215,63 +226,67 @@ export default function IndexesSection({
               />
             </div>
 
-            <div>
-              <label className="text-[10px] md:text-xs text-text-secondary block mb-1">Index Algorithm</label>
-              <Select
-                value={newIndexAlgorithm}
-                onChange={(val) => setNewIndexAlgorithm(val)}
-                options={[
-                  { value: 'BTREE', label: 'BTREE' },
-                  { value: 'HASH', label: 'HASH' },
-                  { value: 'GIST', label: 'GIST' },
-                  { value: 'GIN', label: 'GIN' },
-                  { value: 'BRIN', label: 'BRIN' },
-                ]}
-                size="sm"
-              />
-            </div>
+            {!isCouchbase && (
+              <div>
+                <label className="text-[10px] md:text-xs text-text-secondary block mb-1">Index Algorithm</label>
+                <Select
+                  value={newIndexAlgorithm}
+                  onChange={(val) => setNewIndexAlgorithm(val)}
+                  options={[
+                    { value: 'BTREE', label: 'BTREE' },
+                    { value: 'HASH', label: 'HASH' },
+                    { value: 'GIST', label: 'GIST' },
+                    { value: 'GIN', label: 'GIN' },
+                    { value: 'BRIN', label: 'BRIN' },
+                  ]}
+                  size="sm"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
-                Include Columns <span className="text-text-secondary/50">(optional, for covering index)</span>
-              </label>
+            {!isCouchbase && (
+              <div>
+                <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
+                  Include Columns <span className="text-text-secondary/50">(optional, for covering index)</span>
+                </label>
 
-              <div className="min-h-[28px] bg-bg-0 border border-border rounded px-2 py-1 mb-1 flex flex-wrap gap-1 items-center">
-                {newIndexInclude.length > 0 ? (
-                  newIndexInclude.map((colName) => (
-                    <span
-                      key={colName}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] bg-blue-500/20 text-blue-400 rounded"
-                    >
-                      {colName}
-                      <button
-                        onClick={() => setNewIndexInclude(newIndexInclude.filter(c => c !== colName))}
-                        className="hover:bg-white/20 rounded"
+                <div className="min-h-[28px] bg-bg-0 border border-border rounded px-2 py-1 mb-1 flex flex-wrap gap-1 items-center">
+                  {newIndexInclude.length > 0 ? (
+                    newIndexInclude.map((colName) => (
+                      <span
+                        key={colName}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] md:text-[10px] bg-blue-500/20 text-blue-400 rounded"
                       >
-                        <X size={10} />
-                      </button>
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-text-secondary/50 text-[10px]">No include columns</span>
-                )}
-              </div>
+                        {colName}
+                        <button
+                          onClick={() => setNewIndexInclude(newIndexInclude.filter(c => c !== colName))}
+                          className="hover:bg-white/20 rounded"
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-text-secondary/50 text-[10px]">No include columns</span>
+                  )}
+                </div>
 
-              <div className="flex flex-wrap gap-1">
-                {columns
-                  .filter(col => !newIndexColumns.includes(col.name) && !newIndexInclude.includes(col.name))
-                  .map((col) => (
-                    <button
-                      key={col.name}
-                      type="button"
-                      onClick={() => setNewIndexInclude([...newIndexInclude, col.name])}
-                      className="px-2 py-0.5 text-[9px] md:text-[10px] bg-bg-2 text-text-secondary hover:bg-blue-500/10 hover:text-blue-400 rounded transition-colors border border-border"
-                    >
-                      + {col.name}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-1">
+                  {columns
+                    .filter(col => !newIndexColumns.includes(col.name) && !newIndexInclude.includes(col.name))
+                    .map((col) => (
+                      <button
+                        key={col.name}
+                        type="button"
+                        onClick={() => setNewIndexInclude([...newIndexInclude, col.name])}
+                        className="px-2 py-0.5 text-[9px] md:text-[10px] bg-bg-2 text-text-secondary hover:bg-blue-500/10 hover:text-blue-400 rounded transition-colors border border-border"
+                      >
+                        + {col.name}
+                      </button>
+                    ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
@@ -286,31 +301,35 @@ export default function IndexesSection({
               />
             </div>
 
-            <div>
-              <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
-                Comment <span className="text-text-secondary/50">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={newIndexComment}
-                onChange={(e) => setNewIndexComment(e.target.value)}
-                placeholder="Index description..."
-                className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary focus:border-accent focus:outline-none"
-              />
-            </div>
+            {!isCouchbase && (
+              <div>
+                <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
+                  Comment <span className="text-text-secondary/50">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={newIndexComment}
+                  onChange={(e) => setNewIndexComment(e.target.value)}
+                  placeholder="Index description..."
+                  className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary focus:border-accent focus:outline-none"
+                />
+              </div>
+            )}
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="unique-index"
-                checked={newIndexUnique}
-                onChange={(e) => setNewIndexUnique(e.target.checked)}
-                className="w-3 h-3"
-              />
-              <label htmlFor="unique-index" className="text-[10px] md:text-xs text-text-secondary">
-                Unique Index
-              </label>
-            </div>
+            {!isCouchbase && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="unique-index"
+                  checked={newIndexUnique}
+                  onChange={(e) => setNewIndexUnique(e.target.checked)}
+                  className="w-3 h-3"
+                />
+                <label htmlFor="unique-index" className="text-[10px] md:text-xs text-text-secondary">
+                  Unique Index
+                </label>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <button

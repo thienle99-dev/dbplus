@@ -120,7 +120,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp, dat
     const partitionsError = partitionsQuery.error ? extractApiErrorDetails(partitionsQuery.error).message : null;
     const dependenciesError = dependenciesQuery.error ? extractApiErrorDetails(dependenciesQuery.error).message : null;
 
-    const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints);
+    const sqlDefinition = generateSqlDefinition(schema || '', table || '', columns, indexes, constraints, isCouchbase);
 
     const handleIndexCreated = () => {
         indexesQuery.refetch();
@@ -383,6 +383,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp, dat
                             columns={columns}
                             indexes={indexes}
                             onIndexCreated={handleIndexCreated}
+                            isCouchbase={isCouchbase}
                         />
                     </Section>
                 )}

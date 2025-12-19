@@ -37,7 +37,10 @@ interface VisualQueryBuilderProps {
   };
 }
 
-function quoteIdent(s: string) {
+function quoteIdent(s: string, isCouchbase: boolean = false) {
+  if (isCouchbase) {
+    return `\`${s.replace(/`/g, '``')}\``;
+  }
   return `"${s.replace(/"/g, '""')}"`;
 }
 
@@ -155,24 +158,24 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
     }
 
     const cols =
-      selectedColumns.length > 0 ? selectedColumns.map((c) => quoteIdent(c)).join(', ') : '*';
+      selectedColumns.length > 0 ? selectedColumns.map((c) => quoteIdent(c, isCouchbase)).join(', ') : '*';
     const from =
       selectedSchema === 'main'
-        ? `${quoteIdent(selectedTable)}`
-        : `${quoteIdent(selectedSchema)}.${quoteIdent(selectedTable)}`;
+        ? `${quoteIdent(selectedTable, isCouchbase)}`
+        : `${quoteIdent(selectedSchema, isCouchbase)}.${quoteIdent(selectedTable, isCouchbase)}`;
     let sql = `SELECT ${cols} FROM ${from}`;
 
     if (filters.length > 0) {
       const whereClause = filters.map(f => {
         const asNum = Number(f.value);
         const val = !Number.isNaN(asNum) && f.value.trim() !== '' ? String(asNum) : quoteSqlString(f.value);
-        return `${quoteIdent(f.column)} ${f.operator} ${val}`;
+        return `${quoteIdent(f.column, isCouchbase)} ${f.operator} ${val}`;
       }).join(' AND ');
       sql += ` WHERE ${whereClause}`;
     }
 
     if (sorts.length > 0) {
-      const orderBy = sorts.map(s => `${quoteIdent(s.column)} ${s.direction}`).join(', ');
+      const orderBy = sorts.map(s => `${quoteIdent(s.column, isCouchbase)} ${s.direction}`).join(', ');
       sql += ` ORDER BY ${orderBy}`;
     }
 

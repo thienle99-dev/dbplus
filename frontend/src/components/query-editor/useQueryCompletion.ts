@@ -531,7 +531,10 @@ export function useQueryCompletion({
           autocompletion({
             activateOnTyping: true,
             override: connectionType === 'couchbase' ? [
-              n1qlCompletionSource
+              n1qlCompletionSource,
+              completeFromList(sqlSnippets),
+              aliasCompletionSource,
+              columnCompletionSource,
             ] : [
               completeFromList(sqlSnippets),
               joinCompletionSource,
@@ -545,7 +548,10 @@ export function useQueryCompletion({
       ...(!autoComplete
         ? [
           EditorState.languageData.of(() => connectionType === 'couchbase' ? [
-            { autocomplete: n1qlCompletionSource }
+            { autocomplete: n1qlCompletionSource },
+            { autocomplete: completeFromList(sqlSnippets) },
+            { autocomplete: aliasCompletionSource },
+            { autocomplete: columnCompletionSource },
           ] : [
             {
               autocomplete: completeFromList(sqlSnippets),

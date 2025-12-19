@@ -56,8 +56,8 @@ impl QueryDriver for CouchbaseDriver {
                         Some(keys[0].clone()),
                         obj.get(keys[0]).map(|v| v.is_object()).unwrap_or(false),
                     )
-                } else if keys.len() == 2 && keys.iter().any(|&k| k == "_id") {
-                    let other_key = keys.iter().find(|&&k| k != "_id").unwrap();
+                } else if keys.len() == 2 && keys.iter().any(|&k| k == "id") {
+                    let other_key = keys.iter().find(|&&k| k != "id").unwrap();
                     (
                         Some((*other_key).clone()),
                         obj.get(*other_key).map(|v| v.is_object()).unwrap_or(false),
@@ -96,8 +96,8 @@ impl QueryDriver for CouchbaseDriver {
         if let Some(ref uk) = unwrapped_key {
             for i in 0..sample_size {
                 if let Some(obj) = rows[i].as_object() {
-                    if obj.contains_key("_id") {
-                        column_set.insert("_id".to_string());
+                    if obj.contains_key("id") {
+                        column_set.insert("id".to_string());
                     }
                     if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {
                         for key in inner.keys() {
@@ -123,11 +123,22 @@ impl QueryDriver for CouchbaseDriver {
                 vec![]
             }
         } else {
-            // Keep _id at the front if present
-            let mut cols: Vec<String> = column_set.into_iter().collect();
-            if let Some(pos) = cols.iter().position(|c| c == "_id") {
-                let id_col = cols.remove(pos);
-                cols.insert(0, id_col);
+            // Favor 'id' and unique names
+            let mut cols: Vec<String> = Vec::new();
+
+            // If both 'id' and '_id' exist, we only want 'id' as per user request
+            if column_set.contains("id") {
+                cols.push("id".to_string());
+            } else if column_set.contains("_id") {
+                // If only _id exists, rename it to id? Or just show it?
+                // The user said they want 'id' in results.
+                cols.push("id".to_string());
+            }
+
+            for col in column_set {
+                if col != "id" && col != "_id" {
+                    cols.push(col);
+                }
             }
             cols
         };
@@ -139,8 +150,14 @@ impl QueryDriver for CouchbaseDriver {
                 if let Some(ref uk) = unwrapped_key {
                     let inner_obj = obj.get(uk).and_then(|v| v.as_object());
                     for col in &columns {
-                        if col == "_id" && obj.contains_key("_id") {
-                            row_values.push(obj.get("_id").cloned().unwrap_or(Value::Null));
+                        if col == "id" {
+                            // Try id then _id
+                            let val = obj
+                                .get("id")
+                                .or_else(|| obj.get("_id"))
+                                .cloned()
+                                .unwrap_or(Value::Null);
+                            row_values.push(val);
                         } else if let Some(inner) = inner_obj {
                             row_values.push(inner.get(col).cloned().unwrap_or(Value::Null));
                         } else {
@@ -149,7 +166,16 @@ impl QueryDriver for CouchbaseDriver {
                     }
                 } else {
                     for col in &columns {
-                        row_values.push(obj.get(col).cloned().unwrap_or(Value::Null));
+                        if col == "id" {
+                            let val = obj
+                                .get("id")
+                                .or_else(|| obj.get("_id"))
+                                .cloned()
+                                .unwrap_or(Value::Null);
+                            row_values.push(val);
+                        } else {
+                            row_values.push(obj.get(col).cloned().unwrap_or(Value::Null));
+                        }
                     }
                 }
                 grid_rows.push(row_values);
@@ -184,7 +210,7 @@ impl QueryDriver for CouchbaseDriver {
                             meta_list.push(crate::services::db_driver::ColumnMetadata {
                                 table_name: Some(table.to_string()),
                                 column_name: col.clone(),
-                                is_primary_key: col == "_id" || col == "id",
+                                is_primary_key: col == "id",
                                 is_editable: true,
                                 schema_name: schema.map(|s| s.to_string()),
                             });

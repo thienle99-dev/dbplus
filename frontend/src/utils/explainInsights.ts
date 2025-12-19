@@ -9,7 +9,7 @@ export type PlanHotspot = {
 };
 
 export type ExplainInsights = {
-  engine: 'postgres' | 'sqlite' | 'unknown';
+  engine: 'postgres' | 'sqlite' | 'couchbase' | 'unknown';
   planningTimeMs?: number;
   executionTimeMs?: number;
   totalCost?: number;
@@ -59,6 +59,7 @@ function collectPostgresPlanNodes(planNode: any, out: any[] = []) {
 
 function detectEngine(plan: any): ExplainInsights['engine'] {
   if (Array.isArray(plan) && plan.length && isObject(plan[0]) && isObject(plan[0].Plan)) return 'postgres';
+  if (Array.isArray(plan) && plan.length && isObject(plan[0]) && isObject(plan[0].plan)) return 'couchbase';
   if (Array.isArray(plan) && plan.length && isObject(plan[0]) && typeof plan[0].detail === 'string') return 'sqlite';
   if (typeof plan === 'string') return 'unknown';
   return 'unknown';

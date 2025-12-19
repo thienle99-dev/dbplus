@@ -79,7 +79,20 @@ export default function TableDataTab({
         return row[index];
       }, {
         id: col,
-        header: col,
+        header: () => {
+          const colInfo = _columnsInfo.find(c => c.name === col);
+          const isPk = colInfo?.is_primary_key || (isCouchbase && (col === '_id' || col === 'id'));
+          return (
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isPk && (
+                <span title="Primary Key" className="text-yellow-500 flex-shrink-0 drop-shadow-sm">
+                  🔑
+                </span>
+              )}
+              <span className="truncate">{col}</span>
+            </div>
+          );
+        },
         cell: (info) => {
           const val = info.getValue();
           const rowIndex = info.row.index;
