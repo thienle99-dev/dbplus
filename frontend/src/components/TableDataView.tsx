@@ -229,18 +229,6 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
     setEdits({});
   }, []);
 
-  if (loading && !data) {
-    return <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-red-500">Error: {error}</div>;
-  }
-
-  if (!data) {
-    return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
-  }
-
   return (
     <div className="flex flex-col h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
       {/* Tab Navigation */}
@@ -280,7 +268,13 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
       </div>
 
       <div className="flex-1 overflow-hidden relative">
-        {activeTab === 'data' && data ? (
+        {loading && !data ? (
+           <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
+        ) : error ? (
+           <div className="p-8 text-red-500">Error: {error}</div>
+        ) : !data && activeTab === 'data' ? (
+           <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">No data available</div>
+        ) : activeTab === 'data' && data ? (
           <TableDataTab
             connectionId={connectionId}
             schema={schema}
