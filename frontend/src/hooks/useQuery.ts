@@ -12,6 +12,7 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             offset,
             include_total_count,
             confirmed_unsafe,
+            query_id,
         }: {
             query: string;
             schema?: string;
@@ -20,21 +21,27 @@ export const useExecuteQuery = (connectionId: string | undefined) => {
             offset?: number;
             include_total_count?: boolean;
             confirmed_unsafe?: boolean;
+            query_id?: string;
         }) => {
             if (!connectionId) throw new Error("Connection ID is required");
 
-            // Build query params for GET request if it's a simple select (optional optimization, but keeping POST for generic execute is safer for now)
-            // Sticking to the existing pattern: POST /execute with query body
+            const headers = query_id ? { 'X-Query-ID': query_id } : undefined;
+
             let url = `/api/connections/${connectionId}/execute`;
 
-            // Should check if we need to use GET /query endpoint for table data browsing or POST /execute for SQL
-            // Based on previous code, GET /query was used for table browsing with limit/offset
             if (limit !== undefined && offset !== undefined && schema && table) {
-                const { data } = await api.get<QueryResult>(`/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${limit}&offset=${offset}`);
+                const { data } = await api.get<QueryResult>(
+                    `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${limit}&offset=${offset}`,
+                    { headers }
+                );
                 return data;
             }
 
-            const { data } = await api.post<QueryResult>(url, { query, limit, offset, include_total_count, confirmed_unsafe });
+            const { data } = await api.post<QueryResult>(
+                url, 
+                { query, limit, offset, include_total_count, confirmed_unsafe },
+                { headers }
+            );
             return data;
         },
     });

@@ -43,6 +43,8 @@ ring = "0.17"
 base64 = "0.22"
 
 # Utilities
+dashmap = "5.5"
+tokio-util = "0.7"
 uuid = { version = "1.0", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 rust_decimal = { version = "1.33", features = ["serde", "db-tokio-postgres"] }

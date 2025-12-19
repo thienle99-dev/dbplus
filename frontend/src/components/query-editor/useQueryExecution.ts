@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format as formatSql } from 'sql-formatter';
 import { useToast } from '../../context/ToastContext';
@@ -7,6 +7,7 @@ import { historyApi } from '../../services/historyApi';
 import { useExecuteQuery } from '../../hooks/useQuery';
 import { QueryResult } from '../../types';
 import { ApiErrorDetails, extractApiErrorDetails } from '../../utils/apiError';
+import api from '../../services/api';
 
 export function useQueryExecution(query: string, setQuery: (q: string) => void) {
     const { connectionId } = useParams();
@@ -19,6 +20,20 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
     const [errorDetails, setErrorDetails] = useState<ApiErrorDetails | null>(null);
     const [lastSql, setLastSql] = useState<string | null>(null);
     const lastHistorySave = useRef<{ sql: string; timestamp: number } | null>(null);
+    const activeQueryIdRef = useRef<string | null>(null);
+
+    // Cancel pending query on unmount
+    useEffect(() => {
+        return () => {
+            const pendingQueryId = activeQueryIdRef.current;
+            if (pendingQueryId) {
+                console.log(`[useQueryExecution] Cancelling query ${pendingQueryId} on unmount`);
+                api.post('/api/queries/cancel', { query_id: pendingQueryId }).catch(err => {
+                    console.warn("Failed to send cancel request", err);
+                });
+            }
+        };
+    }, []);
 
     const isSelectLike = (sql: string) => {
         const trimmed = sql.trimStart();
@@ -35,6 +50,9 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
         setErrorDetails(null);
         setLastSql(sqlToExecute);
 
+        const queryId = crypto.randomUUID();
+        activeQueryIdRef.current = queryId;
+
         try {
             const data = await executeMutation.mutateAsync({
                 query: sqlToExecute,
@@ -46,7 +64,13 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     }
                     : {}),
                 confirmed_unsafe: confirmedUnsafe,
+                query_id: queryId,
             });
+            
+            // Only proceed if this is still the active query
+            if (activeQueryIdRef.current !== queryId) return;
+            activeQueryIdRef.current = null;
+
             const executionTime = Date.now() - startTime;
 
             setResult(data);
@@ -72,6 +96,9 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                 showToast(`Query executed successfully. ${data.affected_rows} rows affected.`, 'success');
             }
         } catch (err: any) {
+            if (activeQueryIdRef.current !== queryId) return;
+            activeQueryIdRef.current = null;
+
             const executionTime = Date.now() - startTime;
             const details = extractApiErrorDetails(err);
             const errorMessage = details.message;
@@ -106,6 +133,9 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
             const startTime = Date.now();
             setError(null);
             setErrorDetails(null);
+            
+            const queryId = crypto.randomUUID();
+            activeQueryIdRef.current = queryId;
 
             try {
                 const data = await executeMutation.mutateAsync({
@@ -113,7 +143,12 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     limit,
                     offset,
                     include_total_count: true,
+                    query_id: queryId,
                 });
+                
+                if (activeQueryIdRef.current !== queryId) return;
+                activeQueryIdRef.current = null;
+
                 setResult(data);
                 const executionTime = Date.now() - startTime;
                 if (data.affected_rows > 0) {
@@ -122,6 +157,9 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     showToast(`Loaded ${data.rows.length} rows (${executionTime}ms)`, 'info');
                 }
             } catch (err: any) {
+                if (activeQueryIdRef.current !== queryId) return;
+                activeQueryIdRef.current = null;
+
                 const details = extractApiErrorDetails(err);
                 setError(details.message);
                 setErrorDetails({ ...details, sql: sqlToExecute });

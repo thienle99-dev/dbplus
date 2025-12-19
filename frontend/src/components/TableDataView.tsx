@@ -39,7 +39,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
-
+  
   // Restore State
   const [isRestored, setIsRestored] = useState(false);
 
@@ -71,6 +71,21 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   if (!schema || !table) {
     return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
   }
+  
+  const activeQueryIdRef = useRef<string | null>(null);
+
+  // Cleanup pending query on unmount
+  useEffect(() => {
+    return () => {
+      const pendingQueryId = activeQueryIdRef.current;
+      if (pendingQueryId) {
+        console.log(`[TableDataView] Cancelling query ${pendingQueryId} on unmount`);
+        api.post('/api/queries/cancel', { query_id: pendingQueryId }).catch(err => {
+            console.warn("Failed to send cancel request", err);
+        });
+      }
+    };
+  }, []);
 
   const fetchColumns = useCallback(async () => {
     if (!connectionId || !schema || !table || fetchingColumnsRef.current) return;
@@ -98,19 +113,43 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
     fetchingRef.current = true;
     setLoading(true);
     setError(null);
+
+    // Generate Query ID
+    const queryId = crypto.randomUUID();
+    activeQueryIdRef.current = queryId;
+
     try {
       const offset = page * pageSize;
       const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`
+        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`,
+        {
+            headers: { 'X-Query-ID': queryId }
+        }
       );
       setData(response.data);
       setEdits({}); // Clear edits on page change/refresh
     } catch (err: unknown) {
-      const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
-      setError(errorMessage);
+      if (activeQueryIdRef.current === queryId) {
+          // Only show error if THIS query failed (and wasn't cancelled locally)
+          const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
+          setError(errorMessage);
+      }
     } finally {
-      setLoading(false);
-      fetchingRef.current = false;
+      if (activeQueryIdRef.current === queryId) {
+          activeQueryIdRef.current = null;
+          setLoading(false);
+          fetchingRef.current = false;
+      } else {
+        // If query ID changed, it means a NEW query started or this one was "cancelled" logic-wise
+        // But we still turn off fetching flag if strictly matching?
+        // Actually if new query started, fetchingRef might be true for THAT one.
+        // We should be careful resetting fetchingRef.
+        // Simple approach: reset loading/fetching if we finished.
+        if (!activeQueryIdRef.current) {
+             setLoading(false);
+             fetchingRef.current = false;
+        }
+      }
     }
   }, [connectionId, schema, table, page, pageSize]);
 

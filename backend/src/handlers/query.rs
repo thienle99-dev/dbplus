@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Json, Path, State},
@@ -5,9 +6,9 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_json::json;
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -17,6 +18,21 @@ pub struct ExecuteQueryParams {
     offset: Option<i64>,
     include_total_count: Option<bool>,
     confirmed_unsafe: Option<bool>,
+}
+
+#[derive(Deserialize)]
+pub struct CancelQueryParams {
+    query_id: String,
+}
+
+pub async fn cancel_query(
+    State(state): State<AppState>,
+    Json(payload): Json<CancelQueryParams>,
+) -> impl IntoResponse {
+    if let Some(entry) = state.queries.get(&payload.query_id) {
+        entry.value().cancel();
+    }
+    StatusCode::OK
 }
 
 fn find_postgres_db_error<'a>(
@@ -34,32 +50,66 @@ fn find_sqlx_db_error<'a>(
 }
 
 pub async fn execute_query(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<ExecuteQueryParams>,
 ) -> impl IntoResponse {
-    let service = ConnectionService::new(db)
+    // 1. Extract Query ID
+    let query_id = headers
+        .get("X-Query-ID")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string());
+
+    // 2. Setup Cancellation Token
+    let cancellation_token = CancellationToken::new();
+    if let Some(qid) = &query_id {
+        state
+            .queries
+            .insert(qid.clone(), cancellation_token.clone());
+    }
+
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
         ));
 
-    match service
-        .execute_query_with_options(
-            connection_id,
-            &payload.query,
-            payload.limit,
-            payload.offset,
-            payload.include_total_count.unwrap_or(false),
-            payload.confirmed_unsafe.unwrap_or(false),
-        )
-        .await
-    {
+    // 3. Wrap execution in select!
+    let execution_future = service.execute_query_with_options(
+        connection_id,
+        &payload.query,
+        payload.limit,
+        payload.offset,
+        payload.include_total_count.unwrap_or(false),
+        payload.confirmed_unsafe.unwrap_or(false),
+    );
+
+    let result = tokio::select! {
+        res = execution_future => res,
+        _ = cancellation_token.cancelled() => {
+             Err(anyhow::anyhow!("Query cancelled"))
+        }
+    };
+
+    // 4. Cleanup
+    if let Some(qid) = &query_id {
+        state.queries.remove(qid);
+    }
+
+    match result {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
         Err(e) => {
-            // Preserve full context for logs, but return structured client-friendly DB error details when possible.
             let message = e.to_string();
+            if message == "Query cancelled" {
+                // Return 499 Client Closed Request (standard-ish for cancellations) or 200 with error?
+                // Let's return 400 for now or custom json.
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({ "message": "Query cancelled" })),
+                )
+                    .into_response();
+            }
 
             let mut db_payload = None;
             for cause in e.chain() {

@@ -14,11 +14,13 @@ use sea_orm::{Database, DatabaseConnection};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
+mod app_state;
 mod config;
 mod handlers;
 mod models;
 mod services;
 mod utils;
+use app_state::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -50,9 +52,12 @@ async fn main() {
         .await
         .expect("Failed to run migrations");
 
+    let state = AppState::new(db);
+
     // build our application with a route
     let app = Router::new()
         .route("/", get(handler))
+        .route("/api/queries/cancel", post(handlers::query::cancel_query))
         // Snippet routes
         .route(
             "/api/snippets",
@@ -333,7 +338,7 @@ async fn main() {
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
-        .with_state(db);
+        .with_state(state);
 
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 19999));
