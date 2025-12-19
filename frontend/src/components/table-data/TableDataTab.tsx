@@ -244,27 +244,26 @@ export default function TableDataTab({
   return (
     <>
       {isCouchbase && (
-        <div className="px-3 py-2 border-b border-border-light flex flex-wrap items-center gap-3 bg-bg-1 glass shadow-sm">
+        <div className="px-3 py-1.5 border-b border-border-light flex flex-wrap items-center gap-4 bg-bg-1/80 backdrop-blur-md glass shadow-sm">
           {/* Bucket Selector */}
-          <div className="flex flex-col gap-0.5 min-w-[140px]">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">Bucket</label>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight">Bucket</label>
             <select
-              className="h-8 px-2 bg-bg-2 border border-border-subtle rounded-lg text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-accent transition-all cursor-pointer"
+              className="h-7 px-2 bg-bg-2 border border-border-subtle rounded-md text-[11px] font-medium text-text-primary outline-none focus:ring-1 focus:ring-accent transition-all cursor-pointer min-w-[120px]"
               value={bucket || currentConnection?.database || ''}
               onChange={(e) => setBucket?.(e.target.value)}
             >
               <option value={currentConnection?.database || ''}>{currentConnection?.database || 'default'}</option>
-              {/* Other buckets could be fetched/listed here if needed */}
             </select>
           </div>
 
-          <div className="h-8 w-px bg-border-light mx-1 self-end mb-1" />
+          <div className="h-6 w-px bg-border-light/50" />
 
           {/* Doc ID Retrieval */}
-          <div className="flex flex-col gap-0.5 min-w-[180px]">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">Document ID</label>
+          <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">Doc ID</label>
             <input
-              className="h-8 px-3 bg-bg-2 border border-border-subtle rounded-lg text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary transition-all"
+              className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 transition-all w-full"
               placeholder="Retrieval by ID..."
               value={documentId}
               onChange={(e) => setDocumentId?.(e.target.value)}
@@ -273,10 +272,10 @@ export default function TableDataTab({
           </div>
 
           {/* N1QL WHERE Filtering */}
-          <div className="flex-1 flex flex-col gap-0.5 min-w-[240px]">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">N1QL WHERE</label>
+          <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">WHERE</label>
             <input
-              className="h-8 px-3 bg-bg-2 border border-border-subtle rounded-lg text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary font-mono transition-all"
+              className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 font-mono transition-all w-full"
               placeholder='e.g. type="user" AND city="HCM"'
               value={filter}
               onChange={(e) => setFilter?.(e.target.value)}
@@ -284,58 +283,57 @@ export default function TableDataTab({
             />
           </div>
 
-          <div className="flex flex-col gap-0.5 self-end mb-0.5">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onRetrieve}
-              className="h-8 px-5 font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all"
-              disabled={loading}
-            >
-              Retrieve Docs
-            </Button>
-          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onRetrieve}
+            className="h-7 px-4 font-semibold text-[11px] shadow-sm hover:shadow-md transition-all whitespace-nowrap"
+            disabled={loading}
+          >
+            Retrieve
+          </Button>
         </div>
       )}
 
       {isCouchbase && (
-        <div className="px-4 py-1.5 bg-bg-2/50 border-b border-border-light flex items-center justify-between text-[11px] text-text-tertiary">
-          <div className="flex items-center gap-1.5 font-medium">
-            <span className="text-accent underline cursor-help decoration-accent/30 underline-offset-2">
-              {data.rows.length} results
+        <div className="px-3 py-1 bg-bg-2/30 border-b border-border-light/50 flex items-center justify-between text-[10px] text-text-tertiary">
+          <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
+            <span className="text-accent font-bold">
+              {data.rows.length} records
             </span>
-            <span>for selection from</span>
-            <code className="bg-bg-3 px-1.5 py-0.5 rounded text-text-secondary border border-border-light">
+            <span className="opacity-40">│</span>
+            <code className="text-text-secondary">
               `{bucket || currentConnection?.database || 'default'}`.`{schema}`.`{table}`
             </code>
             {filter && (
               <>
-                <span>where</span>
-                <code className="bg-bg-3 px-1.5 py-0.5 rounded text-accent/80 border border-border-light font-bold">
+                <span className="opacity-40">where</span>
+                <code className="text-accent/80 font-mono font-bold bg-accent/5 px-1 rounded">
                   {filter}
                 </code>
               </>
             )}
-            <span>limit {pageSize} offset {page * pageSize}</span>
+            <span className="opacity-40">│</span>
+            <span>limit {pageSize}</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-bg-3 px-2 py-0.5 rounded-full border border-border-light">
-              <span className="font-bold text-[9px] uppercase tracking-tighter">Edit Labels</span>
+            <div className="flex items-center gap-2 bg-bg-3/50 px-2 py-0.5 rounded-full border border-border-light/50">
+              <span className="font-bold text-[9px] uppercase tracking-tighter opacity-60">Inline Edit</span>
               <button
                 onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
-                className={`w-7 h-3.5 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
+                className={`w-6 h-3 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
               >
-                <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="p-3 border-b border-border-light flex justify-between items-center bg-bg-1 glass">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-semibold text-text-primary px-2">
+      <div className="px-3 py-2 border-b border-border-light flex justify-between items-center bg-bg-1/50 backdrop-blur-md glass">
+        <div className="flex items-center gap-3">
+          <h2 className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest px-1 py-0.5 rounded bg-bg-2 border border-border-light/50">
             {!isCouchbase && `${schema}.${table}`}
             {isCouchbase && `${table}`}
           </h2>

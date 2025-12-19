@@ -368,37 +368,36 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
   return (
     <div className="flex flex-col pb-[20px] h-full bg-bg-0 rounded-2xl overflow-hidden shadow-sm border border-border-light">
-      {/* Tab Navigation */}
-      <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-2">
+      <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-1.5">
         <div className="flex p-0.5 bg-bg-2 rounded-xl border border-border-light">
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'data'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
               ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Table size={14} />
+            <Table size={13} />
             Data
           </button>
           <button
             onClick={() => setActiveTab('structure')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'structure'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
               ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Database size={14} />
+            <Database size={13} />
             Structure
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'info'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
               ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Info size={14} />
+            <Info size={13} />
             Info
           </button>
         </div>
