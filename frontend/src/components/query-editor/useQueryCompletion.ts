@@ -208,6 +208,34 @@ export function useQueryCompletion({
     return tables;
   }, []);
 
+  // Helper function to resolve columns for a table (handles both qualified and unqualified names)
+  const getColumnsForTable = useCallback((tableName: string): string[] => {
+    if (!schemaCompletion) return [];
+    
+    // Try direct lookup first
+    let cols = schemaCompletion[tableName];
+    
+    // If not found and name doesn't include schema, try to find qualified version
+    if (!cols || cols.length === 0) {
+      const qualifiedKeys = Object.keys(schemaCompletion).filter(
+        key => key.includes(".") && key.endsWith(`.${tableName}`)
+      );
+      if (qualifiedKeys.length > 0) {
+        cols = schemaCompletion[qualifiedKeys[0]];
+      }
+    }
+    
+    // If still not found and name is qualified, try unqualified
+    if (!cols || cols.length === 0) {
+      if (tableName.includes(".")) {
+        const unqualifiedName = tableName.split(".")[1];
+        cols = schemaCompletion[unqualifiedName];
+      }
+    }
+    
+    return cols || [];
+  }, [schemaCompletion]);
+
   const fromCompletionSource = useCallback((context: CompletionContext) => {
       // Match FROM pattern
       const fromPattern = context.matchBefore(/\bFROM\s+\w*/i);
@@ -431,8 +459,8 @@ export function useQueryCompletion({
 
       if (!tableInfo) return null;
 
-      const columns = schemaCompletion?.[tableInfo.name];
-      if (!columns) return null;
+      const columns = getColumnsForTable(tableInfo.name);
+      if (!columns || columns.length === 0) return null;
 
       const options = columns.map((col: string) => ({
         label: col,
@@ -444,7 +472,7 @@ export function useQueryCompletion({
         options,
       };
     },
-    [schemaCompletion, getTablesInQuery]
+    [getColumnsForTable, getTablesInQuery]
   );
 
   const columnCompletionSource = useCallback(
@@ -477,7 +505,7 @@ export function useQueryCompletion({
 
       // Collect columns from all tables in the query
       tables.forEach((t) => {
-        const cols = schemaCompletion?.[t.name] || [];
+        const cols = getColumnsForTable(t.name);
         const tableDisplay = t.alias || t.name;
 
         cols.forEach((col: string) => {
@@ -528,7 +556,7 @@ export function useQueryCompletion({
         options,
       };
     },
-    [schemaCompletion, getTablesInQuery]
+    [getColumnsForTable, getTablesInQuery]
   );
 
   const codeMirrorTheme = useMemo(() => {
