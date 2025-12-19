@@ -39,11 +39,11 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Create indexes for fast lookup
+        // Index for hierarchical lookup (connection -> db -> schema)
         manager
             .create_index(
                 Index::create()
-                    .name("idx_schema_cache_lookup")
+                    .name("idx_schema_cache_hierarchy")
                     .table(SchemaCache::Table)
                     .col(SchemaCache::ConnectionId)
                     .col(SchemaCache::DatabaseName)
@@ -51,6 +51,38 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+
+        // Index on kind (object_type) as requested
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_schema_cache_kind")
+                    .table(SchemaCache::Table)
+                    .col(SchemaCache::ObjectType)
+                    .to_owned(),
+            )
+            .await?;
+
+        // Index on (schema, table) usually for looking up columns or checking table existence
+        // Mapping: schema -> schema_name, table -> parent_name (context of columns) or object_name (context of table)
+        // Adding index on (schema_name, parent_name) covers "get columns of table"
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_schema_cache_parent_lookup")
+                    .table(SchemaCache::Table)
+                    .col(SchemaCache::SchemaName)
+                    .col(SchemaCache::ParentName)
+                    .to_owned(),
+            )
+            .await?;
+
+        // Index on lower(name) for case-insensitive search
+        // Using raw SQL for expression index
+        let db = manager.get_connection();
+        db.execute_unprepared(
+            "CREATE INDEX IF NOT EXISTS idx_schema_cache_lower_name ON schema_cache (lower(object_name))"
+        ).await?;
 
         Ok(())
     }

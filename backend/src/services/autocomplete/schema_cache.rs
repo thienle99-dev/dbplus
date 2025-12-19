@@ -92,6 +92,27 @@ impl SchemaCacheService {
             });
         }
 
+        // Fetch functions
+        let functions = DatabaseDriver::list_functions(driver.as_ref(), schema_name).await?;
+        for func in functions {
+            models.push(schema_cache::Model {
+                id: 0,
+                connection_id,
+                database_name: database_name.to_string(),
+                schema_name: schema_name.to_string(),
+                object_name: func.name.clone(),
+                object_type: "function".to_string(),
+                parent_name: None,
+                metadata: Some(serde_json::json!({
+                    "definition": func.definition,
+                    "arguments": func.arguments,
+                    "return_type": func.return_type,
+                    "language": func.language,
+                })),
+                last_updated: Utc::now(),
+            });
+        }
+
         // Save to SQLite
         self.save_to_db(connection_id, database_name, schema_name, &models)
             .await?;
