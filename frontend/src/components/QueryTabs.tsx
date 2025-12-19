@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense, useTransition } from 'react';
 import { Plus, X, FileCode, BookMarked, History, Database, Pin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import { useConnectionStore } from '../store/connectionStore';
 
 export default function QueryTabs() {
+  const [isPending, startTransition] = useTransition();
   const { connectionId } = useParams<{ connectionId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ export default function QueryTabs() {
       };
       return [...prev, newTab];
     });
-    setActiveTabId(newId);
+    startTransition(() => setActiveTabId(newId));
   }, []);
 
   // Context Menu State
@@ -145,7 +146,7 @@ export default function QueryTabs() {
         // Try to go to right, else left
         const newActiveTab = newTabs[closedIndex] || newTabs[closedIndex - 1] || newTabs[0];
         if (newActiveTab) {
-          setActiveTabId(newActiveTab.id);
+          startTransition(() => setActiveTabId(newActiveTab.id));
         } else if (newTabs.length === 0) {
           // If we closed the last tab (force close all), create a new default one
           const newId = Math.random().toString(36).substr(2, 9);
@@ -159,7 +160,7 @@ export default function QueryTabs() {
           // Use setTimeout to avoid state update conflict during render cycle if called from effect
           setTimeout(() => {
             setTabs([initialTab]);
-            setActiveTabId(newId);
+            startTransition(() => setActiveTabId(newId));
           }, 0);
           return []; // Temporary empty
         }
@@ -172,7 +173,7 @@ export default function QueryTabs() {
     if (!contextMenu) return;
     const itemsToKeep = tabs.filter(t => t.id === contextMenu.tabId);
     setTabs(itemsToKeep);
-    setActiveTabId(contextMenu.tabId);
+    startTransition(() => setActiveTabId(contextMenu.tabId));
   };
 
   const handleCloseAll = () => {
@@ -186,7 +187,7 @@ export default function QueryTabs() {
       lastModified: Date.now(),
     };
     setTabs([initialTab]);
-    setActiveTabId(newId);
+    startTransition(() => setActiveTabId(newId));
   };
 
   const handleForceClose = () => {
@@ -218,7 +219,7 @@ export default function QueryTabs() {
     };
 
     setTabs(prev => [...prev, duplicatedTab]);
-    setActiveTabId(newId);
+    startTransition(() => setActiveTabId(newId));
     setContextMenu(null);
   };
 
@@ -234,7 +235,7 @@ export default function QueryTabs() {
     if (newTab) {
       const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
       if (existing) {
-        setActiveTabId(existing.id);
+        startTransition(() => setActiveTabId(existing.id));
         return;
       }
 
@@ -247,7 +248,7 @@ export default function QueryTabs() {
         lastModified: Date.now(),
       };
       setTabs(prev => [...prev, tableTab]);
-      setActiveTabId(tableTab.id);
+      startTransition(() => setActiveTabId(tableTab.id));
     } else {
       // Open in current tab
       setTabs(prev => prev.map(t =>
@@ -267,7 +268,7 @@ export default function QueryTabs() {
       const { schema, table } = state.openTable;
       const existing = tabs.find((t) => t.type === 'table' && t.schema === schema && t.table === table);
       if (existing) {
-        setActiveTabId(existing.id);
+        startTransition(() => setActiveTabId(existing.id));
       } else {
         const tableTab: Tab = {
           id: Math.random().toString(36).substr(2, 9),
@@ -278,7 +279,7 @@ export default function QueryTabs() {
           lastModified: Date.now(),
         };
         setTabs(prev => [...prev, tableTab]);
-        setActiveTabId(tableTab.id);
+        startTransition(() => setActiveTabId(tableTab.id));
       }
 
       // Clear the state properly using navigate
@@ -297,7 +298,7 @@ export default function QueryTabs() {
 
       if (existingTab) {
         // Switch to existing tab and update content
-        setActiveTabId(existingTab.id);
+        startTransition(() => setActiveTabId(existingTab.id));
         setTabs(prev => prev.map(t =>
           t.id === existingTab.id ? {
             ...t,
@@ -336,7 +337,7 @@ export default function QueryTabs() {
             isDraft: false,
           };
           setTabs(prev => [...prev, newTab]);
-          setActiveTabId(newTab.id);
+          startTransition(() => setActiveTabId(newTab.id));
         }
       }
 
@@ -514,7 +515,7 @@ export default function QueryTabs() {
             {tabs.map(tab => (
               <div
                 key={tab.id}
-                onClick={() => setActiveTabId(tab.id)}
+                onClick={() => startTransition(() => setActiveTabId(tab.id))}
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 className={clsx(
                   "group flex items-center gap-2 px-4 py-2 text-sm border-r border-border cursor-pointer min-w-[120px] max-w-[200px] select-none",

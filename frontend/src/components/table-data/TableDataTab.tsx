@@ -65,7 +65,10 @@ export default function TableDataTab({
 
   const columns = useMemo(() => {
     // ... (keep existing columns logic)
-    if (!data?.columns) return [];
+    // Use data.columns if available, otherwise fallback to columnsInfo
+    const sourceColumns = data?.columns?.length ? data.columns : _columnsInfo.map(c => c.name);
+    
+    if (!sourceColumns.length) return [];
     const helper = createColumnHelper<unknown[]>();
     
     // Index Column
@@ -81,7 +84,7 @@ export default function TableDataTab({
       enableResizing: false,
     });
 
-    const dataColumns = data.columns.map((col, index) =>
+    const dataColumns = sourceColumns.map((col, index) =>
       helper.accessor((row, rowIndex) => {
         if (edits[rowIndex]?.[index] !== undefined) {
           return edits[rowIndex][index];
@@ -142,7 +145,7 @@ export default function TableDataTab({
     );
 
     return [indexColumn, ...dataColumns];
-  }, [data?.columns, edits, onEdit, foreignKeys, connectionId, page, pageSize]);
+  }, [data?.columns, _columnsInfo, edits, onEdit, foreignKeys, connectionId, page, pageSize]);
 
   const tableInstance = useReactTable({
     data: data?.rows || [],
@@ -264,7 +267,7 @@ export default function TableDataTab({
         className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
         style={{ scrollbarGutter: 'stable' }}
       >
-        <table className="w-full text-left border-collapse" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+        <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-20 bg-bg-1 shadow-lg">
             {tableInstance.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
@@ -300,10 +303,12 @@ export default function TableDataTab({
           <tbody className="divide-y divide-border/10 font-sans relative">
             {isAddingRow && (
               <tr className="bg-accent/5 transition-all">
-                {data.columns.map((_col, index) => (
+                {/* Spacer for Index Column */}
+                <td className="px-4 py-2.5" />
+                {(data?.columns?.length ? data.columns : _columnsInfo.map(c => c.name)).map((_col, index) => (
                   <td
                     key={`new-row-${index}`}
-                    className="px-4 py-2.5 first:pl-6"
+                    className="px-4 py-2.5"
                   >
                     <input
                       autoFocus={index === 0}
