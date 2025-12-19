@@ -39,183 +39,426 @@ impl AutocompleteEngine {
     ) -> Result<Vec<Suggestion>> {
         use crate::services::autocomplete::parser::{AutocompleteParser, CursorContext};
 
-        // 1. Parse Context (Lightweight)
+        // 1. Parse Context
         let parse_result = AutocompleteParser::parse(&req.sql, req.cursor_pos);
 
-        // 2. Safety Check (Strings/Comments)
+        // 2. Safety Check
         if !parse_result.is_safe_location {
-            return Ok(Vec::new()); // No suggestions inside strings/comments
+            return Ok(Vec::new());
         }
 
-        let mut suggestions = Vec::new();
+        // 3. Extract current typing prefix for filtering
+        let current_prefix = parse_result.current_token.as_deref().unwrap_or("");
 
-        // 3. Handle Context
+        let mut suggestions = Vec::new();
+        let active_schema = req.active_schema.as_deref().unwrap_or("public");
+
+        // 4. Generate suggestions based on context
         match parse_result.context {
             CursorContext::From | CursorContext::Join => {
-                let schema = req.active_schema.as_deref().unwrap_or("public");
-                let objects = self
-                    .schema_cache
-                    .get_schema_metadata(
-                        req.connection_id,
-                        &req.database_name,
-                        schema,
-                        driver.clone(),
-                        false,
-                    )
-                    .await?;
+                // Suggest tables and views from active schema
+                self.add_table_suggestions(
+                    &mut suggestions,
+                    &req,
+                    active_schema,
+                    driver.clone(),
+                    current_prefix,
+                    true, // in_active_schema
+                )
+                .await?;
 
-                for obj in objects {
-                    suggestions.push(Suggestion {
-                        label: obj.object_name.clone(),
-                        insert_text: obj.object_name.clone(),
-                        kind: obj.object_type,
-                        detail: Some(format!("in {}", obj.schema_name)),
-                        score: 100,
-                    });
-                }
+                // Also suggest schemas for qualified references
+                self.add_schema_suggestions(&mut suggestions, &req, driver.clone(), current_prefix)
+                    .await?;
             }
+
             CursorContext::Select
             | CursorContext::Where
             | CursorContext::On
             | CursorContext::OrderBy
             | CursorContext::GroupBy => {
-                // If we have an identifier chain ending in dot, try alias resolution
+                // Check if typing after alias/table qualifier (e.g., "u.")
                 if let Some(chain) = &parse_result.identifier_chain {
                     if let Some(last) = chain.parts.last() {
                         if last.is_empty() && chain.parts.len() > 1 {
-                            // "something."
-                            let potential_alias = &chain.parts[chain.parts.len() - 2];
+                            // Qualified column reference: "alias." or "schema.table."
+                            let qualifier = &chain.parts[chain.parts.len() - 2];
+                            self.add_qualified_column_suggestions(
+                                &mut suggestions,
+                                &req,
+                                qualifier,
+                                &parse_result.aliases,
+                                driver.clone(),
+                                current_prefix,
+                            )
+                            .await?;
 
-                            // Resolve alias
-                            let table_to_search = if let Some(real_table) =
-                                parse_result.aliases.get(potential_alias)
-                            {
-                                // Found alias "u" -> "users"
-                                // BUT the real table might be "public.users" or just "users"
-                                real_table.clone()
-                            } else {
-                                // Maybe it's a direct table ref "public."
-                                potential_alias.clone()
-                            };
-
-                            // Fetch columns for this specific table
-                            // We need to split schema/table from table_to_search
-                            let (schema, table) = if table_to_search.contains('.') {
-                                let parts: Vec<&str> = table_to_search.split('.').collect();
-                                (parts[0].to_string(), parts[1].to_string())
-                            } else {
-                                (
-                                    req.active_schema
-                                        .clone()
-                                        .unwrap_or_else(|| "public".to_string()),
-                                    table_to_search,
-                                )
-                            };
-
-                            let cols = self
-                                .schema_cache
-                                .get_columns(
-                                    req.connection_id,
-                                    &req.database_name,
-                                    &schema,
-                                    &table,
-                                    driver.clone(),
-                                )
-                                .await?;
-
-                            for col in cols {
-                                suggestions.push(Suggestion {
-                                    label: col.object_name.clone(),
-                                    insert_text: col.object_name.clone(),
-                                    kind: "column".to_string(),
-                                    detail: Some(format!("from {}", table)),
-                                    score: 110,
-                                });
-                            }
+                            // Apply filtering and ranking
+                            Self::filter_and_rank(&mut suggestions, current_prefix);
                             return Ok(suggestions);
                         }
                     }
                 }
 
-                // General Column Suggestions (from all visible tables in alias map)
-                for (alias, table_ref) in &parse_result.aliases {
-                    let (schema, table) = if table_ref.contains('.') {
-                        let parts: Vec<&str> = table_ref.split('.').collect();
-                        (parts[0].to_string(), parts[1].to_string())
-                    } else {
-                        (
-                            req.active_schema
-                                .clone()
-                                .unwrap_or_else(|| "public".to_string()),
-                            table_ref.clone(),
-                        )
-                    };
+                // General column suggestions from all tables in FROM/JOIN
+                self.add_column_suggestions(
+                    &mut suggestions,
+                    &req,
+                    &parse_result.aliases,
+                    driver.clone(),
+                    current_prefix,
+                )
+                .await?;
 
-                    // Lazy load columns
-                    if let Ok(cols) = self
-                        .schema_cache
-                        .get_columns(
-                            req.connection_id,
-                            &req.database_name,
-                            &schema,
-                            &table,
-                            driver.clone(),
-                        )
-                        .await
-                    {
-                        for col in cols {
-                            let display_name = format!("{}.{}", alias, col.object_name);
-                            suggestions.push(Suggestion {
-                                label: display_name,
-                                insert_text: col.object_name.clone(), // Or maybe full ref? Usually just column name if context is clear, but let's stick to simple insert
-                                kind: "column".to_string(),
-                                detail: Some(format!("from {}", table)),
-                                score: 80,
-                            });
-                        }
-                    }
-                }
+                // Add function suggestions
+                self.add_function_suggestions(
+                    &mut suggestions,
+                    &req,
+                    active_schema,
+                    driver.clone(),
+                    current_prefix,
+                )
+                .await?;
 
-                // Also suggest functions
+                // Add common aggregate functions
+                self.add_builtin_functions(&mut suggestions, current_prefix);
+            }
+
+            _ => {
+                // Unknown context: suggest keywords
+                self.add_keyword_suggestions(&mut suggestions, current_prefix);
+            }
+        }
+
+        // 5. Filter, rank, and sort suggestions
+        Self::filter_and_rank(&mut suggestions, current_prefix);
+
+        Ok(suggestions)
+    }
+
+    async fn add_table_suggestions(
+        &self,
+        suggestions: &mut Vec<Suggestion>,
+        req: &AutocompleteRequest,
+        schema: &str,
+        driver: Arc<dyn DatabaseDriver>,
+        _prefix: &str,
+        in_active_schema: bool,
+    ) -> Result<()> {
+        let objects = self
+            .schema_cache
+            .get_schema_metadata(req.connection_id, &req.database_name, schema, driver, false)
+            .await?;
+
+        for obj in objects {
+            let base_score = if in_active_schema { 700 } else { 650 };
+            suggestions.push(Suggestion {
+                label: obj.object_name.clone(),
+                insert_text: obj.object_name.clone(),
+                kind: obj.object_type.clone(),
+                detail: Some(format!("in {}", obj.schema_name)),
+                score: base_score,
+            });
+        }
+
+        Ok(())
+    }
+
+    async fn add_schema_suggestions(
+        &self,
+        suggestions: &mut Vec<Suggestion>,
+        req: &AutocompleteRequest,
+        driver: Arc<dyn DatabaseDriver>,
+        _prefix: &str,
+    ) -> Result<()> {
+        if let Ok(schemas) = DatabaseDriver::get_schemas(&*driver).await {
+            for schema in schemas {
                 suggestions.push(Suggestion {
-                    label: "COUNT(*)".to_string(),
-                    insert_text: "COUNT(*)".to_string(),
-                    kind: "function".to_string(),
-                    detail: Some("Aggregate".to_string()),
-                    score: 90,
+                    label: schema.clone(),
+                    insert_text: schema.clone(),
+                    kind: "schema".to_string(),
+                    detail: Some("schema".to_string()),
+                    score: 600,
                 });
             }
-            _ => {
-                // General keywords
-                let keywords = vec![
-                    "SELECT",
-                    "FROM",
-                    "WHERE",
-                    "GROUP BY",
-                    "ORDER BY",
-                    "HAVING",
-                    "LIMIT",
-                    "INSERT",
-                    "UPDATE",
-                    "DELETE",
-                    "JOIN",
-                    "LEFT JOIN",
-                    "RIGHT JOIN",
-                    "INNER JOIN",
-                    "OUTER JOIN",
-                ];
-                for kw in keywords {
+        }
+
+        Ok(())
+    }
+
+    async fn add_qualified_column_suggestions(
+        &self,
+        suggestions: &mut Vec<Suggestion>,
+        req: &AutocompleteRequest,
+        qualifier: &str,
+        aliases: &std::collections::HashMap<String, String>,
+        driver: Arc<dyn DatabaseDriver>,
+        _prefix: &str,
+    ) -> Result<()> {
+        // Resolve qualifier to actual table
+        let table_ref = aliases
+            .get(qualifier)
+            .map(|s| s.as_str())
+            .unwrap_or(qualifier);
+
+        let (schema, table) = if table_ref.contains('.') {
+            let parts: Vec<&str> = table_ref.split('.').collect();
+            (parts[0].to_string(), parts[1].to_string())
+        } else {
+            (
+                req.active_schema
+                    .clone()
+                    .unwrap_or_else(|| "public".to_string()),
+                table_ref.to_string(),
+            )
+        };
+
+        if let Ok(cols) = self
+            .schema_cache
+            .get_columns(
+                req.connection_id,
+                &req.database_name,
+                &schema,
+                &table,
+                driver,
+            )
+            .await
+        {
+            for col in cols {
+                suggestions.push(Suggestion {
+                    label: col.object_name.clone(),
+                    insert_text: col.object_name.clone(),
+                    kind: "column".to_string(),
+                    detail: Some(format!("{}.{}", qualifier, col.object_name)),
+                    score: 1000, // Highest priority for qualified columns
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn add_column_suggestions(
+        &self,
+        suggestions: &mut Vec<Suggestion>,
+        req: &AutocompleteRequest,
+        aliases: &std::collections::HashMap<String, String>,
+        driver: Arc<dyn DatabaseDriver>,
+        _prefix: &str,
+    ) -> Result<()> {
+        for (alias, table_ref) in aliases {
+            let (schema, table) = if table_ref.contains('.') {
+                let parts: Vec<&str> = table_ref.split('.').collect();
+                (parts[0].to_string(), parts[1].to_string())
+            } else {
+                (
+                    req.active_schema
+                        .clone()
+                        .unwrap_or_else(|| "public".to_string()),
+                    table_ref.clone(),
+                )
+            };
+
+            if let Ok(cols) = self
+                .schema_cache
+                .get_columns(
+                    req.connection_id,
+                    &req.database_name,
+                    &schema,
+                    &table,
+                    driver.clone(),
+                )
+                .await
+            {
+                for col in cols {
+                    let display_name = format!("{}.{}", alias, col.object_name);
                     suggestions.push(Suggestion {
-                        label: kw.to_string(),
-                        insert_text: kw.to_string(),
-                        kind: "keyword".to_string(),
-                        detail: None,
-                        score: 50,
+                        label: display_name,
+                        insert_text: col.object_name.clone(),
+                        kind: "column".to_string(),
+                        detail: Some(format!("from {}", table)),
+                        score: 800, // Columns from FROM/JOIN tables
                     });
                 }
             }
         }
 
-        Ok(suggestions)
+        Ok(())
+    }
+
+    async fn add_function_suggestions(
+        &self,
+        suggestions: &mut Vec<Suggestion>,
+        req: &AutocompleteRequest,
+        schema: &str,
+        driver: Arc<dyn DatabaseDriver>,
+        _prefix: &str,
+    ) -> Result<()> {
+        // Get user-defined functions from active schema
+        if let Ok(functions) = DatabaseDriver::list_functions(&*driver, schema).await {
+            for func in functions {
+                let signature = func.arguments.as_deref().unwrap_or("");
+                suggestions.push(Suggestion {
+                    label: format!("{}({})", func.name, signature),
+                    insert_text: format!("{}()", func.name),
+                    kind: "function".to_string(),
+                    detail: Some(format!("in {}", func.schema)),
+                    score: 550,
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    fn add_builtin_functions(&self, suggestions: &mut Vec<Suggestion>, _prefix: &str) {
+        let builtins = vec![
+            ("COUNT", "COUNT(*)", "Aggregate function"),
+            ("SUM", "SUM()", "Aggregate function"),
+            ("AVG", "AVG()", "Aggregate function"),
+            ("MIN", "MIN()", "Aggregate function"),
+            ("MAX", "MAX()", "Aggregate function"),
+            ("COALESCE", "COALESCE()", "Returns first non-null value"),
+            ("NULLIF", "NULLIF()", "Returns NULL if equal"),
+            ("CAST", "CAST( AS )", "Type conversion"),
+            ("UPPER", "UPPER()", "Convert to uppercase"),
+            ("LOWER", "LOWER()", "Convert to lowercase"),
+            ("TRIM", "TRIM()", "Remove whitespace"),
+            ("NOW", "NOW()", "Current timestamp"),
+            ("CURRENT_DATE", "CURRENT_DATE", "Current date"),
+            (
+                "CURRENT_TIMESTAMP",
+                "CURRENT_TIMESTAMP",
+                "Current timestamp",
+            ),
+        ];
+
+        for (name, insert, detail) in builtins {
+            suggestions.push(Suggestion {
+                label: name.to_string(),
+                insert_text: insert.to_string(),
+                kind: "function".to_string(),
+                detail: Some(detail.to_string()),
+                score: 500,
+            });
+        }
+    }
+
+    fn add_keyword_suggestions(&self, suggestions: &mut Vec<Suggestion>, _prefix: &str) {
+        let keywords = vec![
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "JOIN",
+            "LEFT JOIN",
+            "RIGHT JOIN",
+            "INNER JOIN",
+            "OUTER JOIN",
+            "FULL JOIN",
+            "CROSS JOIN",
+            "ON",
+            "GROUP BY",
+            "HAVING",
+            "ORDER BY",
+            "LIMIT",
+            "OFFSET",
+            "UNION",
+            "UNION ALL",
+            "INTERSECT",
+            "EXCEPT",
+            "INSERT INTO",
+            "UPDATE",
+            "DELETE FROM",
+            "CREATE TABLE",
+            "ALTER TABLE",
+            "DROP TABLE",
+            "TRUNCATE",
+            "AS",
+            "DISTINCT",
+            "ALL",
+            "AND",
+            "OR",
+            "NOT",
+            "IN",
+            "EXISTS",
+            "BETWEEN",
+            "LIKE",
+            "ILIKE",
+            "IS NULL",
+            "IS NOT NULL",
+            "CASE",
+            "WHEN",
+            "THEN",
+            "ELSE",
+            "END",
+        ];
+
+        for kw in keywords {
+            suggestions.push(Suggestion {
+                label: kw.to_string(),
+                insert_text: kw.to_string(),
+                kind: "keyword".to_string(),
+                detail: None,
+                score: 100,
+            });
+        }
+    }
+
+    fn filter_and_rank(suggestions: &mut Vec<Suggestion>, prefix: &str) {
+        let prefix_lower = prefix.to_lowercase();
+
+        // Calculate match quality and adjust scores
+        for suggestion in suggestions.iter_mut() {
+            let label_lower = suggestion.label.to_lowercase();
+
+            if prefix.is_empty() {
+                // No filtering, keep base score
+                continue;
+            }
+
+            // Check match type
+            let match_boost = if label_lower.starts_with(&prefix_lower) {
+                // Prefix match - highest boost
+                300
+            } else if label_lower.contains(&prefix_lower) {
+                // Substring match - medium boost
+                150
+            } else if Self::fuzzy_match(&label_lower, &prefix_lower) {
+                // Fuzzy match - low boost
+                50
+            } else {
+                // No match - filter out
+                suggestion.score = -1;
+                continue;
+            };
+
+            suggestion.score += match_boost;
+        }
+
+        // Remove non-matching suggestions
+        suggestions.retain(|s| s.score >= 0);
+
+        // Sort by score (descending), then by label (ascending) for stability
+        suggestions.sort_by(|a, b| b.score.cmp(&a.score).then_with(|| a.label.cmp(&b.label)));
+
+        // Limit results to top 50 for performance
+        suggestions.truncate(50);
+    }
+
+    fn fuzzy_match(text: &str, pattern: &str) -> bool {
+        let mut pattern_chars = pattern.chars();
+        let mut current_pattern_char = pattern_chars.next();
+
+        for text_char in text.chars() {
+            if let Some(pc) = current_pattern_char {
+                if text_char == pc {
+                    current_pattern_char = pattern_chars.next();
+                }
+            } else {
+                return true;
+            }
+        }
+
+        current_pattern_char.is_none()
     }
 }

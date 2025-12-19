@@ -1126,7 +1126,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     className="w-full text-left border-collapse"
                                     style={{ width: tableInstance.getTotalSize(), tableLayout: 'fixed' }}
                                 >
-                                    <thead className="sticky top-0 z-20 bg-bg-1/85 backdrop-blur-md shadow-sm">
+                                    <thead className="sticky top-0 z-20 bg-bg-1 backdrop-blur-md shadow-sm">
                                         {tableInstance.getHeaderGroups().map((headerGroup) => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map((header) => (

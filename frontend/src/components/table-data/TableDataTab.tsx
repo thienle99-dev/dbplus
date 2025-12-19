@@ -264,7 +264,7 @@ export default function TableDataTab({
 
       <div 
         ref={tableContainerRef}
-        className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
+        className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border/10 shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
         style={{ scrollbarGutter: 'stable' }}
       >
         <table className="w-full text-left border-collapse">
