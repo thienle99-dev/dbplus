@@ -269,6 +269,7 @@ pub struct TableDataParams {
     database: Option<String>,
     filter: Option<String>,
     document_id: Option<String>,
+    fields: Option<String>,
 }
 
 pub async fn get_table_data(
@@ -299,6 +300,11 @@ pub async fn get_table_data(
                 .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
         );
 
+    let fields_vec: Option<Vec<String>> = params
+        .fields
+        .as_ref()
+        .and_then(|f| serde_json::from_str(f).ok());
+
     match service
         .get_table_data(
             connection_id,
@@ -308,6 +314,7 @@ pub async fn get_table_data(
             offset,
             params.filter,
             params.document_id,
+            fields_vec,
         )
         .await
     {

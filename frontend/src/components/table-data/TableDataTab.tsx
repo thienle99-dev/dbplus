@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -6,12 +6,14 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Edit, Copy, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Edit, Copy, MoreHorizontal, Trash2, Columns, Maximize2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState, SchemaForeignKey } from '../../types';
 import Button from '../ui/Button';
+import SavedFilters from './SavedFilters';
+import JsonEditorModal from '../ui/JsonEditorModal';
 import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
 import { useConnectionStore } from '../../store/connectionStore';
 
@@ -45,6 +47,8 @@ interface TableDataTabProps {
   onRetrieve?: () => void;
   onDelete?: (rowIndex: number) => Promise<void>;
   onDuplicate?: (rowIndex: number) => Promise<void>;
+  fields?: string[];
+  setFields?: (val: string[]) => void;
 }
 
 export default function TableDataTab({
@@ -77,7 +81,23 @@ export default function TableDataTab({
   onRetrieve,
   onDelete,
   onDuplicate,
+  fields = [],
+  setFields,
 }: TableDataTabProps) {
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const columnSelectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target as Node)) {
+        setShowColumnSelector(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [columnSelectorRef]);
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   const { selectedRow, setSelectedRow } = useSelectedRow();
   const { connections } = useConnectionStore();
@@ -86,6 +106,13 @@ export default function TableDataTab({
 
   // Virtualization Ref
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const [jsonEditorState, setJsonEditorState] = useState<{
+    rowIndex: number;
+    colIndex: number;
+    value: unknown;
+    readOnly: boolean;
+  } | null>(null);
 
   const columns = useMemo(() => {
     // Show data columns
@@ -180,16 +207,33 @@ export default function TableDataTab({
           // For complex types (JSON, arrays, objects), use textarea
           if (isComplex) {
             return (
-              <textarea
-                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
-                  }`}
-                value={displayValue}
-                onChange={(e) => onEdit(rowIndex, index, e.target.value)}
-                placeholder={val === null ? 'NULL' : ''}
-                rows={Math.min(5, displayValue.split('\n').length)}
-                style={{ minHeight: '20px' }}
-                readOnly={!inlineEditingEnabled}
-              />
+              <div className="relative w-full group/complex h-full">
+                <textarea
+                  className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                    }`}
+                  value={displayValue}
+                  onChange={(e) => onEdit(rowIndex, index, e.target.value)}
+                  placeholder={val === null ? 'NULL' : ''}
+                  rows={Math.min(5, displayValue.split('\n').length)}
+                  style={{ minHeight: '20px' }}
+                  readOnly={!inlineEditingEnabled}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setJsonEditorState({
+                      rowIndex,
+                      colIndex: index,
+                      value: isEdited ? edits[rowIndex][index] : val,
+                      readOnly: !inlineEditingEnabled
+                    });
+                  }}
+                  className="absolute top-0 right-0 p-1 rounded hover:bg-bg-3 text-text-tertiary hover:text-accent opacity-0 group-hover/complex:opacity-100 transition-opacity"
+                  title="Open JSON Editor"
+                >
+                  <Maximize2 size={12} />
+                </button>
+              </div>
             );
           }
 
@@ -243,93 +287,117 @@ export default function TableDataTab({
 
   return (
     <>
-      {isCouchbase && (
-        <div className="px-3 py-1.5 border-b border-border-light flex flex-wrap items-center gap-4 bg-bg-1/80 backdrop-blur-md glass shadow-sm">
-          {/* Bucket Selector */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight">Bucket</label>
-            <select
-              className="h-7 px-2 bg-bg-2 border border-border-subtle rounded-md text-[11px] font-medium text-text-primary outline-none focus:ring-1 focus:ring-accent transition-all cursor-pointer min-w-[120px]"
-              value={bucket || currentConnection?.database || ''}
-              onChange={(e) => setBucket?.(e.target.value)}
-            >
-              <option value={currentConnection?.database || ''}>{currentConnection?.database || 'default'}</option>
-            </select>
-          </div>
+      {/* Generic Toolbar for SQL and NoSQL */}
+      <div className="px-3 py-1.5 border-b border-border-light flex flex-wrap items-center gap-4 bg-bg-1/80 backdrop-blur-md glass shadow-sm">
+        {isCouchbase && (
+          <>
+            {/* Bucket Selector */}
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight">Bucket</label>
+              <select
+                className="h-7 px-2 bg-bg-2 border border-border-subtle rounded-md text-[11px] font-medium text-text-primary outline-none focus:ring-1 focus:ring-accent transition-all cursor-pointer min-w-[120px]"
+                value={bucket || currentConnection?.database || ''}
+                onChange={(e) => setBucket?.(e.target.value)}
+              >
+                <option value={currentConnection?.database || ''}>{currentConnection?.database || 'default'}</option>
+              </select>
+            </div>
+            <div className="h-6 w-px bg-border-light/50" />
+            {/* Doc ID Retrieval */}
+            <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">Doc ID</label>
+              <input
+                className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 transition-all w-full"
+                placeholder="Retrieval by ID..."
+                value={documentId}
+                onChange={(e) => setDocumentId?.(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onRetrieve?.()}
+              />
+            </div>
+          </>
+        )}
 
-          <div className="h-6 w-px bg-border-light/50" />
-
-          {/* Doc ID Retrieval */}
-          <div className="flex items-center gap-2 flex-1 max-w-[200px]">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">Doc ID</label>
+        {/* Universal Filter / WHERE */}
+        <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+          <SavedFilters
+            connectionId={connectionId || ''}
+            schema={schema}
+            table={table}
+            currentFilter={filter}
+            onApplyFilter={(f) => setFilter?.(f)}
+          />
+          <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">
+            {isCouchbase ? 'N1QL WHERE' : 'SQL WHERE'}
+          </label>
+          <div className="relative flex-1">
             <input
-              className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 transition-all w-full"
-              placeholder="Retrieval by ID..."
-              value={documentId}
-              onChange={(e) => setDocumentId?.(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && onRetrieve?.()}
-            />
-          </div>
-
-          {/* N1QL WHERE Filtering */}
-          <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-tight whitespace-nowrap">WHERE</label>
-            <input
-              className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 font-mono transition-all w-full"
-              placeholder='e.g. type="user" AND city="HCM"'
+              className="h-7 px-2.5 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 font-mono transition-all w-full pr-8"
+              placeholder={isCouchbase ? 'e.g. type="user"' : 'e.g. age > 18 AND status = \'active\''}
               value={filter}
               onChange={(e) => setFilter?.(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onRetrieve?.()}
             />
+            {filter && (
+              <button
+                onClick={() => setFilter?.('')}
+                className="absolute right-2 top-1.5 text-text-tertiary hover:text-text-primary"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onRetrieve}
-            className="h-7 px-4 font-semibold text-[11px] shadow-sm hover:shadow-md transition-all whitespace-nowrap"
-            disabled={loading}
-          >
-            Retrieve
-          </Button>
         </div>
-      )}
 
-      {isCouchbase && (
-        <div className="px-3 py-1 bg-bg-2/30 border-b border-border-light/50 flex items-center justify-between text-[10px] text-text-tertiary">
-          <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
-            <span className="text-accent font-bold">
-              {data.rows.length} records
-            </span>
-            <span className="opacity-40">│</span>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={onRetrieve}
+          className="h-7 px-4 font-semibold text-[11px] shadow-sm hover:shadow-md transition-all whitespace-nowrap"
+          disabled={loading}
+        >
+          {isCouchbase ? 'Retrieve' : 'Run Filter'}
+        </Button>
+      </div>
+
+      <div className="px-3 py-1 bg-bg-2/30 border-b border-border-light/50 flex items-center justify-between text-[10px] text-text-tertiary">
+        <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
+          <span className="text-accent font-bold">
+            {data.rows.length} records
+          </span>
+          <span className="opacity-40">│</span>
+          {isCouchbase ? (
             <code className="text-text-secondary">
               `{bucket || currentConnection?.database || 'default'}`.`{schema}`.`{table}`
             </code>
-            {filter && (
-              <>
-                <span className="opacity-40">where</span>
-                <code className="text-accent/80 font-mono font-bold bg-accent/5 px-1 rounded">
-                  {filter}
-                </code>
-              </>
-            )}
-            <span className="opacity-40">│</span>
-            <span>limit {pageSize}</span>
-          </div>
+          ) : (
+            <code className="text-text-secondary">
+              {schema}.{table}
+            </code>
+          )}
+          {filter && (
+            <>
+              <span className="opacity-40">where</span>
+              <code className="text-accent/80 font-mono font-bold bg-accent/5 px-1 rounded truncate max-w-[200px]" title={filter}>
+                {filter}
+              </code>
+            </>
+          )}
+          <span className="opacity-40">│</span>
+          <span>limit {pageSize}</span>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-bg-3/50 px-2 py-0.5 rounded-full border border-border-light/50">
-              <span className="font-bold text-[9px] uppercase tracking-tighter opacity-60">Inline Edit</span>
-              <button
-                onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
-                className={`w-6 h-3 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
-              >
-                <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
-              </button>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-bg-3/50 px-2 py-0.5 rounded-full border border-border-light/50">
+            <span className="font-bold text-[9px] uppercase tracking-tighter opacity-60">Inline Edit</span>
+            <button
+              onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
+              className={`w-6 h-3 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
+            >
+              <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="px-3 py-2 border-b border-border-light flex justify-between items-center bg-bg-1/50 backdrop-blur-md glass">
         <div className="flex items-center gap-3">
@@ -383,6 +451,79 @@ export default function TableDataTab({
           )}
         </div>
         <div className="flex gap-2 items-center">
+          <div className="relative" ref={columnSelectorRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowColumnSelector(!showColumnSelector)}
+              icon={<Columns size={14} />}
+              className={`h-8 px-2 ${fields.length > 0 ? 'text-accent bg-accent/10' : ''}`}
+            >
+              Cols {fields.length > 0 ? `(${fields.length})` : ''}
+            </Button>
+            {showColumnSelector && (
+              <div className="absolute top-full right-0 mt-1 w-56 bg-bg-1 border border-border-light rounded-lg shadow-xl z-50 overflow-hidden flex flex-col max-h-[300px]">
+                <div className="p-2 border-b border-border-light bg-bg-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-secondary">Select Columns</span>
+                    <button
+                      onClick={() => setFields?.([])}
+                      className="text-[10px] text-accent hover:underline"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                <div className="overflow-y-auto p-1 custom-scrollbar">
+                  {_columnsInfo.map(col => (
+                    <label key={col.name} className="flex items-center gap-2 p-1.5 hover:bg-bg-2 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-border-subtle bg-bg-0 text-accent focus:ring-accent"
+                        checked={fields.length === 0 || fields.includes(col.name)}
+                        onChange={(e) => {
+                          if (!setFields) return;
+                          e.stopPropagation(); // Stop propagation to avoid closing
+                          if (fields.length === 0) {
+                            // If currently "all" (empty), switch to all except one if unchecking?
+                            // Or switch to just this one if checking?
+                            // Logic:
+                            // If empty, it means ALL. If user clicks one, it implies they want to filter.
+                            // Actually, if it's empty, we should interpret "checked" as "unchecking this one means selecting all others".
+                            // Simpler: If empty, treat as if all are checked.
+                            const allMap = _columnsInfo.map(c => c.name);
+                            if (e.target.checked) {
+                              // Already "checked" implicitly. Do nothing?
+                              // If they click an unchecked one?
+                            } else {
+                              // Unchecking one from "All".
+                              setFields(allMap.filter(n => n !== col.name));
+                            }
+                          } else {
+                            if (e.target.checked) {
+                              setFields([...fields, col.name]);
+                            } else {
+                              setFields(fields.filter(f => f !== col.name));
+                            }
+                          }
+                        }}
+                      // If fields is empty, ALL are checked.
+                      // We need to handle the case where user wants to select just a few.
+                      // Usually, "Show All" is default.
+                      // If I click one, does it mean "Show Only This" or "Toggle This"?
+                      // Standard behavior:
+                      // Default empty = All.
+                      // If user interacts, we probably want to toggle.
+                      // But if empty, all boxes should appear checked.
+                      // If I uncheck one, it becomes specific list.
+                      />
+                      <span className="text-xs text-text-primary truncate">{col.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -556,6 +697,20 @@ export default function TableDataTab({
           </div>
         )}
       </div>
+      {jsonEditorState && (
+        <JsonEditorModal
+          isOpen={true}
+          onClose={() => setJsonEditorState(null)}
+          onSave={(newValue) => {
+            if (jsonEditorState) {
+              onEdit(jsonEditorState.rowIndex, jsonEditorState.colIndex, newValue);
+            }
+          }}
+          initialValue={jsonEditorState.value as any}
+          readOnly={jsonEditorState.readOnly}
+          title={`Edit ${data?.columns?.[jsonEditorState.colIndex] || 'JSON'}`}
+        />
+      )}
     </>
   );
 }

@@ -48,6 +48,8 @@ pub enum Relation {
     SavedQueries,
     #[sea_orm(has_many = "super::query_history::Entity")]
     QueryHistory,
+    #[sea_orm(has_many = "super::saved_filter::Entity")]
+    SavedFilters,
 }
 
 impl Related<super::saved_query::Entity> for Entity {
@@ -59,6 +61,12 @@ impl Related<super::saved_query::Entity> for Entity {
 impl Related<super::query_history::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::QueryHistory.def()
+    }
+}
+
+impl Related<super::saved_filter::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::SavedFilters.def()
     }
 }
 

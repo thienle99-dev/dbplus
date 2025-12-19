@@ -149,7 +149,11 @@ impl SQLiteQuery {
             let row = match item {
                 Ok(r) => r,
                 Err(e) => {
-                    let _ = send_line(&tx, serde_json::json!({ "type": "error", "message": e.to_string() })).await;
+                    let _ = send_line(
+                        &tx,
+                        serde_json::json!({ "type": "error", "message": e.to_string() }),
+                    )
+                    .await;
                     break;
                 }
             };
@@ -159,7 +163,11 @@ impl SQLiteQuery {
             row_count += 1;
         }
 
-        let _ = send_line(&tx, serde_json::json!({ "type": "done", "row_count": row_count })).await;
+        let _ = send_line(
+            &tx,
+            serde_json::json!({ "type": "done", "row_count": row_count }),
+        )
+        .await;
         Ok(())
     }
 }
@@ -192,6 +200,7 @@ impl QueryDriver for SQLiteQuery {
                 limit: None,
                 offset: None,
                 has_more: None,
+                row_metadata: None,
             });
         }
 
@@ -236,6 +245,7 @@ impl QueryDriver for SQLiteQuery {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 
@@ -256,6 +266,7 @@ impl QueryDriver for SQLiteQuery {
                 limit: None,
                 offset: None,
                 has_more: None,
+                row_metadata: None,
             })
         }
     }
@@ -298,7 +309,3 @@ impl QueryDriver for SQLiteQuery {
         Ok(Value::Array(plan))
     }
 }
-
-
-
-

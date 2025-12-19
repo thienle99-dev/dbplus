@@ -12,6 +12,7 @@ pub mod mock_data;
 pub mod query;
 pub mod query_stream;
 pub mod result_edit;
+pub mod saved_filter;
 pub mod saved_query;
 pub mod saved_query_folder;
 pub mod schema;

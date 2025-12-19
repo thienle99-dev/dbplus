@@ -29,6 +29,7 @@ impl TableOperations for PostgresTable {
         offset: i64,
         _filter: Option<String>,
         _document_id: Option<String>,
+        _fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         tracing::info!(
             "[PostgresTable] get_table_data - schema: {}, table: {}, limit: {}, offset: {}",
@@ -47,9 +48,22 @@ impl TableOperations for PostgresTable {
             return Err(anyhow::anyhow!("Invalid schema or table name"));
         }
 
+        let select_clause = if let Some(f) = &_fields {
+            if f.is_empty() {
+                "*".to_string()
+            } else {
+                f.iter()
+                    .map(|field| format!("\"{}\"", field))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            }
+        } else {
+            "*".to_string()
+        };
+
         let query = format!(
-            "SELECT * FROM \"{}\".\"{}\" LIMIT $1 OFFSET $2",
-            schema, table
+            "SELECT {} FROM \"{}\".\"{}\" LIMIT $1 OFFSET $2",
+            select_clause, schema, table
         );
 
         let client = self.pool.get().await?;
@@ -65,6 +79,7 @@ impl TableOperations for PostgresTable {
                 limit: None,
                 offset: None,
                 has_more: None,
+                row_metadata: None,
             });
         }
 
@@ -120,6 +135,7 @@ impl TableOperations for PostgresTable {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 

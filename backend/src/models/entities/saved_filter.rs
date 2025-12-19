@@ -1,0 +1,34 @@
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[sea_orm(table_name = "saved_filters")]
+pub struct Model {
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub id: Uuid,
+    pub connection_id: Uuid,
+    pub schema: String,
+    pub table_ref: String, // 'table' is reserved keyword in Rust sometimes, safer to use table_ref or table_name, but sea-orm handles it. 'table' is fine as struct field if migration uses 'table_ref'. Wait, migration used 'TableRef'.
+    pub name: String,
+    pub filter: String,
+    pub created_at: DateTimeWithTimeZone,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::connection::Entity",
+        from = "Column::ConnectionId",
+        to = "super::connection::Column::Id",
+        on_delete = "Cascade"
+    )]
+    Connection,
+}
+
+impl Related<super::connection::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Connection.def()
+    }
+}
+
+impl ActiveModelBehavior for ActiveModel {}

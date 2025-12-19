@@ -19,10 +19,24 @@ impl TableOperations for MySqlDriver {
         offset: i64,
         _filter: Option<String>,
         _document_id: Option<String>,
+        _fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
+        let select_clause = if let Some(f) = &_fields {
+            if f.is_empty() {
+                "*".to_string()
+            } else {
+                f.iter()
+                    .map(|field| format!("`{}`", field))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            }
+        } else {
+            "*".to_string()
+        };
+
         let query = format!(
-            "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",
-            schema, table, limit, offset
+            "SELECT {} FROM `{}`.`{}` LIMIT {} OFFSET {}",
+            select_clause, schema, table, limit, offset
         );
         self.query(&query).await
     }

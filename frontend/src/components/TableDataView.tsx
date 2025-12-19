@@ -112,6 +112,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   const [filter, setFilter] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [bucket, setBucket] = useState('');
+  const [fields, setFields] = useState<string[]>([]);
 
   const fetchData = useCallback(async (customFilter?: string, customDocId?: string) => {
     if (!connectionId || !schema || !table || fetchingRef.current) return;
@@ -132,6 +133,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       if (f) url += `&filter=${encodeURIComponent(f)}`;
       if (d) url += `&document_id=${encodeURIComponent(d)}`;
       if (bucket) url += `&database=${encodeURIComponent(bucket)}`;
+      if (fields.length > 0) url += `&fields=${encodeURIComponent(JSON.stringify(fields))}`;
 
       const response = await api.get(url, {
         headers: { 'X-Query-ID': queryId }
@@ -156,7 +158,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         }
       }
     }
-  }, [connectionId, schema, table, page, pageSize, filter, documentId, bucket]);
+  }, [connectionId, schema, table, page, pageSize, filter, documentId, bucket, fields]);
 
   useEffect(() => {
     const cacheKey = `${connectionId}-${schema}-${table}`;
@@ -215,29 +217,23 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         const rowIndex = parseInt(rowIndexStr);
         const originalRow = data.rows[rowIndex];
         const pk = getRowPK(originalRow);
+        const rowMetadata = data.row_metadata?.[rowIndex];
 
         if (!pk) {
           throw new Error(`Row ${rowIndex} has no primary key. Cannot update.`);
         }
 
-        const setClauses = Object.entries(rowEdits).map(([colIndexStr, value]) => {
-          const colIndex = parseInt(colIndexStr);
-          const colName = data.columns[colIndex];
-          const escapedValue = value === null ? 'NULL' : `'${String(value).replace(/'/g, "''")}'`;
-          return `"${colName}" = ${escapedValue}`;
+        // Use new endpoint that supports all DBs including Couchbase with CAS
+        return api.patch(`/api/connections/${connectionId}/query-results`, {
+          schema,
+          table,
+          primary_key: pk,
+          updates: rowEdits,
+          row_metadata: rowMetadata
         });
-
-        const whereClauses = Object.entries(pk).map(([col, val]) => {
-          const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
-          return `"${col}" = ${escapedVal}`;
-        });
-
-        return `UPDATE "${schema}"."${table}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`;
       });
 
-      for (const query of updates) {
-        await api.post(`/api/connections/${connectionId}/execute`, { query });
-      }
+      await Promise.all(updates);
 
       await fetchData();
       showToast('Changes saved successfully', 'success');
@@ -309,22 +305,16 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
     setSaving(true);
     try {
-      if (isCouchbase) {
-        // Couchbase delete logic
-        const docId = pk['_id'] || pk['id'];
-        if (!docId) throw new Error("Document ID not found");
+      const rowMetadata = data.row_metadata?.[rowIndex];
 
-        const bucketName = bucket || connection?.database || 'default';
-        const query = `DELETE FROM \`${bucketName}\`.\`${schema}\`.\`${table}\` USE KEYS '${docId}'`;
-        await api.post(`/api/connections/${connectionId}/execute`, { query });
-      } else {
-        const whereClauses = Object.entries(pk).map(([col, val]) => {
-          const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
-          return `"${col}" = ${escapedVal}`;
-        });
-        const query = `DELETE FROM "${schema}"."${table}" WHERE ${whereClauses.join(' AND ')};`;
-        await api.post(`/api/connections/${connectionId}/execute`, { query });
-      }
+      await api.delete(`/api/connections/${connectionId}/query-results`, {
+        data: {
+          schema,
+          table,
+          primary_key: pk,
+          row_metadata: rowMetadata
+        }
+      });
 
       showToast('Record deleted successfully', 'success');
       await fetchData();
@@ -440,6 +430,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
             onRetrieve={() => fetchData()}
             onDelete={handleDelete}
             onDuplicate={handleDuplicate}
+            fields={fields}
+            setFields={setFields}
           />
         ) : activeTab === 'structure' ? (
           <TableStructureTab schema={schema} table={table} />

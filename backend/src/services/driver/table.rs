@@ -15,6 +15,7 @@ pub trait TableOperations: Send + Sync {
         offset: i64,
         filter: Option<String>,
         document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<QueryResult>;
 
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
@@ -41,4 +42,28 @@ pub trait TableOperations: Send + Sync {
     async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies>;
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
+
+    async fn update_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        updates: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64> {
+        // Default implementation returns not implemented error or similar?
+        // Traits usually don't have body unless valid default.
+        // I will make them mandatory.
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
+
+    async fn delete_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64> {
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
 }

@@ -49,6 +49,8 @@ pub struct QueryResult {
     pub offset: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub row_metadata: Option<Vec<Value>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -286,6 +288,7 @@ pub trait DatabaseDriver:
         offset: i64,
         filter: Option<String>,
         document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<QueryResult>;
     async fn execute_query(&self, query: &str) -> Result<QueryResult>;
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
@@ -386,6 +389,7 @@ where
         offset: i64,
         filter: Option<String>,
         document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         <Self as TableOperations>::get_table_data(
             self,
@@ -395,6 +399,7 @@ where
             offset,
             filter,
             document_id,
+            fields,
         )
         .await
     }

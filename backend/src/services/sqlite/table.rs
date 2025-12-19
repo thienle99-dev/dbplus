@@ -28,6 +28,7 @@ impl TableOperations for SQLiteTable {
         offset: i64,
         _filter: Option<String>,
         _document_id: Option<String>,
+        _fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         tracing::info!(
             "[SQLiteTable] get_table_data - schema: {}, table: {}, limit: {}, offset: {}",
@@ -60,6 +61,7 @@ impl TableOperations for SQLiteTable {
                 limit: None,
                 offset: None,
                 has_more: None,
+                row_metadata: None,
             });
         }
 
@@ -111,6 +113,7 @@ impl TableOperations for SQLiteTable {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 

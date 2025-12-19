@@ -15,6 +15,7 @@ export interface QueryResult {
   limit?: number;
   offset?: number;
   has_more?: boolean;
+  row_metadata?: Record<string, any>[];
 }
 
 export type EditState = Record<string, Record<number, unknown>>;

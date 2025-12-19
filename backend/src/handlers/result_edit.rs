@@ -17,6 +17,7 @@ pub struct UpdateRowRequest {
     pub table: String,
     pub primary_key: serde_json::Map<String, Value>,
     pub updates: serde_json::Map<String, Value>,
+    pub row_metadata: Option<serde_json::Map<String, Value>>,
 }
 
 #[derive(Deserialize)]
@@ -24,6 +25,7 @@ pub struct DeleteRowRequest {
     pub schema: Option<String>,
     pub table: String,
     pub primary_key: serde_json::Map<String, Value>,
+    pub row_metadata: Option<serde_json::Map<String, Value>>,
 }
 
 pub async fn update_result_row(
@@ -43,7 +45,9 @@ pub async fn update_result_row(
 
     // Use ConnectionService
     let service = match ConnectionService::new(db.clone()) {
-        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(&headers)),
+        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        )),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
@@ -57,6 +61,27 @@ pub async fn update_result_row(
         "postgres" => "$",
         _ => "?",
     };
+
+    if connection_model.db_type == "couchbase" {
+        let schema = payload.schema.as_deref().unwrap_or("_default"); // Default scope?
+        let pk: std::collections::HashMap<_, _> = payload.primary_key.into_iter().collect();
+        let updates: std::collections::HashMap<_, _> = payload.updates.into_iter().collect();
+        let meta = payload.row_metadata.map(|m| m.into_iter().collect());
+
+        match service
+            .update_row(connection_id, schema, &payload.table, pk, updates, meta)
+            .await
+        {
+            Ok(affected) => {
+                let json_result = serde_json::json!({
+                    "affected_rows": affected,
+                    "success": true
+                });
+                return (StatusCode::OK, Json(json_result)).into_response();
+            }
+            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        }
+    }
 
     // Reconstruct clauses
     let mut set_str = String::new();
@@ -130,7 +155,9 @@ pub async fn delete_result_row(
 
     // Use ConnectionService
     let service = match ConnectionService::new(db.clone()) {
-        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(&headers)),
+        Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        )),
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
 
@@ -144,6 +171,26 @@ pub async fn delete_result_row(
         "postgres" => "$",
         _ => "?",
     };
+
+    if connection_model.db_type == "couchbase" {
+        let schema = payload.schema.as_deref().unwrap_or("_default");
+        let pk: std::collections::HashMap<_, _> = payload.primary_key.into_iter().collect();
+        let meta = payload.row_metadata.map(|m| m.into_iter().collect());
+
+        match service
+            .delete_row(connection_id, schema, &payload.table, pk, meta)
+            .await
+        {
+            Ok(affected) => {
+                let json_result = serde_json::json!({
+                    "affected_rows": affected,
+                    "success": true
+                });
+                return (StatusCode::OK, Json(json_result)).into_response();
+            }
+            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        }
+    }
 
     let mut where_str = String::new();
     for (i, (key, value)) in payload.primary_key.iter().enumerate() {
