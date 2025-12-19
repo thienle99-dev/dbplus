@@ -9,9 +9,15 @@ import TableInfoTab from './TableInfoTab';
 import TableDataTab from './table-data/TableDataTab';
 import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../types';
 import { useConstraints } from '../hooks/useDatabase';
+import { useTabStateStore } from '../store/tabStateStore';
 
-export default function TableDataView({ schema: schemaProp, table: tableProp }: TableDataViewProps = {}) {
+interface Props extends TableDataViewProps {
+  tabId?: string;
+}
+
+export default function TableDataView({ schema: schemaProp, table: tableProp, tabId }: Props = {}) {
   const params = useParams();
+  const { setTabState, getTabState } = useTabStateStore();
   // Use props if provided, otherwise fall back to URL params
   const schema = schemaProp || params.schema;
   const table = tableProp || params.table;
@@ -20,7 +26,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { currentPage: page, pageSize } = useTablePage();
+  const { currentPage: page, pageSize, setCurrentPage: setPage } = useTablePage();
 
   const constraintsQuery = useConstraints(connectionId, schema, table);
 
@@ -33,6 +39,33 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
+
+  // Restore State
+  const [isRestored, setIsRestored] = useState(false);
+
+  useEffect(() => {
+    if (!tabId) return;
+    const saved = getTabState(tabId);
+    if (saved) {
+      if (saved.tableData) setData(saved.tableData);
+      if (saved.tableEdits) setEdits(saved.tableEdits);
+      if (saved.tablePage !== undefined) setPage(saved.tablePage);
+      if (saved.tableActiveView) setActiveTab(saved.tableActiveView);
+      if (saved.tableData) setLoading(false);
+    }
+    setIsRestored(true);
+  }, [tabId, getTabState, setPage]);
+
+  // Save State
+  useEffect(() => {
+    if (!tabId || !isRestored) return;
+    setTabState(tabId, { 
+      tableData: data, 
+      tableEdits: edits,
+      tablePage: page,
+      tableActiveView: activeTab
+    });
+  }, [tabId, data, edits, page, activeTab, setTabState, isRestored]);
 
   // Guard: Return early if schema or table is not defined
   if (!schema || !table) {

@@ -13,6 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import SearchPanel from './query-editor/SearchPanel';
 
 import { useSettingsStore } from '../store/settingsStore';
+import { useTabStateStore } from '../store/tabStateStore';
 import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import { useQuery } from '@tanstack/react-query';
 import { connectionApi } from '../services/connectionApi';
@@ -45,6 +46,7 @@ interface QueryEditorProps {
   onQueryChange?: (sql: string, metadata?: Record<string, any>) => void;
   onSaveSuccess?: () => void;
   onSavedQueryCreated?: (savedQueryId: string, name: string) => void;
+  tabId: string;
 }
 
 export default function QueryEditor({
@@ -57,11 +59,13 @@ export default function QueryEditor({
   splitMode = 'none',
   onQueryChange,
   onSaveSuccess,
-  onSavedQueryCreated
+  onSavedQueryCreated,
+  tabId
 }: QueryEditorProps) {
   const { connectionId } = useParams();
   const { showToast } = useToast();
   const { theme } = useSettingsStore();
+  const { setTabState, getTabState } = useTabStateStore();
 
   // Workspace Tab State for Database Selection
   const { updateTabDatabase, tabs, activeTabId } = useWorkspaceTabsStore();
@@ -109,7 +113,7 @@ export default function QueryEditor({
 
   // Custom Hooks
   const { extensions, schemaCompletion } = useQueryCompletion({ connectionId, theme });
-  const { execute, fetchPage, handleFormat, result, loading, error, errorDetails, lastSql } = useQueryExecution(query, setQuery);
+  const { execute, fetchPage, handleFormat, result, loading, error, errorDetails, lastSql, setResult } = useQueryExecution(query, setQuery);
   const explainQuery = useExplainQuery(connectionId);
   const updateSavedQuery = useUpdateSavedQuery(connectionId);
 
@@ -152,6 +156,29 @@ export default function QueryEditor({
   // Comparison State
   const [snapshot, setSnapshot] = useState<QueryResult | null>(null);
   const [resultDiff, setResultDiff] = useState<DiffResult | null>(null);
+
+  // State Persistence
+  const [isRestored, setIsRestored] = useState(false);
+
+  useEffect(() => {
+    const savedState = getTabState(tabId);
+    if (savedState) {
+      if (savedState.queryResult) setResult(savedState.queryResult);
+      if (savedState.executionPlan) setExecutionPlan(savedState.executionPlan);
+      if (savedState.bottomTab) setBottomTab(savedState.bottomTab);
+    }
+    setIsRestored(true);
+  }, [tabId, getTabState, setResult]);
+
+  useEffect(() => {
+    if (!isRestored) return;
+    setTabState(tabId, { queryResult: result });
+  }, [tabId, result, setTabState, isRestored]);
+
+  useEffect(() => {
+    if (!isRestored) return;
+    setTabState(tabId, { executionPlan, bottomTab });
+  }, [tabId, executionPlan, bottomTab, setTabState, isRestored]);
 
   // Resize State
   const [editorHeight, setEditorHeight] = useState(350);

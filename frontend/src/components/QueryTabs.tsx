@@ -38,24 +38,7 @@ export default function QueryTabs() {
   const [editTitle, setEditTitle] = useState('');
   const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
 
-  // Lazy rendering: Only mount tabs that have been visited/activated
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (activeTabId) {
-      setVisitedTabs(prev => {
-        if (prev.has(activeTabId)) return prev;
-        const next = new Set(prev);
-        next.add(activeTabId);
-        return next;
-      });
-    }
-  }, [activeTabId]);
-
-  // Reset visited tabs when switching context (e.g. database change)
-  useEffect(() => {
-    setVisitedTabs(new Set());
-  }, [draftScopeKey]);
 
   // Debounce timers for auto-save (one per tab)
   const saveTimersRef = useRef<Map<string, number>>(new Map());
@@ -607,22 +590,20 @@ export default function QueryTabs() {
 
           <div className="flex-1 overflow-hidden relative">
             {tabs.map(tab => {
-              // Only render if visible or has been visited (lazy load)
-              const isVisible = activeTabId === tab.id;
-              const hasBeenVisited = visitedTabs.has(tab.id);
-
-              if (!hasBeenVisited && !isVisible) return null;
+              // Strictly render only active tab (Keep Alive via Store)
+              if (activeTabId !== tab.id) return null;
 
               return (
               <div
                 key={tab.id}
-                className={clsx(
-                  "absolute inset-0 flex flex-col bg-bg-0",
-                  activeTabId === tab.id ? "z-10" : "z-0 invisible"
-                )}
+                className="absolute inset-0 flex flex-col bg-bg-0 z-10"
               >
                 {tab.type === 'table' ? (
-                  <TableDataView schema={tab.schema} table={tab.table} />
+                  <TableDataView 
+                    schema={tab.schema!} 
+                    table={tab.table!} 
+                    tabId={tab.id}
+                  />
                 ) : (
                   <QueryEditor
                     initialSql={tab.sql}
@@ -632,6 +613,7 @@ export default function QueryTabs() {
                     savedQueryId={tab.savedQueryId}
                     queryName={tab.title}
                     splitMode={tab.splitMode}
+                    tabId={tab.id}
                     onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
                     onSaveSuccess={() => handleSaveSuccess(tab.id)}
                     onSavedQueryCreated={(savedId, name) => {
