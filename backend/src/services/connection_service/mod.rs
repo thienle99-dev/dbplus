@@ -15,11 +15,15 @@ use anyhow::Result;
 use sea_orm::*;
 use uuid::Uuid;
 
+use crate::services::autocomplete::SchemaCacheService;
+use std::sync::Arc;
+
 /// Service for managing database connections and executing queries.
 pub struct ConnectionService {
     db: DatabaseConnection,
     encryption: EncryptionService,
     database_override: Option<String>,
+    schema_cache: Option<Arc<SchemaCacheService>>,
 }
 
 impl ConnectionService {
@@ -29,7 +33,13 @@ impl ConnectionService {
             db,
             encryption: EncryptionService::new()?,
             database_override: None,
+            schema_cache: None,
         })
+    }
+
+    pub fn with_schema_cache(mut self, schema_cache: Arc<SchemaCacheService>) -> Self {
+        self.schema_cache = Some(schema_cache);
+        self
     }
 
     pub fn with_database_override(mut self, database: Option<String>) -> Self {

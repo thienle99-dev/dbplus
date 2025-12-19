@@ -107,38 +107,36 @@ impl ConnectionService {
 
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
+        let database_name = connection.database.clone();
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
+        use std::sync::Arc;
 
-        match connection.db_type.as_str() {
+        let driver: Arc<dyn DatabaseDriver> = match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
-                let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_schema_metadata(&driver, schema).await
+                Arc::new(PostgresDriver::new(&connection, &password).await?)
             }
-            "sqlite" => {
-                let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_schema_metadata(&driver, schema).await
-            }
-            "clickhouse" => {
-                let driver =
-                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
-                        .await?;
-                DatabaseDriver::get_schema_metadata(&driver, schema).await
-            }
-            "mysql" | "mariadb" | "tidb" => {
-                let driver =
-                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_schema_metadata(&driver, schema).await
-            }
-            "couchbase" => {
-                let driver =
-                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
-                        .await?;
-                DatabaseDriver::get_schema_metadata(&driver, schema).await
-            }
-            _ => Ok(vec![]),
+            "sqlite" => Arc::new(self.sqlite_driver(&connection, &password).await?),
+            "clickhouse" => Arc::new(
+                crate::services::clickhouse::ClickHouseDriver::new(&connection, &password).await?,
+            ),
+            "mysql" | "mariadb" | "tidb" => Arc::new(
+                crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?,
+            ),
+            "couchbase" => Arc::new(
+                crate::services::couchbase::CouchbaseDriver::new(&connection, &password).await?,
+            ),
+            _ => return Ok(vec![]),
+        };
+
+        if let Some(cache) = &self.schema_cache {
+            return cache
+                .get_schema_structure(connection_id, &database_name, schema, driver)
+                .await;
         }
+
+        DatabaseDriver::get_schema_metadata(driver.as_ref(), schema).await
     }
 
     pub async fn get_schema_foreign_keys(

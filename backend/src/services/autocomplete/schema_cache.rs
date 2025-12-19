@@ -398,7 +398,180 @@ impl SchemaCacheService {
         Ok(())
     }
 
-    /// Best-effort parsing of DDL to extract affected objects
+    pub async fn get_schema_structure(
+        &self,
+        connection_id: Uuid,
+        database_name: &str,
+        schema_name: &str,
+        driver: Arc<dyn DatabaseDriver>,
+    ) -> Result<Vec<crate::services::db_driver::TableMetadata>> {
+        use crate::services::db_driver::TableMetadata;
+
+        let key = CacheKey {
+            connection_id,
+            database_name: database_name.to_string(),
+            schema_name: schema_name.to_string(),
+        };
+
+        // 1. Check in-memory cache for tables presence (freshness check)
+        // If we have a timestamp for this schema in memory, use it to decide?
+        // But memory cache stores `Vec<Model>`, usually tables.
+
+        let mut use_cache = false;
+        if let Some(entry) = self.memory_cache.get(&key) {
+            let (_, timestamp) = entry.value();
+            if Utc::now() - *timestamp < self.ttl {
+                use_cache = true;
+            }
+        }
+
+        // If not in memory, check DB for tables
+        if !use_cache {
+            let count = schema_cache::Entity::find()
+                .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+                .filter(schema_cache::Column::DatabaseName.eq(database_name))
+                .filter(schema_cache::Column::SchemaName.eq(schema_name))
+                .filter(schema_cache::Column::ObjectType.is_in(vec!["base table", "view"]))
+                .count(&self.db)
+                .await?;
+
+            if count > 0 {
+                // We assume if tables are there, it's cached.
+                // We might want to check timestamp of one record?
+                // For now, assume validity if present.
+                use_cache = true;
+            }
+        }
+
+        if use_cache {
+            // Retrieve structure from DB
+            // Get all tables and views
+            let tables = schema_cache::Entity::find()
+                .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+                .filter(schema_cache::Column::DatabaseName.eq(database_name))
+                .filter(schema_cache::Column::SchemaName.eq(schema_name))
+                .filter(schema_cache::Column::ObjectType.is_in(vec!["base table", "view"]))
+                .all(&self.db)
+                .await?;
+
+            // Get all columns for this schema
+            let columns = schema_cache::Entity::find()
+                .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+                .filter(schema_cache::Column::DatabaseName.eq(database_name))
+                .filter(schema_cache::Column::SchemaName.eq(schema_name))
+                .filter(schema_cache::Column::ObjectType.eq("column"))
+                .all(&self.db)
+                .await?;
+
+            // Group columns by parent_name
+            let mut columns_map: std::collections::HashMap<String, Vec<String>> =
+                std::collections::HashMap::new();
+            for col in columns {
+                if let Some(parent) = col.parent_name {
+                    columns_map.entry(parent).or_default().push(col.object_name);
+                }
+            }
+
+            let mut result = Vec::new();
+            for table in tables {
+                let cols = columns_map.remove(&table.object_name).unwrap_or_default();
+                result.push(TableMetadata {
+                    table_name: table.object_name,
+                    columns: cols,
+                });
+            }
+
+            return Ok(result);
+        }
+
+        // Cache Miss: Fetch from Driver
+        let metadata = DatabaseDriver::get_schema_metadata(driver.as_ref(), schema_name).await?;
+
+        // Prepare models for saving
+        let mut models = Vec::new();
+        for table in &metadata {
+            models.push(schema_cache::Model {
+                id: 0,
+                connection_id,
+                database_name: database_name.to_string(),
+                schema_name: schema_name.to_string(),
+                object_name: table.table_name.clone(),
+                object_type: "base table".to_string(), // We don't know if view? metadata usually treats them same?
+                // Actually TableMetadata doesn't distinguish view/table.
+                // We might default to base table or try to guess?
+                // For structure view it might not matter much.
+                parent_name: None,
+                metadata: None,
+                last_updated: Utc::now(),
+            });
+
+            for col in &table.columns {
+                models.push(schema_cache::Model {
+                    id: 0,
+                    connection_id,
+                    database_name: database_name.to_string(),
+                    schema_name: schema_name.to_string(),
+                    object_name: col.clone(),
+                    object_type: "column".to_string(),
+                    parent_name: Some(table.table_name.clone()),
+                    metadata: Some(serde_json::json!({
+                        "data_type": "unknown",
+                        "is_nullable": true, // assume nullable
+                        "is_primary_key": false,
+                    })),
+                    last_updated: Utc::now(),
+                });
+            }
+        }
+
+        // Save to DB (Clear old tables/views/columns first)
+        // Delete tables/views/columns in schema
+        schema_cache::Entity::delete_many()
+            .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+            .filter(schema_cache::Column::DatabaseName.eq(database_name))
+            .filter(schema_cache::Column::SchemaName.eq(schema_name))
+            .filter(schema_cache::Column::ObjectType.is_in(vec!["base table", "view", "column"]))
+            .exec(&self.db)
+            .await?;
+
+        if !models.is_empty() {
+            // Batch insert - split if too large?
+            // SQLite limit handling? SeaORM handles it usually.
+            // But if many tables/cols, might need chunks.
+            for chunk in models.chunks(500) {
+                let active_models: Vec<schema_cache::ActiveModel> = chunk
+                    .iter()
+                    .map(|m| schema_cache::ActiveModel {
+                        connection_id: Set(m.connection_id),
+                        database_name: Set(m.database_name.clone()),
+                        schema_name: Set(m.schema_name.clone()),
+                        object_name: Set(m.object_name.clone()),
+                        object_type: Set(m.object_type.clone()),
+                        parent_name: Set(m.parent_name.clone()),
+                        metadata: Set(m.metadata.clone()),
+                        last_updated: Set(m.last_updated),
+                        ..Default::default()
+                    })
+                    .collect();
+
+                schema_cache::Entity::insert_many(active_models)
+                    .exec(&self.db)
+                    .await?;
+            }
+        }
+
+        // Update memory cache (only with tables/views models to keep consistent with get_schema_metadata expectation)
+        let table_models: Vec<schema_cache::Model> = models
+            .iter()
+            .filter(|m| m.object_type == "base table" || m.object_type == "view")
+            .cloned()
+            .collect();
+
+        self.memory_cache.insert(key, (table_models, Utc::now()));
+
+        Ok(metadata)
+    }
+
     fn parse_ddl_objects(sql: &str) -> Option<DdlAffectedObject> {
         // Simple pattern matching for common DDL patterns
         // CREATE/ALTER/DROP TABLE schema.table

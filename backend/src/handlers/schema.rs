@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, Query, State},
@@ -149,7 +150,7 @@ pub async fn drop_schema(
 }
 
 pub async fn list_schema_metadata(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -159,14 +160,15 @@ pub async fn list_schema_metadata(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
                 .database
                 .clone()
                 .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
-        );
+        )
+        .with_schema_cache(state.schema_cache.clone());
     match service
         .get_schema_metadata(connection_id, &params.schema)
         .await
