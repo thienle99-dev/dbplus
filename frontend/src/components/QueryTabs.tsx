@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Plus, X, FileCode, BookMarked, History, Database, Pin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import QueryEditor from './QueryEditor';
+const QueryEditor = lazy(() => import('./QueryEditor'));
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
-import TableDataView from './TableDataView';
+const TableDataView = lazy(() => import('./TableDataView'));
 import { useDraftPersistence } from '../hooks/useDraftPersistence';
 import { TabProvider } from '../context/TabContext';
 import { Tab } from '../types';
@@ -598,6 +598,7 @@ export default function QueryTabs() {
                 key={tab.id}
                 className="absolute inset-0 flex flex-col bg-bg-0 z-10"
               >
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-text-secondary">Loading component...</div>}>
                 {tab.type === 'table' ? (
                   <TableDataView 
                     schema={tab.schema!} 
@@ -641,6 +642,7 @@ export default function QueryTabs() {
                     }}
                   />
                 )}
+                </Suspense>
               </div>
             );
           })}
