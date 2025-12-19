@@ -2,8 +2,6 @@ use crate::services::autocomplete::schema_cache::SchemaCacheService;
 use crate::services::db_driver::DatabaseDriver;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use sqlparser::dialect::PostgreSqlDialect;
-use sqlparser::tokenizer::{Token, Tokenizer};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -39,19 +37,21 @@ impl AutocompleteEngine {
         req: AutocompleteRequest,
         driver: Arc<dyn DatabaseDriver>,
     ) -> Result<Vec<Suggestion>> {
-        let tokens = {
-            let dialect = PostgreSqlDialect {};
-            let mut tokenizer = Tokenizer::new(&dialect, &req.sql);
-            tokenizer.tokenize().unwrap_or_default()
-        };
+        use crate::services::autocomplete::parser::{AutocompleteParser, CursorContext};
 
-        // Find context based on tokens before cursor
-        let context = self.get_context(&req.sql, req.cursor_pos, &tokens);
+        // 1. Parse Context (Lightweight)
+        let parse_result = AutocompleteParser::parse(&req.sql, req.cursor_pos);
+
+        // 2. Safety Check (Strings/Comments)
+        if !parse_result.is_safe_location {
+            return Ok(Vec::new()); // No suggestions inside strings/comments
+        }
 
         let mut suggestions = Vec::new();
 
-        match context {
-            Context::From | Context::Join => {
+        // 3. Handle Context
+        match parse_result.context {
+            CursorContext::From | CursorContext::Join => {
                 let schema = req.active_schema.as_deref().unwrap_or("public");
                 let objects = self
                     .schema_cache
@@ -74,41 +74,105 @@ impl AutocompleteEngine {
                     });
                 }
             }
-            Context::Select
-            | Context::Where
-            | Context::On
-            | Context::OrderBy
-            | Context::GroupBy => {
-                // Find tables in query to suggest columns
-                let tables = self.extract_tables(&tokens, req.cursor_pos);
-                for (table_name, alias) in tables {
+            CursorContext::Select
+            | CursorContext::Where
+            | CursorContext::On
+            | CursorContext::OrderBy
+            | CursorContext::GroupBy => {
+                // If we have an identifier chain ending in dot, try alias resolution
+                if let Some(chain) = &parse_result.identifier_chain {
+                    if let Some(last) = chain.parts.last() {
+                        if last.is_empty() && chain.parts.len() > 1 {
+                            // "something."
+                            let potential_alias = &chain.parts[chain.parts.len() - 2];
+
+                            // Resolve alias
+                            let table_to_search = if let Some(real_table) =
+                                parse_result.aliases.get(potential_alias)
+                            {
+                                // Found alias "u" -> "users"
+                                // BUT the real table might be "public.users" or just "users"
+                                real_table.clone()
+                            } else {
+                                // Maybe it's a direct table ref "public."
+                                potential_alias.clone()
+                            };
+
+                            // Fetch columns for this specific table
+                            // We need to split schema/table from table_to_search
+                            let (schema, table) = if table_to_search.contains('.') {
+                                let parts: Vec<&str> = table_to_search.split('.').collect();
+                                (parts[0].to_string(), parts[1].to_string())
+                            } else {
+                                (
+                                    req.active_schema
+                                        .clone()
+                                        .unwrap_or_else(|| "public".to_string()),
+                                    table_to_search,
+                                )
+                            };
+
+                            let cols = self
+                                .schema_cache
+                                .get_columns(
+                                    req.connection_id,
+                                    &req.database_name,
+                                    &schema,
+                                    &table,
+                                    driver.clone(),
+                                )
+                                .await?;
+
+                            for col in cols {
+                                suggestions.push(Suggestion {
+                                    label: col.object_name.clone(),
+                                    insert_text: col.object_name.clone(),
+                                    kind: "column".to_string(),
+                                    detail: Some(format!("from {}", table)),
+                                    score: 110,
+                                });
+                            }
+                            return Ok(suggestions);
+                        }
+                    }
+                }
+
+                // General Column Suggestions (from all visible tables in alias map)
+                for (alias, table_ref) in &parse_result.aliases {
+                    let (schema, table) = if table_ref.contains('.') {
+                        let parts: Vec<&str> = table_ref.split('.').collect();
+                        (parts[0].to_string(), parts[1].to_string())
+                    } else {
+                        (
+                            req.active_schema
+                                .clone()
+                                .unwrap_or_else(|| "public".to_string()),
+                            table_ref.clone(),
+                        )
+                    };
+
                     // Lazy load columns
-                    let schema = req.active_schema.as_deref().unwrap_or("public");
-                    let cols = self
+                    if let Ok(cols) = self
                         .schema_cache
                         .get_columns(
                             req.connection_id,
                             &req.database_name,
-                            schema,
-                            &table_name,
+                            &schema,
+                            &table,
                             driver.clone(),
                         )
-                        .await?;
-
-                    for col in cols {
-                        let display_name = if let Some(a) = &alias {
-                            format!("{}.{}", a, col.object_name)
-                        } else {
-                            col.object_name.clone()
-                        };
-
-                        suggestions.push(Suggestion {
-                            label: display_name.clone(),
-                            insert_text: col.object_name.clone(),
-                            kind: "column".to_string(),
-                            detail: Some(format!("from {}", table_name)),
-                            score: 80,
-                        });
+                        .await
+                    {
+                        for col in cols {
+                            let display_name = format!("{}.{}", alias, col.object_name);
+                            suggestions.push(Suggestion {
+                                label: display_name,
+                                insert_text: col.object_name.clone(), // Or maybe full ref? Usually just column name if context is clear, but let's stick to simple insert
+                                kind: "column".to_string(),
+                                detail: Some(format!("from {}", table)),
+                                score: 80,
+                            });
+                        }
                     }
                 }
 
@@ -120,35 +184,6 @@ impl AutocompleteEngine {
                     detail: Some("Aggregate".to_string()),
                     score: 90,
                 });
-            }
-            Context::Alias(alias) => {
-                let tables = self.extract_tables(&tokens, req.cursor_pos);
-                if let Some((table_name, _)) = tables
-                    .iter()
-                    .find(|(t, a)| a.as_ref() == Some(&alias) || t == &alias)
-                {
-                    let schema = req.active_schema.as_deref().unwrap_or("public");
-                    let cols = self
-                        .schema_cache
-                        .get_columns(
-                            req.connection_id,
-                            &req.database_name,
-                            schema,
-                            table_name,
-                            driver.clone(),
-                        )
-                        .await?;
-
-                    for col in cols {
-                        suggestions.push(Suggestion {
-                            label: col.object_name.clone(),
-                            insert_text: col.object_name.clone(),
-                            kind: "column".to_string(),
-                            detail: Some(format!("from {}", table_name)),
-                            score: 110,
-                        });
-                    }
-                }
             }
             _ => {
                 // General keywords
@@ -183,101 +218,4 @@ impl AutocompleteEngine {
 
         Ok(suggestions)
     }
-
-    fn get_context(&self, sql: &str, cursor_pos: usize, _tokens: &[Token]) -> Context {
-        if cursor_pos == 0 {
-            return Context::Unknown;
-        }
-
-        let text_before = &sql[..cursor_pos];
-        let words: Vec<&str> = text_before.split_whitespace().collect();
-
-        if let Some(last_word) = words.last() {
-            let upper = last_word.to_uppercase();
-            if upper == "SELECT" {
-                return Context::Select;
-            }
-            if upper == "FROM" || upper == "JOIN" {
-                return Context::From;
-            }
-            if upper == "WHERE" || upper == "AND" || upper == "OR" {
-                return Context::Where;
-            }
-            if upper == "ON" {
-                return Context::On;
-            }
-            if upper == "BY" {
-                if words.len() >= 2 && words[words.len() - 2].to_uppercase() == "GROUP" {
-                    return Context::GroupBy;
-                }
-                if words.len() >= 2 && words[words.len() - 2].to_uppercase() == "ORDER" {
-                    return Context::OrderBy;
-                }
-            }
-
-            if last_word.ends_with('.') {
-                let alias = &last_word[..last_word.len() - 1];
-                return Context::Alias(alias.to_string());
-            }
-        }
-
-        Context::Unknown
-    }
-
-    fn extract_tables(
-        &self,
-        tokens: &[Token],
-        _cursor_pos: usize,
-    ) -> Vec<(String, Option<String>)> {
-        let mut tables = Vec::new();
-        let mut i = 0;
-        while i < tokens.len() {
-            match &tokens[i] {
-                Token::Word(w)
-                    if w.value.to_uppercase() == "FROM" || w.value.to_uppercase() == "JOIN" =>
-                {
-                    i += 1;
-                    if i < tokens.len() {
-                        if let Token::Word(table_word) = &tokens[i] {
-                            let table_name = table_word.value.clone();
-                            let mut alias = None;
-                            i += 1;
-                            // Check for AS or alias
-                            if i < tokens.len() {
-                                if let Token::Word(next_word) = &tokens[i] {
-                                    if next_word.value.to_uppercase() == "AS" {
-                                        i += 1;
-                                        if i < tokens.len() {
-                                            if let Token::Word(alias_word) = &tokens[i] {
-                                                alias = Some(alias_word.value.clone());
-                                            }
-                                        }
-                                    } else if !["WHERE", "GROUP", "ORDER", "JOIN", "LIMIT", "ON"]
-                                        .contains(&next_word.value.to_uppercase().as_str())
-                                    {
-                                        alias = Some(next_word.value.clone());
-                                    }
-                                }
-                            }
-                            tables.push((table_name, alias));
-                        }
-                    }
-                }
-                _ => i += 1,
-            }
-        }
-        tables
-    }
-}
-
-pub enum Context {
-    Select,
-    From,
-    Join,
-    Where,
-    On,
-    OrderBy,
-    GroupBy,
-    Alias(String),
-    Unknown,
 }
