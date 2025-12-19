@@ -217,17 +217,56 @@ export function useQueryCompletion({
 
       if (!schemaCompletion) return null;
 
-      const allTables = Object.keys(schemaCompletion).filter(
-        (key) => !key.includes(".")
-      );
+      const options: any[] = [];
+      const seen = new Set<string>();
 
-      const options = allTables.map((table) => ({
-        label: table,
-        detail: "Table",
-        apply: table,
-        type: "class",
-        boost: 5, // Higher priority for FROM clause
-      }));
+      // Build a map of unqualified -> qualified names
+      const qualifiedMap = new Map<string, string>();
+      Object.keys(schemaCompletion).forEach((key) => {
+        if (key.includes(".")) {
+          const tableName = key.split(".")[1];
+          if (!qualifiedMap.has(tableName)) {
+            qualifiedMap.set(tableName, key);
+          }
+        }
+      });
+
+      // Get all table entries from schemaCompletion
+      Object.keys(schemaCompletion).forEach((key) => {
+        if (key.includes(".")) {
+          // Qualified name (e.g., "public.users")
+          const [schema] = key.split(".");
+          
+          if (!seen.has(key)) {
+            seen.add(key);
+            options.push({
+              label: key,
+              detail: `Table in ${schema}`,
+              apply: key,
+              type: "class",
+              boost: 6, // Higher priority for qualified names
+            });
+          }
+        } else {
+          // Unqualified name (e.g., "users")
+          // Find the qualified version and use it for apply
+          const qualifiedName = qualifiedMap.get(key) || key;
+          const schema = qualifiedName.includes(".") ? qualifiedName.split(".")[0] : null;
+          
+          if (!seen.has(key)) {
+            seen.add(key);
+            options.push({
+              label: key,
+              detail: schema ? `Table (→ ${qualifiedName})` : "Table",
+              apply: qualifiedName, // Apply qualified name
+              type: "class",
+              boost: 5,
+            });
+          }
+        }
+      });
+
+
 
       const wordText = fromPattern ? fromPattern.text : "";
       const fromKeywordMatch = wordText.match(/\bFROM\s+/i);

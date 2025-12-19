@@ -1,0 +1,53 @@
+--- a/frontend/src/components/query-editor/useQueryCompletion.ts
++++ b/frontend/src/components/query-editor/useQueryCompletion.ts
+@@ -217,17 +217,38 @@
+ 
+       if (!schemaCompletion) return null;
+ 
+-      const allTables = Object.keys(schemaCompletion).filter(
+-        (key) => !key.includes(".")
+-      );
+-
+-      const options = allTables.map((table) => ({
+-        label: table,
+-        detail: "Table",
+-        apply: table,
+-        type: "class",
+-        boost: 5, // Higher priority for FROM clause
+-      }));
++      const options: any[] = [];
++      const seen = new Set<string>();
++
++      // Get all table entries from schemaCompletion
++      Object.keys(schemaCompletion).forEach((key) => {
++        if (key.includes(".")) {
++          // Qualified name (e.g., "public.users")
++          const [schema, table] = key.split(".");
++          
++          if (!seen.has(key)) {
++            seen.add(key);
++            options.push({
++              label: key,
++              detail: `Table in ${schema}`,
++              apply: key,
++              type: "class",
++              boost: 6, // Higher priority for qualified names
++            });
++          }
++        } else {
++          // Unqualified name (e.g., "users")
++          if (!seen.has(key)) {
++            seen.add(key);
++            options.push({
++              label: key,
++              detail: "Table",
++              apply: key,
++              type: "class",
++              boost: 5,
++            });
++          }
++        }
++      });
+ 
+       const wordText = fromPattern ? fromPattern.text : "";
+       const fromKeywordMatch = wordText.match(/\bFROM\s+/i);
