@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use uuid::Uuid;
 
 #[derive(Deserialize)]

@@ -17,6 +17,8 @@ impl TableOperations for MySqlDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        _filter: Option<String>,
+        _document_id: Option<String>,
     ) -> Result<QueryResult> {
         let query = format!(
             "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",

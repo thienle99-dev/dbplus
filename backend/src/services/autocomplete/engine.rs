@@ -186,7 +186,7 @@ impl AutocompleteEngine {
     async fn add_schema_suggestions(
         &self,
         suggestions: &mut Vec<Suggestion>,
-        req: &AutocompleteRequest,
+        _req: &AutocompleteRequest,
         driver: Arc<dyn DatabaseDriver>,
         _prefix: &str,
     ) -> Result<()> {
@@ -333,7 +333,7 @@ impl AutocompleteEngine {
     async fn add_function_suggestions(
         &self,
         suggestions: &mut Vec<Suggestion>,
-        req: &AutocompleteRequest,
+        _req: &AutocompleteRequest,
         schema: &str,
         driver: Arc<dyn DatabaseDriver>,
         _prefix: &str,

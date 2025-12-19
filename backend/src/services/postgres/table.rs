@@ -27,6 +27,8 @@ impl TableOperations for PostgresTable {
         table: &str,
         limit: i64,
         offset: i64,
+        _filter: Option<String>,
+        _document_id: Option<String>,
     ) -> Result<QueryResult> {
         tracing::info!(
             "[PostgresTable] get_table_data - schema: {}, table: {}, limit: {}, offset: {}",

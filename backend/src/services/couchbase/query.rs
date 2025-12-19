@@ -2,7 +2,7 @@ use crate::services::db_driver::QueryResult;
 use crate::services::driver::QueryDriver;
 use anyhow::Result;
 use async_trait::async_trait;
-use futures_util::stream::{StreamExt, TryStreamExt};
+use futures_util::stream::TryStreamExt;
 use serde_json::Value;
 
 use super::connection::CouchbaseDriver;
@@ -10,7 +10,7 @@ use super::connection::CouchbaseDriver;
 #[async_trait]
 impl QueryDriver for CouchbaseDriver {
     async fn execute(&self, query: &str) -> Result<u64> {
-        let result = self
+        let _result = self
             .cluster
             .query(query, None)
             .await

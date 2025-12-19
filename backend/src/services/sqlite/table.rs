@@ -26,6 +26,8 @@ impl TableOperations for SQLiteTable {
         table: &str,
         limit: i64,
         offset: i64,
+        _filter: Option<String>,
+        _document_id: Option<String>,
     ) -> Result<QueryResult> {
         tracing::info!(
             "[SQLiteTable] get_table_data - schema: {}, table: {}, limit: {}, offset: {}",
@@ -282,10 +284,7 @@ impl TableOperations for SQLiteTable {
             "SELECT name, sql FROM {}.sqlite_master WHERE type = 'trigger' AND tbl_name = ? ORDER BY name",
             quote_ident(&schema)
         );
-        let rows = sqlx::query(&q)
-        .bind(table)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows = sqlx::query(&q).bind(table).fetch_all(&self.pool).await?;
 
         let mut triggers = Vec::new();
         for row in rows {
@@ -340,7 +339,9 @@ impl TableOperations for SQLiteTable {
         _table: &str,
         _comment: Option<String>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!("Table comments are not supported for sqlite"))
+        Err(anyhow::anyhow!(
+            "Table comments are not supported for sqlite"
+        ))
     }
 
     async fn get_table_permissions(&self, _schema: &str, _table: &str) -> Result<Vec<TableGrant>> {
@@ -362,10 +363,12 @@ impl TableOperations for SQLiteTable {
         Err(anyhow::anyhow!("Permissions are not supported for sqlite"))
     }
 
-    async fn get_table_dependencies(&self, _schema: &str, _table: &str) -> Result<TableDependencies> {
-        Err(anyhow::anyhow!(
-            "Dependencies are not supported for sqlite"
-        ))
+    async fn get_table_dependencies(
+        &self,
+        _schema: &str,
+        _table: &str,
+    ) -> Result<TableDependencies> {
+        Err(anyhow::anyhow!("Dependencies are not supported for sqlite"))
     }
 
     async fn get_storage_bloat_info(
@@ -373,7 +376,9 @@ impl TableOperations for SQLiteTable {
         _schema: &str,
         _table: &str,
     ) -> Result<StorageBloatInfo> {
-        Err(anyhow::anyhow!("Storage & bloat info is not supported for sqlite"))
+        Err(anyhow::anyhow!(
+            "Storage & bloat info is not supported for sqlite"
+        ))
     }
 
     async fn get_partitions(&self, _schema: &str, _table: &str) -> Result<PartitionInfo> {
@@ -416,7 +421,9 @@ mod tests {
         let table = SQLiteTable::new(pool);
 
         let indexes = table.get_table_indexes("main", "t").await.unwrap();
-        assert!(indexes.iter().any(|idx| idx.name == "idx_t_email" && idx.is_unique));
+        assert!(indexes
+            .iter()
+            .any(|idx| idx.name == "idx_t_email" && idx.is_unique));
 
         let constraints = table.get_table_constraints("main", "t").await.unwrap();
         assert!(constraints
@@ -425,7 +432,3 @@ mod tests {
             .any(|uc| uc.constraint_name == "idx_t_email" && uc.columns == vec!["email"]));
     }
 }
-
-
-
-

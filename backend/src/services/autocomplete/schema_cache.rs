@@ -582,7 +582,7 @@ impl SchemaCacheService {
             return None;
         }
 
-        let command = words[0]; // CREATE, ALTER, DROP, TRUNCATE
+        let _command = words[0]; // CREATE, ALTER, DROP, TRUNCATE
         let object_type = words[1]; // TABLE, SCHEMA, VIEW, INDEX, etc.
 
         match object_type {

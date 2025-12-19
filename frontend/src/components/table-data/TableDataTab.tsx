@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -6,13 +6,14 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Edit, Copy, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState, SchemaForeignKey } from '../../types';
 import Button from '../ui/Button';
 import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
+import { useConnectionStore } from '../../store/connectionStore';
 
 interface TableDataTabProps {
   connectionId?: string;
@@ -34,6 +35,16 @@ interface TableDataTabProps {
   onStartAddingRow: () => void;
   onRefresh: () => void;
   foreignKeys?: SchemaForeignKey[];
+  isCouchbase?: boolean;
+  filter?: string;
+  setFilter?: (val: string) => void;
+  documentId?: string;
+  setDocumentId?: (val: string) => void;
+  bucket?: string;
+  setBucket?: (val: string) => void;
+  onRetrieve?: () => void;
+  onDelete?: (rowIndex: number) => Promise<void>;
+  onDuplicate?: (rowIndex: number) => Promise<void>;
 }
 
 export default function TableDataTab({
@@ -56,16 +67,28 @@ export default function TableDataTab({
   onStartAddingRow,
   onRefresh,
   foreignKeys = [],
+  isCouchbase = false,
+  filter = '',
+  setFilter,
+  documentId = '',
+  setDocumentId,
+  bucket = '',
+  setBucket,
+  onRetrieve,
+  onDelete,
+  onDuplicate,
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   const { selectedRow, setSelectedRow } = useSelectedRow();
+  const { connections } = useConnectionStore();
+  const currentConnection = connections.find(c => c.id === connectionId);
+  const [inlineEditingEnabled, setInlineEditingEnabled] = useState(true);
 
   // Virtualization Ref
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const columns = useMemo(() => {
-    // ... (keep existing columns logic)
-    // Use data.columns if available, otherwise fallback to columnsInfo
+    // Show data columns
     const sourceColumns = data?.columns?.length ? data.columns : _columnsInfo.map(c => c.name);
 
     if (!sourceColumns.length) return [];
@@ -81,6 +104,60 @@ export default function TableDataTab({
         </div>
       ),
       size: 40,
+      enableResizing: false,
+    });
+
+    // Actions Column
+    const actionsColumn = helper.display({
+      id: '_actions',
+      header: 'Actions',
+      cell: (info) => (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedRow({
+                rowIndex: info.row.index,
+                rowData: info.row.original,
+                columns: data.columns,
+                schema,
+                table
+              });
+            }}
+            className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-accent transition-colors"
+            title="Edit Details"
+          >
+            <Edit size={12} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate?.(info.row.index);
+            }}
+            className="p-1 hover:bg-bg-2 rounded text-text-secondary hover:text-accent transition-colors"
+            title="Duplicate Row"
+          >
+            <Copy size={12} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(info.row.index);
+            }}
+            className="p-1 hover:bg-error-50 rounded text-text-secondary hover:text-error transition-colors"
+            title="Delete Row"
+          >
+            <Trash2 size={12} />
+          </button>
+          <button
+            className="p-1 hover:bg-bg-2 rounded text-text-secondary transition-colors"
+            title="More Actions"
+          >
+            <MoreHorizontal size={12} />
+          </button>
+        </div>
+      ),
+      size: 100,
       enableResizing: false,
     });
 
@@ -111,6 +188,7 @@ export default function TableDataTab({
                 placeholder={val === null ? 'NULL' : ''}
                 rows={Math.min(5, displayValue.split('\n').length)}
                 style={{ minHeight: '20px' }}
+                readOnly={!inlineEditingEnabled}
               />
             );
           }
@@ -126,6 +204,7 @@ export default function TableDataTab({
                 value={displayValue}
                 onChange={(e) => onEdit(rowIndex, index, e.target.value)}
                 placeholder={val === null ? 'NULL' : ''}
+                readOnly={!inlineEditingEnabled}
               />
               {fk && connectionId && val !== null && (
                 <Link
@@ -138,12 +217,12 @@ export default function TableDataTab({
               )}
             </div>
           );
-        }
+        },
       })
     );
 
-    return [indexColumn, ...dataColumns];
-  }, [data?.columns, _columnsInfo, edits, onEdit, foreignKeys, connectionId, page, pageSize]);
+    return [indexColumn, actionsColumn, ...dataColumns];
+  }, [data?.columns, _columnsInfo, edits, onEdit, foreignKeys, connectionId, page, pageSize, inlineEditingEnabled, onDelete, onDuplicate, setSelectedRow, schema, table]);
 
   const tableInstance = useReactTable({
     data: data?.rows || [],
@@ -164,11 +243,101 @@ export default function TableDataTab({
 
   return (
     <>
+      {isCouchbase && (
+        <div className="px-3 py-2 border-b border-border-light flex flex-wrap items-center gap-3 bg-bg-1 glass shadow-sm">
+          {/* Bucket Selector */}
+          <div className="flex flex-col gap-0.5 min-w-[140px]">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">Bucket</label>
+            <select
+              className="h-8 px-2 bg-bg-2 border border-border-subtle rounded-lg text-xs font-medium text-text-primary outline-none focus:ring-1 focus:ring-accent transition-all cursor-pointer"
+              value={bucket || currentConnection?.database || ''}
+              onChange={(e) => setBucket?.(e.target.value)}
+            >
+              <option value={currentConnection?.database || ''}>{currentConnection?.database || 'default'}</option>
+              {/* Other buckets could be fetched/listed here if needed */}
+            </select>
+          </div>
+
+          <div className="h-8 w-px bg-border-light mx-1 self-end mb-1" />
+
+          {/* Doc ID Retrieval */}
+          <div className="flex flex-col gap-0.5 min-w-[180px]">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">Document ID</label>
+            <input
+              className="h-8 px-3 bg-bg-2 border border-border-subtle rounded-lg text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary transition-all"
+              placeholder="Retrieval by ID..."
+              value={documentId}
+              onChange={(e) => setDocumentId?.(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onRetrieve?.()}
+            />
+          </div>
+
+          {/* N1QL WHERE Filtering */}
+          <div className="flex-1 flex flex-col gap-0.5 min-w-[240px]">
+            <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider ml-1">N1QL WHERE</label>
+            <input
+              className="h-8 px-3 bg-bg-2 border border-border-subtle rounded-lg text-xs text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary font-mono transition-all"
+              placeholder='e.g. type="user" AND city="HCM"'
+              value={filter}
+              onChange={(e) => setFilter?.(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onRetrieve?.()}
+            />
+          </div>
+
+          <div className="flex flex-col gap-0.5 self-end mb-0.5">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onRetrieve}
+              className="h-8 px-5 font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all"
+              disabled={loading}
+            >
+              Retrieve Docs
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isCouchbase && (
+        <div className="px-4 py-1.5 bg-bg-2/50 border-b border-border-light flex items-center justify-between text-[11px] text-text-tertiary">
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="text-accent underline cursor-help decoration-accent/30 underline-offset-2">
+              {data.rows.length} results
+            </span>
+            <span>for selection from</span>
+            <code className="bg-bg-3 px-1.5 py-0.5 rounded text-text-secondary border border-border-light">
+              `{bucket || currentConnection?.database || 'default'}`.`{schema}`.`{table}`
+            </code>
+            {filter && (
+              <>
+                <span>where</span>
+                <code className="bg-bg-3 px-1.5 py-0.5 rounded text-accent/80 border border-border-light font-bold">
+                  {filter}
+                </code>
+              </>
+            )}
+            <span>limit {pageSize} offset {page * pageSize}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-bg-3 px-2 py-0.5 rounded-full border border-border-light">
+              <span className="font-bold text-[9px] uppercase tracking-tighter">Edit Labels</span>
+              <button
+                onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
+                className={`w-7 h-3.5 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
+              >
+                <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-3 border-b border-border-light flex justify-between items-center bg-bg-1 glass">
-        {/* ... (keep toolbar) ... */}
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-semibold text-text-primary px-2">
-            {schema}.{table}
+            {!isCouchbase && `${schema}.${table}`}
+            {isCouchbase && `${table}`}
           </h2>
           {isAddingRow && (
             <div className="flex items-center gap-2">
@@ -241,18 +410,18 @@ export default function TableDataTab({
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0 || loading}
               className="p-1.5 rounded-full hover:bg-bg-0 disabled:opacity-30 text-text-secondary hover:text-text-primary transition-all"
-              title="Previous page"
+              title="Previous batch"
             >
               <ChevronLeft size={14} />
             </button>
             <span className="text-xs text-text-secondary px-2 font-medium min-w-[60px] text-center">
-              Page {page + 1}
+              Batch {page + 1}
             </span>
             <button
               onClick={() => setPage(page + 1)}
               disabled={!data.rows.length || data.rows.length < pageSize || loading}
               className="p-1.5 rounded-full hover:bg-bg-0 disabled:opacity-30 text-text-secondary hover:text-text-primary transition-all"
-              title="Next page"
+              title="Next batch"
             >
               <ChevronRight size={14} />
             </button>

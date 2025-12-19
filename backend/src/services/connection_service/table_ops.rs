@@ -91,6 +91,8 @@ impl ConnectionService {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
     ) -> Result<crate::services::db_driver::QueryResult> {
         let connection = self
             .get_connection_by_id(connection_id)
@@ -106,22 +108,75 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                )
+                .await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                )
+                .await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                )
+                .await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                )
+                .await
+            }
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                )
+                .await
             }
             _ => Ok(crate::services::db_driver::QueryResult {
                 columns: vec![],
@@ -129,8 +184,8 @@ impl ConnectionService {
                 affected_rows: 0,
                 column_metadata: None,
                 total_count: None,
-                limit: None,
-                offset: None,
+                limit: Some(limit),
+                offset: Some(offset),
                 has_more: None,
             }),
         }

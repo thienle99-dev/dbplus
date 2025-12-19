@@ -332,6 +332,8 @@ impl TableOperations for ClickHouseDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        _filter: Option<String>,
+        _document_id: Option<String>,
     ) -> Result<QueryResult> {
         let db = if schema.is_empty() {
             &self.database

@@ -14,13 +14,42 @@ impl TableOperations for CouchbaseDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
     ) -> Result<QueryResult> {
         let bucket = self.bucket_name.as_deref().unwrap_or("default");
-        // N1QL syntax for collection: keyspace is bucket.scope.collection
-        let query = format!(
-            "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT {} OFFSET {}",
-            bucket, schema, table, limit, offset
-        );
+
+        let mut query = if let Some(id) = document_id {
+            if id.trim().is_empty() {
+                format!(
+                    "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t",
+                    bucket, schema, table
+                )
+            } else {
+                format!(
+                    "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t USE KEYS '{}'",
+                    bucket,
+                    schema,
+                    table,
+                    id.replace("'", "''")
+                )
+            }
+        } else {
+            format!(
+                "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t",
+                bucket, schema, table
+            )
+        };
+
+        if let Some(f) = filter {
+            if !f.trim().is_empty() {
+                query.push_str(" WHERE ");
+                query.push_str(&f);
+            }
+        }
+
+        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+
         QueryDriver::execute_query(self, &query).await
     }
 

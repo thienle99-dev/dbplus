@@ -1,9 +1,9 @@
+use crate::services::db_driver::{
+    IndexInfo, PartitionInfo, QueryResult, RoleInfo, StorageBloatInfo, TableComment,
+    TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
+};
 use anyhow::Result;
 use async_trait::async_trait;
-use crate::services::db_driver::{
-    IndexInfo, QueryResult, RoleInfo, TableComment, TableConstraints, TableGrant, TableStatistics,
-    TriggerInfo, StorageBloatInfo, PartitionInfo, TableDependencies,
-};
 
 #[async_trait]
 pub trait TableOperations: Send + Sync {
@@ -13,6 +13,8 @@ pub trait TableOperations: Send + Sync {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
     ) -> Result<QueryResult>;
 
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
@@ -20,7 +22,12 @@ pub trait TableOperations: Send + Sync {
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>>;
     async fn get_table_triggers(&self, schema: &str, table: &str) -> Result<Vec<TriggerInfo>>;
     async fn get_table_comment(&self, schema: &str, table: &str) -> Result<TableComment>;
-    async fn set_table_comment(&self, schema: &str, table: &str, comment: Option<String>) -> Result<()>;
+    async fn set_table_comment(
+        &self,
+        schema: &str,
+        table: &str,
+        comment: Option<String>,
+    ) -> Result<()>;
     async fn get_table_permissions(&self, schema: &str, table: &str) -> Result<Vec<TableGrant>>;
     async fn list_roles(&self) -> Result<Vec<RoleInfo>>;
     async fn set_table_permissions(

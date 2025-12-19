@@ -284,6 +284,8 @@ pub trait DatabaseDriver:
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
     ) -> Result<QueryResult>;
     async fn execute_query(&self, query: &str) -> Result<QueryResult>;
     async fn get_table_constraints(&self, schema: &str, table: &str) -> Result<TableConstraints>;
@@ -382,8 +384,19 @@ where
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
     ) -> Result<QueryResult> {
-        <Self as TableOperations>::get_table_data(self, schema, table, limit, offset).await
+        <Self as TableOperations>::get_table_data(
+            self,
+            schema,
+            table,
+            limit,
+            offset,
+            filter,
+            document_id,
+        )
+        .await
     }
 
     async fn execute_query(&self, query: &str) -> Result<QueryResult> {

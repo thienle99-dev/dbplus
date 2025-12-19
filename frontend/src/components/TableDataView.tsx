@@ -10,6 +10,7 @@ import TableDataTab from './table-data/TableDataTab';
 import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../types';
 import { useConstraints } from '../hooks/useDatabase';
 import { useTabStateStore } from '../store/tabStateStore';
+import { useConnectionStore } from '../store/connectionStore';
 
 interface Props extends TableDataViewProps {
   tabId?: string;
@@ -108,7 +109,11 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
     }
   }, [connectionId, schema, table]);
 
-  const fetchData = useCallback(async () => {
+  const [filter, setFilter] = useState('');
+  const [documentId, setDocumentId] = useState('');
+  const [bucket, setBucket] = useState('');
+
+  const fetchData = useCallback(async (customFilter?: string, customDocId?: string) => {
     if (!connectionId || !schema || !table || fetchingRef.current) return;
     fetchingRef.current = true;
     setLoading(true);
@@ -120,12 +125,17 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
     try {
       const offset = page * pageSize;
-      const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`,
-        {
-          headers: { 'X-Query-ID': queryId }
-        }
-      );
+      const f = customFilter !== undefined ? customFilter : filter;
+      const d = customDocId !== undefined ? customDocId : documentId;
+
+      let url = `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`;
+      if (f) url += `&filter=${encodeURIComponent(f)}`;
+      if (d) url += `&document_id=${encodeURIComponent(d)}`;
+      if (bucket) url += `&database=${encodeURIComponent(bucket)}`;
+
+      const response = await api.get(url, {
+        headers: { 'X-Query-ID': queryId }
+      });
       setData(response.data);
       setEdits({}); // Clear edits on page change/refresh
     } catch (err: unknown) {
@@ -140,18 +150,13 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         setLoading(false);
         fetchingRef.current = false;
       } else {
-        // If query ID changed, it means a NEW query started or this one was "cancelled" logic-wise
-        // But we still turn off fetching flag if strictly matching?
-        // Actually if new query started, fetchingRef might be true for THAT one.
-        // We should be careful resetting fetchingRef.
-        // Simple approach: reset loading/fetching if we finished.
         if (!activeQueryIdRef.current) {
           setLoading(false);
           fetchingRef.current = false;
         }
       }
     }
-  }, [connectionId, schema, table, page, pageSize]);
+  }, [connectionId, schema, table, page, pageSize, filter, documentId, bucket]);
 
   useEffect(() => {
     const cacheKey = `${connectionId}-${schema}-${table}`;
@@ -286,6 +291,66 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
     }
   }, [data, newRowData, schema, table, connectionId, fetchData, showToast]);
 
+  const { connections } = useConnectionStore();
+  const connection = connections.find(c => c.id === connectionId);
+  const isCouchbase = connection?.type === 'couchbase';
+
+  const handleDelete = useCallback(async (rowIndex: number) => {
+    if (!data) return;
+    const row = data.rows[rowIndex];
+    const pk = getRowPK(row);
+
+    if (!pk) {
+      showToast('Cannot delete: No primary key found', 'error');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this record?')) return;
+
+    setSaving(true);
+    try {
+      if (isCouchbase) {
+        // Couchbase delete logic
+        const docId = pk['_id'] || pk['id'];
+        if (!docId) throw new Error("Document ID not found");
+
+        const bucketName = bucket || connection?.database || 'default';
+        const query = `DELETE FROM \`${bucketName}\`.\`${schema}\`.\`${table}\` USE KEYS '${docId}'`;
+        await api.post(`/api/connections/${connectionId}/execute`, { query });
+      } else {
+        const whereClauses = Object.entries(pk).map(([col, val]) => {
+          const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
+          return `"${col}" = ${escapedVal}`;
+        });
+        const query = `DELETE FROM "${schema}"."${table}" WHERE ${whereClauses.join(' AND ')};`;
+        await api.post(`/api/connections/${connectionId}/execute`, { query });
+      }
+
+      showToast('Record deleted successfully', 'success');
+      await fetchData();
+    } catch (err: any) {
+      showToast(`Failed to delete: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [data, getRowPK, connectionId, schema, table, fetchData, showToast, isCouchbase, bucket, connection]);
+
+  const handleDuplicate = useCallback(async (rowIndex: number) => {
+    if (!data) return;
+    const row = data.rows[rowIndex];
+    const newValues: Record<number, unknown> = {};
+
+    data.columns.forEach((_col, index) => {
+      // Skip primary keys for duplication if they are auto-generated?
+      // Actually, just fill the new row form with these values
+      newValues[index] = row[index];
+    });
+
+    setNewRowData(newValues);
+    setIsAddingRow(true);
+    showToast('Row duplicated into new row form', 'info');
+  }, [data, showToast]);
+
   const handleCancelNewRow = useCallback(() => {
     setIsAddingRow(false);
     setNewRowData({});
@@ -338,7 +403,6 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
           </button>
         </div>
       </div>
-
       <div className={`flex-1 relative flex flex-col ${activeTab === 'data' ? 'overflow-hidden' : 'overflow-auto custom-scrollbar'}`}>
         {loading && !data ? (
           <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
@@ -367,6 +431,16 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
             onStartAddingRow={handleStartAddingRow}
             onRefresh={fetchData}
             foreignKeys={constraintsQuery.data?.foreign_keys || []}
+            isCouchbase={isCouchbase}
+            filter={filter}
+            setFilter={setFilter}
+            documentId={documentId}
+            setDocumentId={setDocumentId}
+            bucket={bucket}
+            setBucket={setBucket}
+            onRetrieve={() => fetchData()}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
           />
         ) : activeTab === 'structure' ? (
           <TableStructureTab schema={schema} table={table} />
