@@ -56,8 +56,8 @@ impl QueryDriver for CouchbaseDriver {
                         Some(keys[0].clone()),
                         obj.get(keys[0]).map(|v| v.is_object()).unwrap_or(false),
                     )
-                } else if keys.len() == 2 && keys.iter().any(|&k| k == "id") {
-                    let other_key = keys.iter().find(|&&k| k != "id").unwrap();
+                } else if keys.len() == 2 && keys.iter().any(|&k| k == "id" || k == "_id") {
+                    let other_key = keys.iter().find(|&&k| k != "id" && k != "_id").unwrap();
                     (
                         Some((*other_key).clone()),
                         obj.get(*other_key).map(|v| v.is_object()).unwrap_or(false),
@@ -96,7 +96,7 @@ impl QueryDriver for CouchbaseDriver {
         if let Some(ref uk) = unwrapped_key {
             for i in 0..sample_size {
                 if let Some(obj) = rows[i].as_object() {
-                    if obj.contains_key("id") {
+                    if obj.contains_key("id") || obj.contains_key("_id") {
                         column_set.insert("id".to_string());
                     }
                     if let Some(inner) = obj.get(uk).and_then(|v| v.as_object()) {

@@ -7,9 +7,10 @@ interface EditableCellProps {
     onSave: (newValue: any) => void;
     type: 'string' | 'number' | 'boolean' | 'json' | 'null';
     isEditable: boolean;
+    className?: string;
 }
 
-export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEditable }) => {
+export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEditable, className }) => {
     // ... (existing state) ...
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(formatCellValue(value));
@@ -35,8 +36,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) { 
-            e.preventDefault(); 
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             handleBlur();
         } else if (e.key === 'Escape') {
             setCurrentValue(formatCellValue(value));
@@ -48,8 +49,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
     const displayValue = formatCellValue(value);
     const isComplex = isComplexType(value);
     const datePreview = !isComplex ? tryGetDateFromTimestamp(value) : null;
-    const title = datePreview 
-        ? `Possible Date: ${datePreview}\nOriginal Value: ${displayValue}` 
+    const title = datePreview
+        ? `Possible Date: ${datePreview}\nOriginal Value: ${displayValue}`
         : displayValue;
 
     // If it's a complex type, allow "editing" mode just to view the pretty-printed 
@@ -87,14 +88,13 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
         }
     }
 
-    // Default view state
     return (
         <div
-            className={`w-full h-full px-2 py-1 cursor-text hover:bg-bg-3/50 truncate ${isComplex ? 'font-mono text-xs' : ''}`}
+            className={`w-full h-full px-2 py-1 cursor-text hover:bg-bg-3/50 truncate ${isComplex ? 'font-mono text-xs' : ''} ${className || ''}`}
             onClick={() => canEnterEditMode && setIsEditing(true)}
             title={title}
         >
-             {value === null ? <span className="text-gray-400 italic">null</span> : displayValue}
+            {value === null ? <span className="text-gray-400 italic">null</span> : displayValue}
         </div>
     );
 };

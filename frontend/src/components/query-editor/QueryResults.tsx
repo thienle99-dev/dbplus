@@ -48,6 +48,7 @@ interface QueryResultsProps {
     connectionType?: string;
 }
 
+
 export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
     hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, connectionType
@@ -402,12 +403,15 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                             else if (typeof val === 'number') type = 'number';
                             else if (typeof val === 'boolean') type = 'boolean';
 
+                            const isPk = metadata?.is_primary_key || (connectionType === 'couchbase' && col === 'id');
+
                             return (
                                 <EditableCell
                                     value={val}
                                     onSave={(newVal) => handleCellSave(rowIndex, col, newVal)}
                                     type={type as any}
                                     isEditable={isEditable}
+                                    className={isPk ? 'font-semibold text-text-primary' : ''}
                                 />
                             );
                         },
@@ -629,7 +633,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         if (!target) return;
 
         const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
-        const text = toInsertStatements({ schema, table, columns: result.columns, rows });
+        const text = toInsertStatements({ schema, table, columns: result.columns, rows, isCouchbase: connectionType === 'couchbase' });
         const filename = buildExportFilename(['query_results', connectionId], 'sql');
         downloadTextFile(text, filename, 'application/sql;charset=utf-8;');
         showToast('Exported INSERT statements', 'success');
@@ -652,7 +656,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                 const target = window.prompt('Target table for INSERT statements (schema.table)', defaultTarget);
                 if (!target) return;
                 const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
-                text = toInsertStatements({ schema, table, columns: result.columns, rows });
+                text = toInsertStatements({ schema, table, columns: result.columns, rows, isCouchbase: connectionType === 'couchbase' });
             }
 
             try {

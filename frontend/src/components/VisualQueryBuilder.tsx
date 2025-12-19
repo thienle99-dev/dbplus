@@ -158,12 +158,18 @@ export default function VisualQueryBuilder({ onSqlChange, initialState }: Visual
     }
 
     const cols =
-      selectedColumns.length > 0 ? selectedColumns.map((c) => quoteIdent(c, isCouchbase)).join(', ') : '*';
+      selectedColumns.length > 0
+        ? selectedColumns.map((c) => quoteIdent(c, isCouchbase)).join(', ')
+        : isCouchbase
+          ? 'meta().id as id, t.*'
+          : '*';
     const from =
       selectedSchema === 'main'
         ? `${quoteIdent(selectedTable, isCouchbase)}`
         : `${quoteIdent(selectedSchema, isCouchbase)}.${quoteIdent(selectedTable, isCouchbase)}`;
-    let sql = `SELECT ${cols} FROM ${from}`;
+    let sql = isCouchbase
+      ? `SELECT ${cols} FROM ${from} t`
+      : `SELECT ${cols} FROM ${from}`;
 
     if (filters.length > 0) {
       const whereClause = filters.map(f => {

@@ -1,5 +1,4 @@
 import { CompletionContext } from "@codemirror/autocomplete";
-import { syntaxTree } from "@codemirror/language";
 
 export const N1QL_KEYWORDS = [
     'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY',
@@ -25,7 +24,7 @@ export const N1QL_FUNCTIONS = [
 ];
 
 export async function getN1QLCompletions(
-    connectionId: string,
+    _: string,
     context: CompletionContext
 ) {
     const word = context.matchBefore(/\w*/);

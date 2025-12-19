@@ -77,9 +77,6 @@ export function toJsonRows(columns: string[], rows: any[][], pretty = true) {
   return JSON.stringify({ columns, rows }, null, pretty ? 2 : 0);
 }
 
-function quoteIdentifier(identifier: string) {
-  return `"${identifier.replace(/"/g, '""')}"`;
-}
 
 function sqlLiteral(value: any): string {
   if (value === null || value === undefined) return 'NULL';
@@ -96,10 +93,12 @@ export function toInsertStatements(params: {
   table: string;
   columns: string[];
   rows: any[][];
+  isCouchbase?: boolean;
 }) {
-  const schemaPrefix = params.schema ? `${quoteIdentifier(params.schema)}.` : '';
-  const tableRef = `${schemaPrefix}${quoteIdentifier(params.table)}`;
-  const cols = params.columns.map(quoteIdentifier).join(', ');
+  const quote = (s: string) => params.isCouchbase ? `\`${s.replace(/`/g, '``')}\`` : `"${s.replace(/"/g, '""')}"`;
+  const schemaPrefix = params.schema ? `${quote(params.schema)}.` : '';
+  const tableRef = `${schemaPrefix}${quote(params.table)}`;
+  const cols = params.columns.map(quote).join(', ');
 
   return params.rows
     .map((row) => {

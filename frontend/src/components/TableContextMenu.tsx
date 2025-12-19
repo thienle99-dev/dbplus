@@ -159,7 +159,9 @@ export default function TableContextMenu({
     };
 
     const handleQueryCollection = () => {
-        const sql = `SELECT * FROM ${getFullIdentifier()} LIMIT 1000;`;
+        const sql = isCouchbase
+            ? `SELECT meta().id as id, t.* FROM ${getFullIdentifier()} t LIMIT 1000;`
+            : `SELECT * FROM ${getFullIdentifier()} LIMIT 1000;`;
         if (tabContext?.openQueryInTab) {
             tabContext.openQueryInTab(sql, `Query ${table}`);
         } else {
@@ -212,7 +214,9 @@ export default function TableContextMenu({
     };
 
     const handleCopySelect = () => {
-        const selectStatement = `SELECT * FROM ${getFullIdentifier()};`;
+        const selectStatement = isCouchbase
+            ? `SELECT meta().id as id, t.* FROM ${getFullIdentifier()} t;`
+            : `SELECT * FROM ${getFullIdentifier()};`;
         navigator.clipboard.writeText(selectStatement);
         showToast('SELECT statement copied', 'success');
         onClose();
