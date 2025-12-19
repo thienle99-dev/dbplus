@@ -14,4 +14,6 @@ export interface Tab {
   isDirty?: boolean;
   pinned?: boolean;
   splitMode?: SplitMode;
+  lastActive?: number;
+  isSleeping?: boolean;
 }

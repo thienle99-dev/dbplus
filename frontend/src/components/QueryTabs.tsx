@@ -39,7 +39,48 @@ export default function QueryTabs() {
   const [editTitle, setEditTitle] = useState('');
   const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
 
+  // Sleep Tab Logic
+  const prevActiveTabIdRef = useRef<string | null>(null);
+  const SLEEP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
+  // Track active state transitions
+  useEffect(() => {
+      const prevId = prevActiveTabIdRef.current;
+      const currId = activeTabId;
+      
+      setTabs(prev => prev.map(t => {
+          if (t.id === currId) {
+              // Becomes active: Wake up and update timestamp
+              return { ...t, isSleeping: false, lastActive: Date.now() };
+          }
+          if (t.id === prevId) {
+             // Becomes inactive: Update timestamp
+             return { ...t, lastActive: Date.now() };
+          }
+          // Initialize lastActive if missing
+          if (!t.lastActive) return { ...t, lastActive: Date.now() };
+          return t;
+      }));
+      prevActiveTabIdRef.current = currId;
+  }, [activeTabId]);
+
+  // Sleep Timer
+  useEffect(() => {
+      const interval = setInterval(() => {
+          const now = Date.now();
+          setTabs(prev => prev.map(t => {
+              if (t.id === activeTabId) return t; // Active tab never sleeps
+              if (t.isSleeping) return t; // Already sleeping
+              
+              if (t.lastActive && (now - t.lastActive > SLEEP_TIMEOUT)) {
+                  console.log(`[QueryTabs] Tab ${t.id} is sleeping due to inactivity`);
+                  return { ...t, isSleeping: true };
+              }
+              return t;
+          }));
+      }, 30000); // Check every 30s
+      return () => clearInterval(interval);
+  }, [activeTabId]);
 
   // Debounce timers for auto-save (one per tab)
   const saveTimersRef = useRef<Map<string, number>>(new Map());
@@ -568,6 +609,9 @@ export default function QueryTabs() {
                 {(tab.isDraft || tab.isDirty) && (
                   <span className="w-2 h-2 rounded-full bg-yellow-500" title="Unsaved changes" />
                 )}
+                {tab.isSleeping && (
+                   <span className="text-[9px] uppercase font-bold tracking-wider text-text-secondary/50 border border-text-secondary/20 px-1 rounded ml-1 select-none">Paused</span>
+                )}
                 <button
                   onClick={(e) => closeTab(tab.id, e)}
                   className={clsx(
@@ -591,13 +635,19 @@ export default function QueryTabs() {
 
           <div className="flex-1 overflow-hidden relative">
             {tabs.map(tab => {
-              // Strictly render only active tab (Keep Alive via Store)
-              if (activeTabId !== tab.id) return null;
+              const isActive = activeTabId === tab.id;
+              
+              // Sleep Logic: Unmount if sleeping AND not active
+              if (!isActive && tab.isSleeping) return null;
+
+              // Soft Tab Logic: Keep mounted (hidden) if not active and not sleeping
+              const displayStyle = isActive ? 'flex' : 'none';
 
               return (
               <div
                 key={tab.id}
-                className="absolute inset-0 flex flex-col bg-bg-0 z-10"
+                className="absolute inset-0 flex-col bg-bg-0 z-10"
+                style={{ display: displayStyle }}
               >
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-text-secondary">Loading component...</div>}>
                 {tab.type === 'table' ? (
@@ -610,7 +660,7 @@ export default function QueryTabs() {
                   <QueryEditor
                     initialSql={tab.sql}
                     initialMetadata={tab.metadata}
-                    isActive={activeTabId === tab.id}
+                    isActive={isActive} // Was activeTabId === tab.id
                     isDraft={tab.isDraft}
                     savedQueryId={tab.savedQueryId}
                     queryName={tab.title}
