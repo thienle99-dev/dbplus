@@ -21,7 +21,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onAdd }) 
     }, []);
 
     return (
-        <div className="px-4 py-3 bg-bg-2/90 border-b border-border/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="px-4 py-3 bg-bg-2 glass border-b border-border-light sticky top-0 z-10">
             <div className="flex items-center gap-2">
                 {/* Add Button */}
                 <button
@@ -47,7 +47,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onAdd }) 
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder="Search for connection... (⌘F)"
-                        className="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-1 border border-border/60 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/70 focus:border-accent/60 transition-all"
+                        className="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-1 border border-border-light text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
                     />
                 </div>
             </div>

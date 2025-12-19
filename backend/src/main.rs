@@ -351,8 +351,19 @@ async fn main() {
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 19999));
     tracing::info!("listening on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::error!("Failed to bind to {}: {}", addr, e);
+            if e.kind() == std::io::ErrorKind::AddrInUse {
+                tracing::error!("Port {} is already in use. Please check if another instance of DBPlus is running.", addr.port());
+            }
+            return;
+        }
+    };
+    if let Err(e) = axum::serve(listener, app).await {
+        tracing::error!("Server error: {}", e);
+    }
 }
 
 async fn handler() -> &'static str {

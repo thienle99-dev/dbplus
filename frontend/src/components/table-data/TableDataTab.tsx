@@ -59,7 +59,7 @@ export default function TableDataTab({
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
   const { selectedRow, setSelectedRow } = useSelectedRow();
-  
+
   // Virtualization Ref
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -67,16 +67,16 @@ export default function TableDataTab({
     // ... (keep existing columns logic)
     // Use data.columns if available, otherwise fallback to columnsInfo
     const sourceColumns = data?.columns?.length ? data.columns : _columnsInfo.map(c => c.name);
-    
+
     if (!sourceColumns.length) return [];
     const helper = createColumnHelper<unknown[]>();
-    
+
     // Index Column
     const indexColumn = helper.display({
       id: '_index',
       header: '#',
       cell: (info) => (
-        <div className="text-text-secondary/60 text-[10px] font-mono select-none text-right pr-2">
+        <div className="text-text-tertiary text-[10px] font-mono select-none text-right pr-2">
           {(page * pageSize) + info.row.index + 1}
         </div>
       ),
@@ -104,9 +104,8 @@ export default function TableDataTab({
           if (isComplex) {
             return (
               <textarea
-                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${
-                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
-                }`}
+                className={`w-full bg-transparent border-none outline-none p-0 text-xs font-mono resize-none ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                  }`}
                 value={displayValue}
                 onChange={(e) => onEdit(rowIndex, index, e.target.value)}
                 placeholder={val === null ? 'NULL' : ''}
@@ -122,15 +121,14 @@ export default function TableDataTab({
           return (
             <div className="flex items-center gap-1 group/cell w-full">
               <input
-                className={`flex-1 min-w-0 bg-transparent border-none outline-none p-0 text-sm ${
-                  isEdited ? 'text-accent font-medium' : 'text-text-primary'
-                }`}
+                className={`flex-1 min-w-0 bg-transparent border-none outline-none p-0 text-sm ${isEdited ? 'text-accent font-medium' : 'text-text-primary'
+                  }`}
                 value={displayValue}
                 onChange={(e) => onEdit(rowIndex, index, e.target.value)}
                 placeholder={val === null ? 'NULL' : ''}
               />
               {fk && connectionId && val !== null && (
-                <Link 
+                <Link
                   to={`/workspace/${connectionId}/tables/${fk.target_schema}/${fk.target_table}`}
                   className="opacity-0 group-hover/cell:opacity-100 transition-opacity p-0.5 rounded hover:bg-bg-2 text-accent"
                   title={`Go to ${fk.target_schema}.${fk.target_table}`}
@@ -166,7 +164,7 @@ export default function TableDataTab({
 
   return (
     <>
-      <div className="p-3 border-b border-border/40 flex justify-between items-center bg-bg-1/80 backdrop-blur-sm">
+      <div className="p-3 border-b border-border-light flex justify-between items-center bg-bg-1 glass">
         {/* ... (keep toolbar) ... */}
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-semibold text-text-primary px-2">
@@ -227,7 +225,7 @@ export default function TableDataTab({
           >
             Row
           </Button>
-          <div className="h-4 w-px bg-border/40 mx-1 self-center" />
+          <div className="h-4 w-px bg-border-light mx-1 self-center" />
           <Button
             variant="ghost"
             size="sm"
@@ -236,9 +234,9 @@ export default function TableDataTab({
             className="h-8 w-8 p-0"
             title="Refresh"
           />
-          <div className="h-4 w-px bg-border/40 mx-1 self-center" />
-           {/* Pagination */}
-           <div className="flex items-center gap-1 rounded-full bg-bg-2/50 border border-border/40 p-0.5">
+          <div className="h-4 w-px bg-border-light mx-1 self-center" />
+          {/* Pagination */}
+          <div className="flex items-center gap-1 rounded-full bg-bg-2 border border-border-light p-0.5">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0 || loading}
@@ -262,9 +260,9 @@ export default function TableDataTab({
         </div>
       </div>
 
-      <div 
+      <div
         ref={tableContainerRef}
-        className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border/10 shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
+        className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border-subtle shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
         style={{ scrollbarGutter: 'stable' }}
       >
         <table className="w-full text-left border-collapse">
@@ -274,7 +272,7 @@ export default function TableDataTab({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-xs font-semibold text-text-secondary/90 tracking-wide select-none first:pl-6 border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30"
+                    className="px-4 py-3 text-xs font-semibold text-text-secondary tracking-wide select-none first:pl-6 border-b border-r border-border-subtle last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2"
                     style={{ width: header.getSize() }}
                   >
                     <div className="flex items-center gap-1.5 cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
@@ -291,18 +289,17 @@ export default function TableDataTab({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`absolute right-0 top-3 bottom-3 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${
-                        header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
-                      }`}
+                      className={`absolute right-0 top-3 bottom-3 w-[1px] bg-border-subtle hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
+                        }`}
                     />
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-border/10 font-sans relative">
+          <tbody className="divide-y divide-border-subtle font-sans relative">
             {isAddingRow && (
-              <tr className="bg-accent/5 transition-all">
+              <tr className="bg-primary-transparent transition-all">
                 {/* Spacer for Index Column */}
                 <td className="px-4 py-2.5" />
                 {(data?.columns?.length ? data.columns : _columnsInfo.map(c => c.name)).map((_col, index) => (
@@ -312,7 +309,7 @@ export default function TableDataTab({
                   >
                     <input
                       autoFocus={index === 0}
-                      className="w-full bg-transparent border-b border-accent/30 focus:border-accent outline-none py-1 text-xs text-text-primary placeholder:text-text-secondary/40 font-medium transition-colors"
+                      className="w-full bg-transparent border-b border-accent-subtle focus:border-accent outline-none py-1 text-xs text-text-primary placeholder:text-text-tertiary font-medium transition-colors"
                       value={newRowData[index] === undefined ? '' : String(newRowData[index])}
                       onChange={(e) => onNewRowChange(index, e.target.value)}
                       placeholder="Enter value"
@@ -328,7 +325,7 @@ export default function TableDataTab({
                 ))}
               </tr>
             )}
-            
+
             {/* Top Padding for Virtualization */}
             {rowVirtualizer.getVirtualItems().length > 0 && (
               <tr style={{ height: `${rowVirtualizer.getVirtualItems()[0].start}px` }}>
@@ -340,17 +337,17 @@ export default function TableDataTab({
               const row = rows[virtualRow.index];
               const isModified = edits[row.index] !== undefined;
               const isSelected = selectedRow?.rowIndex === row.index;
-              
+
               return (
                 <tr
                   key={row.id}
-                  data-index={virtualRow.index} 
+                  data-index={virtualRow.index}
                   ref={rowVirtualizer.measureElement}
                   className={`
                     group transition-colors duration-150 ease-out cursor-pointer
-                    ${isSelected 
-                       ? 'bg-accent/10' 
-                       : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${row.index % 2 === 1 ? 'bg-gray-500/5' : ''}`
+                    ${isSelected
+                      ? 'bg-primary-transparent'
+                      : isModified ? 'bg-warning-50' : `hover:bg-bg-2/50 ${row.index % 2 === 1 ? 'bg-bg-subtle' : ''}`
                     }
                   `}
                   onClick={() => {
@@ -368,7 +365,7 @@ export default function TableDataTab({
                       key={cell.id}
                       className={`
                         px-4 py-2.5 text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px] first:pl-6
-                        border-r border-border/5 last:border-r-0
+                        border-r border-border-subtle last:border-r-0
                         ${isSelected ? 'text-accent-foreground' : ''}
                       `}
                     >
@@ -378,8 +375,8 @@ export default function TableDataTab({
                 </tr>
               )
             })}
-             {/* Bottom Padding for Virtualization */}
-             {rowVirtualizer.getVirtualItems().length > 0 && (
+            {/* Bottom Padding for Virtualization */}
+            {rowVirtualizer.getVirtualItems().length > 0 && (
               <tr style={{ height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end}px` }}>
                 <td colSpan={columns.length} />
               </tr>

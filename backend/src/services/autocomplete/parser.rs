@@ -1,5 +1,5 @@
 use sqlparser::dialect::GenericDialect;
-use sqlparser::tokenizer::{Token, Tokenizer, Word};
+use sqlparser::tokenizer::{Token, Tokenizer};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]

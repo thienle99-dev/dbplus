@@ -197,11 +197,11 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={12} className="text-text-secondary" />
         </div>
-        <Database size={14} className="text-accent/80" />
+        <Database size={14} className="text-accent" />
         <span className="truncate font-medium flex-1 text-left">{schemaName}</span>
       </Collapsible.Trigger>
 
-      <Collapsible.Content className="ml-2 border-l border-border/50 overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
+      <Collapsible.Content className="ml-2 border-l border-border-light overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
         {loading ? (
           <div className="pl-6 py-1 text-[10px] text-text-secondary">Loading objects...</div>
         ) : !hasItems ? (
@@ -210,7 +210,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           <>
             {/* Tables Folder */}
             {filteredTables.length > 0 && (
-              <ObjectFolder title="Tables" icon={<Table size={12} className="text-blue-400" />} count={filteredTables.length} defaultOpen={true}>
+              <ObjectFolder title="Tables" icon={<Table size={12} className="text-accent" />} count={filteredTables.length} defaultOpen={true}>
                 {filteredTables.map(table => {
                   const tablePinned = isPinned(schemaName, table.name);
                   return (
@@ -230,7 +230,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
             {/* Views Folder */}
             {filteredViews.length > 0 && (
-              <ObjectFolder title="Views" icon={<Eye size={12} className="text-purple-400" />} count={filteredViews.length}>
+              <ObjectFolder title="Views" icon={<Eye size={12} className="text-accent" />} count={filteredViews.length}>
                 {filteredViews.map(view => (
                   <div key={view.name}
                     onClick={() => handleObjectClick(view.name, 'view')}
@@ -245,7 +245,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
             {/* Functions Folder */}
             {filteredFunctions.length > 0 && (
-              <ObjectFolder title="Functions" icon={<FileCode size={12} className="text-orange-400" />} count={filteredFunctions.length}>
+              <ObjectFolder title="Functions" icon={<FileCode size={12} className="text-accent" />} count={filteredFunctions.length}>
                 {filteredFunctions.map(func => (
                   <div key={func.name}
                     onClick={() => handleObjectClick(func.name, 'function')}
@@ -444,7 +444,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   if (error) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-        <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-3">
+        <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">
           <AlertTriangle className="w-6 h-6 text-error" />
         </div>
 
@@ -453,7 +453,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           Unable to connect to the database. Please check your connection settings.
         </p>
 
-        <div className="w-full max-w-[260px] bg-bg-2 border border-border rounded-md p-2.5 mb-4 text-left">
+        <div className="w-full max-w-[260px] bg-bg-2 border border-border-light rounded-md p-2.5 mb-4 text-left">
           <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
             {(() => {
               const err = error as any;
@@ -638,10 +638,10 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
 
       {/* Schema Filter Modal */}
       {showSchemaFilter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-bg-1 border border-border rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 backdrop-blur-sm">
+          <div className="bg-bg-1 border border-border-light rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-border-light flex items-center justify-between">
               <h3 className="text-sm font-semibold text-text-primary">Visible Schemas</h3>
               <div className="flex items-center gap-2">
                 <Button
@@ -686,7 +686,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
               )}
             </div>
 
-            <div className="px-4 py-3 border-t border-border flex items-center justify-between text-xs text-text-secondary">
+            <div className="px-4 py-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary">
               <span>{visibleSchemas.size} of {schemas.length} selected</span>
               <Button
                 variant="primary"

@@ -42,7 +42,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-border bg-bg-1">
+            <div className="p-4 border-b border-border-light bg-bg-1">
                 <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                     <Database size={16} />
                     Table Structure: {schema}.{table}
@@ -53,33 +53,33 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
                 <table className="w-full border-collapse text-sm">
                     <thead className="bg-bg-1 sticky top-0 z-10">
                         <tr>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary w-8">#</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Column Name</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Data Type</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Nullable</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Default</th>
-                            <th className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary">Key</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary w-8">#</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary">Column Name</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary">Data Type</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary">Nullable</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary">Default</th>
+                            <th className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary">Key</th>
                         </tr>
                     </thead>
                     <tbody>
                         {columns.map((col, index) => (
-                            <tr key={col.name} className="hover:bg-bg-1/50">
-                                <td className="border-b border-r border-border px-4 py-2 text-text-secondary">{index + 1}</td>
-                                <td className="border-b border-r border-border px-4 py-2 text-text-primary font-medium">{col.name}</td>
-                                <td className="border-b border-r border-border px-4 py-2 text-text-primary">{col.data_type}</td>
-                                <td className="border-b border-r border-border px-4 py-2 text-text-primary">
+                            <tr key={col.name} className="hover:bg-bg-1">
+                                <td className="border-b border-r border-border-light px-4 py-2 text-text-secondary">{index + 1}</td>
+                                <td className="border-b border-r border-border-light px-4 py-2 text-text-primary font-medium">{col.name}</td>
+                                <td className="border-b border-r border-border-light px-4 py-2 text-text-primary">{col.data_type}</td>
+                                <td className="border-b border-r border-border-light px-4 py-2 text-text-primary">
                                     {col.is_nullable ? (
-                                        <span className="text-green-500">YES</span>
+                                        <span className="text-success">YES</span>
                                     ) : (
-                                        <span className="text-red-500">NO</span>
+                                        <span className="text-error">NO</span>
                                     )}
                                 </td>
-                                <td className="border-b border-r border-border px-4 py-2 text-text-secondary">
+                                <td className="border-b border-r border-border-light px-4 py-2 text-text-secondary">
                                     {col.default_value || <span className="italic">NULL</span>}
                                 </td>
-                                <td className="border-b border-r border-border px-4 py-2">
+                                <td className="border-b border-r border-border-light px-4 py-2">
                                     {col.is_primary_key && (
-                                        <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">PK</span>
+                                        <span className="text-xs bg-primary-transparent text-accent px-2 py-0.5 rounded">PK</span>
                                     )}
                                 </td>
                             </tr>

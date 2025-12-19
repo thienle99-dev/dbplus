@@ -15,7 +15,7 @@ import { useWorkspaceTabsStore } from '../store/workspaceTabsStore';
 import { useConnectionStore } from '../store/connectionStore';
 
 export default function QueryTabs() {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const { connectionId } = useParams<{ connectionId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -45,41 +45,41 @@ export default function QueryTabs() {
 
   // Track active state transitions
   useEffect(() => {
-      const prevId = prevActiveTabIdRef.current;
-      const currId = activeTabId;
-      
-      setTabs(prev => prev.map(t => {
-          if (t.id === currId) {
-              // Becomes active: Wake up and update timestamp
-              return { ...t, isSleeping: false, lastActive: Date.now() };
-          }
-          if (t.id === prevId) {
-             // Becomes inactive: Update timestamp
-             return { ...t, lastActive: Date.now() };
-          }
-          // Initialize lastActive if missing
-          if (!t.lastActive) return { ...t, lastActive: Date.now() };
-          return t;
-      }));
-      prevActiveTabIdRef.current = currId;
+    const prevId = prevActiveTabIdRef.current;
+    const currId = activeTabId;
+
+    setTabs(prev => prev.map(t => {
+      if (t.id === currId) {
+        // Becomes active: Wake up and update timestamp
+        return { ...t, isSleeping: false, lastActive: Date.now() };
+      }
+      if (t.id === prevId) {
+        // Becomes inactive: Update timestamp
+        return { ...t, lastActive: Date.now() };
+      }
+      // Initialize lastActive if missing
+      if (!t.lastActive) return { ...t, lastActive: Date.now() };
+      return t;
+    }));
+    prevActiveTabIdRef.current = currId;
   }, [activeTabId]);
 
   // Sleep Timer
   useEffect(() => {
-      const interval = setInterval(() => {
-          const now = Date.now();
-          setTabs(prev => prev.map(t => {
-              if (t.id === activeTabId) return t; // Active tab never sleeps
-              if (t.isSleeping) return t; // Already sleeping
-              
-              if (t.lastActive && (now - t.lastActive > SLEEP_TIMEOUT)) {
-                  console.log(`[QueryTabs] Tab ${t.id} is sleeping due to inactivity`);
-                  return { ...t, isSleeping: true };
-              }
-              return t;
-          }));
-      }, 30000); // Check every 30s
-      return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setTabs(prev => prev.map(t => {
+        if (t.id === activeTabId) return t; // Active tab never sleeps
+        if (t.isSleeping) return t; // Already sleeping
+
+        if (t.lastActive && (now - t.lastActive > SLEEP_TIMEOUT)) {
+          console.log(`[QueryTabs] Tab ${t.id} is sleeping due to inactivity`);
+          return { ...t, isSleeping: true };
+        }
+        return t;
+      }));
+    }, 30000); // Check every 30s
+    return () => clearInterval(interval);
   }, [activeTabId]);
 
   // Debounce timers for auto-save (one per tab)
@@ -238,7 +238,7 @@ export default function QueryTabs() {
 
   const handlePinTab = () => {
     if (!contextMenu) return;
-    setTabs(prev => prev.map(t => 
+    setTabs(prev => prev.map(t =>
       t.id === contextMenu.tabId ? { ...t, pinned: !t.pinned } : t
     ));
     setContextMenu(null);
@@ -266,7 +266,7 @@ export default function QueryTabs() {
 
   const handleSetSplitMode = (mode: 'none' | 'vertical' | 'horizontal') => {
     if (!contextMenu) return;
-    setTabs(prev => prev.map(t => 
+    setTabs(prev => prev.map(t =>
       t.id === contextMenu.tabId ? { ...t, splitMode: mode } : t
     ));
     setContextMenu(null);
@@ -515,29 +515,29 @@ export default function QueryTabs() {
       <div className="flex h-full bg-bg-0">
         {/* Left Sidebar for Saved Queries / History */}
         <div className={clsx(
-          "border-r border-border bg-bg-1 transition-all duration-200",
+          "border-r border-border-light bg-bg-1 glass transition-all duration-200 z-10",
           sidebarView ? "w-64" : "w-12"
         )}>
           <div className="flex flex-col h-full">
             <button
               onClick={() => setSidebarView(sidebarView === 'saved' ? null : 'saved')}
               className={clsx(
-                "p-3 hover:bg-bg-2 border-b border-border",
+                "p-3 hover:bg-bg-2 transition-colors border-b border-border-subtle",
                 sidebarView === 'saved' && "bg-bg-2 text-accent"
               )}
               title="Saved Queries"
             >
-              <BookMarked size={20} />
+              <BookMarked size={18} />
             </button>
             <button
               onClick={() => setSidebarView(sidebarView === 'history' ? null : 'history')}
               className={clsx(
-                "p-3 hover:bg-bg-2 border-b border-border",
+                "p-3 hover:bg-bg-2 transition-colors border-b border-border-subtle",
                 sidebarView === 'history' && "bg-bg-2 text-accent"
               )}
               title="Query History"
             >
-              <History size={20} />
+              <History size={18} />
             </button>
 
             {/* Sidebar Content */}
@@ -551,18 +551,18 @@ export default function QueryTabs() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          <div className="flex items-center bg-bg-1 border-b border-border overflow-x-auto">
+        <div className="flex-1 flex flex-col min-w-0 relative bg-bg-default">
+          <div className="flex items-center bg-bg-1 glass border-b border-border-light overflow-x-auto no-scrollbar scroll-smooth px-2 h-10">
             {tabs.map(tab => (
               <div
                 key={tab.id}
                 onClick={() => startTransition(() => setActiveTabId(tab.id))}
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 className={clsx(
-                  "group flex items-center gap-2 px-4 py-2 text-sm border-r border-border cursor-pointer min-w-[120px] max-w-[200px] select-none",
+                  "group flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium transition-all duration-200 cursor-pointer min-w-[100px] max-w-[180px] select-none rounded-md mx-0.5",
                   activeTabId === tab.id
-                    ? "bg-bg-0 text-text-primary border-t-2 border-t-accent"
-                    : "bg-bg-1 text-text-secondary hover:bg-bg-2 hover:text-text-primary"
+                    ? "bg-bg-active text-text-primary shadow-sm"
+                    : "text-text-secondary hover:bg-bg-1 hover:text-text-primary"
                 )}
               >
                 {tab.type === 'table' ? (
@@ -607,10 +607,10 @@ export default function QueryTabs() {
 
 
                 {(tab.isDraft || tab.isDirty) && (
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" title="Unsaved changes" />
+                  <span className="w-2 h-2 rounded-full bg-warning" title="Unsaved changes" />
                 )}
                 {tab.isSleeping && (
-                   <span className="text-[9px] uppercase font-bold tracking-wider text-text-secondary/50 border border-text-secondary/20 px-1 rounded ml-1 select-none">Paused</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider text-text-tertiary border border-border-light px-1 rounded ml-1 select-none">Paused</span>
                 )}
                 <button
                   onClick={(e) => closeTab(tab.id, e)}
@@ -625,18 +625,18 @@ export default function QueryTabs() {
             ))}
             <button
               onClick={() => addTab()}
-              className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-2"
+              className="p-1.5 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-1 rounded-md transition-colors"
               title="New Query Tab"
               aria-label="New Query Tab (Ctrl+T)"
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </button>
           </div>
 
           <div className="flex-1 overflow-hidden relative">
             {tabs.map(tab => {
               const isActive = activeTabId === tab.id;
-              
+
               // Sleep Logic: Unmount if sleeping AND not active
               if (!isActive && tab.isSleeping) return null;
 
@@ -644,65 +644,65 @@ export default function QueryTabs() {
               const displayStyle = isActive ? 'flex' : 'none';
 
               return (
-              <div
-                key={tab.id}
-                className="absolute inset-0 flex-col bg-bg-0 z-10"
-                style={{ display: displayStyle }}
-              >
-                <Suspense fallback={<div className="flex h-full items-center justify-center text-text-secondary">Loading component...</div>}>
-                {tab.type === 'table' ? (
-                  <TableDataView 
-                    schema={tab.schema!} 
-                    table={tab.table!} 
-                    tabId={tab.id}
-                  />
-                ) : (
-                  <QueryEditor
-                    initialSql={tab.sql}
-                    initialMetadata={tab.metadata}
-                    isActive={isActive} // Was activeTabId === tab.id
-                    isDraft={tab.isDraft}
-                    savedQueryId={tab.savedQueryId}
-                    queryName={tab.title}
-                    splitMode={tab.splitMode}
-                    tabId={tab.id}
-                    onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
-                    onSaveSuccess={() => handleSaveSuccess(tab.id)}
-                    onSavedQueryCreated={(savedId, name) => {
-                      setTabs(prev => prev.map(t => {
-                        if (t.id !== tab.id) return t;
-                        const updated = {
-                          ...t,
-                          savedQueryId: savedId,
-                          title: name,
-                          isDraft: false,
-                          isDirty: false,
-                          lastModified: Date.now(),
-                        };
-                        saveDraft({
-                          id: updated.id,
-                          title: updated.title,
-                          type: updated.type,
-                          sql: updated.sql || '',
-                          metadata: updated.metadata,
-                          savedQueryId: updated.savedQueryId,
-                          lastModified: updated.lastModified || Date.now(),
-                        });
-                        return updated;
-                      }));
-                    }}
-                  />
-                )}
-                </Suspense>
-              </div>
-            );
-          })}
+                <div
+                  key={tab.id}
+                  className="absolute inset-0 flex-col bg-bg-0 z-10"
+                  style={{ display: displayStyle }}
+                >
+                  <Suspense fallback={<div className="flex h-full items-center justify-center text-text-secondary">Loading component...</div>}>
+                    {tab.type === 'table' ? (
+                      <TableDataView
+                        schema={tab.schema!}
+                        table={tab.table!}
+                        tabId={tab.id}
+                      />
+                    ) : (
+                      <QueryEditor
+                        initialSql={tab.sql}
+                        initialMetadata={tab.metadata}
+                        isActive={isActive} // Was activeTabId === tab.id
+                        isDraft={tab.isDraft}
+                        savedQueryId={tab.savedQueryId}
+                        queryName={tab.title}
+                        splitMode={tab.splitMode}
+                        tabId={tab.id}
+                        onQueryChange={(sql, metadata) => handleQueryChange(tab.id, sql, metadata)}
+                        onSaveSuccess={() => handleSaveSuccess(tab.id)}
+                        onSavedQueryCreated={(savedId, name) => {
+                          setTabs(prev => prev.map(t => {
+                            if (t.id !== tab.id) return t;
+                            const updated = {
+                              ...t,
+                              savedQueryId: savedId,
+                              title: name,
+                              isDraft: false,
+                              isDirty: false,
+                              lastModified: Date.now(),
+                            };
+                            saveDraft({
+                              id: updated.id,
+                              title: updated.title,
+                              type: updated.type,
+                              sql: updated.sql || '',
+                              metadata: updated.metadata,
+                              savedQueryId: updated.savedQueryId,
+                              lastModified: updated.lastModified || Date.now(),
+                            });
+                            return updated;
+                          }));
+                        }}
+                      />
+                    )}
+                  </Suspense>
+                </div>
+              );
+            })}
           </div>
 
           {/* Context Menu */}
           {contextMenu && (
             <div
-              className="fixed bg-bg-1 border border-border shadow-lg rounded py-1 z-50 w-48"
+              className="fixed bg-bg-1 border border-border-light shadow-lg rounded py-1 z-50 w-48"
               style={{ top: contextMenu.y, left: contextMenu.x }}
             >
               <button
@@ -717,7 +717,7 @@ export default function QueryTabs() {
               >
                 Force Close (Discard)
               </button>
-              <div className="border-t border-border my-1" />
+              <div className="border-t border-border-light my-1" />
               <button
                 className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
                 onClick={handlePinTab}
@@ -730,7 +730,7 @@ export default function QueryTabs() {
               >
                 Duplicate Tab
               </button>
-              <div className="border-t border-border my-1" />
+              <div className="border-t border-border-light my-1" />
               <button
                 className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
                 onClick={() => handleSetSplitMode('vertical')}
@@ -749,7 +749,7 @@ export default function QueryTabs() {
               >
                 No Split
               </button>
-              <div className="border-t border-border my-1" />
+              <div className="border-t border-border-light my-1" />
               <button
                 className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-bg-2"
                 onClick={handleCloseOthers}

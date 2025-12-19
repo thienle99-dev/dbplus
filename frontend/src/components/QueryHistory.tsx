@@ -148,7 +148,7 @@ export default function QueryHistory({
   return (
     <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-l border-border w-80' : ''}`}>
       {/* Header */}
-      <div className={`flex-shrink-0 border-b border-border/40 bg-bg-1/50 backdrop-blur-sm ${embedded ? 'p-2' : 'p-4'}`}>
+      <div className={`flex-shrink-0 border-b border-border-light bg-bg-1 glass ${embedded ? 'p-2' : 'p-4'}`}>
         <div className="flex items-center justify-between mb-3">
           {!embedded ? (
             <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
@@ -198,13 +198,13 @@ export default function QueryHistory({
                 placeholder="Search history..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                className="w-full bg-bg-2/50 border border-border/40 rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary focus:border-accent/50 focus:bg-bg-0 focus:outline-none transition-all"
+                className="w-full bg-bg-2 border border-border-light rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary focus:border-accent focus:bg-bg-0 focus:outline-none transition-all"
               />
             </div>
           )}
 
           {(showFilters || (!embedded && statusFilter !== 'all')) && (
-            <div className="flex bg-bg-2/50 p-0.5 rounded-lg border border-border/40">
+            <div className="flex bg-bg-2 p-0.5 rounded-lg border border-border-light">
               {(['all', 'success', 'error'] as const).map((filter) => (
                 <button
                   key={filter}

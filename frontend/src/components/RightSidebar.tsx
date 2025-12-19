@@ -262,7 +262,7 @@ export default function RightSidebar() {
 
   if (!isOpen) {
     return (
-      <div className="w-10 flex-shrink-0 border-l border-border bg-bg-1 flex flex-col items-center py-2 gap-2">
+      <div className="w-10 flex-shrink-0 border-l border-border-light bg-bg-1 flex flex-col items-center py-2 gap-2">
         <button
           onClick={() => setIsOpen(true)}
           className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded"
@@ -276,18 +276,18 @@ export default function RightSidebar() {
 
   return (
     <div
-      className="flex-shrink-0 border-l border-border bg-bg-1 flex flex-col h-full transition-all duration-300 relative"
+      className="flex-shrink-0 border-l border-border-light bg-bg-1 flex flex-col h-full transition-all duration-300 relative"
       style={{ width: `${sidebarWidth}px` }}
     >
       <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent/50 z-20 transition-colors"
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent z-20 transition-colors"
         onMouseDown={(e) => {
           e.preventDefault();
           setIsResizing(true);
         }}
         title="Drag to resize"
       />
-      <div className="flex items-center border-b border-border bg-bg-2/50">
+      <div className="flex items-center border-b border-border-light bg-bg-2">
         <button
           onClick={() => setActiveTab('details')}
           className={`flex-1 px-2 py-1.5 text-xs font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${activeTab === 'details'
@@ -341,7 +341,7 @@ export default function RightSidebar() {
                         <button
                           onClick={() => handleSave(selectedRow.rowIndex)}
                           disabled={executeQuery.isPending}
-                          className="p-0.5 text-accent hover:bg-accent/20 rounded disabled:opacity-50"
+                          className="p-0.5 text-accent hover:bg-primary-transparent rounded disabled:opacity-50"
                           title="Save changes"
                         >
                           <Save size={11} />
@@ -367,7 +367,7 @@ export default function RightSidebar() {
                         <button
                           onClick={() => handleDelete(selectedRow.rowIndex)}
                           disabled={executeQuery.isPending}
-                          className="p-0.5 text-text-secondary hover:text-red-400 hover:bg-red-500/20 rounded disabled:opacity-50"
+                          className="p-0.5 text-text-secondary hover:text-error hover:bg-error-50 rounded disabled:opacity-50"
                           title="Delete row"
                         >
                           <Trash2 size={11} />
@@ -409,13 +409,13 @@ export default function RightSidebar() {
                     };
 
                     return (
-                      <div key={colName} className={`group relative p-2 rounded-lg border transition-all ${isModified ? 'bg-amber-500/5 border-amber-500/30' : 'bg-bg-2/30 border-transparent hover:border-border'}`}>
+                      <div key={colName} className={`group relative p-2 rounded-lg border transition-all ${isModified ? 'bg-warning-50 border-warning' : 'bg-bg-2 border-transparent hover:border-border-light'}`}>
                         {/* Field Header */}
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2 max-w-[80%]">
                             <span className="text-xs font-medium text-text-primary truncate" title={colName}>{colName}</span>
                             <div className="flex gap-1">
-                              {isPK && <span className="text-[9px] font-bold bg-accent/10 text-accent px-1.5 py-px rounded uppercase tracking-wider">PK</span>}
+                              {isPK && <span className="text-[9px] font-bold bg-primary-transparent text-accent px-1.5 py-px rounded uppercase tracking-wider">PK</span>}
                               <span className="text-[9px] text-text-tertiary bg-bg-3 px-1.5 py-px rounded">{colInfo?.data_type || 'unknown'}</span>
                             </div>
                           </div>
@@ -438,7 +438,7 @@ export default function RightSidebar() {
                               <button
                                 onClick={() => handleValueChange(selectedRow.rowIndex, colName, isNull ? '' : null)}
                                 className={`text-[9px] font-bold px-1.5 py-px rounded transition-colors ${isNull
-                                  ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                                  ? 'bg-error-50 text-error border border-error-100'
                                   : 'text-text-tertiary hover:text-text-secondary bg-bg-3'
                                   }`}
                                 title={isNull ? "Set to Value" : "Set to NULL"}
@@ -453,14 +453,14 @@ export default function RightSidebar() {
                         <div className="relative">
                           {isEditing && !isReadOnly ? (
                             isNull ? (
-                              <div className="w-full px-2 py-1.5 bg-bg-2/50 border border-dashed border-border rounded text-xs text-text-tertiary italic">
+                              <div className="w-full px-2 py-1.5 bg-bg-2/50 border border-dashed border-border-light rounded text-xs text-text-tertiary italic">
                                 NULL
                               </div>
                             ) : dataType === 'boolean' || dataType === 'bool' ? (
                               <select
                                 value={String(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value === 'true')}
-                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
                               >
                                 <option value="true">TRUE</option>
                                 <option value="false">FALSE</option>
@@ -470,7 +470,7 @@ export default function RightSidebar() {
                                 type="number"
                                 value={String(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none font-mono"
+                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none font-mono"
                                 placeholder="Enter number..."
                               />
                             ) : (dataType.includes('text') || dataType.includes('char') || dataType.includes('json')) ? (
@@ -478,7 +478,7 @@ export default function RightSidebar() {
                                 rows={String(currentValue).length > 50 || String(currentValue).includes('\n') ? 5 : 1}
                                 value={formatCellValue(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-vertical font-mono leading-relaxed"
+                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-vertical font-mono leading-relaxed"
                                 placeholder="Enter text..."
                               />
                             ) : (
@@ -490,8 +490,8 @@ export default function RightSidebar() {
                               />
                             )
                           ) : (
-                            <div 
-                              className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2/30' : 'text-text-secondary bg-bg-2/50'}`}
+                            <div
+                              className={`text-xs px-2 py-1.5 rounded border border-transparent font-mono break-all whitespace-pre-wrap ${isNull ? 'text-text-tertiary italic bg-bg-2' : 'text-text-secondary bg-bg-2'}`}
                               title={tryGetDateFromTimestamp(currentValue) ? `Possible Date: ${tryGetDateFromTimestamp(currentValue)}` : ''}
                             >
                               {isNull ? 'NULL' : formatCellValue(currentValue)}
@@ -531,7 +531,7 @@ export default function RightSidebar() {
               </div>
 
               {showNewRow && (
-                <div className="mb-2 p-1.5 bg-bg-2 rounded border border-accent/30 max-h-[300px] overflow-y-auto">
+                <div className="mb-2 p-1.5 bg-bg-2 rounded border border-border-light max-h-[300px] overflow-y-auto">
                   <div className="text-[10px] font-medium text-accent mb-1.5 sticky top-0 bg-bg-2 pb-1">New Record</div>
                   <div className="space-y-1.5">
                     {columnsInfo.map((col) => (
@@ -539,9 +539,9 @@ export default function RightSidebar() {
                         <label className="text-[10px] text-text-secondary flex items-center justify-between">
                           <span className="flex items-center gap-1">
                             {col.name}
-                            {col.is_primary_key && <span className="text-[8px] bg-accent/20 text-accent px-1 rounded">PK</span>}
+                            {col.is_primary_key && <span className="text-[8px] bg-primary-transparent text-accent px-1 rounded">PK</span>}
                           </span>
-                          <span className="text-[9px] text-text-secondary/60">{col.data_type}</span>
+                          <span className="text-[9px] text-text-tertiary">{col.data_type}</span>
                         </label>
                         <input
                           type="text"
@@ -549,7 +549,7 @@ export default function RightSidebar() {
                           onChange={(e) => handleNewRowValueChange(col.name, e.target.value === '' ? null : e.target.value)}
                           placeholder={col.is_nullable ? 'NULL' : col.default_value || 'Required'}
                           disabled={col.is_primary_key && col.default_value !== null}
-                          className="w-full bg-bg-0 border border-border rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full bg-bg-0 border border-border-light rounded px-1.5 py-0.5 text-[10px] text-text-primary focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                     ))}
@@ -557,7 +557,7 @@ export default function RightSidebar() {
                       <button
                         onClick={handleCreateNew}
                         disabled={executeQuery.isPending}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-blue-600 text-white rounded text-[10px] font-medium disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-accent hover:bg-accent/90 text-white rounded text-[10px] font-medium disabled:opacity-50"
                       >
                         <Save size={11} />
                         Create
@@ -576,7 +576,7 @@ export default function RightSidebar() {
                 </div>
               )}
 
-              <div className="text-center text-text-secondary text-[10px] mt-4 p-2 bg-bg-2/30 rounded">
+              <div className="text-center text-text-secondary text-[10px] mt-4 p-2 bg-bg-2 rounded">
                 <Info size={16} className="mx-auto mb-1 opacity-50" />
                 <p>Click a row in the table to view details</p>
               </div>
@@ -587,7 +587,8 @@ export default function RightSidebar() {
         <div className="flex-1 overflow-hidden">
           <LogViewer />
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

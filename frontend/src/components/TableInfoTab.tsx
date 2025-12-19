@@ -136,19 +136,19 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     if (isLoading && !columns.length) { // Show loading only if no data at all
         return <div className="p-8 text-text-secondary">Loading table info...</div>;
     }
-    
+
     // Check for critical errors (e.g. connection lost)
     const criticalError = columnsQuery.error || indexesQuery.error || constraintsQuery.error;
     if (criticalError) {
         return (
             <div className="p-8 flex flex-col items-center justify-center text-center">
-                 <div className="text-error mb-2">Failed to load table information</div>
-                 <div className="text-text-secondary text-xs mb-4 max-w-sm">
+                <div className="text-error mb-2">Failed to load table information</div>
+                <div className="text-text-secondary text-xs mb-4 max-w-sm">
                     {extractApiErrorDetails(criticalError).message || 'Connection might be lost.'}
-                 </div>
-                 <button
+                </div>
+                <button
                     onClick={handleRefreshAll}
-                    className="px-4 py-2 bg-bg-2 hover:bg-bg-3 border border-border rounded text-sm text-text-primary transition-colors"
+                    className="px-4 py-2 bg-bg-2 hover:bg-bg-3 border border-border-light rounded text-sm text-text-primary transition-colors"
                 >
                     Retry
                 </button>
@@ -173,7 +173,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
     }) => {
         const isCollapsed = collapsed[id] ?? defaultCollapsed;
         return (
-            <div className="border border-border rounded bg-bg-1 overflow-hidden">
+            <div className="border border-border-light rounded bg-bg-1 overflow-hidden">
                 <button
                     type="button"
                     onClick={() => setCollapsed((prev) => ({ ...prev, [id]: !(prev[id] ?? defaultCollapsed) }))}
@@ -206,7 +206,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
 
     return (
         <div className="flex flex-col h-full overflow-auto">
-            <div className="p-3 md:p-4 border-b border-border bg-bg-1">
+            <div className="p-3 md:p-4 border-b border-border-light bg-bg-1">
                 <h3 className="text-xs md:text-sm font-medium text-text-primary flex items-center gap-2">
                     <Info size={14} className="md:w-4 md:h-4" />
                     <span className="truncate">Table Information: {schema}.{table}</span>
@@ -215,7 +215,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
 
             <div className="flex-1 p-3 md:p-4 space-y-3 md:space-y-4">
                 {/* Quick Actions Bar */}
-                <div className="flex flex-wrap items-center gap-2 p-2 border border-border rounded bg-bg-1">
+                <div className="flex flex-wrap items-center gap-2 p-2 border border-border-light rounded bg-bg-1">
                     <button
                         type="button"
                         onClick={async () => {
@@ -226,7 +226,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                                 showToast('Failed to copy DDL', 'error');
                             }
                         }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border-light"
                         title="Copy DDL"
                     >
                         <Copy size={14} />
@@ -246,7 +246,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             URL.revokeObjectURL(url);
                             showToast('Schema exported', 'success');
                         }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border-light"
                         title="Export schema"
                     >
                         <Download size={14} />
@@ -270,7 +270,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                                 showToast(msg || 'Analyze failed', 'error');
                             }
                         }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border-light disabled:opacity-50"
                         title="Analyze table"
                     >
                         <Activity size={14} />
@@ -283,7 +283,7 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                             handleRefreshAll();
                             showToast('Refreshed', 'success');
                         }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-bg-2 hover:bg-bg-3 text-text-secondary hover:text-text-primary rounded border border-border-light"
                         title="Refresh all"
                     >
                         <RefreshCw size={14} />
@@ -292,17 +292,16 @@ export default function TableInfoTab({ schema: schemaProp, table: tableProp }: T
                 </div>
 
                 {/* Tabs */}
-                <div className="flex flex-wrap gap-2 border border-border rounded bg-bg-1 p-2">
+                <div className="flex flex-wrap gap-2 border border-border-light rounded bg-bg-1 p-2">
                     {tabs.map((t) => (
                         <button
                             key={t.key}
                             type="button"
                             onClick={() => setActiveTab(t.key)}
-                            className={`px-3 py-1.5 rounded text-xs border transition-colors ${
-                                activeTab === t.key
-                                    ? 'bg-bg-2 border-accent text-text-primary'
-                                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                            }`}
+                            className={`px-3 py-1.5 rounded text-xs border transition-colors ${activeTab === t.key
+                                    ? 'bg-bg-active border-accent text-text-primary'
+                                    : 'bg-bg-0 border-border-light text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                }`}
                         >
                             {t.label}
                         </button>

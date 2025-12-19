@@ -137,9 +137,9 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[600px] translate-x-[-50%] translate-y-[-50%] rounded-[var(--radius-lg)] bg-bg-1 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-border flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center p-5 border-b border-border bg-bg-2/30">
+        <Dialog.Overlay className="fixed inset-0 bg-bg-overlay/50 backdrop-blur-sm data-[state=open]:animate-overlayShow" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[600px] translate-x-[-50%] translate-y-[-50%] rounded-[var(--radius-lg)] bg-bg-1 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-border-light flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center p-5 border-b border-border-light bg-bg-2">
             <Dialog.Title className="text-lg font-semibold text-text-primary flex items-center gap-2">
               <Database size={18} className="text-accent" />
               New Connection
@@ -153,13 +153,13 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="px-5 pt-4 bg-bg-1">
-              <div className="flex border-b border-border">
+              <div className="flex border-b border-border-light">
                 <button
                   type="button"
                   onClick={() => setActiveTab('general')}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'general'
-                      ? 'text-accent border-accent'
-                      : 'text-text-secondary border-transparent hover:text-text-primary'
+                    ? 'text-accent border-accent'
+                    : 'text-text-secondary border-transparent hover:text-text-primary'
                     }`}
                 >
                   General
@@ -168,8 +168,8 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   type="button"
                   onClick={() => setActiveTab('ssh')}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'ssh'
-                      ? 'text-accent border-accent'
-                      : 'text-text-secondary border-transparent hover:text-text-primary'
+                    ? 'text-accent border-accent'
+                    : 'text-text-secondary border-transparent hover:text-text-primary'
                     }`}
                 >
                   <Terminal size={14} />
@@ -179,8 +179,8 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   type="button"
                   onClick={() => setActiveTab('ssl')}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'ssl'
-                      ? 'text-accent border-accent'
-                      : 'text-text-secondary border-transparent hover:text-text-primary'
+                    ? 'text-accent border-accent'
+                    : 'text-text-secondary border-transparent hover:text-text-primary'
                     }`}
                 >
                   <Shield size={14} />
@@ -190,8 +190,8 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   type="button"
                   onClick={() => setActiveTab('advanced')}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'advanced'
-                      ? 'text-accent border-accent'
-                      : 'text-text-secondary border-transparent hover:text-text-primary'
+                    ? 'text-accent border-accent'
+                    : 'text-text-secondary border-transparent hover:text-text-primary'
                     }`}
                 >
                   <Lock size={14} />
@@ -208,7 +208,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                     <div className="grid gap-2">
                       <label className="text-sm font-medium text-text-secondary">Name</label>
                       <input
-                        className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                        className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="My Database"
@@ -220,7 +220,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                     <div className="grid gap-2">
                       <label className="text-sm font-medium text-text-secondary">Database Type</label>
                       <select
-                        className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                        className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                         value={formData.db_type}
                         onChange={(e) => setFormData({ ...formData, db_type: e.target.value })}
                       >
@@ -236,7 +236,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                       <div className="col-span-2 grid gap-2">
                         <label className="text-sm font-medium text-text-secondary">Host</label>
                         <input
-                          className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                          className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                           value={formData.host}
                           onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                           autoCapitalize="off"
@@ -249,7 +249,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                         <label className="text-sm font-medium text-text-secondary">Port</label>
                         <input
                           type="number"
-                          className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                          className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                           value={formData.port}
                           onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) })}
                           required
@@ -262,7 +262,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                         {formData.db_type === 'couchbase' ? 'Bucket' : 'Database'}
                       </label>
                       <input
-                        className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                        className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                         value={formData.database}
                         onChange={(e) => setFormData({ ...formData, database: e.target.value })}
                         autoCapitalize="off"
@@ -276,7 +276,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                       <div className="grid gap-2">
                         <label className="text-sm font-medium text-text-secondary">Username</label>
                         <input
-                          className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                          className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                           value={formData.username}
                           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                           autoCapitalize="off"
@@ -289,12 +289,12 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                         <label className="text-sm font-medium text-text-secondary">Password</label>
                         <input
                           type="password"
-                          className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
+                          className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none transition-colors"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           placeholder="••••••••"
                         />
-                        <div className="text-[10px] text-text-secondary/70 flex items-center gap-1">
+                        <div className="text-[10px] text-text-tertiary flex items-center gap-1">
                           <Lock size={10} /> Saved securely in Keychain
                         </div>
                       </div>
@@ -304,11 +304,11 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
                 {activeTab === 'ssh' && (
                   <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center gap-2 mb-2 p-3 bg-bg-2/30 rounded border border-border/50">
+                    <div className="flex items-center gap-2 mb-2 p-3 bg-bg-2 rounded border border-border-light">
                       <input
                         type="checkbox"
                         id="ssh_enabled"
-                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+                        className="w-4 h-4 rounded border-border-light text-accent focus:ring-accent"
                         checked={formData.ssh_enabled}
                         onChange={(e) => setFormData({ ...formData, ssh_enabled: e.target.checked })}
                       />
@@ -323,7 +323,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                           <div className="col-span-2 grid gap-2">
                             <label className="text-sm font-medium text-text-secondary">SSH Host</label>
                             <input
-                              className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                              className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                               value={formData.ssh_host}
                               onChange={(e) => setFormData({ ...formData, ssh_host: e.target.value })}
                               placeholder="ssh.example.com"
@@ -333,7 +333,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                             <label className="text-sm font-medium text-text-secondary">Port</label>
                             <input
                               type="number"
-                              className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                              className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                               value={formData.ssh_port}
                               onChange={(e) => setFormData({ ...formData, ssh_port: parseInt(e.target.value) })}
                               placeholder="22"
@@ -354,7 +354,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                         <div className="grid gap-2">
                           <label className="text-sm font-medium text-text-secondary">Authentication Type</label>
                           <select
-                            className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                            className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                             value={formData.ssh_auth_type}
                             onChange={(e) => setFormData({ ...formData, ssh_auth_type: e.target.value })}
                           >
@@ -369,7 +369,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                             <label className="text-sm font-medium text-text-secondary">SSH Password</label>
                             <input
                               type="password"
-                              className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                              className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                               value={formData.ssh_password}
                               onChange={(e) => setFormData({ ...formData, ssh_password: e.target.value })}
                               placeholder="••••••••"
@@ -380,18 +380,18 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                             <label className="text-sm font-medium text-text-secondary">Private Key File</label>
                             <div className="flex gap-2">
                               <input
-                                className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none flex-1"
+                                className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none flex-1"
                                 value={formData.ssh_key_file}
                                 onChange={(e) => setFormData({ ...formData, ssh_key_file: e.target.value })}
                                 placeholder="/path/to/id_rsa"
                               />
-                              <button type="button" className="px-3 py-2 bg-bg-2 border border-border rounded hover:bg-bg-3 text-text-secondary">Browse</button>
+                              <button type="button" className="px-3 py-2 bg-bg-2 border border-border-light rounded hover:bg-bg-3 text-text-secondary">Browse</button>
                             </div>
 
                             <label className="text-sm font-medium text-text-secondary mt-2">Passphrase (Optional)</label>
                             <input
                               type="password"
-                              className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                              className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                               value={formData.ssh_key_passphrase}
                               onChange={(e) => setFormData({ ...formData, ssh_key_passphrase: e.target.value })}
                               placeholder="Key passphrase"
@@ -408,7 +408,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                     <div className="grid gap-2">
                       <label className="text-sm font-medium text-text-secondary">SSL Mode</label>
                       <select
-                        className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                        className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
                         value={formData.ssl_mode}
                         onChange={(e) => setFormData({ ...formData, ssl_mode: e.target.value })}
                       >
@@ -433,7 +433,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                         <div className="grid gap-2">
                           <label className="text-sm font-medium text-text-secondary">Client Key</label>
                           <textarea
-                            className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none font-mono text-xs h-20"
+                            className="bg-bg-0 border border-border-light rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none font-mono text-xs h-20"
                             value={formData.ssl_key_file}
                             onChange={(e) => setFormData({ ...formData, ssl_key_file: e.target.value })}
                             placeholder="-----BEGIN PRIVATE KEY-----..."
@@ -455,7 +455,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
                 {activeTab === 'advanced' && (
                   <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center gap-3 p-4 bg-bg-2/30 rounded border border-border/50">
+                    <div className="flex items-center gap-3 p-4 bg-bg-2 rounded border border-border-light">
                       <Shield className="text-accent" size={20} />
                       <div className="flex-1">
                         <h4 className="text-sm font-medium text-text-primary">Read-Only Connection</h4>
@@ -463,13 +463,13 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded border-border text-accent focus:ring-accent"
+                        className="w-5 h-5 rounded border-border-light text-accent focus:ring-accent"
                         checked={formData.is_read_only}
                         onChange={(e) => setFormData({ ...formData, is_read_only: e.target.checked })}
                       />
                     </div>
 
-                    <div className="p-4 bg-bg-2/30 rounded border border-border/50">
+                    <div className="p-4 bg-bg-2 rounded border border-border-light">
                       <h4 className="text-sm font-medium text-text-primary mb-2">Connection Color</h4>
                       <div className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-offset-bg-1 ring-blue-500"></div>
@@ -484,7 +484,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
               </div>
 
-              <div className="flex justify-end gap-3 p-5 border-t border-border bg-bg-1">
+              <div className="flex justify-end gap-3 p-5 border-t border-border-light bg-bg-1">
                 <button
                   type="button"
                   onClick={handleTestConnection}

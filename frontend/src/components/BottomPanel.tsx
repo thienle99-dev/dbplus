@@ -54,7 +54,7 @@ export function BottomPanel({ }: BottomPanelProps) {
 
     if (!isOpen) {
         return (
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border-light">
                 <button
                     onClick={() => setIsOpen(true)}
                     className="w-full px-4 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-2 flex items-center justify-center gap-2"
@@ -68,12 +68,12 @@ export function BottomPanel({ }: BottomPanelProps) {
 
     return (
         <div
-            className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border-light flex flex-col"
             style={{ height: `${panelHeight}px` }}
         >
             {/* Resize Handle */}
             <div
-                className="absolute top-0 left-0 right-0 h-1 cursor-row-resize hover:bg-accent/50 z-50 transition-colors"
+                className="absolute top-0 left-0 right-0 h-1 cursor-row-resize hover:bg-accent z-50 transition-colors"
                 onMouseDown={(e) => {
                     e.preventDefault();
                     setIsResizing(true);
@@ -82,7 +82,7 @@ export function BottomPanel({ }: BottomPanelProps) {
             />
 
             {/* Tabs Header */}
-            <div className="flex items-center justify-between border-b border-border bg-bg-2/50 px-2">
+            <div className="flex items-center justify-between border-b border-border-light bg-bg-2 px-2">
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => setActiveTab('sql')}

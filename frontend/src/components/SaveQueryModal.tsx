@@ -125,7 +125,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-xl bg-bg-1/80 border border-border/60 px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/70 focus:border-accent/60 h-20 resize-none transition-all"
+            className="w-full rounded-xl bg-bg-1 glass border border-border-light px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent h-20 resize-none transition-all"
             placeholder="What does this query do?"
           />
         </div>
@@ -145,7 +145,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
           <select
             value={folderId}
             onChange={(e) => setFolderId(e.target.value)}
-            className="w-full rounded-xl bg-bg-1/80 border border-border/60 px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/70 focus:border-accent/60 transition-all"
+            className="w-full rounded-xl bg-bg-1 glass border border-border-light px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
           >
             <option value="">No folder</option>
             {folders.map((f) => (

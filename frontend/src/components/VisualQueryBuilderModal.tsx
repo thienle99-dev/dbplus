@@ -1,5 +1,6 @@
 import { X, Sparkles, HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import VisualQueryBuilderEnhanced from './VisualQueryBuilderEnhanced';
 import GuidePanel from './GuidePanel';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -58,21 +59,21 @@ export default function VisualQueryBuilderModal({
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
                 {/* Backdrop - Darker and more blurred */}
                 <div
-                    className="absolute inset-0 bg-black/80 backdrop-blur-lg"
+                    className="absolute inset-0 bg-bg-overlay/50 backdrop-blur-lg"
                     onClick={onClose}
                 />
 
                 {/* Modal */}
-                <div className="relative w-full max-w-7xl h-[92vh] mx-4 bg-bg-0 rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="relative w-full max-w-7xl h-[92vh] mx-4 bg-bg-0 rounded-2xl shadow-2xl border border-border-light flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                     {/* Header with gradient */}
-                    <div className="relative flex items-center justify-between px-6 py-5 border-b border-border/50 bg-gradient-to-r from-accent/10 via-bg-1 to-accent/10">
+                    <div className="relative flex items-center justify-between px-6 py-5 border-b border-border-light bg-gradient-to-r from-bg-2 via-bg-1 to-bg-2">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-accent/10 rounded-lg">
+                            <div className="p-2 bg-primary-transparent rounded-lg">
                                 <Sparkles size={20} className="text-accent" />
                             </div>
                             <div>
@@ -118,7 +119,7 @@ export default function VisualQueryBuilderModal({
                     </div>
 
                     {/* Footer with gradient */}
-                    <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-gradient-to-r from-bg-1 via-bg-0 to-bg-1">
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-border-light bg-gradient-to-r from-bg-1 via-bg-0 to-bg-1">
                         <div className="flex items-center gap-2 text-xs text-text-secondary">
                             <span className="px-2 py-1 bg-bg-2 border border-border rounded-md font-mono">Esc</span>
                             <span>{t.shortcuts.escToClose}</span>
@@ -138,6 +139,7 @@ export default function VisualQueryBuilderModal({
 
             {/* Guide Panel */}
             <GuidePanel isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} language={language} />
-        </>
+        </>,
+        document.body
     );
 }

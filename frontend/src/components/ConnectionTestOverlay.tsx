@@ -88,7 +88,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
               <div className="relative">
                 <Loader2 size={64} className="text-accent animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 animate-pulse" />
+                  <div className="w-12 h-12 rounded-full bg-primary-transparent animate-pulse" />
                 </div>
               </div>
             )}
@@ -96,7 +96,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
               <div className="relative">
                 <CheckCircle size={64} className="text-green-500" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-green-500/20 animate-ping" />
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 animate-ping" />
                 </div>
               </div>
             )}
@@ -120,7 +120,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
               <span className="block">
                 <span className="block text-error font-medium mb-2">{errorMessage.split('\n')[0]}</span>
                 {errorMessage.includes('\n') && (
-                  <span className="block text-xs text-text-secondary whitespace-pre-line bg-bg-2/50 p-3 rounded border border-border/50 text-left">
+                  <span className="block text-xs text-text-secondary whitespace-pre-line bg-bg-2 p-3 rounded border border-border-light text-left">
                     {errorMessage.split('\n').slice(1).join('\n')}
                   </span>
                 )}
@@ -149,7 +149,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
               </button>
               <button
                 onClick={() => window.history.back()}
-                className="flex-1 px-4 py-2.5 bg-bg-2 hover:bg-bg-3 text-text-primary rounded-lg font-medium transition-all border border-border hover:border-accent/50"
+                className="flex-1 px-4 py-2.5 bg-bg-2 hover:bg-bg-3 text-text-primary rounded-lg font-medium transition-all border border-border hover:border-accent"
               >
                 Go Back
               </button>
@@ -158,7 +158,7 @@ export default function ConnectionTestOverlay({ connectionId, onSuccess, onFailu
 
           {/* Info */}
           {status === 'testing' && (
-            <div className="flex items-start gap-2 mt-4 p-3 bg-accent/5 rounded-lg border border-accent/20 text-left w-full">
+            <div className="flex items-start gap-2 mt-4 p-3 bg-primary-transparent rounded-lg border border-primary-transparent text-left w-full">
               <AlertCircle size={16} className="text-accent mt-0.5 flex-shrink-0" />
               <p className="text-xs text-text-secondary">
                 Ensure the database is accessible before loading the workspace.

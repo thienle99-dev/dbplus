@@ -1,5 +1,6 @@
 import { X, Lightbulb, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { translations, Language } from '../i18n/queryBuilder';
 
 interface GuidePanelProps {
@@ -17,20 +18,20 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-in fade-in duration-200">
+    return createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center animate-in fade-in duration-200">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                className="absolute inset-0 bg-bg-overlay/50 backdrop-blur-sm"
                 onClick={onClose}
             />
 
             {/* Panel */}
-            <div className="relative w-full max-w-3xl max-h-[85vh] mx-4 bg-gradient-to-br from-bg-0 to-bg-1 rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-3xl max-h-[85vh] mx-4 bg-gradient-to-br from-bg-0 to-bg-1 rounded-2xl shadow-2xl border border-border-light flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 bg-gradient-to-r from-accent/10 via-bg-1 to-accent/10">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-border-light bg-gradient-to-r from-bg-2 via-bg-1 to-bg-2">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-accent/10 rounded-lg">
+                        <div className="p-2 bg-primary-transparent rounded-lg">
                             <Lightbulb size={20} className="text-accent" />
                         </div>
                         <div>
@@ -52,7 +53,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-bg-1/50">
+                <div className="flex items-center gap-2 px-6 py-3 border-b border-border-subtle bg-bg-1 glass">
                     <button
                         onClick={() => setActiveTab('steps')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'steps'
@@ -91,7 +92,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                                             <p className="text-sm text-text-secondary mb-2">
                                                 {step.description}
                                             </p>
-                                            <div className="px-3 py-2 bg-bg-0 rounded-md border border-border/50">
+                                            <div className="px-3 py-2 bg-bg-0 rounded-md border border-border-light">
                                                 <code className="text-xs text-accent font-mono">
                                                     {step.example}
                                                 </code>
@@ -102,7 +103,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                             ))}
 
                             {/* Tips Section */}
-                            <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/30">
+                            <div className="mt-6 p-4 bg-primary-transparent rounded-lg border border-accent">
                                 <div className="flex items-start gap-2">
                                     <Lightbulb size={18} className="text-accent flex-shrink-0 mt-0.5" />
                                     <div>
@@ -140,7 +141,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                                                 key={stepIndex}
                                                 className="flex items-start gap-2 text-sm"
                                             >
-                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/20 text-accent text-xs font-bold flex-shrink-0 mt-0.5">
+                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary-transparent text-accent text-xs font-bold flex-shrink-0 mt-0.5">
                                                     {stepIndex + 1}
                                                 </span>
                                                 <span className="text-text-primary">{step}</span>
@@ -154,7 +155,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end px-6 py-4 border-t border-border/50 bg-bg-1/50">
+                <div className="flex items-center justify-end px-6 py-4 border-t border-border-light bg-bg-1 glass">
                     <button
                         onClick={onClose}
                         className="px-6 py-2.5 bg-gradient-to-r from-accent to-accent/90 text-white rounded-xl hover:shadow-lg hover:shadow-accent/25 transition-all font-semibold text-sm"
@@ -163,6 +164,7 @@ export default function GuidePanel({ isOpen, onClose, language }: GuidePanelProp
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

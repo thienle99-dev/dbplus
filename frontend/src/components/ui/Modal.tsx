@@ -67,7 +67,7 @@ export default function Modal({
           relative
           w-full
           ${sizeClasses[size]}
-          bg-bg-1 border border-border/40
+          bg-bg-1 border border-border-light
           rounded-2xl
           shadow-[0_18px_40px_rgba(0,0,0,0.25)]
           flex flex-col
@@ -80,7 +80,7 @@ export default function Modal({
             >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
                         {title && (
                             <h2 className="text-lg font-semibold text-text-primary">
                                 {title}
@@ -112,7 +112,7 @@ export default function Modal({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border-light">
                         {footer}
                     </div>
                 )}

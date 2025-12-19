@@ -39,7 +39,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
-  
+
   // Restore State
   const [isRestored, setIsRestored] = useState(false);
 
@@ -59,8 +59,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   // Save State
   useEffect(() => {
     if (!tabId || !isRestored) return;
-    setTabState(tabId, { 
-      tableData: data, 
+    setTabState(tabId, {
+      tableData: data,
       tableEdits: edits,
       tablePage: page,
       tableActiveView: activeTab
@@ -71,7 +71,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   if (!schema || !table) {
     return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
   }
-  
+
   const activeQueryIdRef = useRef<string | null>(null);
 
   // Cleanup pending query on unmount
@@ -81,7 +81,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       if (pendingQueryId) {
         console.log(`[TableDataView] Cancelling query ${pendingQueryId} on unmount`);
         api.post('/api/queries/cancel', { query_id: pendingQueryId }).catch(err => {
-            console.warn("Failed to send cancel request", err);
+          console.warn("Failed to send cancel request", err);
         });
       }
     };
@@ -123,22 +123,22 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       const response = await api.get(
         `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`,
         {
-            headers: { 'X-Query-ID': queryId }
+          headers: { 'X-Query-ID': queryId }
         }
       );
       setData(response.data);
       setEdits({}); // Clear edits on page change/refresh
     } catch (err: unknown) {
       if (activeQueryIdRef.current === queryId) {
-          // Only show error if THIS query failed (and wasn't cancelled locally)
-          const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
-          setError(errorMessage);
+        // Only show error if THIS query failed (and wasn't cancelled locally)
+        const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
+        setError(errorMessage);
       }
     } finally {
       if (activeQueryIdRef.current === queryId) {
-          activeQueryIdRef.current = null;
-          setLoading(false);
-          fetchingRef.current = false;
+        activeQueryIdRef.current = null;
+        setLoading(false);
+        fetchingRef.current = false;
       } else {
         // If query ID changed, it means a NEW query started or this one was "cancelled" logic-wise
         // But we still turn off fetching flag if strictly matching?
@@ -146,8 +146,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         // We should be careful resetting fetchingRef.
         // Simple approach: reset loading/fetching if we finished.
         if (!activeQueryIdRef.current) {
-             setLoading(false);
-             fetchingRef.current = false;
+          setLoading(false);
+          fetchingRef.current = false;
         }
       }
     }
@@ -302,15 +302,15 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   }, []);
 
   return (
-    <div className="flex flex-col pb-[20px] h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
+    <div className="flex flex-col pb-[20px] h-full bg-bg-0 rounded-2xl overflow-hidden shadow-sm border border-border-light">
       {/* Tab Navigation */}
-      <div className="flex items-center justify-between border-b border-border/40 bg-bg-1 p-2">
-        <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
+      <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-2">
+        <div className="flex p-0.5 bg-bg-2 rounded-xl border border-border-light">
           <button
             onClick={() => setActiveTab('data')}
             className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'data'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
             <Table size={14} />
@@ -319,8 +319,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
           <button
             onClick={() => setActiveTab('structure')}
             className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'structure'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
             <Database size={14} />
@@ -329,8 +329,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
           <button
             onClick={() => setActiveTab('info')}
             className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'info'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
             <Info size={14} />
@@ -341,11 +341,11 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
       <div className={`flex-1 relative flex flex-col ${activeTab === 'data' ? 'overflow-hidden' : 'overflow-auto custom-scrollbar'}`}>
         {loading && !data ? (
-           <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
+          <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
         ) : error ? (
-           <div className="p-8 text-red-500">Error: {error}</div>
+          <div className="p-8 text-red-500">Error: {error}</div>
         ) : !data && activeTab === 'data' ? (
-           <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">No data available</div>
+          <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">No data available</div>
         ) : activeTab === 'data' && data ? (
           <TableDataTab
             connectionId={connectionId}
