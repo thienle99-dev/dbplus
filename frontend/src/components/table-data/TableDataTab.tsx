@@ -1,14 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-// import api from '../../services/api';
-// import { useToast } from '../../context/ToastContext';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
 import { TableColumn, QueryResult, EditState, SchemaForeignKey } from '../../types';
@@ -59,13 +58,30 @@ export default function TableDataTab({
   foreignKeys = [],
 }: TableDataTabProps) {
   const { currentPage: page, setCurrentPage: setPage, pageSize } = useTablePage();
-  // const { showToast } = useToast();
   const { selectedRow, setSelectedRow } = useSelectedRow();
+  
+  // Virtualization Ref
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const columns = useMemo(() => {
+    // ... (keep existing columns logic)
     if (!data?.columns) return [];
     const helper = createColumnHelper<unknown[]>();
-    return data.columns.map((col, index) =>
+    
+    // Index Column
+    const indexColumn = helper.display({
+      id: '_index',
+      header: '#',
+      cell: (info) => (
+        <div className="text-text-secondary/60 text-[10px] font-mono select-none text-right pr-2">
+          {(page * pageSize) + info.row.index + 1}
+        </div>
+      ),
+      size: 40,
+      enableResizing: false,
+    });
+
+    const dataColumns = data.columns.map((col, index) =>
       helper.accessor((row, rowIndex) => {
         if (edits[rowIndex]?.[index] !== undefined) {
           return edits[rowIndex][index];
@@ -124,7 +140,9 @@ export default function TableDataTab({
         }
       })
     );
-  }, [data?.columns, edits, onEdit, foreignKeys, connectionId]);
+
+    return [indexColumn, ...dataColumns];
+  }, [data?.columns, edits, onEdit, foreignKeys, connectionId, page, pageSize]);
 
   const tableInstance = useReactTable({
     data: data?.rows || [],
@@ -132,11 +150,21 @@ export default function TableDataTab({
     getCoreRowModel: getCoreRowModel(),
   });
 
+  const { rows } = tableInstance.getRowModel();
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 35, // Estimate 35px row height
+    overscan: 10,
+  });
+
   const hasChanges = Object.keys(edits).length > 0;
 
   return (
     <>
       <div className="p-3 border-b border-border/40 flex justify-between items-center bg-bg-1/80 backdrop-blur-sm">
+        {/* ... (keep toolbar) ... */}
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-semibold text-text-primary px-2">
             {schema}.{table}
@@ -206,7 +234,8 @@ export default function TableDataTab({
             title="Refresh"
           />
           <div className="h-4 w-px bg-border/40 mx-1 self-center" />
-          <div className="flex items-center gap-1 rounded-full bg-bg-2/50 border border-border/40 p-0.5">
+           {/* Pagination */}
+           <div className="flex items-center gap-1 rounded-full bg-bg-2/50 border border-border/40 p-0.5">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0 || loading}
@@ -231,11 +260,12 @@ export default function TableDataTab({
       </div>
 
       <div 
-        className="flex-1 overflow-auto rounded-xl border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
+        ref={tableContainerRef}
+        className="flex-1 overflow-auto rounded-xl mt-[10px] border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 pb-[50px] custom-scrollbar"
         style={{ scrollbarGutter: 'stable' }}
       >
-        <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 z-20 bg-bg-1/85 backdrop-blur-md shadow-sm">
+        <table className="w-full text-left border-collapse" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+          <thead className="sticky top-0 z-20 bg-bg-1 shadow-lg">
             {tableInstance.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -267,7 +297,7 @@ export default function TableDataTab({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-border/10 font-sans">
+          <tbody className="divide-y divide-border/10 font-sans relative">
             {isAddingRow && (
               <tr className="bg-accent/5 transition-all">
                 {data.columns.map((_col, index) => (
@@ -293,18 +323,29 @@ export default function TableDataTab({
                 ))}
               </tr>
             )}
-            {tableInstance.getRowModel().rows.map((row, i) => {
+            
+            {/* Top Padding for Virtualization */}
+            {rowVirtualizer.getVirtualItems().length > 0 && (
+              <tr style={{ height: `${rowVirtualizer.getVirtualItems()[0].start}px` }}>
+                <td colSpan={columns.length} />
+              </tr>
+            )}
+
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const row = rows[virtualRow.index];
               const isModified = edits[row.index] !== undefined;
               const isSelected = selectedRow?.rowIndex === row.index;
               
               return (
                 <tr
                   key={row.id}
+                  data-index={virtualRow.index} 
+                  ref={rowVirtualizer.measureElement}
                   className={`
                     group transition-colors duration-150 ease-out cursor-pointer
                     ${isSelected 
                        ? 'bg-accent/10' 
-                       : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${i % 2 === 1 ? 'bg-gray-500/5' : ''}`
+                       : isModified ? 'bg-amber-500/5' : `hover:bg-bg-2/50 ${row.index % 2 === 1 ? 'bg-gray-500/5' : ''}`
                     }
                   `}
                   onClick={() => {
@@ -332,6 +373,12 @@ export default function TableDataTab({
                 </tr>
               )
             })}
+             {/* Bottom Padding for Virtualization */}
+             {rowVirtualizer.getVirtualItems().length > 0 && (
+              <tr style={{ height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end}px` }}>
+                <td colSpan={columns.length} />
+              </tr>
+            )}
           </tbody>
         </table>
         {data.rows.length === 0 && (

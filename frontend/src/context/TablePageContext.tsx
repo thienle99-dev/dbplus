@@ -10,7 +10,7 @@ const TablePageContext = createContext<TablePageContextType | undefined>(undefin
 
 export function TablePageProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 100;
+  const pageSize = 25;
 
   return (
     <TablePageContext.Provider value={{ currentPage, setCurrentPage, pageSize }}>

@@ -263,7 +263,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
+    <div className="flex flex-col pb-[20px] h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
       {/* Tab Navigation */}
       <div className="flex items-center justify-between border-b border-border/40 bg-bg-1 p-2">
         <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
@@ -300,7 +300,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden relative">
+      <div className={`flex-1 relative flex flex-col ${activeTab === 'data' ? 'overflow-hidden' : 'overflow-auto custom-scrollbar'}`}>
         {loading && !data ? (
            <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
         ) : error ? (
