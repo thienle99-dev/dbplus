@@ -251,6 +251,7 @@ impl SchemaIntrospection for ClickHouseDriver {
                 data_type: row.r#type.clone(),
                 is_nullable: row.r#type.starts_with("Nullable("),
                 is_primary_key: false,
+                is_foreign_key: false,
                 default_value: if row.default_expression.is_empty() {
                     None
                 } else {

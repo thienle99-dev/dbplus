@@ -76,6 +76,7 @@ impl SchemaIntrospection for CouchbaseDriver {
                 data_type: "JSON".to_string(), // Generic type for now
                 is_nullable: true,
                 is_primary_key: col_name == "id" || col_name == "_id",
+                is_foreign_key: false,
                 default_value: None,
             });
         }
@@ -87,6 +88,7 @@ impl SchemaIntrospection for CouchbaseDriver {
                 data_type: "STRING".to_string(),
                 is_nullable: false,
                 is_primary_key: true,
+                is_foreign_key: false,
                 default_value: None,
             });
             columns.push(TableColumn {
@@ -94,6 +96,7 @@ impl SchemaIntrospection for CouchbaseDriver {
                 data_type: "JSON".to_string(),
                 is_nullable: true,
                 is_primary_key: false,
+                is_foreign_key: false,
                 default_value: None,
             });
         }

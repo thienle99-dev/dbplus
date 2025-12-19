@@ -93,7 +93,13 @@ impl SchemaIntrospection for PostgresSchema {
                 format_type(a.atttypid, a.atttypmod) as data_type,
                 NOT a.attnotnull as is_nullable,
                 pg_get_expr(ad.adbin, ad.adrelid) as column_default,
-                CASE WHEN pk.attname IS NOT NULL THEN true ELSE false END as is_primary_key
+                CASE WHEN pk.attname IS NOT NULL THEN true ELSE false END as is_primary_key,
+                EXISTS (
+                    SELECT 1 FROM pg_constraint con 
+                    WHERE con.conrelid = c.oid 
+                    AND con.contype = 'f' 
+                    AND a.attnum = ANY(con.conkey)
+                ) as is_foreign_key
              FROM pg_attribute a
              JOIN pg_class c ON a.attrelid = c.oid
              JOIN pg_namespace n ON c.relnamespace = n.oid
@@ -119,6 +125,7 @@ impl SchemaIntrospection for PostgresSchema {
                 is_nullable: row.get(2),
                 default_value: row.get(3),
                 is_primary_key: row.get(4),
+                is_foreign_key: row.get(5),
             })
             .collect();
 

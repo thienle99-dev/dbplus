@@ -60,6 +60,7 @@ impl SchemaIntrospection for MySqlDriver {
                     data_type,
                     is_nullable: is_nullable == "YES",
                     is_primary_key: col_key == "PRI",
+                    is_foreign_key: false, // TODO: Implement proper FK check for MySQL
                     default_value: default_val,
                 },
             )

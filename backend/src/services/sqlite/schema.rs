@@ -107,6 +107,7 @@ impl SchemaIntrospection for SQLiteSchema {
                     is_nullable: not_null == 0,
                     default_value,
                     is_primary_key: is_pk,
+                    is_foreign_key: false, // TODO: Implement proper FK check
                 }
             })
             .collect();

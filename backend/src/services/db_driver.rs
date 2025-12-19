@@ -9,6 +9,7 @@ pub struct TableColumn {
     pub data_type: String,
     pub is_nullable: bool,
     pub is_primary_key: bool,
+    pub is_foreign_key: bool,
     pub default_value: Option<String>,
 }
 

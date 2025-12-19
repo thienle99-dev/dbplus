@@ -27,7 +27,8 @@ impl FunctionOperations for PostgresFunction {
                 pg_get_functiondef(p.oid) AS definition,
                 pg_catalog.format_type(p.prorettype, NULL) AS return_type,
                 l.lanname AS language,
-                pg_catalog.pg_get_userbyid(p.proowner) AS owner
+                pg_catalog.pg_get_userbyid(p.proowner) AS owner,
+                pg_catalog.pg_get_function_arguments(p.oid) AS arguments
             FROM pg_proc p
             JOIN pg_namespace n ON n.oid = p.pronamespace
             JOIN pg_language l ON l.oid = p.prolang
@@ -45,7 +46,7 @@ impl FunctionOperations for PostgresFunction {
                 definition: row.get(2),
                 language: Some(row.get(4)),
                 return_type: Some(row.get(3)),
-                arguments: None,
+                arguments: Some(row.get(6)),
                 owner: row.get(5),
             })
             .collect();
@@ -76,7 +77,8 @@ impl FunctionOperations for PostgresFunction {
                 pg_get_functiondef(p.oid) AS definition,
                 pg_catalog.format_type(p.prorettype, NULL) AS return_type,
                 l.lanname AS language,
-                pg_catalog.pg_get_userbyid(p.proowner) AS owner
+                pg_catalog.pg_get_userbyid(p.proowner) AS owner,
+                pg_catalog.pg_get_function_arguments(p.oid) AS arguments
             FROM pg_proc p
             JOIN pg_namespace n ON n.oid = p.pronamespace
             JOIN pg_language l ON l.oid = p.prolang
@@ -93,7 +95,7 @@ impl FunctionOperations for PostgresFunction {
             definition: row.get(2),
             language: Some(row.get(4)),
             return_type: Some(row.get(3)),
-            arguments: None,
+            arguments: Some(row.get(6)),
             owner: row.get(5),
         })
     }
