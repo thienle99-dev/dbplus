@@ -11,6 +11,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useForeignKeys, useTables } from '../../hooks/useDatabase';
+import { useConnectionStore } from '../../store/connectionStore';
 import TableNode from './TableNode';
 import { getLayoutedElements } from './layout';
 import { Loader2, Maximize2, Minimize2 } from 'lucide-react';
@@ -22,16 +23,22 @@ const nodeTypes = {
 interface ERDiagramProps {
     connectionId: string;
     schema: string;
+    database?: string;
     onTableClick?: (tableName: string, schema: string) => void;
 }
 
-export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
+export default function ERDiagram({ connectionId, schema, database }: ERDiagramProps) {
     const { data: foreignKeys = [], isLoading: fkLoading } = useForeignKeys(connectionId, schema);
-    const { data: tables = [], isLoading: tablesLoading } = useTables(connectionId, schema);
+    const { data: tables = [], isLoading: tablesLoading } = useTables(connectionId, schema, database);
     const [layoutType, setLayoutType] = useState<'grid' | 'smart'>('smart');
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { connections } = useConnectionStore();
+    const isCouchbase = useMemo(() => {
+        const conn = connections.find(c => c.id === connectionId);
+        return conn?.type === 'couchbase';
+    }, [connections, connectionId]);
 
     // Lazy column loading
     const [tableColumns, setTableColumns] = useState<Map<string, any[]>>(new Map());
@@ -40,7 +47,7 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
 
     // Fetch all columns immediately when tables are loaded
     const [allColumnsLoaded, setAllColumnsLoaded] = useState(false);
-    
+
     useEffect(() => {
         if (tables.length === 0) {
             setAllColumnsLoaded(false);
@@ -48,7 +55,7 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
         }
 
         setAllColumnsLoaded(false);
-        
+
         const fetchAllColumns = async () => {
             const fetchPromises = tables.map(async (table) => {
                 if (fetchedTablesRef.current.has(table.name)) return;
@@ -56,8 +63,13 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
                 setLoadingColumns(prev => new Set(prev).add(table.name));
 
                 try {
+                    const queryParams = new URLSearchParams({
+                        schema,
+                        table: table.name,
+                        ...(database ? { database } : {})
+                    });
                     const response = await fetch(
-                        `/api/connections/${connectionId}/columns?schema=${schema}&table=${table.name}`
+                        `/api/connections/${connectionId}/columns?${queryParams.toString()}`
                     );
                     if (response.ok) {
                         const cols = await response.json();
@@ -96,8 +108,13 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
         setLoadingColumns(prev => new Set(prev).add(tableName));
 
         try {
+            const queryParams = new URLSearchParams({
+                schema,
+                table: tableName,
+                ...(database ? { database } : {})
+            });
             const response = await fetch(
-                `/api/connections/${connectionId}/columns?schema=${schema}&table=${tableName}`
+                `/api/connections/${connectionId}/columns?${queryParams.toString()}`
             );
             if (response.ok) {
                 const cols = await response.json();
@@ -190,6 +207,7 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
                     columns: columns,
                     primaryKeys: columns.filter(c => c.isPrimaryKey).map(c => c.name),
                     isLoadingColumns: loadingColumns.has(table.name),
+                    database: database,
                 },
             };
         });
@@ -349,7 +367,7 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
                 <div className="flex flex-col items-center gap-3">
                     <Loader2 className="animate-spin text-accent" size={32} />
                     <div className="text-sm text-text-secondary">
-                        {tablesLoading || fkLoading ? 'Loading ER Diagram...' : 'Loading columns...'}
+                        {tablesLoading || fkLoading ? `Loading ${isCouchbase ? 'ER' : 'ER'} Diagram...` : 'Loading columns...'}
                     </div>
                 </div>
             </div>
@@ -360,8 +378,8 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-bg-0">
                 <div className="text-center">
-                    <div className="text-text-secondary mb-2">No tables found in schema "{schema}"</div>
-                    <div className="text-xs text-text-tertiary">Create some tables to see the ER diagram</div>
+                    <div className="text-text-secondary mb-2">No {isCouchbase ? 'collections' : 'tables'} found in {isCouchbase ? 'scope' : 'schema'} "{schema}"</div>
+                    <div className="text-xs text-text-tertiary">Create some {isCouchbase ? 'collections' : 'tables'} to see the diagram</div>
                 </div>
             </div>
         );
@@ -418,7 +436,7 @@ export default function ERDiagram({ connectionId, schema }: ERDiagramProps) {
             <div className="absolute top-4 right-4 z-10 bg-bg-1 border border-border rounded-lg shadow-lg px-3 py-2">
                 <div className="flex items-center gap-4 text-xs">
                     <div>
-                        <span className="text-text-tertiary">Tables:</span>{' '}
+                        <span className="text-text-tertiary">{isCouchbase ? 'Collections' : 'Tables'}:</span>{' '}
                         <span className="font-semibold text-accent">{tables.length}</span>
                     </div>
                     <div>

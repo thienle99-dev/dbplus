@@ -407,8 +407,9 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         onClose={() => setErDiagramOpen(false)}
         connectionId={connectionId}
         schema={schemaName}
+        database={database}
         onTableClick={(tableName, tableSchema) => {
-          navigate(`/connections/${connectionId}/table/${tableSchema}/${tableName}`);
+          navigate(`/workspace/${connectionId}/tables/${tableSchema}/${tableName}`);
         }}
       />
 

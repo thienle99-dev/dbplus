@@ -7,6 +7,7 @@ interface ERDiagramModalProps {
     onClose: () => void;
     connectionId: string;
     schema: string;
+    database?: string;
     onTableClick?: (tableName: string, schema: string) => void;
 }
 
@@ -15,6 +16,7 @@ export default function ERDiagramModal({
     onClose,
     connectionId,
     schema,
+    database,
     onTableClick,
 }: ERDiagramModalProps) {
     const [size, setSize] = useState({ width: 1200, height: 800 });
@@ -115,6 +117,7 @@ export default function ERDiagramModal({
                     <ERDiagram
                         connectionId={connectionId}
                         schema={schema}
+                        database={database}
                         onTableClick={handleTableClick}
                     />
                 </div>

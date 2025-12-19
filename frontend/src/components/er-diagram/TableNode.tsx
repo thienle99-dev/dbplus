@@ -9,6 +9,7 @@ interface TableNodeData {
     columns: ColumnInfo[];
     primaryKeys: string[];
     isLoadingColumns?: boolean;
+    database?: string;
 }
 
 interface TableNodeProps {
@@ -36,9 +37,9 @@ export default function TableNode({ data, selected }: TableNodeProps) {
                         {data.tableName}
                     </div>
                 </div>
-                {data.schema && (
-                    <div className="text-[10px] text-text-tertiary mt-0.5">
-                        {data.schema}
+                {(data.schema || data.database) && (
+                    <div className="text-[10px] text-text-tertiary mt-0.5 truncate">
+                        {data.database ? `${data.database} . ` : ''}{data.schema}
                     </div>
                 )}
             </div>
