@@ -18,7 +18,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp }: 
   const connectionId = params.connectionId;
   const [data, setData] = useState<QueryResult | null>(null);
   const [columnsInfo, setColumnsInfo] = useState<TableColumn[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentPage: page, pageSize } = useTablePage();
 
