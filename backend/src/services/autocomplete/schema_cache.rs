@@ -227,4 +227,232 @@ impl SchemaCacheService {
 
         Ok(())
     }
+
+    /// Refresh schema cache with different scopes
+    pub async fn refresh(
+        &self,
+        connection_id: Uuid,
+        database_name: &str,
+        scope: RefreshScope,
+        driver: Arc<dyn DatabaseDriver>,
+    ) -> Result<()> {
+        match scope {
+            RefreshScope::All => {
+                // Invalidate entire connection cache
+                self.invalidate_connection(connection_id).await?;
+            }
+            RefreshScope::Schema(schema_name) => {
+                // Invalidate specific schema
+                self.invalidate_schema(connection_id, database_name, &schema_name)
+                    .await?;
+
+                // Force refresh
+                self.get_schema_metadata(connection_id, database_name, &schema_name, driver, true)
+                    .await?;
+            }
+            RefreshScope::Table {
+                schema_name,
+                table_name,
+            } => {
+                // Invalidate specific table and its columns
+                self.invalidate_table(connection_id, database_name, &schema_name, &table_name)
+                    .await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Invalidate entire connection cache
+    pub async fn invalidate_connection(&self, connection_id: Uuid) -> Result<()> {
+        // Remove from memory cache
+        self.memory_cache
+            .retain(|k, _| k.connection_id != connection_id);
+
+        // Remove from SQLite
+        schema_cache::Entity::delete_many()
+            .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+            .exec(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Invalidate specific schema
+    pub async fn invalidate_schema(
+        &self,
+        connection_id: Uuid,
+        database_name: &str,
+        schema_name: &str,
+    ) -> Result<()> {
+        // Remove from memory cache
+        self.memory_cache.retain(|k, _| {
+            !(k.connection_id == connection_id
+                && k.database_name == database_name
+                && k.schema_name == schema_name)
+        });
+
+        // Remove from SQLite
+        schema_cache::Entity::delete_many()
+            .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+            .filter(schema_cache::Column::DatabaseName.eq(database_name))
+            .filter(schema_cache::Column::SchemaName.eq(schema_name))
+            .exec(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Invalidate specific table and its columns
+    pub async fn invalidate_table(
+        &self,
+        connection_id: Uuid,
+        database_name: &str,
+        schema_name: &str,
+        table_name: &str,
+    ) -> Result<()> {
+        // Remove from SQLite (table entry and its columns)
+        schema_cache::Entity::delete_many()
+            .filter(schema_cache::Column::ConnectionId.eq(connection_id))
+            .filter(schema_cache::Column::DatabaseName.eq(database_name))
+            .filter(schema_cache::Column::SchemaName.eq(schema_name))
+            .filter(
+                schema_cache::Column::ObjectName
+                    .eq(table_name)
+                    .or(schema_cache::Column::ParentName.eq(Some(table_name))),
+            )
+            .exec(&self.db)
+            .await?;
+
+        // Note: Memory cache stores schema-level data, so we invalidate the whole schema
+        // to ensure consistency
+        self.memory_cache.retain(|k, _| {
+            !(k.connection_id == connection_id
+                && k.database_name == database_name
+                && k.schema_name == schema_name)
+        });
+
+        Ok(())
+    }
+
+    /// Detect and invalidate based on DDL statement
+    pub async fn invalidate_from_ddl(
+        &self,
+        connection_id: Uuid,
+        database_name: &str,
+        sql: &str,
+    ) -> Result<()> {
+        let sql_upper = sql.trim().to_uppercase();
+
+        // Check if it's a DDL statement
+        if !sql_upper.starts_with("CREATE")
+            && !sql_upper.starts_with("ALTER")
+            && !sql_upper.starts_with("DROP")
+            && !sql_upper.starts_with("TRUNCATE")
+        {
+            return Ok(());
+        }
+
+        // Parse DDL to extract affected objects (best effort)
+        let affected = Self::parse_ddl_objects(&sql_upper);
+
+        match affected {
+            Some(DdlAffectedObject::Schema(schema_name)) => {
+                self.invalidate_schema(connection_id, database_name, &schema_name)
+                    .await?;
+            }
+            Some(DdlAffectedObject::Table {
+                schema_name,
+                table_name,
+            }) => {
+                self.invalidate_table(connection_id, database_name, &schema_name, &table_name)
+                    .await?;
+            }
+            None => {
+                // Can't determine specific object, invalidate entire connection
+                self.invalidate_connection(connection_id).await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Best-effort parsing of DDL to extract affected objects
+    fn parse_ddl_objects(sql: &str) -> Option<DdlAffectedObject> {
+        // Simple pattern matching for common DDL patterns
+        // CREATE/ALTER/DROP TABLE schema.table
+        // CREATE/ALTER/DROP SCHEMA schema
+
+        let words: Vec<&str> = sql.split_whitespace().collect();
+        if words.len() < 3 {
+            return None;
+        }
+
+        let command = words[0]; // CREATE, ALTER, DROP, TRUNCATE
+        let object_type = words[1]; // TABLE, SCHEMA, VIEW, INDEX, etc.
+
+        match object_type {
+            "SCHEMA" => {
+                // CREATE SCHEMA schema_name
+                if words.len() >= 3 {
+                    let schema_name = words[2].trim_matches(|c| c == ';' || c == '"');
+                    return Some(DdlAffectedObject::Schema(schema_name.to_lowercase()));
+                }
+            }
+            "TABLE" | "VIEW" | "MATERIALIZED" => {
+                // CREATE TABLE [schema.]table
+                // DROP TABLE [schema.]table
+                // TRUNCATE TABLE [schema.]table
+                let table_ref = if object_type == "MATERIALIZED" && words.len() >= 4 {
+                    // MATERIALIZED VIEW
+                    words[3]
+                } else if words.len() >= 3 {
+                    words[2]
+                } else {
+                    return None;
+                };
+
+                let table_ref =
+                    table_ref.trim_matches(|c| c == ';' || c == '"' || c == '(' || c == ')');
+
+                if table_ref.contains('.') {
+                    let parts: Vec<&str> = table_ref.split('.').collect();
+                    if parts.len() == 2 {
+                        return Some(DdlAffectedObject::Table {
+                            schema_name: parts[0].to_lowercase(),
+                            table_name: parts[1].to_lowercase(),
+                        });
+                    }
+                } else {
+                    // No schema specified, assume public
+                    return Some(DdlAffectedObject::Table {
+                        schema_name: "public".to_string(),
+                        table_name: table_ref.to_lowercase(),
+                    });
+                }
+            }
+            _ => {}
+        }
+
+        None
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum RefreshScope {
+    All,
+    Schema(String),
+    Table {
+        schema_name: String,
+        table_name: String,
+    },
+}
+
+#[derive(Debug, Clone)]
+enum DdlAffectedObject {
+    Schema(String),
+    Table {
+        schema_name: String,
+        table_name: String,
+    },
 }

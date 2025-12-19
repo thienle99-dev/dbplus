@@ -98,7 +98,23 @@ pub async fn execute_query(
     }
 
     match result {
-        Ok(result) => (StatusCode::OK, Json(result)).into_response(),
+        Ok(result) => {
+            // Invalidate cache if DDL was executed
+            let schema_cache = &state.schema_cache;
+            let database_name = headers
+                .get("X-Database")
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("postgres"); // Default database name
+
+            if let Err(e) = schema_cache
+                .invalidate_from_ddl(connection_id, database_name, &payload.query)
+                .await
+            {
+                tracing::warn!("Failed to invalidate cache after DDL: {}", e);
+            }
+
+            (StatusCode::OK, Json(result)).into_response()
+        }
         Err(e) => {
             let message = e.to_string();
             if message == "Query cancelled" {

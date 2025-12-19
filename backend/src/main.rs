@@ -133,6 +133,10 @@ async fn main() {
             get(handlers::schema::list_schema_metadata),
         )
         .route(
+            "/api/connections/:id/schema/refresh",
+            post(handlers::schema_refresh::refresh_schema),
+        )
+        .route(
             "/api/connections/:id/tables",
             get(handlers::schema::list_tables),
         )
