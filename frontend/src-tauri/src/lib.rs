@@ -21,10 +21,20 @@ struct BackendProcess {
     child: Mutex<Option<Child>>,
 }
 
+mod commands;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, pick_sqlite_db_file])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            pick_sqlite_db_file,
+            commands::autocomplete_suggest,
+            commands::schema_list_schemas,
+            commands::schema_list_tables,
+            commands::schema_get_columns,
+            commands::schema_refresh
+        ])
         .plugin(tauri_plugin_opener::init())
         .manage(BackendProcess {
             child: Mutex::new(None),

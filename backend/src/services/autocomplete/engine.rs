@@ -10,7 +10,7 @@ pub struct AutocompleteRequest {
     pub sql: String,
     pub cursor_pos: usize,
     pub connection_id: Uuid,
-    pub database_name: String,
+    pub database_name: Option<String>,
     pub active_schema: Option<String>,
 }
 
@@ -147,7 +147,13 @@ impl AutocompleteEngine {
     ) -> Result<()> {
         let objects = self
             .schema_cache
-            .get_schema_metadata(req.connection_id, &req.database_name, schema, driver, false)
+            .get_schema_metadata(
+                req.connection_id,
+                req.database_name.as_deref().unwrap_or("postgres"),
+                schema,
+                driver,
+                false,
+            )
             .await?;
 
         for obj in objects {
@@ -217,7 +223,7 @@ impl AutocompleteEngine {
             .schema_cache
             .get_columns(
                 req.connection_id,
-                &req.database_name,
+                req.database_name.as_deref().unwrap_or("postgres"),
                 &schema,
                 &table,
                 driver,
@@ -263,7 +269,7 @@ impl AutocompleteEngine {
                 .schema_cache
                 .get_columns(
                     req.connection_id,
-                    &req.database_name,
+                    req.database_name.as_deref().unwrap_or("postgres"),
                     &schema,
                     &table,
                     driver.clone(),
