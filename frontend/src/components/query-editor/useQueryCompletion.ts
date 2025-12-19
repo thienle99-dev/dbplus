@@ -208,6 +208,40 @@ export function useQueryCompletion({
     return tables;
   }, []);
 
+  const fromCompletionSource = useCallback((context: CompletionContext) => {
+      // Match FROM pattern
+      const fromPattern = context.matchBefore(/\bFROM\s+\w*/i);
+      const afterFromSpace = context.matchBefore(/\bFROM\s+/i);
+
+      if (!fromPattern && !afterFromSpace) return null;
+
+      if (!schemaCompletion) return null;
+
+      const allTables = Object.keys(schemaCompletion).filter(
+        (key) => !key.includes(".")
+      );
+
+      const options = allTables.map((table) => ({
+        label: table,
+        detail: "Table",
+        apply: table,
+        type: "class",
+        boost: 5, // Higher priority for FROM clause
+      }));
+
+      const wordText = fromPattern ? fromPattern.text : "";
+      const fromKeywordMatch = wordText.match(/\bFROM\s+/i);
+
+      return {
+        from: fromPattern
+          ? fromPattern.from + (fromKeywordMatch?.[0].length || 0)
+          : context.pos,
+        options,
+      };
+    },
+    [schemaCompletion]
+  );
+
   const joinCompletionSource = useCallback(
     (context: CompletionContext) => {
       // Match various JOIN patterns
@@ -521,6 +555,7 @@ export function useQueryCompletion({
             activateOnTyping: true,
             override: [
               completeFromList(sqlSnippets),
+              fromCompletionSource,
               joinCompletionSource,
               aliasCompletionSource,
               columnCompletionSource,

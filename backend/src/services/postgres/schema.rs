@@ -50,10 +50,18 @@ impl SchemaIntrospection for PostgresSchema {
         let client = self.pool.get().await?;
         let rows = client
             .query(
-                "SELECT table_schema, table_name, table_type 
-             FROM information_schema.tables 
-             WHERE table_schema = $1 
-             ORDER BY table_name",
+                "SELECT n.nspname, c.relname, 
+                CASE 
+                    WHEN c.relkind = 'v' THEN 'VIEW'
+                    WHEN c.relkind = 'm' THEN 'MATERIALIZED VIEW'
+                    WHEN c.relkind = 'f' THEN 'FOREIGN TABLE'
+                    ELSE 'BASE TABLE'
+                END as table_type
+             FROM pg_class c
+             JOIN pg_namespace n ON n.oid = c.relnamespace
+             WHERE n.nspname = $1 
+               AND c.relkind IN ('r', 'v', 'm', 'p', 'f')
+             ORDER BY c.relname",
                 &[&schema],
             )
             .await?;
@@ -77,27 +85,28 @@ impl SchemaIntrospection for PostgresSchema {
 
         let client = self.pool.get().await?;
 
+        // Uses pg_catalog to support materialized views, foreign tables, partitioned tables
         let rows = client
             .query(
                 "SELECT 
-                c.column_name, 
-                c.data_type, 
-                c.is_nullable, 
-                c.column_default,
-                CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END as is_primary_key
-             FROM information_schema.columns c
+                a.attname, 
+                format_type(a.atttypid, a.atttypmod) as data_type,
+                NOT a.attnotnull as is_nullable,
+                pg_get_expr(ad.adbin, ad.adrelid) as column_default,
+                CASE WHEN pk.attname IS NOT NULL THEN true ELSE false END as is_primary_key
+             FROM pg_attribute a
+             JOIN pg_class c ON a.attrelid = c.oid
+             JOIN pg_namespace n ON c.relnamespace = n.oid
+             LEFT JOIN pg_attrdef ad ON a.attrelid = ad.adrelid AND a.attnum = ad.adnum
              LEFT JOIN (
-                SELECT kcu.table_schema, kcu.table_name, kcu.column_name
-                FROM information_schema.key_column_usage kcu
-                JOIN information_schema.table_constraints tc 
-                  ON kcu.constraint_name = tc.constraint_name
-                  AND kcu.table_schema = tc.table_schema
-                WHERE tc.constraint_type = 'PRIMARY KEY'
-             ) pk ON c.table_schema = pk.table_schema 
-                  AND c.table_name = pk.table_name 
-                  AND c.column_name = pk.column_name
-             WHERE c.table_schema = $1 AND c.table_name = $2
-             ORDER BY c.ordinal_position",
+                SELECT i.indrelid, a.attname
+                FROM pg_index i
+                JOIN pg_attribute a ON a.attnum = ANY(i.indkey) AND a.attrelid = i.indrelid
+                WHERE i.indisprimary
+             ) pk ON pk.indrelid = c.oid AND pk.attname = a.attname
+             WHERE n.nspname = $1 AND c.relname = $2
+               AND a.attnum > 0 AND NOT a.attisdropped
+             ORDER BY a.attnum",
                 &[&schema, &table],
             )
             .await?;
@@ -107,7 +116,7 @@ impl SchemaIntrospection for PostgresSchema {
             .map(|row| TableColumn {
                 name: row.get(0),
                 data_type: row.get(1),
-                is_nullable: row.get::<_, String>(2) == "YES",
+                is_nullable: row.get(2),
                 default_value: row.get(3),
                 is_primary_key: row.get(4),
             })
@@ -120,15 +129,21 @@ impl SchemaIntrospection for PostgresSchema {
 
         Ok(columns)
     }
+
     async fn get_schema_metadata(&self, schema: &str) -> Result<Vec<TableMetadata>> {
         let client = self.pool.get().await?;
         // Get all columns for all tables in schema
+        // Using pg_catalog to include materialized views, partitioned tables, foreign tables
+        // Use LEFT JOIN to ensure tables without columns are still included
         let rows = client
             .query(
-                "SELECT table_name, column_name 
-                 FROM information_schema.columns 
-                 WHERE table_schema = $1 
-                 ORDER BY table_name, ordinal_position",
+                "SELECT c.relname, a.attname 
+                 FROM pg_class c
+                 JOIN pg_namespace n ON n.oid = c.relnamespace
+                 LEFT JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+                 WHERE n.nspname = $1
+                   AND c.relkind IN ('r', 'v', 'm', 'p', 'f')
+                 ORDER BY c.relname, a.attnum",
                 &[&schema],
             )
             .await?;
@@ -136,7 +151,7 @@ impl SchemaIntrospection for PostgresSchema {
         let mut result: Vec<TableMetadata> = Vec::new();
         for row in rows {
             let table_name: String = row.get(0);
-            let column_name: String = row.get(1);
+            let column_name: Option<String> = row.get(1);
 
             if result
                 .last()
@@ -148,7 +163,9 @@ impl SchemaIntrospection for PostgresSchema {
                     columns: Vec::new(),
                 });
             }
-            result.last_mut().unwrap().columns.push(column_name);
+            if let Some(col) = column_name {
+                result.last_mut().unwrap().columns.push(col);
+            }
         }
 
         Ok(result)
@@ -158,19 +175,22 @@ impl SchemaIntrospection for PostgresSchema {
         let client = self.pool.get().await?;
         let search_pattern = format!("%{}%", query);
 
+        // Intentionally include pg_catalog and information_schema in search results
+        // to allow users to find system tables and views.
         let sql = "
             SELECT n.nspname as schema, c.relname as name, 
                    CASE 
                      WHEN c.relkind = 'r' THEN 'TABLE' 
                      WHEN c.relkind = 'v' THEN 'VIEW' 
                      WHEN c.relkind = 'm' THEN 'MATERIALIZED VIEW'
+                     WHEN c.relkind = 'f' THEN 'FOREIGN TABLE'
+                     WHEN c.relkind = 'p' THEN 'TABLE' -- Partitioned table
                    END as type
             FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname NOT IN ('information_schema', 'pg_catalog')
-              AND n.nspname NOT LIKE 'pg_toast%'
+            WHERE n.nspname NOT LIKE 'pg_toast%'
               AND n.nspname NOT LIKE 'pg_temp%'
-              AND c.relkind IN ('r', 'v', 'm')
+              AND c.relkind IN ('r', 'v', 'm', 'f', 'p')
               AND c.relname ILIKE $1
             
             UNION ALL
@@ -178,8 +198,7 @@ impl SchemaIntrospection for PostgresSchema {
             SELECT n.nspname as schema, p.proname as name, 'FUNCTION' as type
             FROM pg_proc p
             JOIN pg_namespace n ON n.oid = p.pronamespace
-            WHERE n.nspname NOT IN ('information_schema', 'pg_catalog')
-              AND n.nspname NOT LIKE 'pg_toast%'
+            WHERE n.nspname NOT LIKE 'pg_toast%'
               AND n.nspname NOT LIKE 'pg_temp%'
               AND p.proname ILIKE $1
             
