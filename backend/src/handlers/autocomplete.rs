@@ -11,6 +11,11 @@ pub async fn get_suggestions(
     State(state): State<AppState>,
     Json(req): Json<AutocompleteRequest>,
 ) -> Result<Json<Vec<Suggestion>>, (StatusCode, String)> {
+    tracing::info!(
+        "Autocomplete request - sql: '{}', cursor: {}",
+        req.sql,
+        req.cursor_pos
+    );
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -19,9 +24,23 @@ pub async fn get_suggestions(
         .await
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
 
-    let driver: Arc<dyn DatabaseDriver> = match connection.db_type.as_str() {
+    // If database_name is provided in request and differs from connection.database,
+    // we should attempt to create a driver for that specific database.
+    let mut connection_to_use = connection.clone();
+    if let Some(target_db) = &req.database_name {
+        if target_db != &connection.database {
+            tracing::info!(
+                "Database mismatch: connection uses '{}', but request wants '{}'. Switching driver target.",
+                connection.database,
+                target_db
+            );
+            connection_to_use.database = target_db.clone();
+        }
+    }
+
+    let driver: Arc<dyn DatabaseDriver> = match connection_to_use.db_type.as_str() {
         "postgres" | "cockroachdb" | "cockroach" => Arc::new(
-            PostgresDriver::new(&connection, &password)
+            PostgresDriver::new(&connection_to_use, &password)
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
         ),
@@ -36,10 +55,12 @@ pub async fn get_suggestions(
     let schema_cache = state.schema_cache.clone();
     let engine = AutocompleteEngine::new(schema_cache);
 
-    let suggestions = engine
-        .suggest(req, driver)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let suggestions = engine.suggest(req, driver).await.map_err(|e| {
+        tracing::error!("Autocomplete engine error: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    tracing::info!("Returning {} suggestions", suggestions.len());
 
     Ok(Json(suggestions))
 }

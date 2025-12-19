@@ -100,6 +100,13 @@ impl AutocompleteEngine {
                     }
                 }
 
+                // Debug: Log context and extracted aliases
+                tracing::debug!(
+                    "Autocomplete context: {:?}, Aliases found: {:?}",
+                    parse_result.context,
+                    parse_result.aliases
+                );
+
                 // General column suggestions from all tables in FROM/JOIN
                 self.add_column_suggestions(
                     &mut suggestions,
@@ -131,7 +138,13 @@ impl AutocompleteEngine {
         }
 
         // 5. Filter, rank, and sort suggestions
+        tracing::info!("📊 Before filter: {} suggestions", suggestions.len());
         Self::filter_and_rank(&mut suggestions, current_prefix);
+        tracing::info!(
+            "✅ After filter: {} suggestions (prefix: '{}')",
+            suggestions.len(),
+            current_prefix
+        );
 
         Ok(suggestions)
     }
@@ -252,6 +265,16 @@ impl AutocompleteEngine {
         driver: Arc<dyn DatabaseDriver>,
         _prefix: &str,
     ) -> Result<()> {
+        tracing::info!(
+            "add_column_suggestions called with {} aliases",
+            aliases.len()
+        );
+
+        if aliases.is_empty() {
+            tracing::warn!("❌ No aliases found - cannot suggest columns");
+            return Ok(());
+        }
+
         for (alias, table_ref) in aliases {
             let (schema, table) = if table_ref.contains('.') {
                 let parts: Vec<&str> = table_ref.split('.').collect();
@@ -265,17 +288,30 @@ impl AutocompleteEngine {
                 )
             };
 
+            let db_name = req.database_name.as_deref().unwrap_or("postgres");
+
+            tracing::debug!(
+                "Fetching columns for alias '{}' -> table '{}.{}' in database '{}'",
+                alias,
+                schema,
+                table,
+                db_name
+            );
+
             if let Ok(cols) = self
                 .schema_cache
-                .get_columns(
-                    req.connection_id,
-                    req.database_name.as_deref().unwrap_or("postgres"),
-                    &schema,
-                    &table,
-                    driver.clone(),
-                )
+                .get_columns(req.connection_id, db_name, &schema, &table, driver.clone())
                 .await
             {
+                tracing::debug!(
+                    "✅ Successfully fetched {} columns for {}.{}",
+                    cols.len(),
+                    schema,
+                    table
+                );
+                if cols.is_empty() {
+                    tracing::warn!("⚠️ No columns found in cache/db for {}.{}!", schema, table);
+                }
                 for col in cols {
                     let display_name = format!("{}.{}", alias, col.object_name);
                     suggestions.push(Suggestion {
@@ -286,6 +322,8 @@ impl AutocompleteEngine {
                         score: 800, // Columns from FROM/JOIN tables
                     });
                 }
+            } else {
+                tracing::warn!("Failed to fetch columns for {}.{}", schema, table);
             }
         }
 
