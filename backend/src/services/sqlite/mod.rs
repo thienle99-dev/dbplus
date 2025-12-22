@@ -359,3 +359,4 @@ impl FunctionOperations for SQLiteDriver {
             .await
     }
 }
+

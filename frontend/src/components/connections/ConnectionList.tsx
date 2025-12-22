@@ -65,7 +65,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                         )}
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3 px-4 pb-4">
+                    <div className="flex flex-col gap-4 px-6 pb-6 mt-2">
                         {filteredConnections.map((connection, index) => (
                             <ConnectionItem
                                 key={connection.id}

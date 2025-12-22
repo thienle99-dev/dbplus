@@ -20,6 +20,8 @@ pub struct Model {
     pub ssl_ca_file: Option<String>,
     pub ssl_key_file: Option<String>,
     pub ssl_cert_file: Option<String>,
+    pub status_color: Option<String>,
+    pub tags: Option<String>,
 
     #[sea_orm(default_value = "false")]
     pub ssh_enabled: bool,

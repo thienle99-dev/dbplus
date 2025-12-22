@@ -27,7 +27,8 @@ const DEFAULT_FORM_DATA = {
     database: '',
     user: '',
     password: '',
-    statusColor: 'bg-blue-500',
+    status_color: 'bg-blue-500',
+    tags: '',
     ssl: false,
     environment: 'development',
     safe_mode_level: '1', // using string for select
@@ -87,9 +88,13 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
     useEffect(() => {
         if (isOpen) {
             if (initialValues) {
+                const { password, ...others } = initialValues as any;
                 setFormData(prev => ({
                     ...prev,
-                    ...initialValues,
+                    ...others,
+                    password: '', // Clear password field for editing
+                    status_color: initialValues.status_color || 'bg-blue-500',
+                    tags: initialValues.tags || '',
                     port: String(initialValues.port || '5432'),
                     user: initialValues.username || '',
                     environment: initialValues.environment || 'development',
@@ -101,7 +106,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 setFormData({
                     ...DEFAULT_FORM_DATA,
                     type: nextType,
-                    statusColor: dbColor || DEFAULT_FORM_DATA.statusColor,
+                    status_color: dbColor || DEFAULT_FORM_DATA.status_color,
                     host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
                     port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : (nextType === 'tidb' ? '4000' : (nextType === 'mysql' || nextType === 'mariadb' ? '3306' : (nextType === 'couchbase' ? '8091' : (nextType === 'cockroach' ? '26257' : DEFAULT_FORM_DATA.port))))),
                     user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : (nextType === 'mysql' || nextType === 'mariadb' || nextType === 'tidb' ? 'root' : (nextType === 'couchbase' ? 'Administrator' : (nextType === 'cockroach' ? 'root' : DEFAULT_FORM_DATA.user)))),
@@ -123,6 +128,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         username: formData.type === 'sqlite' ? '' : formData.user,
         password: formData.type === 'sqlite' ? '' : formData.password,
         ssl: formData.ssl ?? false,
+        status_color: formData.status_color,
+        tags: formData.tags,
         environment: formData.environment,
         safe_mode_level: parseInt(formData.safe_mode_level) || 1,
     });
@@ -254,16 +261,19 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                 <button
                                     key={color.name}
                                     type="button"
-                                    onClick={() => handleChange('statusColor', color.class)}
-                                    className={`w-6 h-6 rounded-full ${color.class} ${formData.statusColor === color.class ? 'ring-2 ring-bg-1 ring-offset-2 ring-offset-accent' : 'opacity-60 hover:opacity-100'} transition-all`}
+                                    onClick={() => handleChange('status_color', color.class)}
+                                    className={`w-6 h-6 rounded-full ${color.class} ${formData.status_color === color.class ? 'ring-2 ring-bg-1 ring-offset-2 ring-offset-accent' : 'opacity-60 hover:opacity-100'} transition-all`}
                                     title={color.name}
                                 />
                             ))}
                         </div>
                         <div className="flex-1" />
-                        <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
-                            Tag
-                        </Button>
+                        <Input
+                            placeholder="Tags (comma separated)"
+                            value={formData.tags}
+                            onChange={(e) => handleChange('tags', e.target.value)}
+                            className="flex-1"
+                        />
                     </div>
                 </div>
 

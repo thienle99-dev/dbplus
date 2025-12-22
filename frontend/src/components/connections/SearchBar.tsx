@@ -1,7 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
 
 interface SearchBarProps {
     value: string;
@@ -24,28 +22,27 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onAdd }) 
     }, []);
 
     return (
-        <div className="px-4 py-3 bg-bg-2 glass border-b border-border-light sticky top-0 z-10">
-            <div className="flex items-center gap-3">
+        <div className="px-6 py-4 bg-bg-1/40 sticky top-0 z-10 backdrop-blur-md">
+            <div className="flex items-center gap-4">
                 {/* Add Button */}
-                <Button
-                    variant="ghost"
-                    size="sm"
+                <button
                     onClick={onAdd}
-                    className="w-8 h-8 rounded-full !px-0"
+                    className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg transition-all"
                     title="Create connection"
-                    icon={<Plus size={18} />}
-                />
+                >
+                    <Plus size={20} />
+                </button>
 
                 {/* Search Input */}
-                <div className="flex-1">
-                    <Input
+                <div className="flex-1 relative group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors" size={16} />
+                    <input
                         ref={inputRef}
                         type="text"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder="Search for connection... (⌘F)"
-                        leftIcon={<Search size={16} />}
-                        fullWidth
+                        className="w-full bg-bg-2/50 border border-border-subtle focus:border-accent/50 focus:ring-4 focus:ring-accent/10 rounded-xl py-2 pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted outline-none transition-all"
                     />
                 </div>
             </div>
