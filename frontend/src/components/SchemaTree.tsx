@@ -24,6 +24,7 @@ import { DdlScope } from '../features/export-ddl/exportDdl.types';
 import ERDiagramModal from './ERDiagramModal';
 import SchemaDiffModal from './schema-diff/SchemaDiffModal';
 import { MockDataModal } from './mock-data/MockDataModal';
+import CreateCouchbaseBucketModal from './connections/CreateCouchbaseBucketModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
@@ -403,6 +404,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [createSchemaOpen, setCreateSchemaOpen] = useState(false);
   const [showSchemaFilter, setShowSchemaFilter] = useState(false);
   const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
+  const [createCouchbaseBucketOpen, setCreateCouchbaseBucketOpen] = useState(false);
   const { connections } = useConnectionStore();
   const navigate = useNavigate();
   const connectionType = useMemo(
@@ -457,56 +459,6 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   // Filter schemas based on visibility
   const filteredSchemas = schemas.filter(schema => visibleSchemas.has(schema));
 
-  if (loading) return <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>;
-
-  if (error) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-        <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">
-          <AlertTriangle className="w-6 h-6 text-error" />
-        </div>
-
-        <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
-        <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
-          Unable to connect to the database. Please check your connection settings.
-        </p>
-
-        <div className="w-full max-w-[260px] bg-bg-2 border border-border-light rounded-md p-2.5 mb-4 text-left">
-          <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
-            {(() => {
-              const err = error as any;
-              const data = err.response?.data;
-              if (typeof data === 'string') return data;
-              return data?.message || err.message || 'Unknown error';
-            })()}
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
-            className="gap-2"
-          >
-            <RefreshCw size={14} />
-            Retry
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="gap-2"
-          >
-            <ArrowLeft size={14} />
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const handleOpenCreateDatabase = () => {
     if (!connectionId) return;
     setCreateDbOpen(true);
@@ -551,20 +503,42 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
 
           {connectionType !== 'sqlite' ? (
             <>
-              <button
-                onClick={handleOpenCreateDatabase}
-                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                title="Create database"
-              >
-                <Database size={14} />
-              </button>
-              <button
-                onClick={() => setCreateSchemaOpen(true)}
-                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                title="Create schema"
-              >
-                <Plus size={14} />
-              </button>
+              {connectionType !== 'couchbase' && (
+                <>
+                  <button
+                    onClick={handleOpenCreateDatabase}
+                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                    title="Create database"
+                  >
+                    <Database size={14} />
+                  </button>
+                  <button
+                    onClick={() => setCreateSchemaOpen(true)}
+                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                    title="Create schema"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </>
+              )}
+              {connectionType === 'couchbase' && (
+                <>
+                  <button
+                    onClick={() => navigate(`/workspace/${connectionId}/buckets`)}
+                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                    title="Manage Buckets"
+                  >
+                    <Database size={14} />
+                  </button>
+                  <button
+                    onClick={() => navigate(`/workspace/${connectionId}/scopes`)}
+                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                    title="Manage Scopes"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -621,19 +595,68 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           )}
         </div>
       </div>
-      {filteredSchemas.map((schemaName: string) => {
-        return (
-          <SchemaNode
-            key={schemaName}
-            schemaName={schemaName}
-            connectionId={connectionId!}
-            searchTerm={searchTerm}
-            defaultOpen={schemas.length === 1}
-            connectionType={connectionType}
-            showPinnedOnly={showPinnedOnly}
-          />
-        );
-      })}
+
+      {loading ? (
+        <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>
+      ) : error ? (
+        <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+          <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">
+            <AlertTriangle className="w-6 h-6 text-error" />
+          </div>
+
+          <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
+          <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
+            Unable to connect to the database. Please check your connection settings.
+          </p>
+
+          <div className="w-full max-w-[260px] bg-bg-2 border border-border-light rounded-md p-2.5 mb-4 text-left">
+            <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
+              {(() => {
+                const err = error as any;
+                const data = err.response?.data;
+                if (typeof data === 'string') return data;
+                return data?.message || err.message || 'Unknown error';
+              })()}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
+              className="gap-2"
+            >
+              <RefreshCw size={14} />
+              Retry
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="gap-2"
+            >
+              <ArrowLeft size={14} />
+              Go Back
+            </Button>
+          </div>
+        </div>
+      ) : (
+        filteredSchemas.map((schemaName: string) => {
+          return (
+            <SchemaNode
+              key={schemaName}
+              schemaName={schemaName}
+              connectionId={connectionId!}
+              searchTerm={searchTerm}
+              defaultOpen={schemas.length === 1}
+              connectionType={connectionType}
+              showPinnedOnly={showPinnedOnly}
+            />
+          );
+        })
+      )}
 
       {createDbOpen && (
         <CreateDatabaseModal
@@ -642,6 +665,18 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           connectionId={connectionId!}
           onCreated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+          }}
+        />
+      )}
+
+      {createCouchbaseBucketOpen && (
+        <CreateCouchbaseBucketModal
+          open={createCouchbaseBucketOpen}
+          onOpenChange={setCreateCouchbaseBucketOpen}
+          connectionId={connectionId!}
+          onCreated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+            await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
           }}
         />
       )}

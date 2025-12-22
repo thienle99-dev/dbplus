@@ -65,6 +65,11 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support schemas via this API"
             )),
+            "couchbase" => {
+                use crate::services::couchbase::CouchbaseDriver;
+                let driver = CouchbaseDriver::new(&connection, &password).await?;
+                driver.create_schema(name).await
+            }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_schema"
             )),
@@ -91,6 +96,11 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support schemas via this API"
             )),
+            "couchbase" => {
+                use crate::services::couchbase::CouchbaseDriver;
+                let driver = CouchbaseDriver::new(&connection, &password).await?;
+                driver.drop_schema(name).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type for drop_schema")),
         }
     }

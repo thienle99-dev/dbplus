@@ -61,6 +61,12 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support creating separate databases via this API"
             )),
+            "couchbase" => {
+                use crate::services::couchbase::CouchbaseDriver;
+                use crate::services::driver::extension::DatabaseManagementDriver;
+                let driver = CouchbaseDriver::new(&connection, &password).await?;
+                driver.create_database(name).await
+            }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_database"
             )),
@@ -86,6 +92,11 @@ impl ConnectionService {
             "sqlite" => Err(anyhow::anyhow!(
                 "SQLite does not support dropping databases via this API"
             )),
+            "couchbase" => {
+                use crate::services::couchbase::CouchbaseDriver;
+                let driver = CouchbaseDriver::new(&connection, &password).await?;
+                driver.drop_database(name).await
+            }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for drop_database"
             )),

@@ -21,6 +21,8 @@ import ERDiagramView from './components/ERDiagramView';
 import { useSettingsStore } from './store/settingsStore';
 import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
 import ConnectionTestOverlay from './components/ConnectionTestOverlay';
+import BucketManagement from './components/couchbase/BucketManagement';
+import ScopeManagement from './components/couchbase/ScopeManagement';
 
 const WorkspacePage = () => {
   useKeyboardShortcuts();
@@ -135,6 +137,8 @@ const WorkspacePage = () => {
                 <Route path="/dashboards" element={<DashboardList />} />
                 <Route path="/dashboards/:dashboardId" element={<DashboardView />} />
                 <Route path="/diagram/:schema" element={<ERDiagramView />} />
+                <Route path="/buckets" element={<BucketManagement />} />
+                <Route path="/scopes" element={<ScopeManagement />} />
               </Routes>
             </div>
           </div>

@@ -1,5 +1,6 @@
 pub mod capabilities;
 pub mod connection;
+pub mod management;
 pub mod query;
 pub mod schema;
 pub mod table;
