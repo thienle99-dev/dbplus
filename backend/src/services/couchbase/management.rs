@@ -3,12 +3,20 @@ use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 
+use couchbase::management::buckets::bucket_settings::{BucketSettings, BucketType};
+
 #[async_trait]
 impl DatabaseManagementDriver for CouchbaseDriver {
     async fn create_database(&self, name: &str) -> Result<()> {
-        let _mgr = self.cluster.buckets();
-        // TODO: Implement using BucketSettings when API is confirmed
-        Err(anyhow::anyhow!("Bucket creation for Couchbase is not yet fully implemented in this version of the SDK. Please use the Couchbase Web Console."))
+        let mgr = self.cluster.buckets();
+        let settings = BucketSettings::new(name.to_string())
+            .ram_quota_mb(100)
+            .bucket_type(BucketType::COUCHBASE);
+
+        mgr.create_bucket(settings, None)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create bucket '{}': {}", name, e))?;
+        Ok(())
     }
 
     async fn drop_database(&self, name: &str) -> Result<()> {
