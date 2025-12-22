@@ -47,6 +47,94 @@ impl ConnectionService {
         }
     }
 
+    pub async fn create_table(&self, connection_id: Uuid, schema: &str, table: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                DatabaseDriver::create_table(&driver, schema, table).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                DatabaseDriver::create_table(&driver, schema, table).await
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::create_table(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::create_table(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+                DatabaseDriver::create_table(&driver, schema, table).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
+    pub async fn drop_table(&self, connection_id: Uuid, schema: &str, table: &str) -> Result<()> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::db_driver::DatabaseDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                DatabaseDriver::drop_table(&driver, schema, table).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                DatabaseDriver::drop_table(&driver, schema, table).await
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::drop_table(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                DatabaseDriver::drop_table(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+                DatabaseDriver::drop_table(&driver, schema, table).await
+            }
+            _ => Err(anyhow::anyhow!("Unsupported database type")),
+        }
+    }
+
     pub async fn get_columns(
         &self,
         connection_id: Uuid,

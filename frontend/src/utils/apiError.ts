@@ -28,6 +28,14 @@ export function extractApiErrorDetails(err: any): ApiErrorDetails {
     message = err.message;
   }
 
+  // Clean up Couchbase JSON error dumps from the message
+  if (message.includes('{"extended_context"')) {
+    const parts = message.split(': {');
+    if (parts.length > 0) {
+      message = parts[0];
+    }
+  }
+
   return {
     message,
     status,

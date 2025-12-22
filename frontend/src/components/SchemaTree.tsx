@@ -25,9 +25,11 @@ import ERDiagramModal from './ERDiagramModal';
 import SchemaDiffModal from './schema-diff/SchemaDiffModal';
 import { MockDataModal } from './mock-data/MockDataModal';
 import CreateCouchbaseBucketModal from './connections/CreateCouchbaseBucketModal';
+import CreateCouchbaseCollectionModal from './couchbase/CreateCouchbaseCollectionModal';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
+import { extractApiErrorDetails } from '../utils/apiError';
 
 interface ObjectFolderProps {
   title: string;
@@ -95,6 +97,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   // ER Diagram Modal State
   const [erDiagramOpen, setErDiagramOpen] = useState(false);
   const [mockDataModal, setMockDataModal] = useState<{ open: boolean; table: string }>({ open: false, table: '' });
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -157,6 +160,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   const handleSchemaContextMenu = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     setSchemaContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCreateCollection = async (name: string) => {
+    try {
+      await connectionApi.createTable(connectionId, schemaName, name, { database: activeDatabase || undefined });
+      showToast(`${tableTerm} '${name}' created successfully`, 'success');
+      queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+    } catch (err: any) {
+      const { message } = extractApiErrorDetails(err);
+      showToast(message || `Failed to create ${tableTerm.toLowerCase()}`, 'error');
+    }
   };
 
   const isCouchbase = connectionType === 'couchbase';
@@ -311,6 +325,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             setMockDataModal({ open: true, table: contextMenu.table });
             setContextMenu(null);
           }}
+          objectTerm={tableTerm}
         />
       )}
 
@@ -339,7 +354,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             View ER Diagram
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem icon={<Plus size={14} />}>Create {tableTerm}...</ContextMenuItem>
+          <ContextMenuItem icon={<Plus size={14} />} onClick={() => {
+            setSchemaContextMenu(null);
+            if (connectionType === 'couchbase') {
+              setCreateCollectionOpen(true);
+            } else {
+              showToast('Create table not implemented for this driver yet', 'info');
+            }
+          }}>Create {tableTerm}...</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem icon={<Trash2 size={14} />} onClick={() => {
             setSchemaContextMenu(null);
@@ -401,14 +423,36 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         />
       )}
 
-
+      {createCollectionOpen && (
+        <CreateCouchbaseCollectionModal
+          isOpen={createCollectionOpen}
+          onClose={() => setCreateCollectionOpen(false)}
+          onSubmit={handleCreateCollection}
+          scopeName={schemaName}
+          bucketName={activeDatabase || 'default'}
+        />
+      )}
     </Collapsible.Root>
   );
 }
 
 export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?: string; showPinnedOnly?: boolean }) {
   const { connectionId } = useParams();
-  const { data: schemas = [], isLoading: loading, error } = useSchemas(connectionId);
+  const { data: rawSchemas = [], isLoading: loading, error } = useSchemas(connectionId);
+  const { connections } = useConnectionStore();
+  const navigate = useNavigate();
+  const connectionType = useMemo(
+    () => connections.find((c) => c.id === connectionId)?.type,
+    [connections, connectionId],
+  );
+
+  const schemas = useMemo(() => {
+    if (connectionType === 'couchbase') {
+      return rawSchemas.filter(s => s !== '_default' && s !== '_system');
+    }
+    return rawSchemas;
+  }, [rawSchemas, connectionType]);
+
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const dialog = useDialog();
@@ -418,12 +462,6 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [showSchemaFilter, setShowSchemaFilter] = useState(false);
   const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
   const [createCouchbaseBucketOpen, setCreateCouchbaseBucketOpen] = useState(false);
-  const { connections } = useConnectionStore();
-  const navigate = useNavigate();
-  const connectionType = useMemo(
-    () => connections.find((c) => c.id === connectionId)?.type,
-    [connections, connectionId],
-  );
 
   // Visible schemas state (stored in localStorage)
   const [visibleSchemas, setVisibleSchemas] = useState<Set<string>>(() => {
@@ -487,7 +525,8 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       showToast(result.message || `Schema '${name}' created`, result.success ? 'success' : 'error');
     } catch (err: any) {
       console.error('Failed to create schema', err);
-      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create schema', 'error');
+      const { message } = extractApiErrorDetails(err);
+      showToast(message || 'Failed to create schema', 'error');
     }
   };
 

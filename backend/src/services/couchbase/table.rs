@@ -12,6 +12,31 @@ use std::collections::HashMap;
 
 #[async_trait]
 impl TableOperations for CouchbaseDriver {
+    async fn create_table(&self, schema: &str, table: &str) -> Result<()> {
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
+
+        let query = format!(
+            "CREATE COLLECTION `{}`.`{}`.`{}`",
+            bucket_name, schema, table
+        );
+        QueryDriver::execute_query(self, &query).await?;
+        Ok(())
+    }
+
+    async fn drop_table(&self, schema: &str, table: &str) -> Result<()> {
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
+
+        let query = format!("DROP COLLECTION `{}`.`{}`.`{}`", bucket_name, schema, table);
+        QueryDriver::execute_query(self, &query).await?;
+        Ok(())
+    }
+
     async fn get_table_data(
         &self,
         schema: &str,

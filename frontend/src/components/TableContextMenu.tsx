@@ -17,9 +17,11 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTabContext } from '../context/TabContext';
 import { useToast } from '../context/ToastContext';
 import { useDialog } from '../context/DialogContext';
+import { connectionApi } from '../services/connectionApi';
 
 interface TableContextMenuProps {
     table: string;
@@ -33,6 +35,7 @@ interface TableContextMenuProps {
     onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
     onExportDdl: () => void;
     onOpenMockData: () => void;
+    objectTerm?: string;
 }
 
 interface MenuItem {
@@ -58,6 +61,7 @@ export default function TableContextMenu({
     onOpenImport,
     onExportDdl,
     onOpenMockData,
+    objectTerm = 'Table',
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
@@ -65,6 +69,7 @@ export default function TableContextMenu({
     const [submenuPosition, setSubmenuPosition] = useState<{ top: number; left: number } | null>(null);
     const hoverTimeoutRef = useRef<number | null>(null);
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { showToast } = useToast();
     const dialog = useDialog();
 
@@ -168,17 +173,17 @@ export default function TableContextMenu({
 
     const handleCopyName = () => {
         navigator.clipboard.writeText(table);
-        showToast('Table name copied to clipboard', 'success');
+        showToast(`${objectTerm} name copied to clipboard`, 'success');
         onClose();
     };
 
     const handleCopyCreateTable = async () => {
         try {
-            const createStatement = `-- CREATE TABLE statement for ${schema}.${table}\n-- (Full DDL generation requires backend support)`;
+            const createStatement = `-- CREATE ${objectTerm.toUpperCase()} statement for ${schema}.${table}\n-- (Full DDL generation requires backend support)`;
             navigator.clipboard.writeText(createStatement);
-            showToast('CREATE TABLE statement copied', 'success');
+            showToast(`CREATE ${objectTerm.toUpperCase()} statement copied`, 'success');
         } catch (error) {
-            showToast('Failed to copy CREATE TABLE statement', 'error');
+            showToast(`Failed to copy CREATE ${objectTerm.toUpperCase()} statement`, 'error');
         }
         onClose();
     };
@@ -213,8 +218,8 @@ export default function TableContextMenu({
 
     const handleTruncate = async () => {
         const confirmed = await dialog.confirm({
-            title: 'Truncate Table',
-            message: `Are you sure you want to truncate table "${table}"? This will delete all rows and cannot be undone.`,
+            title: `Truncate ${objectTerm}`,
+            message: `Are you sure you want to truncate ${objectTerm.toLowerCase()} "${table}"? This will delete all rows and cannot be undone.`,
             confirmLabel: 'Truncate',
             variant: 'destructive'
         });
@@ -227,16 +232,22 @@ export default function TableContextMenu({
 
     const handleDelete = async () => {
         const userInput = await dialog.prompt({
-            title: 'Delete Table',
-            message: `To delete table "${table}", please type the table name to confirm:`,
+            title: `Delete ${objectTerm}`,
+            message: `To delete ${objectTerm.toLowerCase()} "${table}", please type the ${objectTerm.toLowerCase()} name to confirm:`,
             placeholder: table,
             confirmLabel: 'Delete'
         });
 
         if (userInput === table) {
-            showToast('Delete functionality coming soon', 'info');
+            try {
+                await connectionApi.dropTable(connectionId, schema, table);
+                showToast(`${objectTerm} '${table}' deleted successfully`, 'success');
+                queryClient.invalidateQueries({ queryKey: ['tables', connectionId, schema] });
+            } catch (err: any) {
+                showToast(err.message || `Failed to delete ${objectTerm.toLowerCase()}`, 'error');
+            }
         } else if (userInput !== null) {
-            showToast('Table name did not match', 'error');
+            showToast(`${objectTerm} name did not match`, 'error');
         }
         onClose();
     };
@@ -321,7 +332,7 @@ export default function TableContextMenu({
             label: 'Copy Script As',
             icon: <Code size={14} />,
             submenu: [
-                { label: 'CREATE TABLE', icon: <CopyIcon size={14} />, onClick: handleCopyCreateTable },
+                { label: `CREATE ${objectTerm.toUpperCase()}`, icon: <CopyIcon size={14} />, onClick: handleCopyCreateTable },
                 { label: 'SELECT Statement', icon: <CopyIcon size={14} />, onClick: handleCopySelect },
                 { label: 'INSERT Statement', icon: <CopyIcon size={14} />, onClick: handleCopyInsert },
                 { label: 'UPDATE Statement', icon: <CopyIcon size={14} />, onClick: handleCopyUpdate },
@@ -333,7 +344,7 @@ export default function TableContextMenu({
             label: 'Clone...',
             icon: <CopyIcon size={14} />,
             onClick: () => {
-                showToast('Clone table coming soon', 'info');
+                showToast(`Clone ${objectTerm.toLowerCase()} coming soon`, 'info');
                 onClose();
             },
         },

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { connectionApi } from '../../services/connectionApi';
 import ManagementPage from '../layouts/ManagementPage';
 import { Plus, Trash2, Search, Database } from 'lucide-react';
+import { extractApiErrorDetails } from '../../utils/apiError';
 import Button from '../ui/Button';
 import CreateCouchbaseBucketModal from '../connections/CreateCouchbaseBucketModal';
 import CreateCouchbaseScopeModal from './CreateCouchbaseScopeModal';
@@ -30,17 +31,7 @@ export default function BucketManagement() {
     bucket.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getErrorMessage = (error: any, defaultMsg: string) => {
-    let msg = error.response?.data?.message || defaultMsg;
-    // Clean up Couchbase JSON error dumps
-    if (msg.includes('{"extended_context"')) {
-       const parts = msg.split(': {');
-       if (parts.length > 0) {
-           return parts[0];
-       }
-    }
-    return msg;
-  };
+
 
   const handleDropBucket = async (bucketName: string) => {
     const confirmed = await dialog.confirm({
@@ -57,7 +48,8 @@ export default function BucketManagement() {
       showToast(`Bucket '${bucketName}' dropped successfully`, 'success');
       queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
     } catch (error: any) {
-      showToast(getErrorMessage(error, 'Failed to drop bucket'), 'error');
+      const { message } = extractApiErrorDetails(error);
+      showToast(message || 'Failed to drop bucket', 'error');
     }
   };
 
@@ -68,7 +60,8 @@ export default function BucketManagement() {
         queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
         setCreateScopeModalOpen(false);
       } catch (error: any) {
-        showToast(getErrorMessage(error, 'Failed to create scope'), 'error');
+        const { message } = extractApiErrorDetails(error);
+        showToast(message || 'Failed to create scope', 'error');
       }
   };
 

@@ -43,13 +43,21 @@ pub trait TableOperations: Send + Sync {
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
 
+    async fn create_table(&self, _schema: &str, _table: &str) -> Result<()> {
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
+
+    async fn drop_table(&self, _schema: &str, _table: &str) -> Result<()> {
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
+
     async fn update_row(
         &self,
-        schema: &str,
-        table: &str,
-        primary_key: &std::collections::HashMap<String, serde_json::Value>,
-        updates: &std::collections::HashMap<String, serde_json::Value>,
-        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+        _schema: &str,
+        _table: &str,
+        _primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        _updates: &std::collections::HashMap<String, serde_json::Value>,
+        _row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
     ) -> Result<u64> {
         // Default implementation returns not implemented error or similar?
         // Traits usually don't have body unless valid default.
@@ -59,10 +67,10 @@ pub trait TableOperations: Send + Sync {
 
     async fn delete_row(
         &self,
-        schema: &str,
-        table: &str,
-        primary_key: &std::collections::HashMap<String, serde_json::Value>,
-        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+        _schema: &str,
+        _table: &str,
+        _primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        _row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
     ) -> Result<u64> {
         Err(anyhow::anyhow!("Operation not supported"))
     }

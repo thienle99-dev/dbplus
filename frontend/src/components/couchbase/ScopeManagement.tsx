@@ -12,6 +12,7 @@ import { useActiveDatabaseOverride } from '../../hooks/useActiveDatabaseOverride
 import { useDatabases } from '../../hooks/useDatabase';
 import Select from '../ui/Select';
 import { Database } from 'lucide-react';
+import { extractApiErrorDetails } from '../../utils/apiError';
 
 export default function ScopeManagement() {
   const { connectionId } = useParams();
@@ -46,18 +47,6 @@ export default function ScopeManagement() {
     scope !== '_default' && scope !== '_system' && scope.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getErrorMessage = (error: any, defaultMsg: string) => {
-    let msg = error.response?.data?.message || defaultMsg;
-    // Clean up Couchbase JSON error dumps
-    if (msg.includes('{"extended_context"')) {
-       // Attempt to extract the simple message before the JSON
-       const parts = msg.split(': {');
-       if (parts.length > 0) {
-           return parts[0];
-       }
-    }
-    return msg;
-  };
 
   const handleDropScope = async (scopeName: string) => {
     const confirmed = await dialog.confirm({
@@ -74,18 +63,20 @@ export default function ScopeManagement() {
       showToast(`Scope '${scopeName}' dropped successfully`, 'success');
       queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
     } catch (error: any) {
-      showToast(getErrorMessage(error, 'Failed to drop scope'), 'error');
+      const { message } = extractApiErrorDetails(error);
+      showToast(message || 'Failed to drop scope', 'error');
     }
   };
 
   const handleCreateScope = async (name: string, bucketName: string) => {
       try {
-        await connectionApi.createSchema(connectionId!, name, { database: bucketName });
-        showToast(`Scope '${name}' created successfully in '${bucketName}'`, 'success');
+        const result = await connectionApi.createSchema(connectionId!, name, { database: bucketName });
+        showToast(result.message || `Scope '${name}' created successfully`, result.success ? 'success' : 'error');
         queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
         setIsCreateModalOpen(false);
       } catch (error: any) {
-        showToast(getErrorMessage(error, 'Failed to create scope'), 'error');
+        const { message } = extractApiErrorDetails(error);
+        showToast(message || 'Failed to create scope', 'error');
       }
   };
 

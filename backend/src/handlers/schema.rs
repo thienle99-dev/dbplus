@@ -227,6 +227,65 @@ pub async fn list_tables(
     }
 }
 
+#[derive(Deserialize)]
+pub struct CreateTableRequest {
+    schema: String,
+    table: String,
+    #[serde(default)]
+    database: Option<String>,
+}
+
+pub async fn create_table(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Json(payload): Json<CreateTableRequest>,
+) -> impl IntoResponse {
+    let table = payload.table.trim();
+    if table.is_empty() {
+        return (StatusCode::BAD_REQUEST, "Table name cannot be empty").into_response();
+    }
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(
+            payload
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
+    match service
+        .create_table(connection_id, &payload.schema, table)
+        .await
+    {
+        Ok(_) => (StatusCode::CREATED, "Table created successfully").into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+pub async fn drop_table(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<ColumnParams>,
+) -> impl IntoResponse {
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(
+            params
+                .database
+                .clone()
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
+    match service
+        .drop_table(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(_) => (StatusCode::OK, "Table dropped successfully").into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
 pub async fn list_columns(
     State(db): State<DatabaseConnection>,
     headers: HeaderMap,

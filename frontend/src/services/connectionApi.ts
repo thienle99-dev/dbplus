@@ -100,6 +100,17 @@ export const connectionApi = {
         return response.data;
     },
 
+    createTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post(`/api/connections/${id}/tables`, { schema, table, database: options?.database });
+        return response.data;
+    },
+
+    dropTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<void> => {
+        await api.delete(`/api/connections/${id}/tables`, {
+            params: { schema, table, ...options },
+        });
+    },
+
     dropSchema: async (id: string, name: string, options?: { database?: string }): Promise<void> => {
         await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`, { params: options });
     },
