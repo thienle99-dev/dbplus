@@ -51,7 +51,7 @@ export const ConnectionsDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex text-text-primary font-sans bg-bg-0 overflow-hidden">
+    <div className="h-screen flex text-text-primary font-sans bg-bg-0 overflow-hidden" data-tauri-drag-region>
       <Sidebar
         onBackup={() => setDataToolsMode('backup')}
         onRestore={() => setDataToolsMode('restore')}
@@ -60,9 +60,9 @@ export const ConnectionsDashboard: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-bg-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-bg-0 pt-8" data-tauri-drag-region>
         {/* Search Header Area (handled by ConnectionList mostly, but we can add a drag region) */}
-        <div className="h-4 w-full bg-bg-0 draggable-region" />
+        <div className="h-4 w-full bg-bg-0 cursor-default" />
 
         {/* Connection List */}
         <div className="flex-1 overflow-hidden p-4 md:p-6">

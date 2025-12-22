@@ -117,9 +117,9 @@ const WorkspacePage = () => {
     <SelectedRowProvider>
       <TablePageProvider>
         <SkipToContent targetId="main-content" />
-        <div className="flex h-screen bg-bg-0 text-text-primary overflow-hidden">
+        <div className="flex h-screen bg-bg-0 text-text-primary overflow-hidden" data-tauri-drag-region>
           <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0 bg-bg-0 h-full pb-[60px]">
+          <div className="flex-1 flex flex-col min-w-0 bg-bg-0 h-full pb-[60px] pt-8" data-tauri-drag-region>
             <Breadcrumbs />
             <div
               id="main-content"

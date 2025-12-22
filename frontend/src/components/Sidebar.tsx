@@ -104,8 +104,9 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1 border-r pb-[20px] border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
+      className="bg-bg-1 border-r pb-[20px] pt-8 border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
       style={{ width: `${sidebarWidth}px` }}
+      data-tauri-drag-region
     >
       {/* Vertical Workspace Tabs Rail */}
       <div className="w-[60px] border-r border-border-light bg-bg-2 flex flex-col items-center py-3 gap-2">
