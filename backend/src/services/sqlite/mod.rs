@@ -165,9 +165,12 @@ impl TableOperations for SQLiteDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         self.table
-            .get_table_data(schema, table, limit, offset)
+            .get_table_data(schema, table, limit, offset, filter, document_id, fields)
             .await
     }
 

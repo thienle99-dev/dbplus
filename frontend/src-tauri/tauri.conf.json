@@ -15,7 +15,7 @@
         "title": "DBPlus",
         "width": 1200,
         "height": 800,
-        "resizable": false,
+        "resizable": true,
         "minWidth": 1200,
         "minHeight": 800
       }

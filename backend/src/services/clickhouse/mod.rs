@@ -136,6 +136,7 @@ impl QueryDriver for ClickHouseDriver {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 
@@ -332,15 +333,31 @@ impl TableOperations for ClickHouseDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        _filter: Option<String>,
+        _document_id: Option<String>,
+        _fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         let db = if schema.is_empty() {
             &self.database
         } else {
             schema
         };
+        let select_clause = if let Some(f) = &_fields {
+            if f.is_empty() {
+                "*".to_string()
+            } else {
+                f.iter()
+                    .map(|field| format!("`{}`", field))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            }
+        } else {
+            "*".to_string()
+        };
+
         let sql = format!(
-            "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",
-            db, table, limit, offset
+            "SELECT {} FROM `{}`.`{}` LIMIT {} OFFSET {}",
+            select_clause, db, table, limit, offset
         );
         self.query(&sql).await
     }

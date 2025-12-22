@@ -100,7 +100,7 @@ function SectionCard({
 }) {
     return (
         <div className="bg-bg-1 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-2/50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-light bg-bg-2">
                 <div className="flex items-center gap-2">
                     <Icon size={16} className="text-accent" />
                     <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
@@ -441,7 +441,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                             className={`shrink-0 w-16 h-7 rounded-md text-[10px] font-bold border transition-all flex items-center justify-center z-10
                                     ${filter.logic === 'OR'
                                     ? 'bg-orange-500/10 text-orange-500 border-orange-500/30 hover:bg-orange-500/20'
-                                    : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'}
+                                    : 'bg-primary-transparent text-accent border-border-light hover:bg-primary-subtle'}
                                 `}
                         >
                             {filter.logic === 'OR' ? 'OR' : 'AND'}
@@ -453,12 +453,12 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                     group flex flex-wrap items-stretch gap-2 p-2 rounded-lg border transition-all
                     ${filter.type === 'group'
                         ? 'bg-bg-1/50 border-accent/30 hover:border-accent'
-                        : 'bg-bg-0 border-border/40 hover:border-border hover:bg-bg-1/30'}
+                        : 'bg-bg-0 border-border-light hover:border-border hover:bg-bg-1'}
                 `}>
 
                     {filter.type === 'group' ? (
                         <div className="flex-1 flex flex-col gap-2 w-full">
-                            <div className="flex items-center justify-between border-b border-border/50 pb-1 mb-1">
+                            <div className="flex items-center justify-between border-b border-border-light pb-1 mb-1">
                                 <span className="text-xs font-bold text-accent px-2">GROUP</span>
                                 <div className="flex gap-2">
                                     <button onClick={() => addFilter(filter.id)} className="text-[10px] bg-bg-2 px-2 py-1 rounded hover:text-accent">+ Rule</button>
@@ -466,7 +466,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                     <button onClick={() => removeFilter(filter.id)} className="text-error hover:bg-error/10 p-1 rounded"><Trash2 size={14} /></button>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2 pt-1 pl-1 border-l-2 border-dashed border-border/50">
+                            <div className="flex flex-col gap-2 pt-1 pl-1 border-l-2 border-dashed border-border-light">
                                 {renderFilters(filter.children || [], depth + 1)}
                             </div>
                         </div>
@@ -708,9 +708,9 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                     {selectedSchema && selectedTable && (
                         /* Row 2: SQL Preview */
                         <div className="w-full flex items-start gap-2 bg-bg-1 pl-2 pr-1 py-1.5 rounded-lg border border-border shadow-sm group hover:border-accent/50 transition-colors">
-                            <span className="flex-shrink-0 text-[10px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded mt-0.5">SQL</span>
+                            <span className="flex-shrink-0 text-[10px] font-bold bg-primary-transparent text-accent px-1.5 py-0.5 rounded mt-0.5">SQL</span>
                             <div
-                                className="flex-1 font-mono text-xs text-text-secondary break-all whitespace-pre-wrap max-h-32 overflow-y-auto cursor-text selection:bg-accent/20"
+                                className="flex-1 font-mono text-xs text-text-secondary break-all whitespace-pre-wrap max-h-32 overflow-y-auto cursor-text selection:bg-primary-transparent"
                                 title={generatedSql}
                             >
                                 {formattedSqlDisplay}
@@ -748,7 +748,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                         onClick={() => setSelectedColumns([])}
                                         className={`px-3 py-1.5 text-sm rounded-md border transition-all ${selectedColumns.length === 0
                                             ? 'bg-accent text-white border-accent shadow-sm'
-                                            : 'bg-bg-2 text-text-primary border-border hover:border-accent/50'
+                                            : 'bg-bg-2 text-text-primary border-border-light hover:border-accent'
                                             }`}
                                     >
                                         {t.actions.allColumns}
@@ -777,7 +777,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 action={
                                     <button
                                         onClick={addAggregate}
-                                        className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors"
+                                        className="text-xs text-accent hover:text-accent-hover flex items-center gap-1 font-medium transition-colors"
                                     >
                                         <Plus size={14} /> {t.actions.add}
                                     </button>
@@ -788,7 +788,7 @@ export default function VisualQueryBuilderEnhanced({ onSqlChange, language, init
                                 ) : (
                                     <div className="space-y-3">
                                         {aggregates.map(agg => (
-                                            <div key={agg.id} className="flex gap-2 items-center p-3 bg-bg-0 rounded-md border border-border">
+                                            <div key={agg.id} className="flex gap-2 items-center p-3 bg-bg-0 rounded-md border border-border-light">
                                                 <Select
                                                     value={agg.function}
                                                     onChange={(val) => updateAggregate(agg.id, 'function', val)}

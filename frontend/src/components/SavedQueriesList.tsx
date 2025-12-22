@@ -215,9 +215,9 @@ export default function SavedQueriesList({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-r border-border w-64' : ''}`}>
+    <div className={`flex flex-col h-full bg-bg-1 ${!embedded ? 'border-r border-border-light w-64' : ''}`}>
       {!embedded ? (
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border-light">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider">Saved Queries</h2>
             <div className="flex items-center gap-1">
@@ -258,12 +258,12 @@ export default function SavedQueriesList({
               placeholder="Search queries..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="w-full bg-bg-2 border border-border rounded pl-8 pr-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
+              className="w-full bg-bg-2 border border-border-light rounded text-text-primary text-sm focus:border-accent outline-none"
             />
           </div>
         </div>
       ) : (
-        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+        <div className="px-3 py-2 border-b border-border-light flex items-center justify-between">
           <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Saved</span>
           <div className="flex items-center gap-1">
             <button
@@ -297,11 +297,11 @@ export default function SavedQueriesList({
         ) : filteredQueries.length === 0 ? (
           <div className="p-4 text-center text-text-secondary text-sm">No saved queries found</div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border-light">
             {grouped.folders.map(group => {
               const isCollapsed = collapsedFolderIds.has(group.id);
               return (
-                <div key={group.id} className="border-b border-border">
+                <div key={group.id} className="border-b border-border-light">
                   <div
                     className="px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-bg-2 group"
                     onClick={() => toggleFolder(group.id)}
@@ -323,7 +323,7 @@ export default function SavedQueriesList({
                       </button>
                       <button
                         onClick={(e) => handleDeleteFolder(group.id, e)}
-                        className="p-1 hover:bg-error/10 hover:text-error rounded text-text-secondary"
+                        className="p-1 hover:bg-error-50 hover:text-error rounded text-text-secondary"
                         title="Delete folder"
                       >
                         <Trash2 size={12} />
@@ -332,7 +332,7 @@ export default function SavedQueriesList({
                   </div>
 
                   {!isCollapsed && (
-                    <div className="divide-y divide-border">
+                    <div className="divide-y divide-border-light">
                       {group.queries.map(query => (
                         <div
                           key={query.id}
@@ -354,7 +354,7 @@ export default function SavedQueriesList({
                               </button>
                               <button
                                 onClick={(e) => handleDelete(query.id, e)}
-                                className="p-1 hover:bg-error/10 hover:text-error rounded text-text-secondary"
+                                className="p-1 hover:bg-error-50 hover:text-error rounded text-text-secondary"
                                 title="Delete"
                               >
                                 <Trash2 size={12} />
@@ -382,11 +382,11 @@ export default function SavedQueriesList({
             })}
 
             {grouped.unfiled.length > 0 && (
-              <div className="border-b border-border">
+              <div className="border-b border-border-light">
                 <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider">
                   Unfiled ({grouped.unfiled.length})
                 </div>
-                <div className="divide-y divide-border">
+                <div className="divide-y divide-border-light">
                   {grouped.unfiled.map(query => (
                     <div
                       key={query.id}

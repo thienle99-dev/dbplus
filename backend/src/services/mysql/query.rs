@@ -58,6 +58,7 @@ impl QueryDriver for MySqlDriver {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 

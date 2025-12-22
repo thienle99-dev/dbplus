@@ -13,6 +13,7 @@ pub mod mysql;
 pub mod pg_dump;
 pub mod postgres;
 pub mod postgres_driver;
+pub mod saved_filter_service;
 pub mod saved_query_folder_service;
 pub mod saved_query_service;
 pub mod schema_diff;

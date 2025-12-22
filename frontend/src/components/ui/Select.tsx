@@ -85,13 +85,13 @@ export default function Select({
                 disabled={disabled}
                 className={`
           w-full flex items-center justify-between gap-2
-          rounded-lg bg-bg-2/50 border border-transparent
+          rounded-xl bg-bg-2 border border-border-subtle
           text-text-primary shadow-sm
           transition-all duration-200
           ${sizeClasses[size]}
           ${disabled
                         ? 'opacity-50 cursor-not-allowed bg-bg-2/80'
-                        : 'hover:bg-bg-2 focus:outline-none focus:bg-bg-0 focus:border-accent/40 focus:ring-4 focus:ring-accent/10'
+                        : 'hover:bg-bg-0 hover:border-border-light focus:outline-none focus:bg-bg-0 focus:border-accent/40 focus:ring-4 focus:ring-accent/10'
                     }
           ${isOpen ? 'bg-bg-0 ring-4 ring-accent/10 border-accent/40' : ''}
         `}
@@ -117,16 +117,16 @@ export default function Select({
             {isOpen && (
                 <div
                     className="
-            absolute z-50 w-full mt-1
-            bg-bg-2 border border-border/50 rounded-lg
-            shadow-xl
-            max-h-64 overflow-hidden
-            animate-in fade-in slide-in-from-top-2 duration-200
+            absolute z-50 w-full mt-2
+            bg-bg-1/95 backdrop-blur-xl border border-border-light rounded-2xl
+            shadow-2xl ring-1 ring-black/5
+            max-h-[320px] overflow-hidden
+            animate-in fade-in slide-in-from-top-2 duration-300 ease-out
           "
                 >
                     {/* Search Input */}
                     {searchable && (
-                        <div className="p-2 border-b border-border/50">
+                        <div className="p-2.5 border-b border-border-subtle backdrop-blur-md">
                             <input
                                 ref={searchInputRef}
                                 type="text"
@@ -134,10 +134,10 @@ export default function Select({
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search..."
                                 className="
-                  w-full px-3 py-1.5 text-sm
-                  bg-bg-3/50 border border-transparent rounded
-                  text-text-primary placeholder-text-secondary
-                  focus:outline-none focus:bg-bg-0 focus:ring-2 focus:ring-accent/20
+                  w-full px-3 py-1.5 text-xs
+                  bg-bg-2 border border-border-subtle rounded-lg
+                  text-text-primary placeholder:text-text-muted
+                  focus:outline-none focus:bg-bg-0 focus:ring-2 focus:ring-accent/20 transition-all
                 "
                                 onClick={(e) => e.stopPropagation()}
                             />

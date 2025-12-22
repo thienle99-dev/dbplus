@@ -21,11 +21,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         const baseStyles = 'inline-flex items-center justify-center gap-1.5 font-medium transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px';
 
         const variants = {
-            primary: 'rounded-full bg-accent text-bg-0 shadow-[0_0_0_1px_rgba(255,255,255,0.25)] hover:bg-accent/90',
-            secondary: 'rounded-full border border-border/60 bg-bg-2/80 text-text-secondary hover:bg-bg-3 hover:text-text-primary',
-            ghost: 'rounded-full text-text-secondary hover:bg-bg-3 hover:text-text-primary',
-            danger: 'rounded-full bg-red-500/90 text-bg-0 hover:bg-red-500',
-            outline: 'rounded-full border border-border/60 text-text-primary hover:bg-bg-2'
+            primary: 'rounded-full bg-accent text-bg-0 shadow-sm hover:bg-accent/90 hover:shadow-md transition-all',
+            secondary: 'rounded-full border border-border-subtle bg-bg-2 backdrop-blur-sm text-text-secondary hover:bg-bg-3 hover:text-text-primary',
+            ghost: 'rounded-full text-text-secondary hover:bg-bg-2 hover:text-text-primary',
+            danger: 'rounded-full bg-error text-bg-0 hover:bg-error/90',
+            outline: 'rounded-full border border-border-subtle text-text-primary hover:bg-bg-2 backdrop-blur-sm'
         };
 
         const sizes = {

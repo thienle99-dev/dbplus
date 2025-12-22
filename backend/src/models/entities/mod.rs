@@ -3,6 +3,7 @@ pub mod dashboard;
 pub mod dashboard_chart;
 pub mod query_history;
 pub mod query_snippet;
+pub mod saved_filter;
 pub mod saved_query;
 pub mod saved_query_folder;
 pub mod schema_cache;

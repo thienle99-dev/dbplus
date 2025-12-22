@@ -399,7 +399,7 @@ export default function TableContextMenu({
                     </div>
                 </div>
 
-                {item.divider && <div className="h-px bg-border my-1" />}
+                {item.divider && <div className="h-px bg-border-light my-1" />}
             </div>
         );
     };
@@ -408,7 +408,7 @@ export default function TableContextMenu({
         <>
             <div
                 ref={menuRef}
-                className="fixed z-50 min-w-[220px] bg-bg-1 border border-border rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
+                className="fixed z-50 min-w-[220px] bg-bg-1 border border-border-light rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
                 style={{
                     left: position.x,
                     top: position.y,
@@ -427,7 +427,7 @@ export default function TableContextMenu({
                 return (
                     <div
                         ref={submenuRef}
-                        className="fixed z-[60] min-w-[200px] bg-bg-1 border border-border rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
+                        className="fixed z-[60] min-w-[200px] bg-bg-1 border border-border-light rounded-lg shadow-xl py-1 opacity-0 scale-95 transition-all duration-150"
                         style={{
                             left: submenuPosition.left,
                             top: submenuPosition.top,

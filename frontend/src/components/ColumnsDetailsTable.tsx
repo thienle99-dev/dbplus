@@ -141,8 +141,8 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
     };
 
     return (
-        <div className="bg-bg-0 border border-border rounded overflow-hidden">
-            <div className="p-2 border-b border-border flex justify-end">
+        <div className="bg-bg-0 border border-border-light rounded overflow-hidden">
+            <div className="p-2 border-b border-border-light flex justify-end">
                 <button
                     onClick={handleAddColumn}
                     className="flex items-center gap-1 px-2 py-1 text-[10px] md:text-xs bg-accent hover:bg-blue-600 text-white rounded transition-colors"
@@ -155,11 +155,11 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                 <table className="w-full text-[10px] md:text-xs">
                     <thead className="bg-bg-1">
                         <tr>
-                            <th className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap">
+                            <th className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap">
                                 Icons
                             </th>
                             <th
-                                className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
+                                className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
                                 onClick={() => handleSort('name')}
                             >
                                 <div className="flex items-center gap-1">
@@ -168,7 +168,7 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                 </div>
                             </th>
                             <th
-                                className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
+                                className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
                                 onClick={() => handleSort('data_type')}
                             >
                                 <div className="flex items-center gap-1">
@@ -177,7 +177,7 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                 </div>
                             </th>
                             <th
-                                className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
+                                className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
                                 onClick={() => handleSort('nullable')}
                             >
                                 <div className="flex items-center gap-1">
@@ -186,7 +186,7 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                 </div>
                             </th>
                             <th
-                                className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
+                                className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-left font-medium text-text-secondary whitespace-nowrap cursor-pointer hover:bg-bg-2"
                                 onClick={() => handleSort('default')}
                             >
                                 <div className="flex items-center gap-1">
@@ -194,7 +194,7 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                     <SortIcon field="default" />
                                 </div>
                             </th>
-                            <th className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-right font-medium text-text-secondary whitespace-nowrap">
+                            <th className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-right font-medium text-text-secondary whitespace-nowrap">
                                 Actions
                             </th>
                         </tr>
@@ -206,8 +206,8 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                             const isIndexed = indexedColumns.has(column.name);
 
                             return (
-                                <tr key={column.name} className="hover:bg-bg-1/50">
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2">
+                                <tr key={column.name} className="hover:bg-bg-1">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2">
                                         <div className="flex items-center gap-1">
                                             {isPK && (
                                                 <span
@@ -235,17 +235,17 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                             )}
                                         </div>
                                     </td>
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-text-primary font-mono break-all">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-text-primary font-mono break-all">
                                         {column.name}
                                     </td>
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2">
                                         <span className="text-[9px] md:text-xs bg-bg-2 text-text-secondary px-1.5 md:px-2 py-0.5 rounded whitespace-nowrap inline-block">
                                             {column.data_type}
                                         </span>
                                     </td>
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2">
                                         {column.is_nullable ? (
-                                            <span className="text-[9px] md:text-xs bg-yellow-500/20 text-yellow-400 px-1.5 md:px-2 py-0.5 rounded whitespace-nowrap inline-block">
+                                            <span className="text-[9px] md:text-xs bg-warning-50 text-warning px-1.5 md:px-2 py-0.5 rounded whitespace-nowrap inline-block">
                                                 YES
                                             </span>
                                         ) : (
@@ -254,12 +254,12 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
                                             </span>
                                         )}
                                     </td>
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-text-secondary text-[9px] md:text-xs font-mono break-all">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-text-secondary text-[9px] md:text-xs font-mono break-all">
                                         {column.default_value || (
                                             <span className="italic opacity-50">NULL</span>
                                         )}
                                     </td>
-                                    <td className="border-b border-border px-2 md:px-3 py-1.5 md:py-2 text-right">
+                                    <td className="border-b border-border-light px-2 md:px-3 py-1.5 md:py-2 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <button
                                                 onClick={() => handleEditColumn(column)}

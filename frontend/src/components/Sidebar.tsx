@@ -104,22 +104,22 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1/95 border-r pb-[20px] border-border/40 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
+      className="bg-bg-1 border-r pb-[20px] border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
       style={{ width: `${sidebarWidth}px` }}
     >
       {/* Vertical Workspace Tabs Rail */}
-      <div className="w-[60px] border-r border-border/40 bg-bg-2/50 flex flex-col items-center py-3 gap-2">
+      <div className="w-[60px] border-r border-border-light bg-bg-2 flex flex-col items-center py-3 gap-2">
         <button
           onClick={() => navigate('/')}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${location.pathname === '/'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
-            : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border/40 hover:border-accent/40'
+            ? 'bg-accent text-white shadow-lg'
+            : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border-light hover:border-accent'
             }`}
           title="Connections Hub"
         >
           <LayoutGrid size={20} strokeWidth={1.5} />
         </button>
-        <div className="w-8 h-px bg-border/40 my-1" />
+        <div className="w-8 h-px bg-border-light my-1" />
         <div className="flex-1 overflow-y-auto px-1 space-y-2 w-full no-scrollbar">
           {tabs.map((t) => {
             const meta = connectionById.get(t.connectionId);
@@ -144,8 +144,8 @@ export default function Sidebar() {
                   ]);
                 }}
                 className={`group relative w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-200 mx-auto ${isActive
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-105'
-                  : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border/40 hover:border-accent/40'
+                  ? 'bg-accent text-white shadow-lg scale-105'
+                  : 'bg-bg-1 text-text-secondary hover:text-text-primary hover:bg-bg-0 border border-border-light hover:border-accent'
                   }`}
                 title={label}
               >
@@ -172,7 +172,7 @@ export default function Sidebar() {
                       navigate(nextActive.lastPath || `/workspace/${nextActive.connectionId}/query`);
                     }
                   }}
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-bg-2 border border-border text-text-secondary hover:text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center leading-none shadow-sm z-10"
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-bg-2 border border-border-light text-text-secondary hover:text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center leading-none shadow-sm z-10"
                   aria-label="Close tab"
                   title="Close"
                 >
@@ -183,10 +183,10 @@ export default function Sidebar() {
           })}
         </div>
 
-        <div className="p-1 pt-2 border-t border-border/40 w-full flex justify-center">
+        <div className="p-1 pt-2 border-t border-border-light w-full flex justify-center">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-10 h-10 rounded-xl border border-border/40 bg-bg-1 text-text-secondary hover:text-accent hover:border-accent/50 hover:bg-bg-0 transition-all flex items-center justify-center shadow-sm"
+            className="w-10 h-10 rounded-xl border border-border-light bg-bg-1 text-text-secondary hover:text-accent hover:border-accent hover:bg-bg-0 transition-all flex items-center justify-center shadow-sm"
             title="Open connection/database (Cmd+K)"
           >
             <span className="text-lg leading-none pb-0.5">+</span>
@@ -196,7 +196,7 @@ export default function Sidebar() {
 
       {/* Resize Handle */}
       <div
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent/50 z-50 transition-colors opacity-0 hover:opacity-100"
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent z-50 transition-colors opacity-0 hover:opacity-100"
         onMouseDown={(e) => {
           e.preventDefault();
           setIsResizing(true);
@@ -205,9 +205,9 @@ export default function Sidebar() {
       />
 
       {/* Main Sidebar Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-bg-1/50">
+      <div className="flex-1 flex flex-col min-w-0 bg-bg-1">
         {/* Search Header */}
-        <div className="p-4 border-b border-border/40 space-y-4">
+        <div className="p-4 border-b border-border-light space-y-4">
           {/* Global Search Input */}
           <div className="flex gap-2 items-center">
             <Input
@@ -215,11 +215,11 @@ export default function Sidebar() {
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 bg-bg-2/50 border-transparent focus:bg-bg-0"
+              className="flex-1 bg-bg-2 border-transparent focus:bg-bg-0"
             />
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="p-2 bg-bg-2/50 border border-border/40 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
+              className="p-2 bg-bg-2 border flex-shrink-0 border-border-light rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
               title="Switch Database (Cmd+K)"
             >
               <Database size={16} />
@@ -227,12 +227,12 @@ export default function Sidebar() {
           </div>
 
           {/* Tab Navigation (Segmented Control style) */}
-          <div className="flex bg-bg-2/50 p-1 rounded-xl border border-border/40">
+          <div className="flex bg-bg-2 p-1 rounded-xl border border-border-light">
             <button
               onClick={() => setActiveTab('items')}
               className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'items'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="Explorer"
             >
@@ -242,8 +242,8 @@ export default function Sidebar() {
             <button
               onClick={() => setActiveTab('queries')}
               className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'queries'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="Saved Queries"
             >
@@ -253,8 +253,8 @@ export default function Sidebar() {
             <button
               onClick={() => setActiveTab('history')}
               className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'history'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-black/5'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="History"
             >
@@ -293,7 +293,7 @@ export default function Sidebar() {
                       localStorage.setItem('show-pinned-only', JSON.stringify(newValue));
                     }}
                     className={`p-1.5 hover:bg-bg-2 rounded-lg transition-colors ${showPinnedOnly
-                      ? 'text-accent bg-accent/10'
+                      ? 'text-accent bg-primary-transparent'
                       : 'text-text-secondary hover:text-text-primary'
                       }`}
                     title={showPinnedOnly ? "Show All Tables" : "Show Pinned Tables Only"}
@@ -326,17 +326,17 @@ export default function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border/40 space-y-1 bg-bg-1/80 backdrop-blur-sm z-10">
+        <div className="p-3 border-t border-border-light space-y-1 bg-bg-1 glass z-10">
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-bg-2/80 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-bg-2 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             <Settings size={16} />
             Settings
           </button>
           <button
             onClick={() => navigate('/')}
-            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl text-sm text-text-secondary transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-error-50 hover:text-error rounded-xl text-sm text-text-secondary transition-colors"
           >
             <LogOut size={16} />
             Disconnect

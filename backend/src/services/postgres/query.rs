@@ -1832,6 +1832,7 @@ impl QueryDriver for PostgresQuery {
                 limit: None,
                 offset: None,
                 has_more: None,
+                row_metadata: None,
             });
         }
 
@@ -1866,6 +1867,7 @@ impl QueryDriver for PostgresQuery {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: None,
         })
     }
 
@@ -1891,6 +1893,7 @@ impl QueryDriver for PostgresQuery {
                             limit: None,
                             offset: None,
                             has_more: None,
+                            row_metadata: None,
                         });
                     }
 
@@ -1926,6 +1929,7 @@ impl QueryDriver for PostgresQuery {
                         limit: None,
                         offset: None,
                         has_more: None,
+                        row_metadata: None,
                     })
                 } else {
                     let affected = client.execute(&statement, &[]).await?;
@@ -1938,6 +1942,7 @@ impl QueryDriver for PostgresQuery {
                         limit: None,
                         offset: None,
                         has_more: None,
+                        row_metadata: None,
                     })
                 }
             }
@@ -2003,6 +2008,7 @@ impl QueryDriver for PostgresQuery {
                                 limit: None,
                                 offset: None,
                                 has_more: None,
+                                row_metadata: None,
                             };
 
                             // Reset type info for next batch
@@ -2022,6 +2028,7 @@ impl QueryDriver for PostgresQuery {
                     limit: None,
                     offset: None,
                     has_more: None,
+                    row_metadata: None,
                 }))
             }
         }

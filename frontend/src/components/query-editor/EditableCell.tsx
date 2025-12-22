@@ -35,8 +35,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) { 
-            e.preventDefault(); 
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             handleBlur();
         } else if (e.key === 'Escape') {
             setCurrentValue(formatCellValue(value));
@@ -48,8 +48,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
     const displayValue = formatCellValue(value);
     const isComplex = isComplexType(value);
     const datePreview = !isComplex ? tryGetDateFromTimestamp(value) : null;
-    const title = datePreview 
-        ? `Possible Date: ${datePreview}\nOriginal Value: ${displayValue}` 
+    const title = datePreview
+        ? `Possible Date: ${datePreview}\nOriginal Value: ${displayValue}`
         : displayValue;
 
     // If it's a complex type, allow "editing" mode just to view the pretty-printed 
@@ -63,7 +63,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
                 <textarea
                     ref={textareaRef}
                     readOnly={!isEditable}
-                    className={`w-full h-full px-2 py-1 bg-bg-2 border border-primary-default outline-none text-text-primary text-xs font-mono resize-none absolute top-0 left-0 z-10 min-h-[100px] shadow-lg ${!isEditable ? 'bg-bg-1' : ''}`}
+                    className={`w-full h-full px-2 py-1 bg-bg-2 backdrop-blur-sm border border-accent rounded-md outline-none text-text-primary text-xs font-mono resize-none absolute top-0 left-0 z-10 min-h-[120px] shadow-2xl ${!isEditable ? 'bg-bg-1' : ''}`}
                     value={currentValue}
                     onChange={(e) => isEditable && setCurrentValue(e.target.value)}
                     onBlur={handleBlur}
@@ -76,7 +76,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
             return (
                 <input
                     ref={inputRef}
-                    className="w-full h-full px-2 py-1 bg-bg-2 border border-primary-default outline-none text-text-primary text-xs"
+                    className="w-full h-full px-2 py-1 bg-bg-2 backdrop-blur-sm border border-accent rounded-md outline-none text-text-primary text-xs shadow-lg"
                     value={currentValue}
                     onChange={(e) => setCurrentValue(e.target.value)}
                     onBlur={handleBlur}
@@ -90,11 +90,11 @@ export const EditableCell: React.FC<EditableCellProps> = ({ value, onSave, isEdi
     // Default view state
     return (
         <div
-            className={`w-full h-full px-2 py-1 cursor-text hover:bg-bg-3/50 truncate ${isComplex ? 'font-mono text-xs' : ''}`}
+            className={`w-full h-full px-2 py-1 cursor-text hover:bg-bg-3 truncate ${isComplex ? 'font-mono text-xs' : ''}`}
             onClick={() => canEnterEditMode && setIsEditing(true)}
             title={title}
         >
-             {value === null ? <span className="text-gray-400 italic">null</span> : displayValue}
+            {value === null ? <span className="text-text-tertiary italic">null</span> : displayValue}
         </div>
     );
 };

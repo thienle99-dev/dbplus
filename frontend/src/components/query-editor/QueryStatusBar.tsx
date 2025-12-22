@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, Code, LayoutTemplate } from 'lucide-react';
+import { Code, LayoutTemplate } from 'lucide-react';
 
 interface QueryStatusBarProps {
     mode: 'sql' | 'visual';
@@ -15,32 +15,34 @@ export const QueryStatusBar: React.FC<QueryStatusBarProps> = ({
     queryTrimmed
 }) => {
     return (
-        <div className="h-8 border-t border-border bg-bg-1 flex items-center px-3 justify-between select-none">
+        <div className="h-8 border-t border-border-subtle bg-bg-1 glass flex items-center px-3 justify-between select-none">
             <div className="flex items-center gap-2">
                 <button
                     onClick={onFormat}
                     disabled={!queryTrimmed}
-                    className="p-1.5 hover:bg-bg-3 rounded-md text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                    className="p-1 px-2 hover:bg-bg-2 rounded-md text-text-secondary hover:text-text-primary transition-all disabled:opacity-50 text-[10px] uppercase font-bold tracking-wider"
                     title="Format SQL (Cmd+K)"
                 >
-                    <AlignLeft size={14} />
+                    Format
                 </button>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center p-0.5 bg-bg-2 rounded-lg border border-border-light">
                 <button
                     onClick={() => setMode('sql')}
-                    className={`p-1.5 rounded-md transition-colors ${mode === 'sql' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
+                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all text-[11px] font-medium ${mode === 'sql' ? 'text-accent bg-bg-0 shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'}`}
                     title="SQL View"
                 >
-                    <Code size={14} />
+                    <Code size={12} />
+                    <span>SQL</span>
                 </button>
                 <button
                     onClick={() => setMode('visual')}
-                    className={`p-1.5 rounded-md transition-colors ${mode === 'visual' ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-bg-3'}`}
+                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all text-[11px] font-medium ${mode === 'visual' ? 'text-accent bg-bg-0 shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'}`}
                     title="Visual Builder"
                 >
-                    <LayoutTemplate size={14} />
+                    <LayoutTemplate size={12} />
+                    <span>Visual</span>
                 </button>
             </div>
         </div>

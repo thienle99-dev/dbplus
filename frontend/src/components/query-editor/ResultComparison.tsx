@@ -52,7 +52,7 @@ export function ResultComparison({ diff, columns, onClose }: ResultComparisonPro
     return (
         <div className="flex flex-col h-full bg-bg-1">
             {/* Header / Toolbar */}
-            <div className="flex items-center justify-between p-2 border-b border-border bg-bg-2">
+            <div className="flex items-center justify-between p-2 border-b border-border-light bg-bg-2">
                 <div className="flex items-center gap-4">
                     <span className="font-semibold text-sm">Result Comparison</span>
                     <div className="flex items-center gap-2 text-xs">
@@ -61,15 +61,14 @@ export function ResultComparison({ diff, columns, onClose }: ResultComparisonPro
                         <span className="text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded">~{diff.modified} Modified</span>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
-                    <button 
+                    <button
                         onClick={() => setFilter(filter === 'all' ? 'changes' : 'all')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border ${
-                            filter === 'changes' 
-                                ? 'bg-accent/10 border-accent text-accent' 
-                                : 'bg-bg-1 border-border text-text-secondary hover:text-text-primary'
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border ${filter === 'changes'
+                                ? 'bg-primary-transparent border-accent text-accent'
+                                : 'bg-bg-1 border-border-light text-text-secondary hover:text-text-primary'
+                            }`}
                     >
                         <Filter size={12} />
                         {filter === 'changes' ? 'Showing Changes only' : 'Show All Rows'}
@@ -110,20 +109,20 @@ export function ResultComparison({ diff, columns, onClose }: ResultComparisonPro
                                     height: `${virtualRow.size}px`,
                                     transform: `translateY(${virtualRow.start}px)`,
                                 }}
-                                className={`flex items-center border-b border-border/50 text-xs font-mono whitespace-nowrap px-4 ${getRowStyle(row.type)}`}
+                                className={`flex items-center border-b border-border-light text-xs font-mono whitespace-nowrap px-4 ${getRowStyle(row.type)}`}
                             >
                                 <div className="w-8 shrink-0 text-text-tertiary select-none">
                                     {row.type === 'removed' ? '-' : row.rowIndex + 1}
                                 </div>
                                 <div className="w-8 shrink-0 select-none mr-2">
-                                     {row.type === 'added' && <span className="text-green-500 font-bold">+</span>}
-                                     {row.type === 'removed' && <span className="text-red-500 font-bold">-</span>}
-                                     {row.type === 'modified' && <span className="text-yellow-500 font-bold">~</span>}
+                                    {row.type === 'added' && <span className="text-green-500 font-bold">+</span>}
+                                    {row.type === 'removed' && <span className="text-red-500 font-bold">-</span>}
+                                    {row.type === 'modified' && <span className="text-yellow-500 font-bold">~</span>}
                                 </div>
                                 {columns.map((col, cIdx) => (
-                                    <div 
-                                        key={cIdx} 
-                                        className={`w-[150px] shrink-0 truncate px-2 border-l border-border/10 ${getCellStyle(row, col.name)}`}
+                                    <div
+                                        key={cIdx}
+                                        className={`w-[150px] shrink-0 truncate px-2 border-l border-border-subtle ${getCellStyle(row, col.name)}`}
                                         title={getCellTitle(row, col.name) || String(row.data[col.name])}
                                     >
                                         {String(row.data[col.name] ?? 'NULL')}
@@ -134,12 +133,12 @@ export function ResultComparison({ diff, columns, onClose }: ResultComparisonPro
                     })}
                 </div>
             </div>
-            
+
             {/* Header Overlay (Pseudo) - a simple way to show headers */}
-            <div className="absolute top-[41px] left-0 right-0 bg-bg-1 border-b border-border flex text-xs font-bold text-text-secondary px-4 h-8 items-center pointer-events-none z-10">
+            <div className="absolute top-[41px] left-0 right-0 bg-bg-1 border-b border-border-light flex text-xs font-bold text-text-secondary px-4 h-8 items-center pointer-events-none z-10">
                 <div className="w-8 shrink-0">#</div>
                 <div className="w-8 shrink-0 mr-2"></div>
-                 {columns.map((col, cIdx) => (
+                {columns.map((col, cIdx) => (
                     <div key={cIdx} className="w-[150px] shrink-0 px-2 border-l border-transparent">
                         {col.name}
                     </div>

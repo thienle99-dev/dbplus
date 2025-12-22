@@ -179,6 +179,15 @@ async fn main() {
                 .delete(handlers::saved_query::delete_saved_query),
         )
         .route(
+            "/api/connections/:id/saved-filters",
+            get(handlers::saved_filter::list_saved_filters)
+                .post(handlers::saved_filter::create_saved_filter),
+        )
+        .route(
+            "/api/connections/:id/saved-filters/:filter_id",
+            delete(handlers::saved_filter::delete_saved_filter),
+        )
+        .route(
             "/api/connections/:id/saved-query-folders",
             get(handlers::saved_query_folder::list_folders)
                 .post(handlers::saved_query_folder::create_folder),
@@ -351,8 +360,19 @@ async fn main() {
     // run it
     let addr = SocketAddr::from(([127, 0, 0, 1], 19999));
     tracing::info!("listening on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::error!("Failed to bind to {}: {}", addr, e);
+            if e.kind() == std::io::ErrorKind::AddrInUse {
+                tracing::error!("Port {} is already in use. Please check if another instance of DBPlus is running.", addr.port());
+            }
+            return;
+        }
+    };
+    if let Err(e) = axum::serve(listener, app).await {
+        tracing::error!("Server error: {}", e);
+    }
 }
 
 async fn handler() -> &'static str {

@@ -47,7 +47,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, childre
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-50 min-w-[220px] bg-bg-1/80 backdrop-blur-xl border border-border/40 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-100 text-sm"
+            className="fixed z-50 min-w-[220px] bg-bg-1 glass border border-border-light rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-100 text-sm"
             style={style}
         >
             {children}
@@ -101,7 +101,7 @@ export const ContextMenuItem: React.FC<ContextMenuItemProps> = ({ onClick, child
 };
 
 export const ContextMenuSeparator: React.FC = () => (
-    <div className="h-px bg-border/40 my-1 mx-2" />
+    <div className="h-px bg-border-subtle my-1 mx-2" />
 );
 
 export const ContextMenuLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (

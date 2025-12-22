@@ -15,7 +15,7 @@ export const LogViewer: React.FC = () => {
     return (
         <div className="h-full flex flex-col bg-bg-0">
             {/* Header */}
-            <div className="flex items-start flex-col px-3 py-2 bg-bg-1 border-b border-border">
+            <div className="flex items-start flex-col px-3 py-2 bg-bg-1 border-b border-border-light">
                 <div className="mb-2">
                     <span className="text-xs mb-3 font-medium text-text-secondary">
                         Network Logs ({filteredLogs.length})
@@ -33,7 +33,7 @@ export const LogViewer: React.FC = () => {
                         <button
                             onClick={() => setFilter('request')}
                             className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'request'
-                                ? 'bg-blue-500 text-white'
+                                ? 'bg-info text-white'
                                 : 'bg-bg-2 text-text-secondary hover:text-text-primary'
                                 }`}
                         >
@@ -42,7 +42,7 @@ export const LogViewer: React.FC = () => {
                         <button
                             onClick={() => setFilter('response')}
                             className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'response'
-                                ? 'bg-green-500 text-white'
+                                ? 'bg-success text-white'
                                 : 'bg-bg-2 text-text-secondary hover:text-text-primary'
                                 }`}
                         >
@@ -51,7 +51,7 @@ export const LogViewer: React.FC = () => {
                         <button
                             onClick={() => setFilter('error')}
                             className={`px-2 py-0.5 text-[10px] rounded transition-colors ${filter === 'error'
-                                ? 'bg-red-500 text-white'
+                                ? 'bg-error text-white'
                                 : 'bg-bg-2 text-text-secondary hover:text-text-primary'
                                 }`}
                         >
@@ -92,7 +92,7 @@ export const LogViewer: React.FC = () => {
                         No logs yet...
                     </div>
                 ) : (
-                    <div className="divide-y divide-border">
+                    <div className="divide-y divide-border-light">
                         {filteredLogs.map((log) => (
                             <LogItem key={log.id} log={log} />
                         ))}
@@ -109,22 +109,22 @@ const LogItem: React.FC<{ log: LogEntry }> = ({ log }) => {
     const getTypeStyles = () => {
         switch (log.type) {
             case 'error':
-                return 'bg-red-500/10 border-l-2 border-l-red-500';
+                return 'bg-error-50 border-l-2 border-l-error';
             case 'response':
                 return log.status && log.status >= 400
-                    ? 'bg-red-500/10 border-l-2 border-l-red-500'
-                    : 'bg-green-500/10 border-l-2 border-l-green-500';
+                    ? 'bg-error-50 border-l-2 border-l-error'
+                    : 'bg-success-50 border-l-2 border-l-success';
             case 'request':
-                return 'bg-blue-500/10 border-l-2 border-l-blue-500';
+                return 'bg-info-50 border-l-2 border-l-info';
             default:
-                return 'bg-bg-1 border-l-2 border-l-border';
+                return 'bg-bg-1 border-l-2 border-l-border-light';
         }
     };
 
     const getMethodColor = () => {
-        if (log.type === 'error' || (log.status && log.status >= 400)) return 'text-red-400';
-        if (log.status && log.status >= 200 && log.status < 300) return 'text-green-400';
-        if (log.type === 'request') return 'text-blue-400';
+        if (log.type === 'error' || (log.status && log.status >= 400)) return 'text-error';
+        if (log.status && log.status >= 200 && log.status < 300) return 'text-success';
+        if (log.type === 'request') return 'text-info';
         return 'text-text-secondary';
     };
 

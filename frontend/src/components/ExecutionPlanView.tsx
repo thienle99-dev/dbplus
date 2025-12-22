@@ -141,7 +141,7 @@ function PgPlanNodeRow({
     return (
         <div className="select-text">
             <div
-                className={`flex items-start gap-2 rounded border border-border bg-bg-0 px-2 py-1.5 ${highlight ? 'ring-1 ring-yellow-500/60' : ''
+                className={`flex items-start gap-2 rounded border border-border-light bg-bg-0 px-2 py-1.5 ${highlight ? 'ring-1 ring-warning' : ''
                     }`}
                 style={{ marginLeft: depth * 12 }}
             >
@@ -285,39 +285,39 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
     return (
         <div className="h-full overflow-auto p-4 bg-bg-1">
             {(title || extraHeader) && (
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border-light">
                     {title && <span className="font-semibold text-text-primary">{title}</span>}
                     {extraHeader}
                 </div>
             )}
             {engine === 'postgres' && insights && (
                 <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div className="p-3 rounded border border-border bg-bg-0">
+                    <div className="p-3 rounded border border-border-light bg-bg-0">
                         <div className="text-[10px] uppercase tracking-wider text-text-secondary">Planning</div>
                         <div className="text-sm font-semibold text-text-primary">
                             {insights.planningTimeMs !== undefined ? `${insights.planningTimeMs.toFixed(2)} ms` : '—'}
                         </div>
                     </div>
-                    <div className="p-3 rounded border border-border bg-bg-0">
+                    <div className="p-3 rounded border border-border-light bg-bg-0">
                         <div className="text-[10px] uppercase tracking-wider text-text-secondary">Execution</div>
                         <div className="text-sm font-semibold text-text-primary">
                             {insights.executionTimeMs !== undefined ? `${insights.executionTimeMs.toFixed(2)} ms` : '—'}
                         </div>
                     </div>
-                    <div className="p-3 rounded border border-border bg-bg-0">
+                    <div className="p-3 rounded border border-border-light bg-bg-0">
                         <div className="text-[10px] uppercase tracking-wider text-text-secondary">Rows</div>
                         <div className="text-sm font-semibold text-text-primary">
                             {insights.actualRows !== undefined ? `${insights.actualRows}` : insights.planRows !== undefined ? `${insights.planRows} (est)` : '—'}
                         </div>
                     </div>
-                    <div className="p-3 rounded border border-border bg-bg-0">
+                    <div className="p-3 rounded border border-border-light bg-bg-0">
                         <div className="text-[10px] uppercase tracking-wider text-text-secondary">Index / Seq Scan</div>
                         <div className="text-sm font-semibold text-text-primary">
                             {insights.hasIndexScan ? 'Index' : 'No index'} / {insights.hasSeqScan ? 'Seq' : 'No seq'}
                         </div>
                     </div>
                     {insights.buffers && (
-                        <div className="col-span-2 md:col-span-4 p-3 rounded border border-border bg-bg-0">
+                        <div className="col-span-2 md:col-span-4 p-3 rounded border border-border-light bg-bg-0">
                             <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-1">Buffers</div>
                             <div className="text-xs text-text-secondary flex flex-wrap gap-x-4 gap-y-1">
                                 {insights.buffers.sharedHit !== undefined && <span>{`shared hit: ${insights.buffers.sharedHit}`}</span>}
@@ -341,7 +341,7 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                         <button
                             type="button"
                             onClick={() => pgRoot && setExpandedPaths(collectExpandedPaths(pgRoot, 10))}
-                            className="px-2 py-1 rounded border text-xs bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2"
+                            className="px-2 py-1 rounded border text-xs bg-bg-0 border-border-light text-text-secondary hover:text-text-primary hover:bg-bg-2"
                             disabled={!pgRoot}
                         >
                             Expand all
@@ -349,7 +349,7 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                         <button
                             type="button"
                             onClick={() => setExpandedPaths(new Set(['0']))}
-                            className="px-2 py-1 rounded border text-xs bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2"
+                            className="px-2 py-1 rounded border text-xs bg-bg-0 border-border-light text-text-secondary hover:text-text-primary hover:bg-bg-2"
                             disabled={!pgRoot}
                         >
                             Collapse all
@@ -359,7 +359,7 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                             onClick={() => setViewMode('tree')}
                             className={`px-2 py-1 rounded border text-xs ${viewMode === 'tree'
                                 ? 'bg-bg-2 border-accent text-text-primary'
-                                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                : 'bg-bg-0 border-border-light text-text-secondary hover:text-text-primary hover:bg-bg-2'
                                 }`}
                         >
                             Tree
@@ -369,7 +369,7 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                             onClick={() => setViewMode('json')}
                             className={`px-2 py-1 rounded border text-xs ${viewMode === 'json'
                                 ? 'bg-bg-2 border-accent text-text-primary'
-                                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                                : 'bg-bg-0 border-border-light text-text-secondary hover:text-text-primary hover:bg-bg-2'
                                 }`}
                         >
                             JSON
@@ -404,7 +404,7 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
                     <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Hotspots</div>
                     <div className="grid gap-2">
                         {insights.hotspots.map((h, idx) => (
-                            <div key={idx} className="p-3 rounded border border-border bg-bg-0">
+                            <div key={idx} className="p-3 rounded border border-border-light bg-bg-0">
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="min-w-0">
                                         <div className="text-sm font-medium text-text-primary truncate">
@@ -481,7 +481,7 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
 
     return (
         <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-2 border-b border-border bg-bg-1">
+            <div className="flex items-center justify-between p-2 border-b border-border-light bg-bg-1">
                 <div className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
                     {showComparison ? 'Plan Comparison' : 'Execution Plan Analysis'}
                 </div>
@@ -489,7 +489,7 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
                     {onSaveBaseline && !baselinePlan && plan && (
                         <button
                             onClick={() => onSaveBaseline(plan)}
-                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border rounded text-text-primary flex items-center gap-1"
+                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border-light rounded text-text-primary flex items-center gap-1"
                             title="Set current plan as baseline for comparison"
                         >
                             <span>Set as Baseline</span>
@@ -498,7 +498,7 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
                     {onClearBaseline && baselinePlan && (
                         <button
                             onClick={onClearBaseline}
-                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border rounded text-text-primary flex items-center gap-1"
+                            className="px-2 py-1 text-xs bg-bg-2 hover:bg-bg-3 border border-border-light rounded text-text-primary flex items-center gap-1"
                             title="Clear baseline plan"
                         >
                             <span>Clear Baseline</span>
@@ -508,7 +508,7 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
             </div>
 
             <div className="flex-1 overflow-hidden flex">
-                <div className={`flex-1 overflow-hidden flex flex-col ${showComparison ? 'border-r border-border' : ''}`}>
+                <div className={`flex-1 overflow-hidden flex flex-col ${showComparison ? 'border-r border-border-light' : ''}`}>
                     <PlanAnalysis
                         plan={plan}
                         title={showComparison ? "Current Plan" : undefined}
@@ -516,11 +516,11 @@ export default function ExecutionPlanView({ plan, baselinePlan, loading, error, 
                 </div>
 
                 {showComparison && (
-                    <div className="flex-1 overflow-hidden flex flex-col bg-bg-1/50">
+                    <div className="flex-1 overflow-hidden flex flex-col bg-bg-subtle">
                         <PlanAnalysis
                             plan={baselinePlan}
                             title="Baseline Plan"
-                            extraHeader={<div className="ml-2 text-[10px] text-accent font-bold px-1.5 py-0.5 bg-accent/10 rounded">BASELINE</div>}
+                            extraHeader={<div className="ml-2 text-[10px] text-accent font-bold px-1.5 py-0.5 bg-primary-transparent rounded">BASELINE</div>}
                         />
                     </div>
                 )}

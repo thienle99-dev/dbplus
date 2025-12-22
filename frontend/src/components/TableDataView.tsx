@@ -10,6 +10,7 @@ import TableDataTab from './table-data/TableDataTab';
 import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../types';
 import { useConstraints } from '../hooks/useDatabase';
 import { useTabStateStore } from '../store/tabStateStore';
+import { useConnectionStore } from '../store/connectionStore';
 
 interface Props extends TableDataViewProps {
   tabId?: string;
@@ -39,7 +40,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   const [activeTab, setActiveTab] = useState<'data' | 'structure' | 'info'>('data');
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState<Record<number, unknown>>({});
-  
+
   // Restore State
   const [isRestored, setIsRestored] = useState(false);
 
@@ -59,8 +60,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   // Save State
   useEffect(() => {
     if (!tabId || !isRestored) return;
-    setTabState(tabId, { 
-      tableData: data, 
+    setTabState(tabId, {
+      tableData: data,
       tableEdits: edits,
       tablePage: page,
       tableActiveView: activeTab
@@ -71,7 +72,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   if (!schema || !table) {
     return <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">Select a table to view data</div>;
   }
-  
+
   const activeQueryIdRef = useRef<string | null>(null);
 
   // Cleanup pending query on unmount
@@ -81,7 +82,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       if (pendingQueryId) {
         console.log(`[TableDataView] Cancelling query ${pendingQueryId} on unmount`);
         api.post('/api/queries/cancel', { query_id: pendingQueryId }).catch(err => {
-            console.warn("Failed to send cancel request", err);
+          console.warn("Failed to send cancel request", err);
         });
       }
     };
@@ -108,7 +109,12 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
     }
   }, [connectionId, schema, table]);
 
-  const fetchData = useCallback(async () => {
+  const [filter, setFilter] = useState('');
+  const [documentId, setDocumentId] = useState('');
+  const [bucket, setBucket] = useState('');
+  const [fields, setFields] = useState<string[]>([]);
+
+  const fetchData = useCallback(async (customFilter?: string, customDocId?: string) => {
     if (!connectionId || !schema || !table || fetchingRef.current) return;
     fetchingRef.current = true;
     setLoading(true);
@@ -120,38 +126,39 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
     try {
       const offset = page * pageSize;
-      const response = await api.get(
-        `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`,
-        {
-            headers: { 'X-Query-ID': queryId }
-        }
-      );
+      const f = customFilter !== undefined ? customFilter : filter;
+      const d = customDocId !== undefined ? customDocId : documentId;
+
+      let url = `/api/connections/${connectionId}/query?schema=${schema}&table=${table}&limit=${pageSize}&offset=${offset}`;
+      if (f) url += `&filter=${encodeURIComponent(f)}`;
+      if (d) url += `&document_id=${encodeURIComponent(d)}`;
+      if (bucket) url += `&database=${encodeURIComponent(bucket)}`;
+      if (fields.length > 0) url += `&fields=${encodeURIComponent(JSON.stringify(fields))}`;
+
+      const response = await api.get(url, {
+        headers: { 'X-Query-ID': queryId }
+      });
       setData(response.data);
       setEdits({}); // Clear edits on page change/refresh
     } catch (err: unknown) {
       if (activeQueryIdRef.current === queryId) {
-          // Only show error if THIS query failed (and wasn't cancelled locally)
-          const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
-          setError(errorMessage);
+        // Only show error if THIS query failed (and wasn't cancelled locally)
+        const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
+        setError(errorMessage);
       }
     } finally {
       if (activeQueryIdRef.current === queryId) {
-          activeQueryIdRef.current = null;
+        activeQueryIdRef.current = null;
+        setLoading(false);
+        fetchingRef.current = false;
+      } else {
+        if (!activeQueryIdRef.current) {
           setLoading(false);
           fetchingRef.current = false;
-      } else {
-        // If query ID changed, it means a NEW query started or this one was "cancelled" logic-wise
-        // But we still turn off fetching flag if strictly matching?
-        // Actually if new query started, fetchingRef might be true for THAT one.
-        // We should be careful resetting fetchingRef.
-        // Simple approach: reset loading/fetching if we finished.
-        if (!activeQueryIdRef.current) {
-             setLoading(false);
-             fetchingRef.current = false;
         }
       }
     }
-  }, [connectionId, schema, table, page, pageSize]);
+  }, [connectionId, schema, table, page, pageSize, filter, documentId, bucket, fields]);
 
   useEffect(() => {
     const cacheKey = `${connectionId}-${schema}-${table}`;
@@ -210,29 +217,23 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
         const rowIndex = parseInt(rowIndexStr);
         const originalRow = data.rows[rowIndex];
         const pk = getRowPK(originalRow);
+        const rowMetadata = data.row_metadata?.[rowIndex];
 
         if (!pk) {
           throw new Error(`Row ${rowIndex} has no primary key. Cannot update.`);
         }
 
-        const setClauses = Object.entries(rowEdits).map(([colIndexStr, value]) => {
-          const colIndex = parseInt(colIndexStr);
-          const colName = data.columns[colIndex];
-          const escapedValue = value === null ? 'NULL' : `'${String(value).replace(/'/g, "''")}'`;
-          return `"${colName}" = ${escapedValue}`;
+        // Use new endpoint that supports all DBs including Couchbase with CAS
+        return api.patch(`/api/connections/${connectionId}/query-results`, {
+          schema,
+          table,
+          primary_key: pk,
+          updates: rowEdits,
+          row_metadata: rowMetadata
         });
-
-        const whereClauses = Object.entries(pk).map(([col, val]) => {
-          const escapedVal = typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val;
-          return `"${col}" = ${escapedVal}`;
-        });
-
-        return `UPDATE "${schema}"."${table}" SET ${setClauses.join(', ')} WHERE ${whereClauses.join(' AND ')};`;
       });
 
-      for (const query of updates) {
-        await api.post(`/api/connections/${connectionId}/execute`, { query });
-      }
+      await Promise.all(updates);
 
       await fetchData();
       showToast('Changes saved successfully', 'success');
@@ -286,6 +287,60 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
     }
   }, [data, newRowData, schema, table, connectionId, fetchData, showToast]);
 
+  const { connections } = useConnectionStore();
+  const connection = connections.find(c => c.id === connectionId);
+  const isCouchbase = connection?.type === 'couchbase';
+
+  const handleDelete = useCallback(async (rowIndex: number) => {
+    if (!data) return;
+    const row = data.rows[rowIndex];
+    const pk = getRowPK(row);
+
+    if (!pk) {
+      showToast('Cannot delete: No primary key found', 'error');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this record?')) return;
+
+    setSaving(true);
+    try {
+      const rowMetadata = data.row_metadata?.[rowIndex];
+
+      await api.delete(`/api/connections/${connectionId}/query-results`, {
+        data: {
+          schema,
+          table,
+          primary_key: pk,
+          row_metadata: rowMetadata
+        }
+      });
+
+      showToast('Record deleted successfully', 'success');
+      await fetchData();
+    } catch (err: any) {
+      showToast(`Failed to delete: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [data, getRowPK, connectionId, schema, table, fetchData, showToast, isCouchbase, bucket, connection]);
+
+  const handleDuplicate = useCallback(async (rowIndex: number) => {
+    if (!data) return;
+    const row = data.rows[rowIndex];
+    const newValues: Record<number, unknown> = {};
+
+    data.columns.forEach((_col, index) => {
+      // Skip primary keys for duplication if they are auto-generated?
+      // Actually, just fill the new row form with these values
+      newValues[index] = row[index];
+    });
+
+    setNewRowData(newValues);
+    setIsAddingRow(true);
+    showToast('Row duplicated into new row form', 'info');
+  }, [data, showToast]);
+
   const handleCancelNewRow = useCallback(() => {
     setIsAddingRow(false);
     setNewRowData({});
@@ -302,50 +357,48 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   }, []);
 
   return (
-    <div className="flex flex-col pb-[20px] h-full bg-bg-1/50 rounded-2xl overflow-hidden shadow-sm border border-border/40">
-      {/* Tab Navigation */}
-      <div className="flex items-center justify-between border-b border-border/40 bg-bg-1 p-2">
-        <div className="flex p-0.5 bg-bg-2/50 rounded-xl border border-border/40">
+    <div className="flex flex-col pb-[20px] h-full bg-bg-0 rounded-2xl overflow-hidden shadow-sm border border-border-light">
+      <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-1.5">
+        <div className="flex p-0.5 bg-bg-2 rounded-xl border border-border-light">
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'data'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Table size={14} />
+            <Table size={13} />
             Data
           </button>
           <button
             onClick={() => setActiveTab('structure')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'structure'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Database size={14} />
+            <Database size={13} />
             Structure
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${activeTab === 'info'
-              ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-black/5'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2/50'
+            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
+              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
               }`}
           >
-            <Info size={14} />
+            <Info size={13} />
             Info
           </button>
         </div>
       </div>
-
       <div className={`flex-1 relative flex flex-col ${activeTab === 'data' ? 'overflow-hidden' : 'overflow-auto custom-scrollbar'}`}>
         {loading && !data ? (
-           <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
+          <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>
         ) : error ? (
-           <div className="p-8 text-red-500">Error: {error}</div>
+          <div className="p-8 text-red-500">Error: {error}</div>
         ) : !data && activeTab === 'data' ? (
-           <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">No data available</div>
+          <div className="flex h-full items-center justify-center text-text-secondary/50 font-medium">No data available</div>
         ) : activeTab === 'data' && data ? (
           <TableDataTab
             connectionId={connectionId}
@@ -367,6 +420,18 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
             onStartAddingRow={handleStartAddingRow}
             onRefresh={fetchData}
             foreignKeys={constraintsQuery.data?.foreign_keys || []}
+            isCouchbase={isCouchbase}
+            filter={filter}
+            setFilter={setFilter}
+            documentId={documentId}
+            setDocumentId={setDocumentId}
+            bucket={bucket}
+            setBucket={setBucket}
+            onRetrieve={() => fetchData()}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            fields={fields}
+            setFields={setFields}
           />
         ) : activeTab === 'structure' ? (
           <TableStructureTab schema={schema} table={table} />

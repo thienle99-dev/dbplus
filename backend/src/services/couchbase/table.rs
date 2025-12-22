@@ -5,6 +5,10 @@ use crate::services::driver::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use couchbase::options::kv_options::{MutateInOptions, RemoveOptions};
+use couchbase::subdoc::mutate_in_specs::MutateInSpec;
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[async_trait]
 impl TableOperations for CouchbaseDriver {
@@ -14,13 +18,62 @@ impl TableOperations for CouchbaseDriver {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
         let bucket = self.bucket_name.as_deref().unwrap_or("default");
-        // N1QL syntax for collection: keyspace is bucket.scope.collection
-        let query = format!(
-            "SELECT meta().id as _id, t.* FROM `{}`.`{}`.`{}` t LIMIT {} OFFSET {}",
-            bucket, schema, table, limit, offset
-        );
+
+        let select_clause = if let Some(f) = &fields {
+            if f.is_empty() {
+                "meta().id as _id, t.*, meta().cas as _cas, meta().expiration as _expiry, meta().flags as _flags".to_string()
+            } else {
+                // Ensure _id is always included for Couchbase
+                let mut f_with_meta = f.clone();
+                if !f_with_meta.contains(&"_id".to_string()) {
+                    f_with_meta.insert(0, "meta().id as _id".to_string());
+                }
+                f_with_meta.push("meta().cas as _cas".to_string());
+                f_with_meta.push("meta().expiration as _expiry".to_string());
+                f_with_meta.push("meta().flags as _flags".to_string());
+                f_with_meta.join(", ")
+            }
+        } else {
+            "meta().id as _id, t.*, meta().cas as _cas, meta().expiration as _expiry, meta().flags as _flags".to_string()
+        };
+
+        let mut query = if let Some(id) = document_id {
+            if id.trim().is_empty() {
+                format!(
+                    "SELECT {} FROM `{}`.`{}`.`{}` t",
+                    select_clause, bucket, schema, table
+                )
+            } else {
+                format!(
+                    "SELECT {} FROM `{}`.`{}`.`{}` t USE KEYS '{}'",
+                    select_clause,
+                    bucket,
+                    schema,
+                    table,
+                    id.replace("'", "''")
+                )
+            }
+        } else {
+            format!(
+                "SELECT {} FROM `{}`.`{}`.`{}` t",
+                select_clause, bucket, schema, table
+            )
+        };
+
+        if let Some(f) = filter {
+            if !f.trim().is_empty() {
+                query.push_str(" WHERE ");
+                query.push_str(&f);
+            }
+        }
+
+        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+
         QueryDriver::execute_query(self, &query).await
     }
 
@@ -199,6 +252,102 @@ impl TableOperations for CouchbaseDriver {
             key: None,
             partitions: vec![],
         })
+    }
+
+    async fn update_row(
+        &self,
+        _schema: &str,
+        _table: &str,
+        primary_key: &std::collections::HashMap<String, Value>,
+        updates: &std::collections::HashMap<String, Value>,
+        row_metadata: Option<&std::collections::HashMap<String, Value>>,
+    ) -> Result<u64> {
+        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let id = primary_key
+            .get("_id")
+            .or_else(|| primary_key.get("id"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing _id in primary_key"))?;
+
+        let bucket = self.cluster.bucket(bucket_name);
+        let scope = bucket.scope(_schema);
+        let collection = scope.collection(_table);
+
+        let cas: Option<u64> = if let Some(meta) = row_metadata {
+            meta.get("_cas").and_then(|v| {
+                if let Value::Number(n) = v {
+                    n.as_u64()
+                } else if let Value::String(s) = v {
+                    s.parse().ok()
+                } else {
+                    None
+                }
+            })
+        } else {
+            None
+        };
+
+        let mut specs = vec![];
+        for (k, v) in updates {
+            specs.push(MutateInSpec::upsert(k, v, None)?);
+        }
+
+        if specs.is_empty() {
+            return Ok(0);
+        }
+
+        let mut options = MutateInOptions::default();
+        if let Some(c) = cas {
+            options = options.cas(c);
+        }
+
+        match collection.mutate_in(id, &specs, options).await {
+            Ok(_) => Ok(1),
+            Err(e) => Err(anyhow::anyhow!("Update failed: {}", e)),
+        }
+    }
+
+    async fn delete_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, Value>,
+        row_metadata: Option<&std::collections::HashMap<String, Value>>,
+    ) -> Result<u64> {
+        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let id = primary_key
+            .get("_id")
+            .or_else(|| primary_key.get("id"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow::anyhow!("Missing _id in primary_key"))?;
+
+        let bucket = self.cluster.bucket(bucket_name);
+        let scope = bucket.scope(schema);
+        let collection = scope.collection(table);
+
+        let cas: Option<u64> = if let Some(meta) = row_metadata {
+            meta.get("_cas").and_then(|v| {
+                if let Value::Number(n) = v {
+                    n.as_u64()
+                } else if let Value::String(s) = v {
+                    s.parse().ok()
+                } else {
+                    None
+                }
+            })
+        } else {
+            None
+        };
+
+        let mut options = RemoveOptions::default();
+        if let Some(c) = cas {
+            options = options.cas(c);
+        }
+
+        match collection.remove(id, options).await {
+            Ok(_) => Ok(1),
+            Err(e) => Err(anyhow::anyhow!("Delete failed: {}", e)),
+        }
     }
 }
 

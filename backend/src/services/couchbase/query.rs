@@ -2,7 +2,7 @@ use crate::services::db_driver::QueryResult;
 use crate::services::driver::QueryDriver;
 use anyhow::Result;
 use async_trait::async_trait;
-use futures_util::stream::{StreamExt, TryStreamExt};
+use futures_util::stream::TryStreamExt;
 use serde_json::Value;
 
 use super::connection::CouchbaseDriver;
@@ -10,7 +10,7 @@ use super::connection::CouchbaseDriver;
 #[async_trait]
 impl QueryDriver for CouchbaseDriver {
     async fn execute(&self, query: &str) -> Result<u64> {
-        let result = self
+        let _result = self
             .cluster
             .query(query, None)
             .await
@@ -62,14 +62,33 @@ impl QueryDriver for CouchbaseDriver {
         };
 
         let mut grid_rows = Vec::new();
+        let mut row_metadata = Vec::new();
+
         for row in rows {
             if let Some(obj) = row.as_object() {
+                // Extract metadata fields
+                let mut meta = std::collections::HashMap::new();
+                if let Some(v) = obj.get("_cas") {
+                    meta.insert("_cas".to_string(), v.clone());
+                }
+                if let Some(v) = obj.get("_id") {
+                    meta.insert("_id".to_string(), v.clone());
+                }
+                if let Some(v) = obj.get("_expiry") {
+                    meta.insert("_expiry".to_string(), v.clone());
+                }
+                if let Some(v) = obj.get("_flags") {
+                    meta.insert("_flags".to_string(), v.clone());
+                }
+                row_metadata.push(meta);
+
                 let mut row_values = Vec::new();
                 for col in &columns {
                     row_values.push(obj.get(col).cloned().unwrap_or(Value::Null));
                 }
                 grid_rows.push(row_values);
             } else {
+                row_metadata.push(std::collections::HashMap::new());
                 grid_rows.push(vec![row]);
             }
         }
@@ -83,6 +102,12 @@ impl QueryDriver for CouchbaseDriver {
             limit: None,
             offset: None,
             has_more: None,
+            row_metadata: Some(
+                row_metadata
+                    .into_iter()
+                    .map(|m| serde_json::to_value(m).unwrap_or(Value::Null))
+                    .collect(),
+            ),
         })
     }
 

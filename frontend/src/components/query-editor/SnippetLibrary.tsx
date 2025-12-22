@@ -98,7 +98,7 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
             setParameterSnippet(snippet);
             return;
         }
-        
+
         // Fallback: check for placeholders in SQL
         if (hasPlaceholders(snippet.sql)) {
             // Extract placeholders and create basic variables
@@ -109,21 +109,21 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                 required: true,
                 description: `Value for ${name}`,
             }));
-            
+
             setParameterSnippet({
                 ...snippet,
                 variables: autoVariables,
             });
             return;
         }
-        
+
         // No parameters needed, insert directly
         onInsert(snippet.sql);
     };
 
     const handleExecuteWithParams = (params: Record<string, any>) => {
         if (!parameterSnippet) return;
-        
+
         const finalSql = replacePlaceholders(parameterSnippet.sql, params);
         onInsert(finalSql);
         setParameterSnippet(null);
@@ -148,7 +148,7 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                                 placeholder="Search snippets..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full bg-bg-2 border border-border rounded pl-9 pr-3 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+                                className="w-full bg-bg-2 border border-border-light rounded pl-9 pr-3 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
                             />
                         </div>
                         <button
@@ -172,7 +172,7 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                             filteredSnippets.map(snippet => (
                                 <div
                                     key={snippet.id}
-                                    className="p-3 border border-border rounded bg-bg-1 hover:border-accent/50 cursor-pointer group transition-all"
+                                    className="p-3 border border-border-light rounded bg-bg-1 hover:border-accent cursor-pointer group transition-all"
                                     onClick={() => openInsert(snippet)}
                                 >
                                     <div className="flex justify-between items-start mb-1">
@@ -205,9 +205,9 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
                                         </div>
                                     </div>
 
-                                    <div className="bg-bg-0 p-2 rounded border border-border/50 font-mono text-xs text-text-secondary overflow-hidden max-h-16 relative">
+                                    <div className="bg-bg-0 p-2 rounded border border-border-light font-mono text-xs text-text-secondary overflow-hidden max-h-16 relative">
                                         <pre className="whitespace-pre-wrap break-all line-clamp-2">{snippet.sql}</pre>
-                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-bg-0/50 pointer-events-none" />
+                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-bg-panel pointer-events-none" />
                                     </div>
 
                                     <div className="mt-2 flex items-center justify-between">

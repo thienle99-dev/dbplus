@@ -1,5 +1,8 @@
 use super::ConnectionService;
+use crate::services::driver::TableOperations;
 use anyhow::Result;
+use serde_json::Value;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 impl ConnectionService {
@@ -17,6 +20,7 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
+
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
@@ -91,6 +95,9 @@ impl ConnectionService {
         table: &str,
         limit: i64,
         offset: i64,
+        filter: Option<String>,
+        document_id: Option<String>,
+        fields: Option<Vec<String>>,
     ) -> Result<crate::services::db_driver::QueryResult> {
         let connection = self
             .get_connection_by_id(connection_id)
@@ -106,22 +113,80 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_data(&driver, schema, table, limit, offset).await
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
+            }
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+                DatabaseDriver::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
             }
             _ => Ok(crate::services::db_driver::QueryResult {
                 columns: vec![],
@@ -129,9 +194,10 @@ impl ConnectionService {
                 affected_rows: 0,
                 column_metadata: None,
                 total_count: None,
-                limit: None,
-                offset: None,
+                limit: Some(limit),
+                offset: Some(offset as i64),
                 has_more: None,
+                row_metadata: None,
             }),
         }
     }
@@ -817,6 +883,75 @@ impl ConnectionService {
                 key: None,
                 partitions: vec![],
             }),
+        }
+    }
+    pub async fn update_row(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        primary_key: HashMap<String, Value>,
+        updates: HashMap<String, Value>,
+        row_metadata: Option<HashMap<String, Value>>,
+    ) -> Result<u64> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        // For now only Couchbase supports update_row via TableOperations
+        match connection.db_type.as_str() {
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+
+                driver
+                    .update_row(schema, table, &primary_key, &updates, row_metadata.as_ref())
+                    .await
+            }
+            _ => Err(anyhow::anyhow!(
+                "Update row via TableOperations not supported for this driver yet"
+            )),
+        }
+    }
+
+    pub async fn delete_row(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+        primary_key: HashMap<String, Value>,
+        row_metadata: Option<HashMap<String, Value>>,
+    ) -> Result<u64> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        match connection.db_type.as_str() {
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+
+                driver
+                    .delete_row(schema, table, &primary_key, row_metadata.as_ref())
+                    .await
+            }
+            _ => Err(anyhow::anyhow!(
+                "Delete row via TableOperations not supported for this driver yet"
+            )),
         }
     }
 }

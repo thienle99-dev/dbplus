@@ -34,10 +34,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const themes = Object.values(THEME_CONFIGS);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[600px] bg-bg-1 border border-border rounded-lg shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-overlay backdrop-blur-sm">
+            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[600px] bg-bg-1 border border-border-light rounded-lg shadow-2xl flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
                     <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
                     <button
                         onClick={onClose}
@@ -49,7 +49,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar */}
-                    <div className="w-48 border-r border-border bg-bg-0 p-2">
+                    <div className="w-48 border-r border-border-light bg-bg-0 p-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -109,7 +109,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             max="50"
                                             value={settings.maxRecentConnections}
                                             onChange={(e) => settings.updateSettings({ maxRecentConnections: parseInt(e.target.value) })}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
                                 </div>
@@ -129,7 +129,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             max="24"
                                             value={settings.editorFontSize}
                                             onChange={(e) => settings.setEditorFontSize(parseInt(e.target.value))}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
 
@@ -141,7 +141,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             max="8"
                                             value={settings.tabSize}
                                             onChange={(e) => settings.updateSettings({ tabSize: parseInt(e.target.value) })}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
 
@@ -223,8 +223,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                             className={`
                                                                 relative group flex flex-col p-2 space-y-2 rounded-lg border text-left transition-all overflow-hidden
                                                                 ${settings.theme === theme.value
-                                                                    ? 'bg-accent/5 border-accent ring-1 ring-accent'
-                                                                    : 'bg-bg-1 border-border hover:bg-bg-2 hover:border-text-secondary'
+                                                                    ? 'bg-primary-transparent border-accent ring-1 ring-accent'
+                                                                    : 'bg-bg-1 border-border-light hover:bg-bg-2 hover:border-text-secondary'
                                                                 }
                                                             `}
                                                         >
@@ -276,7 +276,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             step="100"
                                             value={settings.defaultLimit}
                                             onChange={(e) => settings.updateSettings({ defaultLimit: parseInt(e.target.value) })}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
 
@@ -290,7 +290,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             step="5000"
                                             value={settings.queryTimeout}
                                             onChange={(e) => settings.updateSettings({ queryTimeout: parseInt(e.target.value) })}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
 
@@ -304,7 +304,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             step="10"
                                             value={settings.defaultPageSize}
                                             onChange={(e) => settings.updateSettings({ defaultPageSize: parseInt(e.target.value) })}
-                                            className="w-full px-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm"
+                                            className="w-full px-3 py-2 bg-bg-2 border border-border-light rounded text-text-primary text-sm"
                                         />
                                     </label>
 
@@ -358,7 +358,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-border">
+                                    <div className="pt-4 border-t border-border-light">
                                         <p className="text-sm text-text-secondary">
                                             A modern, fast, and intuitive database client built with React, TypeScript, and Rust.
                                         </p>
@@ -376,7 +376,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border-light">
                     <Button
                         variant="ghost"
                         size="sm"

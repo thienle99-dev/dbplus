@@ -318,7 +318,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer
                                 ${isAll || isSome
                                     ? 'bg-accent border-accent text-bg-1'
-                                    : 'border-text-secondary/50 hover:border-text-secondary bg-transparent'}
+                                    : 'border-border-subtle hover:border-text-secondary bg-transparent'}
                             `}
                         >
                             {isAll && !isSome && <Check size={12} strokeWidth={3} />}
@@ -333,7 +333,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                             w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer
                             ${row.getIsSelected()
                                 ? 'bg-accent border-accent text-bg-1'
-                                : 'border-text-secondary/50 hover:border-text-secondary bg-transparent'}
+                                : 'border-border-subtle hover:border-text-secondary bg-transparent'}
                         `}
                     >
                         {row.getIsSelected() && <Check size={12} strokeWidth={3} />}
@@ -677,10 +677,10 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     }, [error, errorDetails]);
 
     return (
-        <div className="flex-1 overflow-auto bg-bg-0 flex flex-col">
-            {loading && <div className="p-4 text-text-secondary">Executing query...</div>}
+        <div className="flex-1 overflow-auto bg-bg-default flex flex-col">
+            {loading && <div className="p-4 text-text-secondary animate-pulse">Executing query...</div>}
             {error && (
-                <div className="p-4 border-b border-border bg-bg-1">
+                <div className="p-4 border-b border-border-light bg-bg-1 glass">
                     {(() => {
                         const data = errorDetails?.responseData;
                         const db = data && typeof data === 'object' ? (data as any).db : undefined;
@@ -696,7 +696,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     <div className="text-xs font-semibold text-error uppercase tracking-wider mb-2">Database Error</div>
                                     <div className="text-error font-mono text-sm whitespace-pre-wrap break-words">{dbMessage || error}</div>
                                     {formattedDbError && (
-                                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
+                                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border-light text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
                                             {formattedDbError}
                                         </pre>
                                     )}
@@ -728,7 +728,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                         <>
                                             <button
                                                 onClick={() => setShowErrorDetails((v) => !v)}
-                                                className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                                className="px-2 py-1 text-xs rounded border border-border-light bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
                                                 title="Toggle raw error details"
                                             >
                                                 {showErrorDetails ? 'Hide details' : 'Show details'}
@@ -743,7 +743,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                         .then(() => showToast('Copied error details', 'success'))
                                                         .catch(() => showToast('Copy failed', 'error'));
                                                 }}
-                                                className="px-2 py-1 text-xs rounded border border-border bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
+                                                className="px-2 py-1 text-xs rounded border border-border-light bg-bg-2 text-text-secondary hover:text-text-primary hover:bg-bg-3 transition-colors"
                                                 title="Copy error details"
                                             >
                                                 Copy
@@ -756,7 +756,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     })()}
 
                     {showErrorDetails && errorDetails && (
-                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
+                        <pre className="mt-3 p-3 rounded bg-bg-0 border border-border-light text-[11px] text-text-secondary overflow-auto max-h-[240px] whitespace-pre-wrap break-words">
                             {typeof errorDetails.responseData === 'string'
                                 ? errorDetails.responseData
                                 : JSON.stringify(errorDetails, null, 2)}
@@ -767,7 +767,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
             {result && (
                 <div className="flex flex-col h-full">
-                    <div className="p-2.5 bg-bg-2 text-sm border-b border-border flex items-center justify-between">
+                    <div className="relative z-30 p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                                 {result.affected_rows > 0
@@ -775,17 +775,17 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     : `${result.rows.length} rows returned`}
                             </span>
                             {hasEditableColumns && (
-                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
                                     Double-click cells to edit
                                 </span>
                             )}
                             {hasTruncatedRows && (
-                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
                                     Showing first {MAX_RENDER_ROWS.toLocaleString()} of {result.rows.length.toLocaleString()} rows
                                 </span>
                             )}
                             {totalCount !== undefined && limit !== undefined && offset !== undefined && (
-                                <span className="text-text-secondary text-xs bg-bg-3 px-2 py-0.5 rounded border border-border">
+                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
                                     Total {totalCount.toLocaleString()} • Page {currentPage}/{totalPages}
                                 </span>
                             )}
@@ -797,20 +797,20 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 <div className="relative flex items-center gap-2" ref={exportMenuRef}>
                                     <button
                                         onClick={() => setExportMenuOpen((v) => !v)}
-                                        className="px-3 py-1.5 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition-colors text-sm border border-border/50 hover:border-border"
+                                        className="h-8 px-3 hover:bg-bg-2 rounded-lg text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition-all text-[12px] font-medium border border-border-light hover:border-border-strong"
                                         title="Export / Copy"
                                     >
                                         ⬇ Export
                                         {selectedCount > 0 && (
-                                            <span className="text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded">
+                                            <span className="text-xs bg-primary-transparent text-accent px-1.5 py-0.5 rounded">
                                                 {selectedCount}
                                             </span>
                                         )}
                                     </button>
 
                                     {exportMenuOpen && (
-                                        <div className="absolute right-0 top-full mt-1 w-64 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
-                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+                                        <div className="absolute right-0 top-full mt-1 w-64 bg-bg-1 border border-border-light rounded shadow-2xl overflow-hidden z-50">
+                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border-light">
                                                 Download
                                             </div>
                                             <button
@@ -866,12 +866,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                             </button>
                                             <button
                                                 onClick={() => { setExportMenuOpen(false); handleDownloadInsertSql(); }}
-                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 border-t border-border"
+                                                className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-2 border-t border-border-light"
                                             >
                                                 INSERT statements (.sql)
                                             </button>
 
-                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-y border-border">
+                                            <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-y border-border-light">
                                                 Copy To Clipboard
                                             </div>
                                             <button
@@ -905,7 +905,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
                             {/* Save Changes - Keep visible (critical action) */}
                             {pendingEditsCount > 0 && (
-                                <div className="flex items-center gap-2 border-l border-border pl-2">
+                                <div className="flex items-center gap-2 border-l border-border-light pl-2">
                                     <span className="text-accent font-semibold text-sm">{pendingEditsCount} modified</span>
                                     <button
                                         onClick={handleDiscardChanges}
@@ -932,14 +932,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                             setExportMenuOpen(false); // Close export if open
                                             setMoreActionsOpen(!moreActionsOpen);
                                         }}
-                                        className="px-2 py-1.5 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary transition-colors border border-border/50 hover:border-border"
+                                        className="px-2 py-1.5 hover:bg-bg-3 rounded text-text-secondary hover:text-text-primary transition-colors border border-border-light hover:border-border-strong"
                                         title="More actions"
                                     >
                                         ⋯
                                     </button>
 
                                     {moreActionsOpen && (
-                                        <div className="absolute right-0 top-full mt-1 w-56 bg-bg-1 border border-border rounded shadow-2xl overflow-hidden z-50">
+                                        <div className="absolute right-0 top-full mt-1 w-56 bg-bg-1 border border-border-light rounded shadow-2xl overflow-hidden z-50">
                                             {/* Snapshot actions */}
                                             {onSnapshot && (
                                                 <>
@@ -960,7 +960,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                                     onCompareSnapshot?.();
                                                                     setMoreActionsOpen(false);
                                                                 }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-accent hover:bg-accent/10 flex items-center gap-2 font-medium"
+                                                                className="w-full px-3 py-2 text-left text-sm text-accent hover:bg-primary-transparent flex items-center gap-2 font-medium"
                                                             >
                                                                 ⚖️ Compare with Snapshot
                                                             </button>
@@ -976,7 +976,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                         </>
                                                     )}
                                                     {(selectedCount > 0 && hasEditableColumns) || hasTruncatedRows ? (
-                                                        <div className="border-t border-border my-1" />
+                                                        <div className="border-t border-border-light my-1" />
                                                     ) : null}
                                                 </>
                                             )}
@@ -994,7 +994,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                         📋 Clone {selectedCount} {selectedCount === 1 ? 'Row' : 'Rows'}
                                                     </button>
                                                     {hasTruncatedRows ? (
-                                                        <div className="border-t border-border my-1" />
+                                                        <div className="border-t border-border-light my-1" />
                                                     ) : null}
                                                 </>
                                             )}
@@ -1020,14 +1020,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
                             {/* Row count badge */}
                             {result.rows.length > 0 && (
-                                <span className="bg-accent/10 px-2 py-1 rounded text-xs font-medium text-accent border border-accent/20">
+                                <span className="bg-primary-transparent px-2 py-1 rounded text-xs font-medium text-accent border border-border-light">
                                     {displayRows.length} {displayRows.length === 1 ? 'row' : 'rows'}
                                 </span>
                             )}
 
                             {/* Virtualized badge */}
                             {result.rows.length > 2000 && (
-                                <span className="bg-bg-3 px-2 py-0.5 rounded text-xs text-text-secondary border border-border">
+                                <span className="bg-bg-3 px-2 py-0.5 rounded text-xs text-text-secondary border border-border-light">
                                     Virtualized
                                 </span>
                             )}
@@ -1035,11 +1035,11 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     </div>
 
                     {canPaginate && totalCount !== undefined && limit !== undefined && offset !== undefined && (
-                        <div className="px-2 py-2 bg-bg-1 border-b border-border flex items-center justify-between gap-3">
+                        <div className="px-2 py-2 bg-bg-1 border-b border-border-light flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 text-xs text-text-secondary">
                                 <span>Rows per page</span>
                                 <select
-                                    className="bg-bg-0 border border-border rounded px-2 py-1 text-xs text-text-primary"
+                                    className="bg-bg-0 border border-border-light rounded px-2 py-1 text-xs text-text-primary"
                                     value={pageSize}
                                     onChange={(e) => {
                                         const next = Number(e.target.value);
@@ -1059,7 +1059,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 <button
                                     onClick={() => onPaginate(limit, Math.max(0, offset - limit))}
                                     disabled={loading || offset === 0}
-                                    className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-1.5 rounded bg-bg-2 border border-border-light text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Previous page"
                                     aria-label="Previous page"
                                 >
@@ -1068,7 +1068,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 <button
                                     onClick={() => onPaginate(limit, Math.min(offset + limit, Math.max(0, totalCount - 1)))}
                                     disabled={loading || (result.has_more === false)}
-                                    className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-1.5 rounded bg-bg-2 border border-border-light text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Next page"
                                     aria-label="Next page"
                                 >
@@ -1090,7 +1090,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     <input
                                         name="page"
                                         defaultValue={currentPage}
-                                        className="w-16 bg-bg-0 border border-border rounded px-2 py-1 text-xs text-text-primary"
+                                        className="w-16 bg-bg-0 border border-border-light rounded px-2 py-1 text-xs text-text-primary"
                                         type="number"
                                         min={1}
                                         max={totalPages}
@@ -1098,7 +1098,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="p-1.5 rounded bg-bg-2 border border-border text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="p-1.5 rounded bg-bg-2 border border-border-light text-xs text-text-secondary hover:text-text-primary hover:bg-bg-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="Go to page"
                                         aria-label="Go to page"
                                     >
@@ -1111,12 +1111,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
                     {result.columns.length > 0 && (
                         <div
-                            className="flex-1 overflow-auto rounded-lg border border-border/10 shadow-sm bg-bg-1/30 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
+                            className="flex-1 overflow-auto rounded-lg border border-border-subtle shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
                             ref={tableScrollRef}
                             style={{ scrollbarGutter: 'stable' }}
                         >
                             {result.rows.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-text-secondary/60">
+                                <div className="flex flex-col items-center justify-center h-full text-text-tertiary">
                                     <div className="text-4xl mb-4 opacity-50">📊</div>
                                     <div className="text-sm font-medium">Query executed successfully</div>
                                     <div className="text-xs mt-1 opacity-70">No rows returned</div>
@@ -1132,7 +1132,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                 {headerGroup.headers.map((header) => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-3 py-2 text-xs font-semibold text-text-secondary/90 tracking-wide select-none border-b border-r border-border/10 last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2/30 relative"
+                                                        className="px-3 py-2 text-xs font-semibold text-text-secondary tracking-wide select-none border-b border-r border-border-subtle last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2 relative"
                                                         style={{
                                                             width: header.getSize(),
                                                         }}
@@ -1153,7 +1153,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                         <div
                                                             onMouseDown={header.getResizeHandler()}
                                                             onTouchStart={header.getResizeHandler()}
-                                                            className={`absolute right-0 top-2 bottom-2 w-[1px] bg-border/20 hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
+                                                            className={`absolute right-0 top-2 bottom-2 w-[1px] bg-border-subtle hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
                                                                 }`}
                                                         />
                                                     </th>
@@ -1185,14 +1185,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                                 key={row.id}
                                                                 className={`
                                                                 
-                                                                    hover:bg-bg-2/40 group transition-colors duration-150 ease-out border-b border-transparent hover:border-border/5
-                                                                    ${virtualRow.index % 2 === 1 ? 'bg-gray-500/5' : ''}
+                                                                    hover:bg-bg-2 group transition-colors duration-150 ease-out border-b border-transparent hover:border-border-subtle
+                                                                    ${virtualRow.index % 2 === 1 ? 'bg-bg-subtle' : ''}
                                                                 `}
                                                             >
                                                                 {row.getVisibleCells().map((cell) => (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className="px-3 py-1.5 border-r border-border/5 last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                        className="px-3 py-1.5 border-r border-border-subtle last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
                                                                         style={{
                                                                             width: cell.column.getSize(),
                                                                             maxWidth: cell.column.getSize(),

@@ -42,7 +42,7 @@ export default function DataGrid() {
   const columns = useMemo(() => {
     if (!data?.columns) return [];
     const helper = createColumnHelper<unknown[]>();
-    return data.columns.map((col, index) => 
+    return data.columns.map((col, index) =>
       helper.accessor((row) => row[index], {
         id: col,
         header: col,
@@ -77,7 +77,7 @@ export default function DataGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border flex justify-between items-center">
+      <div className="p-4 border-b border-border-light flex justify-between items-center">
         <h2 className="text-lg font-semibold text-text-primary">
           {schema}.{table}
         </h2>
@@ -110,7 +110,7 @@ export default function DataGrid() {
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-b border-r border-border px-4 py-2 text-left font-medium text-text-secondary min-w-[150px]"
+                    className="border-b border-r border-border-light px-4 py-2 text-left font-medium text-text-secondary min-w-[150px]"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -123,11 +123,11 @@ export default function DataGrid() {
           </thead>
           <tbody>
             {tableInstance.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-bg-1/50">
+              <tr key={row.id} className="hover:bg-bg-1">
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className="border-b border-r border-border px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
+                    className="border-b border-r border-border-light px-4 py-1.5 text-text-primary whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>

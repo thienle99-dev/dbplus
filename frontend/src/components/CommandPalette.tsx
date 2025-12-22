@@ -138,10 +138,10 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-bg-overlay/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl bg-bg-1 rounded-lg shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-        <div className="flex items-center px-4 py-3 border-b border-border gap-3">
+      <div className="relative w-full max-w-xl bg-bg-1 rounded-lg shadow-2xl border border-border-light flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="flex items-center px-4 py-3 border-b border-border-light gap-3">
           <Search size={18} className="text-text-secondary" />
           <input
             ref={inputRef}
@@ -174,11 +174,11 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
             results.map((item: any, index: number) => {
               const isSelected = index === selectedIndex;
               let Icon = Table;
-              let iconColor = "text-blue-400";
-              if (item.type === 'VIEW') { Icon = Eye; iconColor = "text-purple-400"; }
-              if (item.type === 'FUNCTION') { Icon = FileCode; iconColor = "text-orange-400"; }
-              if (item.type === 'TRIGGER') { Icon = Code; iconColor = "text-yellow-400"; }
-              if (item.type === 'DATABASE') { Icon = Database; iconColor = "text-green-400"; }
+              let iconColor = "text-accent";
+              if (item.type === 'VIEW') { Icon = Eye; iconColor = "text-accent"; }
+              if (item.type === 'FUNCTION') { Icon = FileCode; iconColor = "text-accent"; }
+              if (item.type === 'TRIGGER') { Icon = Code; iconColor = "text-accent"; }
+              if (item.type === 'DATABASE') { Icon = Database; iconColor = "text-accent"; }
 
               return (
                 <div

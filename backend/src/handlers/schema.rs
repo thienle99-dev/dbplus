@@ -267,6 +267,9 @@ pub struct TableDataParams {
     offset: Option<i64>,
     #[serde(default)]
     database: Option<String>,
+    filter: Option<String>,
+    document_id: Option<String>,
+    fields: Option<String>,
 }
 
 pub async fn get_table_data(
@@ -278,12 +281,14 @@ pub async fn get_table_data(
     let limit = params.limit.unwrap_or(100);
     let offset = params.offset.unwrap_or(0);
     tracing::info!(
-        "[API] GET /query - connection_id: {}, schema: {}, table: {}, limit: {}, offset: {}",
+        "[API] GET /query - connection_id: {}, schema: {}, table: {}, limit: {}, offset: {}, filter: {:?}, document_id: {:?}",
         connection_id,
         params.schema,
         params.table,
         limit,
-        offset
+        offset,
+        params.filter,
+        params.document_id
     );
 
     let service = ConnectionService::new(db)
@@ -295,8 +300,22 @@ pub async fn get_table_data(
                 .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
         );
 
+    let fields_vec: Option<Vec<String>> = params
+        .fields
+        .as_ref()
+        .and_then(|f| serde_json::from_str(f).ok());
+
     match service
-        .get_table_data(connection_id, &params.schema, &params.table, limit, offset)
+        .get_table_data(
+            connection_id,
+            &params.schema,
+            &params.table,
+            limit,
+            offset,
+            params.filter,
+            params.document_id,
+            fields_vec,
+        )
         .await
     {
         Ok(result) => {
