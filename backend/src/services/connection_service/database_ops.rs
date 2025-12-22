@@ -34,6 +34,12 @@ impl ConnectionService {
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
                 DatabaseDriver::get_databases(&driver).await
             }
+            "couchbase" => {
+                let driver =
+                    crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
+                        .await?;
+                DatabaseDriver::get_databases(&driver).await
+            }
             _ => Ok(vec![]),
         }
     }

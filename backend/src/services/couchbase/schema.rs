@@ -18,10 +18,16 @@ impl SchemaIntrospection for CouchbaseDriver {
     async fn get_databases(&self) -> Result<Vec<String>> {
         // Requires management permission
         let mgr = self.cluster.buckets();
-        let buckets = mgr
-            .get_all_buckets(None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to list buckets: {}", e))?;
+        tracing::info!("[Couchbase] Listing buckets...");
+        let buckets = mgr.get_all_buckets(None).await.map_err(|e| {
+            tracing::error!("[Couchbase] Failed to list buckets: {}", e);
+            anyhow::anyhow!("Failed to list buckets: {}", e)
+        })?;
+        tracing::info!(
+            "[Couchbase] Found {} buckets: {:?}",
+            buckets.len(),
+            buckets.iter().map(|b| &b.name).collect::<Vec<_>>()
+        );
         Ok(buckets.iter().map(|b| b.name.clone()).collect())
     }
 
