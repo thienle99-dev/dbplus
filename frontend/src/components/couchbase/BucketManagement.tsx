@@ -6,6 +6,7 @@ import ManagementPage from '../layouts/ManagementPage';
 import { Plus, Trash2, Search, Database } from 'lucide-react';
 import Button from '../ui/Button';
 import CreateCouchbaseBucketModal from '../connections/CreateCouchbaseBucketModal';
+import CreateCouchbaseScopeModal from './CreateCouchbaseScopeModal';
 import { useDialog } from '../../context/DialogContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -15,6 +16,8 @@ export default function BucketManagement() {
   const dialog = useDialog();
   const { showToast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createScopeModalOpen, setCreateScopeModalOpen] = useState(false);
+  const [selectedBucketForScope, setSelectedBucketForScope] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: buckets = [], isLoading } = useQuery({
@@ -26,6 +29,18 @@ export default function BucketManagement() {
   const filteredBuckets = buckets.filter((bucket: string) => 
     bucket.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getErrorMessage = (error: any, defaultMsg: string) => {
+    let msg = error.response?.data?.message || defaultMsg;
+    // Clean up Couchbase JSON error dumps
+    if (msg.includes('{"extended_context"')) {
+       const parts = msg.split(': {');
+       if (parts.length > 0) {
+           return parts[0];
+       }
+    }
+    return msg;
+  };
 
   const handleDropBucket = async (bucketName: string) => {
     const confirmed = await dialog.confirm({
@@ -42,8 +57,24 @@ export default function BucketManagement() {
       showToast(`Bucket '${bucketName}' dropped successfully`, 'success');
       queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
     } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to drop bucket', 'error');
+      showToast(getErrorMessage(error, 'Failed to drop bucket'), 'error');
     }
+  };
+
+  const handleCreateScope = async (name: string, bucketName: string) => {
+      try {
+        await connectionApi.createSchema(connectionId!, name, { database: bucketName });
+        showToast(`Scope '${name}' created successfully in '${bucketName}'`, 'success');
+        queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+        setCreateScopeModalOpen(false);
+      } catch (error: any) {
+        showToast(getErrorMessage(error, 'Failed to create scope'), 'error');
+      }
+  };
+
+  const openCreateScopeModal = (bucketName: string) => {
+      setSelectedBucketForScope(bucketName);
+      setCreateScopeModalOpen(true);
   };
 
   return (
@@ -95,13 +126,22 @@ export default function BucketManagement() {
                     {bucket}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleDropBucket(bucket)}
-                      className="p-1.5 text-text-muted hover:text-error hover:bg-error-bg rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      title="Drop Bucket"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => openCreateScopeModal(bucket)}
+                          className="p-1.5 text-text-muted hover:text-accent hover:bg-accent/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          title="Create Scope"
+                        >
+                          <Plus size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDropBucket(bucket)}
+                          className="p-1.5 text-text-muted hover:text-error hover:bg-error-bg rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          title="Drop Bucket"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -115,6 +155,14 @@ export default function BucketManagement() {
         onOpenChange={setIsCreateModalOpen}
         connectionId={connectionId!}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ['databases', connectionId] })}
+      />
+
+      <CreateCouchbaseScopeModal
+        isOpen={createScopeModalOpen}
+        onClose={() => setCreateScopeModalOpen(false)}
+        onSubmit={handleCreateScope}
+        connectionId={connectionId!}
+        defaultBucket={selectedBucketForScope}
       />
     </ManagementPage>
   );

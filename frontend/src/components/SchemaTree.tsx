@@ -159,16 +159,29 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     setSchemaContextMenu({ x: e.clientX, y: e.clientY });
   };
 
+  const isCouchbase = connectionType === 'couchbase';
+  const schemaTerm = isCouchbase ? 'Scope' : 'Schema';
+  const tableTerm = isCouchbase ? 'Collection' : 'Table';
+
   const dropSchemaLogic = async () => {
     if (connectionType === 'sqlite' && schemaName === 'main') {
       showToast('Cannot detach main database', 'error'); return;
     }
-    const msg = connectionType === 'sqlite' ? `Are you sure you want to detach attached database "${schemaName}"?` : `Are you sure you want to drop schema "${schemaName}"?`;
+    
+    let msg = `Are you sure you want to drop ${schemaTerm.toLowerCase()} "${schemaName}"?`;
+    let title = `Drop ${schemaTerm}`;
+    let confirmLabel = 'Drop';
+
+    if (connectionType === 'sqlite') {
+       msg = `Are you sure you want to detach attached database "${schemaName}"?`;
+       title = 'Detach Database';
+       confirmLabel = 'Detach';
+    }
     
     const confirmed = await dialog.confirm({
-      title: connectionType === 'sqlite' ? 'Detach Database' : 'Drop Schema',
+      title,
       message: msg,
-      confirmLabel: connectionType === 'sqlite' ? 'Detach' : 'Drop',
+      confirmLabel,
       variant: 'destructive'
     });
 
@@ -180,20 +193,20 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         showToast(`Detached '${schemaName}'`, 'success');
       } else {
         const confirmName = await dialog.prompt({
-          title: 'Confirm Drop Schema',
-          message: `To drop schema "${schemaName}", please type its name to confirm:`,
+          title: `Confirm Drop ${schemaTerm}`,
+          message: `To drop ${schemaTerm.toLowerCase()} "${schemaName}", please type its name to confirm:`,
           placeholder: schemaName,
           confirmLabel: 'Drop'
         });
 
         if (confirmName !== schemaName) return;
         await connectionApi.dropSchema(connectionId, schemaName);
-        showToast(`Schema '${schemaName}' dropped`, 'success');
+        showToast(`${schemaTerm} '${schemaName}' dropped`, 'success');
       }
       await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
       await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
     } catch (err: any) {
-      showToast('Failed to drop/detach schema', 'error');
+      showToast(`Failed to drop/detach ${schemaTerm.toLowerCase()}`, 'error');
     }
   };
 
@@ -223,12 +236,12 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         {loading ? (
           <div className="pl-6 py-1 text-[10px] text-text-secondary">Loading objects...</div>
         ) : !hasItems ? (
-          <div className="pl-6 py-1 text-[10px] text-text-secondary">Empty schema</div>
+          <div className="pl-6 py-1 text-[10px] text-text-secondary">Empty {schemaTerm.toLowerCase()}</div>
         ) : (
           <>
             {/* Tables Folder */}
             {filteredTables.length > 0 && (
-              <ObjectFolder title="Tables" icon={<Table size={12} className="text-accent" />} count={filteredTables.length} defaultOpen={true}>
+              <ObjectFolder title={`${tableTerm}s`} icon={<Table size={12} className="text-accent" />} count={filteredTables.length} defaultOpen={true}>
                 {filteredTables.map(table => {
                   const tablePinned = isPinned(schemaName, table.name);
                   return (
@@ -326,13 +339,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             View ER Diagram
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem icon={<Plus size={14} />}>Create Table...</ContextMenuItem>
+          <ContextMenuItem icon={<Plus size={14} />}>Create {tableTerm}...</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem icon={<Trash2 size={14} />} onClick={() => {
             setSchemaContextMenu(null);
             dropSchemaLogic();
           }} danger>
-            {connectionType === 'sqlite' ? 'Detach Database' : 'Drop Schema'}
+            {connectionType === 'sqlite' ? 'Detach Database' : `Drop ${schemaTerm}`}
           </ContextMenuItem>
         </ContextMenu>
       )}
@@ -481,7 +494,9 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   return (
     <div className="flex flex-col pb-4">
       <div className="px-3 py-2 flex items-center justify-between">
-        <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">Schemas</div>
+        <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+          {connectionType === 'couchbase' ? 'Scopes' : 'Schemas'}
+        </div>
         <div className="flex items-center gap-1">
           {/* Schema Filter Button */}
           <button

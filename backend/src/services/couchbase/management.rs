@@ -28,7 +28,10 @@ impl DatabaseManagementDriver for CouchbaseDriver {
     }
 
     async fn create_schema(&self, name: &str) -> Result<()> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
         mgr.create_scope(name, None)
@@ -38,7 +41,10 @@ impl DatabaseManagementDriver for CouchbaseDriver {
     }
 
     async fn drop_schema(&self, name: &str) -> Result<()> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = self
+            .bucket_name
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
         mgr.drop_scope(name, None)

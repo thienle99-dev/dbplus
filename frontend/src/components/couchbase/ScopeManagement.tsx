@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { connectionApi } from '../../services/connectionApi';
 import ManagementPage from '../layouts/ManagementPage';
 import { Plus, Trash2, Search, Library } from 'lucide-react';
 import Button from '../ui/Button';
-import CreateSchemaModal from '../CreateSchemaModal'; // Reuse generic modal for now
+import CreateCouchbaseScopeModal from './CreateCouchbaseScopeModal';
 import { useDialog } from '../../context/DialogContext';
 import { useToast } from '../../context/ToastContext';
+import { useActiveDatabaseOverride } from '../../hooks/useActiveDatabaseOverride';
+import { useDatabases } from '../../hooks/useDatabase';
+import Select from '../ui/Select';
+import { Database } from 'lucide-react';
 
 export default function ScopeManagement() {
   const { connectionId } = useParams();
@@ -16,16 +20,44 @@ export default function ScopeManagement() {
   const { showToast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBucket, setSelectedBucket] = useState<string>('');
+  
+  const dbOverride = useActiveDatabaseOverride(connectionId);
+  const { data: buckets = [] } = useDatabases(connectionId);
+
+  // Sync selected bucket with global override or default to first bucket
+  useEffect(() => {
+    if (dbOverride) {
+      setSelectedBucket(dbOverride);
+    } else if (!selectedBucket && buckets.length > 0) {
+      setSelectedBucket(buckets[0]);
+    }
+  }, [dbOverride, buckets, selectedBucket]);
+
+  const activeBucket = selectedBucket || dbOverride;
 
   const { data: scopes = [], isLoading } = useQuery({
-    queryKey: ['schemas', connectionId],
-    queryFn: () => connectionApi.getSchemas(connectionId!),
-    enabled: !!connectionId,
+    queryKey: ['schemas', connectionId, activeBucket],
+    queryFn: () => connectionApi.getSchemas(connectionId!, activeBucket ? { database: activeBucket } : undefined),
+    enabled: !!connectionId && !!activeBucket,
   });
 
   const filteredScopes = scopes.filter((scope: string) => 
-    scope.toLowerCase().includes(searchTerm.toLowerCase())
+    scope !== '_default' && scope !== '_system' && scope.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getErrorMessage = (error: any, defaultMsg: string) => {
+    let msg = error.response?.data?.message || defaultMsg;
+    // Clean up Couchbase JSON error dumps
+    if (msg.includes('{"extended_context"')) {
+       // Attempt to extract the simple message before the JSON
+       const parts = msg.split(': {');
+       if (parts.length > 0) {
+           return parts[0];
+       }
+    }
+    return msg;
+  };
 
   const handleDropScope = async (scopeName: string) => {
     const confirmed = await dialog.confirm({
@@ -38,22 +70,22 @@ export default function ScopeManagement() {
     if (!confirmed) return;
 
     try {
-      await connectionApi.dropSchema(connectionId!, scopeName);
+      await connectionApi.dropSchema(connectionId!, scopeName, activeBucket ? { database: activeBucket } : undefined);
       showToast(`Scope '${scopeName}' dropped successfully`, 'success');
       queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
     } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to drop scope', 'error');
+      showToast(getErrorMessage(error, 'Failed to drop scope'), 'error');
     }
   };
 
-  const handleCreateScope = async (name: string) => {
+  const handleCreateScope = async (name: string, bucketName: string) => {
       try {
-        await connectionApi.createSchema(connectionId!, name);
-        showToast(`Scope '${name}' created successfully`, 'success');
+        await connectionApi.createSchema(connectionId!, name, { database: bucketName });
+        showToast(`Scope '${name}' created successfully in '${bucketName}'`, 'success');
         queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
         setIsCreateModalOpen(false);
       } catch (error: any) {
-        showToast(error.response?.data?.message || 'Failed to create scope', 'error');
+        showToast(getErrorMessage(error, 'Failed to create scope'), 'error');
       }
   };
 
@@ -67,15 +99,27 @@ export default function ScopeManagement() {
         onClick: () => setIsCreateModalOpen(true),
       }}
       toolbar={
-        <div className="relative w-full max-w-sm">
-           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
-           <input 
-             type="text" 
-             placeholder="Search scopes..." 
-             className="w-full pl-8 pr-3 py-1.5 bg-bg-2 border border-border rounded text-sm focus:outline-none focus:border-accent transition-colors"
-             value={searchTerm}
-             onChange={(e) => setSearchTerm(e.target.value)}
-           />
+        <div className="flex items-center gap-2 w-full max-w-lg">
+           <div className="w-48">
+             <Select
+                value={activeBucket || ''}
+                onChange={setSelectedBucket}
+                options={buckets.map(b => ({ label: b, value: b, icon: <Database size={14} /> }))}
+                placeholder="Select Bucket"
+                size="sm"
+                searchable
+             />
+           </div>
+           <div className="relative flex-1">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input 
+              type="text" 
+              placeholder="Search scopes..." 
+              className="w-full pl-8 pr-3 py-1.5 bg-bg-2 border border-border rounded text-sm focus:outline-none focus:border-accent transition-colors"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+           </div>
         </div>
       }
     >
@@ -122,10 +166,12 @@ export default function ScopeManagement() {
         </div>
       )}
 
-      <CreateSchemaModal
+      <CreateCouchbaseScopeModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateScope}
+        connectionId={connectionId!}
+        defaultBucket={activeBucket || undefined}
       />
     </ManagementPage>
   );

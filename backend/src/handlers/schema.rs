@@ -79,6 +79,7 @@ pub async fn create_schema(
     State(db): State<DatabaseConnection>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
+    Query(params): Query<DatabaseOverrideParams>,
     Json(payload): Json<CreateSchemaRequest>,
 ) -> impl IntoResponse {
     let name = payload.name.trim();
@@ -105,9 +106,11 @@ pub async fn create_schema(
 
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(
-            &headers,
-        ));
+        .with_database_override(
+            params
+                .database
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.create_schema(connection_id, name).await {
         Ok(_) => (
             StatusCode::CREATED,
@@ -132,6 +135,7 @@ pub async fn drop_schema(
     State(db): State<DatabaseConnection>,
     headers: HeaderMap,
     Path((connection_id, name)): Path<(Uuid, String)>,
+    Query(params): Query<DatabaseOverrideParams>,
 ) -> impl IntoResponse {
     let name = name.trim().to_string();
     if name.is_empty() {
@@ -140,9 +144,11 @@ pub async fn drop_schema(
 
     let service = ConnectionService::new(db)
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(
-            &headers,
-        ));
+        .with_database_override(
+            params
+                .database
+                .or_else(|| crate::utils::request::database_override_from_headers(&headers)),
+        );
     match service.drop_schema(connection_id, &name).await {
         Ok(_) => (StatusCode::NO_CONTENT, ()).into_response(),
         Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),

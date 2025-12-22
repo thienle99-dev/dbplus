@@ -90,18 +90,18 @@ export const connectionApi = {
     },
 
     // Get all schemas
-    getSchemas: async (id: string): Promise<string[]> => {
-        const response = await api.get(`/api/connections/${id}/schemas`);
+    getSchemas: async (id: string, options?: { database?: string }): Promise<string[]> => {
+        const response = await api.get(`/api/connections/${id}/schemas`, { params: options });
         return response.data;
     },
 
-    createSchema: async (id: string, name: string): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post(`/api/connections/${id}/schemas`, { name });
+    createSchema: async (id: string, name: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
+        const response = await api.post(`/api/connections/${id}/schemas`, { name }, { params: options });
         return response.data;
     },
 
-    dropSchema: async (id: string, name: string): Promise<void> => {
-        await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`);
+    dropSchema: async (id: string, name: string, options?: { database?: string }): Promise<void> => {
+        await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`, { params: options });
     },
 
     getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {
