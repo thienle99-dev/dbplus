@@ -1,3 +1,53 @@
+/* Fonts */
+/* Fonts */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/sf-pro-display-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/sf-pro-display-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/sf-pro-display-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/sf-pro-display-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Mono';
+  src: url('/fonts/sf-mono-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Mono';
+  src: url('/fonts/sf-mono-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Import TablePlus Design System */
 @import './styles/design-tokens.css';
 
@@ -5,23 +55,102 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* === DARK MODE (Default - TablePlus Style) === */
+  /* Box sizing rules */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-  /* Background - Cool Dark (Not Black) */
-  --color-bg-default: #1F1F24; /* App background / Main panel */
-  --color-bg-panel: #1B1C21;   /* Sidebar (left) */
-  --color-bg-hover: #2F3137;   /* Row hover / Hover surface */
-  --color-bg-active: #24262B;  /* Active / Table Surface */
-  --color-bg-elevated: #2B2D33; /* Modal, Dropdown */
-  --color-bg-sunken: #18191D;   /* Slightly darker than BG for inputs? */
+  /* Prevent font size inflation */
+  html {
+    -moz-text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    /* Scale UI to 90% (0.9 * 16px = 14.4px base) */
+    font-size: 90%;
+  }
+
+  /* Remove default margin in favour of better control in authored CSS */
+  body, h1, h2, h3, h4, p,
+  figure, blockquote, dl, dd {
+    margin-block-end: 0;
+  }
+
+  /* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
+  ul[role='list'],
+  ol[role='list'] {
+    list-style: none;
+  }
+
+  /* Set core body defaults */
+  body {
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Set shorter line heights on headings and interactive elements */
+  h1, h2, h3, h4,
+  button, input, label {
+    line-height: 1.1;
+  }
+
+  /* Balance text wrapping on headings */
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  /* A elements that don't have a class get default styles */
+  a:not([class]) {
+    text-decoration-skip-ink: auto;
+    color: currentColor;
+  }
+
+  /* Make images easier to work with */
+  img,
+  picture {
+    max-width: 100%;
+    display: block;
+  }
+
+  /* Inherit fonts for inputs and buttons */
+  input, button,
+  textarea, select {
+    font: inherit;
+  }
+
+  /* Make sure textareas without a rows attribute are not tiny */
+  textarea:not([rows]) {
+    min-height: 10em;
+  }
+
+  /* Anything that has been anchored to should have extra scroll margin */
+  :target {
+    scroll-margin-block: 5ex;
+  }
+
+/* === END RESETS === */
+
+:root {
+  /* === DARK MODE (Default - TablePlus Style + MacOS 15 Geometry) === */
+
+  /* Background - Cool Dark */
+  --color-bg-default: #1F1F24;
+  --color-bg-panel: #1B1C21;
+  --color-bg-hover: #2F3137;
+  --color-bg-active: #24262B;
+  --color-bg-elevated: #2B2D33;
+  --color-bg-sunken: #18191D;
 
   /* Surface */
-  --color-surface-raised: #24262B; /* Table surface */
+  --color-surface-raised: #24262B;
   --color-surface-sunken: #1F1F24;
-  --color-surface-overlay: rgba(0, 0, 0, 0.6); /* User Spec */
+  --color-surface-overlay: rgba(0, 0, 0, 0.6);
 
-  /* Text - High Legibility */
+  /* Text */
   --color-text-primary: #E6E6E6;
   --color-text-secondary: #B5B5B5;
   --color-text-muted: #8A8A8A;
@@ -29,18 +158,24 @@
   --color-text-accent: #5C7CFA;
   --color-text-inverse: #1F1F24;
 
-  /* Border - Minimalist/Thin */
-  --color-border-default: rgba(255, 255, 255, 0.08); /* Divider */
-  --color-border-light: rgba(255, 255, 255, 0.06);   /* Border subtle */
-  --color-border-strong: rgba(255, 255, 255, 0.12);  /* Border strong */
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  /* Border - Ultra Subtle (MacOS 15 Style) */
+  --color-border-default: rgba(255, 255, 255, 0.04); /* Barely visible */
+  --color-border-light: rgba(255, 255, 255, 0.03);
+  --color-border-strong: rgba(255, 255, 255, 0.08); /* Divider */
+  --color-border-subtle: rgba(255, 255, 255, 0.02);
   --color-border-focus: #5C7CFA;
 
-  /* Primary - TablePlus Blue */
+  /* MacOS 15 Geometry - Rounded & Smooth */
+  --radius-sm: 0.375rem;    /* 6px */
+  --radius-md: 0.625rem;    /* 10px */
+  --radius-lg: 0.875rem;    /* 14px */
+  --radius-xl: 1.125rem;    /* 18px */
+
+  /* Primary */
   --color-primary-default: #5C7CFA;
   --color-primary-hover: #4C6EF5;
   --color-primary-active: #3B5BDB;
-  --color-primary-subtle: rgba(92, 124, 250, 0.18); /* Soft BG */
+  --color-primary-subtle: rgba(92, 124, 250, 0.18);
   --color-primary-transparent: rgba(92, 124, 250, 0.18);
   --color-primary-muted: rgba(92, 124, 250, 0.1);
 
@@ -63,24 +198,24 @@
   --gradient-primary: linear-gradient(135deg, #5C7CFA 0%, #4C6EF5 100%);
   --gradient-subtle: linear-gradient(180deg, rgba(92, 124, 250, 0.08) 0%, transparent 100%);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6); /* Modal shadow spec */
+  /* Shadows - Depth over Borders */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 24px -3px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 48px -5px rgba(0, 0, 0, 0.5); /* Deep modal shadow */
+  --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.45); /* Floating panel */
   --shadow-glow: 0 0 15px rgba(92, 124, 250, 0.2);
 
-  /* Code Syntax - TablePlus Editor */
-  /* BG: #1E1F24 */
+  /* Code Syntax */
   --code-keyword: #5C7CFA;
   --code-string: #69DB7C;
   --code-number: #FFD43B;
   --code-comment: #8A8A8A;
-  --code-type: #E6E6E6;      /* Identifier/Type */
+  --code-type: #E6E6E6;
   --code-function: #9775FA;
   --code-variable: #E6E6E6;
 
-  /* Legacy support - map old variables to new system */
+  /* Legacy support */
   --bg-0: var(--color-bg-default);
   --bg-1: var(--color-bg-panel);
   --bg-2: var(--color-bg-hover);
@@ -93,21 +228,25 @@
   --error: var(--color-error);
   --success: var(--color-success);
   --warning: var(--color-warning);
+  --color-divider: var(--color-border-strong);
+  --input-border: var(--color-border-default);
+  --color-border: var(--color-border-default);
+  --primary: var(--color-primary-default);
 
   /* Typography */
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --font-sans: "SF Pro Display", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 
   /* === COMPONENT SIZING SYSTEM === */
 
   /* Typography Scale */
-  --text-2xs: 9px;
-  --text-xs: 11px;
-  --text-sm: 13px;
-  --text-base: 14px;
-  --text-lg: 16px;
-  --text-xl: 18px;
+  --text-2xs: 0.5625rem; /* 9px */
+  --text-xs: 0.6875rem;  /* 11px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-lg: 1rem;       /* 16px */
+  --text-xl: 1.125rem;   /* 18px */
 
   /* Line Heights */
   --leading-tight: 1.25;
@@ -115,43 +254,43 @@
   --leading-relaxed: 1.75;
 
   /* Spacing Scale */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
 
   /* Component Heights */
-  --component-height-sm: 32px;
-  --component-height-md: 40px;
-  --component-height-lg: 48px;
+  --component-height-sm: 2rem;       /* 32px */
+  --component-height-md: 2.5rem;     /* 40px */
+  --component-height-lg: 3rem;       /* 48px */
 
   /* Table */
-  --table-row-height: 36px;
-  --table-header-height: 40px;
-  --table-cell-padding-x: 12px;
-  --table-cell-padding-y: 6px;
-  --table-header-padding-x: 12px;
-  --table-header-padding-y: 8px;
+  --table-row-height: 2.25rem;       /* 36px */
+  --table-header-height: 2.5rem;     /* 40px */
+  --table-cell-padding-x: 0.75rem;   /* 12px */
+  --table-cell-padding-y: 0.375rem;  /* 6px */
+  --table-header-padding-x: 0.75rem; /* 12px */
+  --table-header-padding-y: 0.5rem;  /* 8px */
 
   /* Buttons */
-  --button-padding-x-sm: 12px;
-  --button-padding-y-sm: 6px;
-  --button-padding-x-md: 16px;
-  --button-padding-y-md: 8px;
-  --button-padding-x-lg: 24px;
-  --button-padding-y-lg: 12px;
+  --button-padding-x-sm: 0.75rem;    /* 12px */
+  --button-padding-y-sm: 0.375rem;   /* 6px */
+  --button-padding-x-md: 1rem;       /* 16px */
+  --button-padding-y-md: 0.5rem;     /* 8px */
+  --button-padding-x-lg: 1.5rem;     /* 24px */
+  --button-padding-y-lg: 0.75rem;    /* 12px */
 
   /* Input Fields */
-  --input-height-sm: 32px;
-  --input-height-md: 40px;
-  --input-height-lg: 48px;
-  --input-padding-x: 12px;
-  --input-padding-y: 8px;
+  --input-height-sm: 2rem;           /* 32px */
+  --input-height-md: 2.5rem;         /* 40px */
+  --input-height-lg: 3rem;           /* 48px */
+  --input-padding-x: 0.75rem;        /* 12px */
+  --input-padding-y: 0.5rem;         /* 8px */
 }
 
 /* Dark theme class for consistency */
@@ -598,9 +737,6 @@ body {
   background-color: var(--bg-0);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Selection */
@@ -611,8 +747,8 @@ body {
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 
 ::-webkit-scrollbar-track {
@@ -621,7 +757,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border-strong);
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -651,7 +787,7 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(0.25rem);
   }
 
   to {
@@ -696,7 +832,7 @@ body {
 @keyframes slideInFromTop {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-0.5rem) scale(0.96);
   }
 
   to {
@@ -719,8 +855,8 @@ body {
 
 /* Mask for horizontal scroll fading */
 .mask-linear-fade {
-  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-  mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent);
+  mask-image: linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent);
 }
 
 .no-scrollbar::-webkit-scrollbar {
