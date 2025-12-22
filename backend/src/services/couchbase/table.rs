@@ -8,7 +8,6 @@ use async_trait::async_trait;
 use couchbase::options::kv_options::{MutateInOptions, RemoveOptions};
 use couchbase::subdoc::mutate_in_specs::MutateInSpec;
 use serde_json::Value;
-use std::collections::HashMap;
 
 #[async_trait]
 impl TableOperations for CouchbaseDriver {
@@ -281,8 +280,8 @@ impl TableOperations for CouchbaseDriver {
 
     async fn update_row(
         &self,
-        _schema: &str,
-        _table: &str,
+        schema: &str,
+        table: &str,
         primary_key: &std::collections::HashMap<String, Value>,
         updates: &std::collections::HashMap<String, Value>,
         row_metadata: Option<&std::collections::HashMap<String, Value>>,
@@ -295,8 +294,8 @@ impl TableOperations for CouchbaseDriver {
             .ok_or_else(|| anyhow::anyhow!("Missing _id in primary_key"))?;
 
         let bucket = self.cluster.bucket(bucket_name);
-        let scope = bucket.scope(_schema);
-        let collection = scope.collection(_table);
+        let scope = bucket.scope(schema);
+        let collection = scope.collection(table);
 
         let cas: Option<u64> = if let Some(meta) = row_metadata {
             meta.get("_cas").and_then(|v| {
