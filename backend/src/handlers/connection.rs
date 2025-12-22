@@ -645,6 +645,13 @@ pub async fn get_connection_version(
                 Err(e) => Err(anyhow::anyhow!(e)),
             }
         }
+        "couchbase" => {
+            use crate::services::couchbase::CouchbaseDriver;
+            match CouchbaseDriver::new(&connection, &password).await {
+                Ok(d) => d.query("SELECT VERSION()").await,
+                Err(e) => Err(anyhow::anyhow!(e)),
+            }
+        }
         _ => Err(anyhow::anyhow!("Unsupported database type")),
     };
 
