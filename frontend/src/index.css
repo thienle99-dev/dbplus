@@ -593,7 +593,8 @@
 
   /* Glassmorphism Classes */
   --glass-bg: rgba(28, 28, 30, 0.7);
-  --glass-blur: blur(20px);
+  --glass-blur: blur(10px);
+  will-change: backdrop-filter;
 
   /* Text - Xcode's text colors */
   --text-primary: #FFFFFF;
@@ -679,7 +680,8 @@
 
   /* Glassmorphism Classes */
   --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-blur: blur(20px);
+  --glass-blur: blur(10px);
+  will-change: backdrop-filter;
 
   /* Text - Xcode's light mode text colors */
   --text-primary: #000000;
@@ -774,7 +776,7 @@ body {
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .premium-card:hover {
@@ -796,21 +798,25 @@ body {
 
 @keyframes slideDown {
   from {
-    height: 0;
+    opacity: 0;
+    transform: translateY(-4px);
   }
 
   to {
-    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes slideUp {
   from {
-    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
   }
 
   to {
-    height: 0;
+    opacity: 0;
+    transform: translateY(-4px);
   }
 }
 
