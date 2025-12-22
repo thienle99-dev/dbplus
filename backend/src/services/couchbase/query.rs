@@ -102,7 +102,12 @@ impl QueryDriver for CouchbaseDriver {
             limit: None,
             offset: None,
             has_more: None,
-            row_metadata: Some(row_metadata),
+            row_metadata: Some(
+                row_metadata
+                    .into_iter()
+                    .map(|m| serde_json::to_value(m).unwrap_or(Value::Null))
+                    .collect(),
+            ),
         })
     }
 

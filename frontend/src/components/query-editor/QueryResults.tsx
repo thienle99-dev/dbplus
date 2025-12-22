@@ -767,7 +767,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
             {result && (
                 <div className="flex flex-col h-full">
-                    <div className="p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
+                    <div className="relative z-30 p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                                 {result.affected_rows > 0

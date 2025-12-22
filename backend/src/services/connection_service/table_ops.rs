@@ -1,4 +1,5 @@
 use super::ConnectionService;
+use crate::services::driver::TableOperations;
 use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -19,6 +20,7 @@ impl ConnectionService {
         let connection = self.apply_database_override(connection);
 
         use crate::services::db_driver::DatabaseDriver;
+
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
@@ -908,16 +910,10 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
-                use crate::services::db_driver::DatabaseDriver;
-                DatabaseDriver::update_row(
-                    &driver,
-                    schema,
-                    table,
-                    &primary_key,
-                    &updates,
-                    row_metadata.as_ref(),
-                )
-                .await
+
+                driver
+                    .update_row(schema, table, &primary_key, &updates, row_metadata.as_ref())
+                    .await
             }
             _ => Err(anyhow::anyhow!(
                 "Update row via TableOperations not supported for this driver yet"
@@ -948,15 +944,10 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
-                use crate::services::db_driver::DatabaseDriver;
-                DatabaseDriver::delete_row(
-                    &driver,
-                    schema,
-                    table,
-                    &primary_key,
-                    row_metadata.as_ref(),
-                )
-                .await
+
+                driver
+                    .delete_row(schema, table, &primary_key, row_metadata.as_ref())
+                    .await
             }
             _ => Err(anyhow::anyhow!(
                 "Delete row via TableOperations not supported for this driver yet"
