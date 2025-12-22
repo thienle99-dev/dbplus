@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Clock, Trash2, Search, CheckCircle2, XCircle, Copy, Filter } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useDialog } from '../context/DialogContext';
 
 interface HistoryEntry {
   id: string;
@@ -40,6 +41,7 @@ export default function QueryHistory({
 }) {
   const { connectionId } = useParams();
   const { showToast } = useToast();
+  const dialog = useDialog();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -67,7 +69,14 @@ export default function QueryHistory({
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Clear all query history?')) return;
+    const confirmed = await dialog.confirm({
+      title: 'Clear History',
+      message: 'Are you sure you want to clear all query history for this connection? This action cannot be undone.',
+      confirmLabel: 'Clear All',
+      variant: 'destructive'
+    });
+    
+    if (!confirmed) return;
     try {
       await api.delete(`/api/connections/${connectionId}/history`);
       setHistory([]);
@@ -105,7 +114,15 @@ export default function QueryHistory({
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected items?`)) return;
+    
+    const confirmed = await dialog.confirm({
+      title: 'Delete Items',
+      message: `Are you sure you want to delete ${selectedIds.size} selected items?`,
+      confirmLabel: 'Delete',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.post(`/api/connections/${connectionId}/history/delete`, {

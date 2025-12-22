@@ -4,6 +4,7 @@ import Modal from '../ui/Modal';
 import { QuerySnippet } from '../../types/snippet';
 import { snippetApi } from '../../services/snippetApi';
 import { useToast } from '../../context/ToastContext';
+import { useDialog } from '../../context/DialogContext';
 import SnippetFormModal from './SnippetFormModal';
 import { SnippetParameterModal } from './SnippetParameterModal';
 import { extractPlaceholders, replacePlaceholders, hasPlaceholders } from '../../utils/snippetPlaceholders';
@@ -22,6 +23,7 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
     const [editingSnippet, setEditingSnippet] = useState<QuerySnippet | undefined>(undefined);
     const [parameterSnippet, setParameterSnippet] = useState<QuerySnippet | null>(null);
     const { showToast } = useToast();
+    const dialog = useDialog();
 
     const fetchSnippets = async () => {
         if (!isOpen) return;
@@ -49,7 +51,15 @@ export default function SnippetLibrary({ isOpen, onClose, onInsert }: SnippetLib
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm('Are you sure you want to delete this snippet?')) return;
+        
+        const confirmed = await dialog.confirm({
+            title: 'Delete Snippet',
+            message: 'Are you sure you want to delete this snippet?',
+            confirmLabel: 'Delete',
+            variant: 'destructive'
+        });
+
+        if (!confirmed) return;
         try {
             await snippetApi.deleteSnippet(id);
             showToast('Snippet deleted', 'success');

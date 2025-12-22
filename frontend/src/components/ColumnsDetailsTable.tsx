@@ -6,6 +6,7 @@ import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useParams } from 'react-router-dom';
 import { ColumnsDetailsTableProps } from '../types';
+import { useDialog } from '../context/DialogContext';
 
 type SortField = 'name' | 'data_type' | 'nullable' | 'default';
 type SortDirection = 'asc' | 'desc' | null;
@@ -13,6 +14,7 @@ type SortDirection = 'asc' | 'desc' | null;
 export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onRefresh }: ColumnsDetailsTableProps) {
     const { connectionId, schema, table } = useParams();
     const { showToast } = useToast();
+    const dialog = useDialog();
     const [sortField, setSortField] = useState<SortField | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,9 +35,12 @@ export default function ColumnsDetailsTable({ columns, foreignKeys, indexes, onR
     };
 
     const handleDeleteColumn = async (columnName: string) => {
-        if (!confirm(`Are you sure you want to delete column "${columnName}"? This action cannot be undone.`)) {
-            return;
-        }
+        const confirmed = await dialog.confirm(
+            'Delete Column',
+            `Are you sure you want to delete column "${columnName}"? This action cannot be undone.`,
+            { variant: 'danger' }
+        );
+        if (!confirmed) return;
 
         setDeletingColumn(columnName);
         try {

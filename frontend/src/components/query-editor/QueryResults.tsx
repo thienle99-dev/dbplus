@@ -13,6 +13,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
+import { useDialog } from '../../context/DialogContext';
 import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus } from 'lucide-react';
 
 
@@ -64,6 +65,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const moreActionsRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
+    const dialog = useDialog();
 
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
@@ -106,7 +108,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
             const pkCols = result.column_metadata.filter(c => c.is_primary_key);
             if (pkCols.length === 0) {
-                alert("Cannot save changes: No primary key found for this table.");
+                showToast("Cannot save changes: No primary key found for this table.", "error");
                 return;
             }
 
@@ -138,7 +140,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         } catch (err) {
             console.error("Failed to save changes", err);
-            alert("Failed to save changes. Check console for details.");
+            showToast("Failed to save changes. Check console for details.", "error");
         }
     };
 
@@ -150,9 +152,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         if (!result || !result.column_metadata) return;
 
         // Confirm deletion
-        if (!window.confirm("Are you sure you want to delete this row? This action cannot be undone.")) {
-            return;
-        }
+        const confirmed = await dialog.confirm({
+            title: 'Delete Row',
+            message: 'Are you sure you want to delete this row? This action cannot be undone.',
+            confirmLabel: 'Delete',
+            variant: 'destructive'
+        });
+
+        if (!confirmed) return;
 
         const tableMeta = result.column_metadata.find(c => c.table_name);
         if (!tableMeta || !tableMeta.table_name) {
@@ -162,7 +169,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         const pkCols = result.column_metadata.filter(c => c.is_primary_key);
         if (pkCols.length === 0) {
-            alert("Cannot delete row: No primary key found for this table.");
+            showToast("Cannot delete row: No primary key found for this table.", "error");
             return;
         }
 
@@ -186,7 +193,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to delete row", err);
-            alert("Failed to delete row. Check console for details.");
+            showToast("Failed to delete row. Check console for details.", "error");
         }
     };
 
@@ -528,17 +535,22 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         });
     }, [edits, result, tableInstance]);
 
-    const confirmLargeExport = useCallback((rowCount: number) => {
+    const confirmLargeExport = async (rowCount: number) => {
         if (rowCount <= 10000) return true;
-        return window.confirm(`Exporting ${rowCount} rows may take a while and could freeze the UI. Continue?`);
-    }, []);
+        return dialog.confirm({
+            title: 'Large Export',
+            message: `Exporting ${rowCount} rows may take a while and could freeze the UI. Continue?`,
+            confirmLabel: 'Continue'
+        });
+    };
 
     const handleDownloadCsv = useCallback(
-        (opts = DEFAULT_CSV_OPTIONS) => {
+        async (opts = DEFAULT_CSV_OPTIONS) => {
             if (!result) return;
             const rows = getExportRows();
             if (rows.length === 0) return;
-            if (!confirmLargeExport(rows.length)) return;
+            const confirmed = await confirmLargeExport(rows.length);
+            if (!confirmed) return;
 
             const text = toDelimitedText(result.columns, rows, opts);
             const filename = buildExportFilename(['query_results', connectionId], 'csv');
@@ -548,11 +560,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         [confirmLargeExport, connectionId, getExportRows, result, showToast]
     );
 
-    const handleDownloadTsvForExcel = useCallback(() => {
+    const handleDownloadTsvForExcel = useCallback(async () => {
         if (!result) return;
         const rows = getExportRows();
         if (rows.length === 0) return;
-        if (!confirmLargeExport(rows.length)) return;
+        const confirmed = await confirmLargeExport(rows.length);
+        if (!confirmed) return;
 
         const text = toDelimitedText(result.columns, rows, { ...EXCEL_CSV_OPTIONS, delimiter: '\t', quote: '"' });
         const filename = buildExportFilename(['query_results', connectionId], 'tsv');
@@ -560,11 +573,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         showToast('Exported TSV (Excel-friendly)', 'success');
     }, [confirmLargeExport, connectionId, getExportRows, result, showToast]);
 
-    const handleDownloadExcelXls = useCallback(() => {
+    const handleDownloadExcelXls = useCallback(async () => {
         if (!result) return;
         const rows = getExportRows();
         if (rows.length === 0) return;
-        if (!confirmLargeExport(rows.length)) return;
+        const confirmed = await confirmLargeExport(rows.length);
+        if (!confirmed) return;
 
         const html = toExcelHtmlTable(result.columns, rows, 'Results');
         const filename = buildExportFilename(['query_results', connectionId], 'xls');
@@ -573,11 +587,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     }, [confirmLargeExport, connectionId, getExportRows, result, showToast]);
 
     const handleDownloadJson = useCallback(
-        (mode: 'objects' | 'rows' = 'objects', pretty = true) => {
+        async (mode: 'objects' | 'rows' = 'objects', pretty = true) => {
             if (!result) return;
             const rows = getExportRows();
             if (rows.length === 0) return;
-            if (!confirmLargeExport(rows.length)) return;
+            const confirmed = await confirmLargeExport(rows.length);
+            if (!confirmed) return;
 
             const text =
                 mode === 'objects' ? toJsonObjects(result.columns, rows, pretty) : toJsonRows(result.columns, rows, pretty);
@@ -588,7 +603,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         [confirmLargeExport, connectionId, getExportRows, result, showToast]
     );
 
-    const handleDownloadInsertSql = useCallback(() => {
+    const handleDownloadInsertSql = useCallback(async () => {
         if (!result) return;
         const rows = getExportRows();
         if (rows.length === 0) return;
@@ -596,7 +611,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         const meta = result.column_metadata?.find((c) => c.table_name);
         const defaultTarget = meta?.table_name ? `${meta.schema_name || 'public'}.${meta.table_name}` : '';
-        const target = window.prompt('Target table for INSERT statements (schema.table)', defaultTarget);
+        const target = await dialog.prompt({
+            title: 'Export INSERT SQL',
+            message: 'Target table for INSERT statements (schema.table):',
+            initialValue: defaultTarget,
+            confirmLabel: 'Export'
+        });
         if (!target) return;
 
         const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
@@ -611,7 +631,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             if (!result) return;
             const rows = getExportRows();
             if (rows.length === 0) return;
-            if (!confirmLargeExport(rows.length)) return;
+            const confirmed = await confirmLargeExport(rows.length);
+            if (!confirmed) return;
 
             let text = '';
             if (kind === 'csv') text = toDelimitedText(result.columns, rows, DEFAULT_CSV_OPTIONS);
@@ -620,7 +641,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             if (kind === 'insert') {
                 const meta = result.column_metadata?.find((c) => c.table_name);
                 const defaultTarget = meta?.table_name ? `${meta.schema_name || 'public'}.${meta.table_name}` : '';
-                const target = window.prompt('Target table for INSERT statements (schema.table)', defaultTarget);
+                const target = await dialog.prompt({
+                    title: 'Copy INSERT SQL',
+                    message: 'Target table for INSERT statements (schema.table):',
+                    initialValue: defaultTarget,
+                    confirmLabel: 'Copy'
+                });
                 if (!target) return;
                 const [schema, table] = target.includes('.') ? target.split('.', 2) : ['public', target];
                 text = toInsertStatements({ schema, table, columns: result.columns, rows });
@@ -1002,9 +1028,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                             {/* Render all action */}
                                             {hasTruncatedRows && (
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         setMoreActionsOpen(false);
-                                                        if (window.confirm(`Render all ${result.rows.length.toLocaleString()} rows? This may freeze the UI.`)) {
+                                                        const confirmed = await dialog.confirm(
+                                                            'Render All Rows',
+                                                            `Render all ${result.rows.length.toLocaleString()} rows? This may freeze the UI.`,
+                                                            { variant: 'danger' }
+                                                        );
+                                                        if (confirmed) {
                                                             setRenderAllRows(true);
                                                         }
                                                     }}

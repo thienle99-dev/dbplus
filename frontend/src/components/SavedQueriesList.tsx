@@ -14,6 +14,7 @@ import { SavedQuery } from '../types';
 import api from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../context/ToastContext';
+import { useDialog } from '../context/DialogContext';
 
 export default function SavedQueriesList({
   onSelectQuery,
@@ -32,6 +33,7 @@ export default function SavedQueriesList({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const dialog = useDialog();
 
   // Custom Hooks
   const { data: queries = [], isLoading: loading } = useSavedQueries(connectionId);
@@ -46,12 +48,20 @@ export default function SavedQueriesList({
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this saved query?')) return;
+    
+    const confirmed = await dialog.confirm({
+      title: 'Delete Saved Query',
+      message: 'Are you sure you want to delete this saved query? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
 
     try {
       await deleteSavedQuery.mutateAsync(id);
     } catch (err: unknown) {
-      alert('Failed to delete query');
+      showToast('Failed to delete query', 'error');
     }
   };
 
@@ -101,33 +111,54 @@ export default function SavedQueriesList({
   };
 
   const handleCreateFolder = async () => {
-    const name = prompt('Folder name');
+    const name = await dialog.prompt({
+      title: 'New Folder',
+      message: 'Enter a name for the new folder:',
+      placeholder: 'My Queries',
+      confirmLabel: 'Create'
+    });
+    
     if (!name?.trim()) return;
     try {
       await createFolder.mutateAsync({ name: name.trim() });
     } catch {
-      alert('Failed to create folder');
+      showToast('Failed to create folder', 'error');
     }
   };
 
   const handleRenameFolder = async (folderId: string, currentName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const name = prompt('Rename folder', currentName);
+    
+    const name = await dialog.prompt({
+      title: 'Rename Folder',
+      message: 'Enter a new name for the folder:',
+      initialValue: currentName,
+      confirmLabel: 'Rename'
+    });
+    
     if (!name?.trim() || name.trim() === currentName) return;
     try {
       await updateFolder.mutateAsync({ id: folderId, name: name.trim() });
     } catch {
-      alert('Failed to rename folder');
+      showToast('Failed to rename folder', 'error');
     }
   };
 
   const handleDeleteFolder = async (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Delete this folder? Saved queries in it will become unfiled.')) return;
+    
+    const confirmed = await dialog.confirm({
+      title: 'Delete Folder',
+      message: 'Are you sure you want to delete this folder? Saved queries in it will become unfiled.',
+      confirmLabel: 'Delete',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
     try {
       await deleteFolder.mutateAsync(folderId);
     } catch {
-      alert('Failed to delete folder');
+      showToast('Failed to delete folder', 'error');
     }
   };
 

@@ -6,6 +6,7 @@ import DiffViewer from './DiffViewer';
 import MigrationPreview from './MigrationPreview';
 import { useSchemas, useTables, useDatabases } from '../../hooks/useDatabase';
 import { useConnectionStore } from '../../store/connectionStore';
+import { useToast } from '../../context/ToastContext';
 
 interface SchemaDiffModalProps {
     isOpen: boolean;
@@ -41,6 +42,7 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
     const [isComparing, setIsComparing] = useState(false);
     const [diffResult, setDiffResult] = useState<any>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const { showToast } = useToast();
 
     // Set default schemas when schemas load
     useEffect(() => {
@@ -97,11 +99,11 @@ export default function SchemaDiffModal({ isOpen, onClose, connectionId }: Schem
                 }
             }
 
-            alert('Migration executed successfully!');
+            showToast('Migration executed successfully!', 'success');
             onClose();
         } catch (error: any) {
             console.error('Failed to execute migration:', error);
-            alert(`Migration failed: ${error.message}`);
+            showToast(`Migration failed: ${error.message}`, 'error');
         } finally {
             setIsExecuting(false);
         }

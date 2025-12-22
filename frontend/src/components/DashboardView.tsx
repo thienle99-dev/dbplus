@@ -4,6 +4,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import api from '../services/api';
 import AddChartModal from './AddChartModal';
 import ChartWidget from './ChartWidget';
+import { useDialog } from '../context/DialogContext';
 
 interface Dashboard {
   id: string;
@@ -27,6 +28,7 @@ export default function DashboardView() {
   const [charts, setCharts] = useState<Chart[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddChartOpen, setIsAddChartOpen] = useState(false);
+  const dialog = useDialog();
 
   const fetchDashboard = async () => {
     try {
@@ -48,7 +50,12 @@ export default function DashboardView() {
   }, [connectionId, dashboardId]);
 
   const handleDeleteChart = async (chartId: string) => {
-    if (!confirm('Are you sure you want to remove this chart?')) return;
+    const confirmed = await dialog.confirm(
+      'Remove Chart',
+      'Are you sure you want to remove this chart?',
+      { variant: 'danger' }
+    );
+    if (!confirmed) return;
     try {
       await api.delete(`/api/connections/${connectionId}/dashboards/${dashboardId}/charts/${chartId}`);
       setCharts(charts.filter(c => c.id !== chartId));

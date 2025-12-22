@@ -11,6 +11,7 @@ import { TableColumn, QueryResult, EditState, TableDataViewProps } from '../type
 import { useConstraints } from '../hooks/useDatabase';
 import { useTabStateStore } from '../store/tabStateStore';
 import { useConnectionStore } from '../store/connectionStore';
+import { useDialog } from '../context/DialogContext';
 
 interface Props extends TableDataViewProps {
   tabId?: string;
@@ -34,6 +35,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   const [edits, setEdits] = useState<EditState>({});
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
+  const dialog = useDialog();
   const fetchingRef = useRef(false);
   const fetchingColumnsRef = useRef(false);
   const columnsCacheKeyRef = useRef<string>('');
@@ -301,7 +303,14 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this record?')) return;
+    const confirmed = await dialog.confirm({
+      title: 'Delete Record',
+      message: 'Are you sure you want to delete this record? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
 
     setSaving(true);
     try {

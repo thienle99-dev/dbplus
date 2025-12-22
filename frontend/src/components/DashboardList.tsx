@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Layout, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import { useDialog } from '../context/DialogContext';
 import CreateDashboardModal from './CreateDashboardModal';
 
 interface Dashboard {
@@ -16,6 +17,7 @@ export default function DashboardList() {
   const navigate = useNavigate();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
+  const dialog = useDialog();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchDashboards = async () => {
@@ -35,7 +37,15 @@ export default function DashboardList() {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this dashboard?')) return;
+    
+    const confirmed = await dialog.confirm({
+      title: 'Delete Dashboard',
+      message: 'Are you sure you want to delete this dashboard? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
     
     try {
       await api.delete(`/api/connections/${connectionId}/dashboards/${id}`);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Settings as SettingsIcon, Palette, Code, Database, Info, Keyboard as KeyboardIcon } from 'lucide-react';
 import { useSettingsStore } from '../store/settingsStore';
+import { useDialog } from '../context/DialogContext';
 import { THEME_CONFIGS } from '../constants/themes';
 import Select from './ui/Select';
 import Checkbox from './ui/Checkbox';
@@ -18,6 +19,7 @@ type TabType = 'general' | 'editor' | 'theme' | 'query' | 'shortcuts' | 'about';
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const settings = useSettingsStore();
+    const dialog = useDialog();
 
     if (!isOpen) return null;
 
@@ -380,8 +382,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                            if (confirm('Are you sure you want to reset all settings to defaults?')) {
+                        onClick={async () => {
+                            const confirmed = await dialog.confirm({
+                                title: 'Reset Settings',
+                                message: 'Are you sure you want to reset all settings to defaults?',
+                                confirmLabel: 'Reset',
+                                variant: 'destructive'
+                            });
+                            
+                            if (confirmed) {
                                 settings.resetSettings();
                             }
                         }}

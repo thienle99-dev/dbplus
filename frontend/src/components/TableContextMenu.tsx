@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTabContext } from '../context/TabContext';
 import { useToast } from '../context/ToastContext';
+import { useDialog } from '../context/DialogContext';
 
 interface TableContextMenuProps {
     table: string;
@@ -65,6 +66,7 @@ export default function TableContextMenu({
     const hoverTimeoutRef = useRef<number | null>(null);
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const dialog = useDialog();
 
     let tabContext;
     try {
@@ -209,15 +211,28 @@ export default function TableContextMenu({
         onClose();
     };
 
-    const handleTruncate = () => {
-        if (confirm(`Are you sure you want to truncate table "${table}"? This will delete all rows and cannot be undone.`)) {
+    const handleTruncate = async () => {
+        const confirmed = await dialog.confirm({
+            title: 'Truncate Table',
+            message: `Are you sure you want to truncate table "${table}"? This will delete all rows and cannot be undone.`,
+            confirmLabel: 'Truncate',
+            variant: 'destructive'
+        });
+
+        if (confirmed) {
             showToast('Truncate functionality coming soon', 'info');
         }
         onClose();
     };
 
-    const handleDelete = () => {
-        const userInput = prompt(`To delete table "${table}", please type the table name to confirm:`);
+    const handleDelete = async () => {
+        const userInput = await dialog.prompt({
+            title: 'Delete Table',
+            message: `To delete table "${table}", please type the table name to confirm:`,
+            placeholder: table,
+            confirmLabel: 'Delete'
+        });
+
         if (userInput === table) {
             showToast('Delete functionality coming soon', 'info');
         } else if (userInput !== null) {

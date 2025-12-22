@@ -3,6 +3,7 @@ import { FolderPlus } from 'lucide-react';
 import api from '../services/api';
 import { useParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
+import { useDialog } from '../context/DialogContext';
 import { SaveQueryModalProps } from '../types';
 import { useCreateSavedQueryFolder, useSavedQueryFolders } from '../hooks/useQuery';
 import Modal from './ui/Modal';
@@ -19,6 +20,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
   const { showToast } = useToast();
   const { data: folders = [] } = useSavedQueryFolders(connectionId);
   const createFolder = useCreateSavedQueryFolder(connectionId);
+  const dialog = useDialog();
 
   const tags = useMemo(() => {
     const raw = tagsText
@@ -37,7 +39,13 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
   }, [isOpen, initial?.name, initial?.description, initial?.folder_id, (initial?.tags || []).join(',')]);
 
   const handleCreateFolder = async () => {
-    const folderName = prompt('Folder name');
+    const folderName = await dialog.prompt({
+      title: 'New Folder',
+      message: 'Enter a name for the new folder:',
+      placeholder: 'My Queries',
+      confirmLabel: 'Create'
+    });
+    
     if (!folderName?.trim()) return;
     try {
       const created = await createFolder.mutateAsync({ name: folderName.trim() });

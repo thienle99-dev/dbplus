@@ -10,6 +10,7 @@ import { useExecuteQuery } from '../hooks/useQuery';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCellValue } from '../utils/cellFormatters';
 import { tryGetDateFromTimestamp } from '../utils/dateUtils';
+import { useDialog } from '../context/DialogContext';
 
 type EditState = Record<number, Record<string, unknown>>;
 
@@ -24,6 +25,7 @@ export default function RightSidebar() {
   const { selectedRows: _selectedRows, toggleRowSelection: _toggleRowSelection, selectedRow, setSelectedRow, editingRowIndex, setEditingRowIndex } = useSelectedRow();
   const { connectionId, schema, table } = useParams();
   const { currentPage, pageSize } = useTablePage();
+  const dialog = useDialog();
 
   const effectiveSchema = schema || selectedRow?.schema;
   const effectiveTable = table || selectedRow?.table;
@@ -208,7 +210,12 @@ export default function RightSidebar() {
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this record?')) return;
+    const confirmed = await dialog.confirm(
+      'Delete Record',
+      'Are you sure you want to delete this record?',
+      { variant: 'danger' }
+    );
+    if (!confirmed) return;
 
     try {
       const whereClauses = Object.entries(pk).map(([col, val]) => {

@@ -3,6 +3,7 @@ import { X, Shield, Lock, Terminal, Database } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 import api from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 interface ConnectionFormProps {
   open: boolean;
@@ -14,6 +15,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     db_type: 'postgres',
@@ -48,7 +50,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
       const result = response.data;
 
       const message = result?.message || (result?.success ? 'Connection successful!' : 'Connection failed');
-      alert(message);
+      showToast(message, result?.success ? 'success' : 'error');
     } catch (error: any) {
       console.error('Connection failed:', error);
 
@@ -65,7 +67,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
         errorMessage = error.message;
       }
 
-      alert(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setTesting(false);
     }
@@ -128,7 +130,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
         errorMessage = error.message;
       }
 
-      alert(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

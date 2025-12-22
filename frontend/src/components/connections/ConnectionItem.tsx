@@ -7,6 +7,7 @@ import { useConnectionStore } from '../../store/connectionStore';
 import { connectionApi } from '../../services/connectionApi';
 import { useToast } from '../../context/ToastContext';
 import CreateDatabaseModal from './CreateDatabaseModal';
+import { useDialog } from '../../context/DialogContext';
 
 interface ConnectionItemProps {
     connection: Connection;
@@ -19,6 +20,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     const { deleteConnection, createConnection, setSortOption } = useConnectionStore();
     const isLocal = connection.type === 'sqlite' || connection.host === 'localhost' || connection.host === '127.0.0.1';
     const { showToast } = useToast();
+    const dialog = useDialog();
 
     // UI State
     const [menuPosition, setMenuPosition] = React.useState<{ x: number; y: number } | null>(null);
@@ -41,7 +43,14 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     };
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this connection?')) {
+        const confirmed = await dialog.confirm({
+            title: 'Delete Connection',
+            message: `Are you sure you want to delete "${connection.name}"? This action cannot be undone.`,
+            confirmLabel: 'Delete',
+            variant: 'destructive'
+        });
+
+        if (confirmed) {
             await deleteConnection(connection.id);
         }
         setMenuPosition(null);
@@ -78,7 +87,13 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
             return;
         }
 
-        const name = (prompt(`Schema name to create (in database "${connection.database}"):`) || '').trim();
+        const name = (await dialog.prompt({
+            title: 'Create Schema',
+            message: `Enter name for the new schema in database "${connection.database}":`,
+            placeholder: 'e.g. public_v2',
+            confirmLabel: 'Create'
+        }) || '').trim();
+        
         if (!name) {
             setMenuPosition(null);
             return;

@@ -5,6 +5,7 @@ import * as Collapsible from '@radix-ui/react-collapsible';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTabContext } from '../context/TabContext';
 import { useToast } from '../context/ToastContext';
+import { useDialog } from '../context/DialogContext';
 import { TableInfo, ViewInfo, FunctionInfo } from '../types';
 import TableContextMenu from './TableContextMenu';
 import DataToolsModal from './DataToolsModal';
@@ -72,6 +73,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const dialog = useDialog();
   const activeDatabase = useWorkspaceTabsStore(state => state.activeDatabase());
   const [contextMenu, setContextMenu] = useState<{
     table: string;
@@ -160,14 +162,29 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     if (connectionType === 'sqlite' && schemaName === 'main') {
       showToast('Cannot detach main database', 'error'); return;
     }
-    const msg = connectionType === 'sqlite' ? `Detach attached database "${schemaName}"?` : `Drop schema "${schemaName}"?`;
-    if (!confirm(msg)) return;
+    const msg = connectionType === 'sqlite' ? `Are you sure you want to detach attached database "${schemaName}"?` : `Are you sure you want to drop schema "${schemaName}"?`;
+    
+    const confirmed = await dialog.confirm({
+      title: connectionType === 'sqlite' ? 'Detach Database' : 'Drop Schema',
+      message: msg,
+      confirmLabel: connectionType === 'sqlite' ? 'Detach' : 'Drop',
+      variant: 'destructive'
+    });
+
+    if (!confirmed) return;
+
     try {
       if (connectionType === 'sqlite') {
         await connectionApi.deleteSqliteAttachment(connectionId, schemaName);
         showToast(`Detached '${schemaName}'`, 'success');
       } else {
-        const confirmName = prompt(`To drop schema "${schemaName}", type its name to confirm:`);
+        const confirmName = await dialog.prompt({
+          title: 'Confirm Drop Schema',
+          message: `To drop schema "${schemaName}", please type its name to confirm:`,
+          placeholder: schemaName,
+          confirmLabel: 'Drop'
+        });
+
         if (confirmName !== schemaName) return;
         await connectionApi.dropSchema(connectionId, schemaName);
         showToast(`Schema '${schemaName}' dropped`, 'success');
@@ -380,6 +397,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const { data: schemas = [], isLoading: loading, error } = useSchemas(connectionId);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const dialog = useDialog();
   const [createDbOpen, setCreateDbOpen] = useState(false);
   const [sqliteToolsOpen, setSqliteToolsOpen] = useState(false);
   const [createSchemaOpen, setCreateSchemaOpen] = useState(false);
@@ -561,7 +579,13 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
                     const suggested = (noExt || 'attached')
                       .replace(/[^a-zA-Z0-9_]/g, '_')
                       .replace(/^(\d)/, '_$1');
-                    const name = (prompt('Attach as schema name:', suggested) || '').trim();
+                    const name = (await dialog.prompt({
+                      title: 'Attach Database',
+                      message: 'Enter a name for the attached schema:',
+                      initialValue: suggested,
+                      placeholder: 'e.g. secondary_db',
+                      confirmLabel: 'Attach'
+                    }) || '').trim();
                     if (!name) return;
                     await connectionApi.createSqliteAttachment(connectionId, {
                       name,

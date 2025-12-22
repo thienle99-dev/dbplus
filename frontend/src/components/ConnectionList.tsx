@@ -4,16 +4,23 @@ import { useConnections, useDeleteConnection } from '../hooks/useConnections';
 import { useState } from 'react';
 
 import ConnectionForm from './ConnectionForm';
+import { useDialog } from '../context/DialogContext';
 
 export default function ConnectionList() {
   const { data: connections = [], isLoading: loading, error } = useConnections();
   const deleteConnection = useDeleteConnection();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const navigate = useNavigate();
+  const dialog = useDialog();
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this connection?')) {
+    const confirmed = await dialog.confirm(
+      'Delete Connection',
+      'Are you sure you want to delete this connection?',
+      { variant: 'danger' }
+    );
+    if (confirmed) {
       try {
         await deleteConnection.mutateAsync(id);
       } catch (error) {

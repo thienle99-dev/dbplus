@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Keyboard, Edit2, Check, X } from 'lucide-react';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { KeyboardShortcut } from '../../types/settings';
+import { useDialog } from '../../context/DialogContext';
 
 export default function KeyboardShortcutsTab() {
     const { shortcuts, updateShortcut, resetShortcuts } = useKeyboardShortcuts();
@@ -9,6 +10,7 @@ export default function KeyboardShortcutsTab() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingKeys, setEditingKeys] = useState<string[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const dialog = useDialog();
 
     // Filter shortcuts by search and category
     const filteredShortcuts = useMemo(() => {
@@ -217,12 +219,12 @@ export default function KeyboardShortcutsTab() {
             {/* Footer Actions */}
             <div className="flex justify-between pt-4 border-t border-border">
                 <button
-                    onClick={() => {
-                        if (
-                            confirm(
-                                'Are you sure you want to reset all shortcuts to defaults?'
-                            )
-                        ) {
+                    onClick={async () => {
+                        const confirmed = await dialog.confirm(
+                            'Reset Shortcuts',
+                            'Are you sure you want to reset all shortcuts to defaults?'
+                        );
+                        if (confirmed) {
                             resetShortcuts();
                         }
                     }}
