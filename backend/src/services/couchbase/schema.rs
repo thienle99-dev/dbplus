@@ -26,7 +26,10 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_schemas(&self) -> Result<Vec<String>> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = match &self.bucket_name {
+            Some(name) => name,
+            None => return Ok(vec![]),
+        };
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
         let scopes = mgr
@@ -37,7 +40,10 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket_name = match &self.bucket_name {
+            Some(name) => name,
+            None => return Ok(vec![]),
+        };
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
         let scopes = mgr
@@ -59,7 +65,10 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let bucket = match &self.bucket_name {
+            Some(name) => name,
+            None => return Ok(vec![]),
+        };
         let query = format!(
             "SELECT * FROM `{}`.`{}`.`{}` LIMIT 1",
             bucket, schema, table
