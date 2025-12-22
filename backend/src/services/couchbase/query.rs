@@ -7,6 +7,39 @@ use serde_json::Value;
 
 use super::connection::CouchbaseDriver;
 
+fn split_query(query: &str) -> Vec<String> {
+    let mut statements = Vec::new();
+    let mut current_stmt = String::new();
+    let mut in_single_quote = false;
+    let mut in_double_quote = false;
+    let mut in_backtick = false;
+    let mut chars = query.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '\'' if !in_double_quote && !in_backtick => in_single_quote = !in_single_quote,
+            '"' if !in_single_quote && !in_backtick => in_double_quote = !in_double_quote,
+            '`' if !in_single_quote && !in_double_quote => in_backtick = !in_backtick,
+            ';' if !in_single_quote && !in_double_quote && !in_backtick => {
+                let stmt = current_stmt.trim();
+                if !stmt.is_empty() {
+                    statements.push(stmt.to_string());
+                }
+                current_stmt.clear();
+                continue;
+            }
+            _ => {}
+        }
+        current_stmt.push(c);
+    }
+
+    let stmt = current_stmt.trim();
+    if !stmt.is_empty() {
+        statements.push(stmt.to_string());
+    }
+    statements
+}
+
 #[async_trait]
 impl QueryDriver for CouchbaseDriver {
     async fn execute(&self, query: &str) -> Result<u64> {
@@ -28,9 +61,32 @@ impl QueryDriver for CouchbaseDriver {
     }
 
     async fn execute_query(&self, query: &str) -> Result<QueryResult> {
+        let statements = split_query(query);
+        if statements.is_empty() {
+            return Ok(QueryResult {
+                columns: vec![],
+                rows: vec![],
+                affected_rows: 0,
+                column_metadata: None,
+                total_count: None,
+                limit: None,
+                offset: None,
+                has_more: None,
+                row_metadata: None,
+            });
+        }
+
+        // Execute all but the last statement
+        for stmt in &statements[..statements.len() - 1] {
+            self.execute(stmt).await?;
+        }
+
+        // Execute the last statement and return its result
+        let last_stmt = &statements[statements.len() - 1];
+
         let mut result = self
             .cluster
-            .query(query, None)
+            .query(last_stmt, None)
             .await
             .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
 
@@ -112,8 +168,12 @@ impl QueryDriver for CouchbaseDriver {
     }
 
     async fn execute_script(&self, script: &str) -> Result<u64> {
-        // TODO: splitting script
-        self.execute(script).await
+        let statements = split_query(script);
+        let mut total_affected = 0;
+        for stmt in statements {
+            total_affected += self.execute(&stmt).await?;
+        }
+        Ok(total_affected)
     }
 
     async fn explain(&self, query: &str, _analyze: bool) -> Result<serde_json::Value> {
