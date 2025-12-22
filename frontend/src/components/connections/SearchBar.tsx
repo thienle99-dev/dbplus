@@ -1,4 +1,7 @@
 import React, { useRef, useEffect } from 'react';
+import { Plus, Search } from 'lucide-react';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 interface SearchBarProps {
     value: string;
@@ -22,32 +25,27 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onAdd }) 
 
     return (
         <div className="px-4 py-3 bg-bg-2 glass border-b border-border-light sticky top-0 z-10">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 {/* Add Button */}
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={onAdd}
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-text-secondary hover:bg-bg-3 hover:text-text-primary transition-colors flex-shrink-0"
+                    className="w-8 h-8 rounded-full !px-0"
                     title="Create connection"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
+                    icon={<Plus size={18} />}
+                />
 
                 {/* Search Input */}
-                <div className="flex-1 relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                    <input
+                <div className="flex-1">
+                    <Input
                         ref={inputRef}
                         type="text"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder="Search for connection... (⌘F)"
-                        className="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-1 border border-border-light text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+                        leftIcon={<Search size={16} />}
+                        fullWidth
                     />
                 </div>
             </div>

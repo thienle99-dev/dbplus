@@ -4,6 +4,14 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { connectionApi } from '../../services/connectionApi';
 import { useToast } from '../../context/ToastContext';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+
+const BUCKET_TYPE_OPTIONS = [
+  { value: 'couchbase', label: 'Couchbase' },
+  { value: 'memcached', label: 'Memcached' },
+  { value: 'ephemeral', label: 'Ephemeral' },
+];
 
 interface CreateCouchbaseBucketModalProps {
   open: boolean;
@@ -46,7 +54,7 @@ export default function CreateCouchbaseBucketModal({
         // The current CreateDatabaseOptions doesn't have RAM quota, 
         // but it's okay for now since we have a reminder in the backend that creation is partially implemented.
       });
-      
+
       showToast(result.message || `Bucket '${name}' creation initiated`, result.success ? 'success' : 'info');
       onCreated?.();
       handleClose();
@@ -75,40 +83,32 @@ export default function CreateCouchbaseBucketModal({
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-text-secondary">Bucket Name</label>
-              <input
-                className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="my-bucket"
-                autoFocus
-                required
-              />
-            </div>
+            <Input
+              label="Bucket Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="my-bucket"
+              autoFocus
+              required
+              fullWidth
+            />
 
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-text-secondary">RAM Quota (MB)</label>
-              <input
-                type="number"
-                min="100"
-                className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                value={ramQuota}
-                onChange={(e) => setRamQuota(Number(e.target.value))}
-              />
-            </div>
+            <Input
+              label="RAM Quota (MB)"
+              type="number"
+              min="100"
+              value={ramQuota}
+              onChange={(e) => setRamQuota(Number(e.target.value))}
+              fullWidth
+            />
 
-            <div className="grid gap-2">
+            <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-text-secondary">Bucket Type</label>
-              <select
-                className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+              <Select
                 value={bucketType}
-                onChange={(e) => setBucketType(e.target.value as any)}
-              >
-                <option value="couchbase">Couchbase</option>
-                <option value="memcached">Memcached</option>
-                <option value="ephemeral">Ephemeral</option>
-              </select>
+                onChange={(value) => setBucketType(value as any)}
+                options={BUCKET_TYPE_OPTIONS}
+              />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">

@@ -5,6 +5,9 @@ import { connectionApi } from '../../services/connectionApi';
 import { CreateDatabaseOptions, CreateDatabaseRequest } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import Checkbox from '../ui/Checkbox';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
 
 interface CreateDatabaseModalProps {
   open: boolean;
@@ -85,104 +88,89 @@ export default function CreateDatabaseModal({
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-text-secondary">Name</label>
-              <input
-                className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="my_new_db"
-                required
-              />
-            </div>
+            <Input
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="my_new_db"
+              required
+              fullWidth
+            />
 
-            <button
-              type="button"
-              className="text-xs text-text-secondary hover:text-text-primary self-start"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowAdvanced((v) => !v)}
+              className="self-start text-xs h-6"
             >
               {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
-            </button>
+            </Button>
 
             {showAdvanced && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">Owner</label>
-                  <input
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.owner || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, owner: e.target.value }))}
-                    placeholder="postgres"
-                  />
-                </div>
+                <Input
+                  label="Owner"
+                  value={options.owner || ''}
+                  onChange={(e) => setOptions((o) => ({ ...o, owner: e.target.value }))}
+                  placeholder="postgres"
+                  fullWidth
+                />
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">Template</label>
-                  <input
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.template || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, template: e.target.value }))}
-                    placeholder="template0"
-                  />
-                </div>
+                <Input
+                  label="Template"
+                  value={options.template || ''}
+                  onChange={(e) => setOptions((o) => ({ ...o, template: e.target.value }))}
+                  placeholder="template0"
+                  fullWidth
+                />
 
-                <div className="grid gap-2">
+                <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-text-secondary">Encoding</label>
-                  <select
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
+                  <Select
                     value={options.encoding || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, encoding: e.target.value || undefined }))}
-                  >
-                    <option value="">Default</option>
-                    {ENCODINGS.map((enc) => (
-                      <option key={enc} value={enc}>{enc}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">Tablespace</label>
-                  <input
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.tablespace || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, tablespace: e.target.value }))}
-                    placeholder="pg_default"
+                    onChange={(value) => setOptions((o) => ({ ...o, encoding: value || undefined }))}
+                    options={[
+                      { value: '', label: 'Default' },
+                      ...ENCODINGS.map(enc => ({ value: enc, label: enc }))
+                    ]}
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">LC_COLLATE</label>
-                  <input
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.lcCollate || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, lcCollate: e.target.value }))}
-                    placeholder="en_US.UTF-8"
-                  />
-                </div>
+                <Input
+                  label="Tablespace"
+                  value={options.tablespace || ''}
+                  onChange={(e) => setOptions((o) => ({ ...o, tablespace: e.target.value }))}
+                  placeholder="pg_default"
+                  fullWidth
+                />
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">LC_CTYPE</label>
-                  <input
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.lcCtype || ''}
-                    onChange={(e) => setOptions((o) => ({ ...o, lcCtype: e.target.value }))}
-                    placeholder="en_US.UTF-8"
-                  />
-                </div>
+                <Input
+                  label="LC_COLLATE"
+                  value={options.lcCollate || ''}
+                  onChange={(e) => setOptions((o) => ({ ...o, lcCollate: e.target.value }))}
+                  placeholder="en_US.UTF-8"
+                  fullWidth
+                />
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium text-text-secondary">Connection limit</label>
-                  <input
-                    type="number"
-                    className="bg-bg-0 border border-border rounded px-3 py-2 text-text-primary focus:border-accent focus:outline-none"
-                    value={options.connectionLimit ?? -1}
-                    onChange={(e) => setOptions((o) => ({ ...o, connectionLimit: Number(e.target.value) }))}
-                  />
-                  <div className="text-[11px] text-text-secondary">Use -1 for no limit</div>
-                </div>
+                <Input
+                  label="LC_CTYPE"
+                  value={options.lcCtype || ''}
+                  onChange={(e) => setOptions((o) => ({ ...o, lcCtype: e.target.value }))}
+                  placeholder="en_US.UTF-8"
+                  fullWidth
+                />
+
+                <Input
+                  label="Connection limit"
+                  type="number"
+                  value={options.connectionLimit ?? -1}
+                  onChange={(e) => setOptions((o) => ({ ...o, connectionLimit: Number(e.target.value) }))}
+                  helperText="Use -1 for no limit"
+                  fullWidth
+                />
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-text-secondary">Flags</label>
@@ -201,20 +189,19 @@ export default function CreateDatabaseModal({
             )}
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-              <button
-                type="button"
-                className="h-9 px-4 bg-bg-2 border border-border text-text-secondary rounded text-sm hover:bg-bg-3 transition-colors"
+              <Button
+                variant="secondary"
                 onClick={handleClose}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={!canSubmit}
-                className="h-9 px-4 bg-accent text-white rounded text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                isLoading={submitting}
               >
-                {submitting ? 'Creating…' : 'Create'}
-              </button>
+                Create
+              </Button>
             </div>
           </form>
         </Dialog.Content>

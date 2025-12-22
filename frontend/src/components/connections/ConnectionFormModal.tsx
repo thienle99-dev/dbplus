@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import Select from '../ui/Select';
 
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
 
@@ -31,6 +32,26 @@ const DEFAULT_FORM_DATA = {
     environment: 'development',
     safe_mode_level: '1', // using string for select
 };
+
+const SAFE_MODE_OPTIONS = [
+    { value: '0', label: 'Off' },
+    { value: '1', label: 'Warning' },
+    { value: '2', label: 'Strict' },
+];
+
+const ENVIRONMENT_OPTIONS = [
+    { value: 'development', label: 'Development' },
+    { value: 'staging', label: 'Staging' },
+    { value: 'production', label: 'Production' },
+];
+
+const SSL_MODE_OPTIONS = [
+    { value: 'disable', label: 'Disable' },
+    { value: 'require', label: 'Require' },
+    { value: 'verify-ca', label: 'Verify CA' },
+    { value: 'verify-full', label: 'Verify Full' },
+    { value: 'prefer', label: 'Prefer' },
+];
 
 const RECENT_SQLITE_DB_KEY = 'dbplus.recentSqliteDbs';
 const MAX_RECENT_SQLITE_DBS = 8;
@@ -166,29 +187,30 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
 
     const footer = (
         <div className="flex w-full items-center justify-between">
-            <Button variant="ghost" className="flex items-center gap-2">
-                Over SSH <ChevronDown size={12} />
+            <Button variant="ghost" className="flex items-center gap-2" rightIcon={<ChevronDown size={12} />}>
+                Over SSH
             </Button>
             <div className="flex gap-2">
                 <Button variant="secondary" onClick={onClose}>
                     Cancel
                 </Button>
-                <Button variant="secondary" onClick={handleTest} disabled={testStatus === 'testing'}>
-                    {testStatus === 'testing' ? 'Testing...' : 'Test'}
+                <Button
+                    variant="secondary"
+                    onClick={handleTest}
+                    isLoading={testStatus === 'testing'}
+                    disabled={testStatus === 'testing' || isSubmitting}
+                >
+                    Test
                 </Button>
                 <Button
                     variant="primary"
                     onClick={() => {
-                        // Create a fake event or just call helper. 
-                        // Form will catch standard submit, but Buttons are type="button" by default.
-                        // We can manually trigger form submit logic since they are outside form tag in Modal footer.
-                        // Actually, Modal footer is OUTSIDE the form if form wraps children.
-                        // So we should manually call handleSubmit(e as any).
                         handleSubmit({ preventDefault: () => { } } as any);
                     }}
-                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    disabled={isSubmitting || testStatus === 'testing'}
                 >
-                    {isSubmitting ? 'Connecting...' : 'Connect'}
+                    Connect
                 </Button>
             </div>
         </div>
@@ -249,26 +271,20 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
                     <label className="text-sm text-text-secondary">Environment</label>
                     <div className="flex gap-3">
-                        <select
+                        <Select
                             value={formData.environment}
-                            onChange={(e) => handleChange('environment', e.target.value)}
-                            className="bg-bg-1 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none flex-1"
-                        >
-                            <option value="development">Development</option>
-                            <option value="staging">Staging</option>
-                            <option value="production">Production</option>
-                        </select>
+                            onChange={(value) => handleChange('environment', value)}
+                            options={ENVIRONMENT_OPTIONS}
+                            className="flex-1"
+                        />
 
                         <label className="text-sm text-text-secondary self-center whitespace-nowrap">Safe Mode</label>
-                        <select
+                        <Select
                             value={formData.safe_mode_level}
-                            onChange={(e) => handleChange('safe_mode_level', e.target.value)}
-                            className="bg-bg-1 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none w-32"
-                        >
-                            <option value="0">Off</option>
-                            <option value="1">Warning</option>
-                            <option value="2">Strict</option>
-                        </select>
+                            onChange={(value) => handleChange('safe_mode_level', value)}
+                            options={SAFE_MODE_OPTIONS}
+                            className="w-32"
+                        />
                     </div>
                 </div>
 
@@ -357,7 +373,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                 Browse...
                             </Button>
                         ) : (
-                            <Button variant="secondary" size="sm">
+                            <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
                                 Bootstrap...
                             </Button>
                         )}
@@ -382,9 +398,11 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 {/* SSL Mode */}
                 <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
                     <label className="text-sm text-text-secondary">SSL mode</label>
-                    <Button variant="secondary" className="justify-between" rightIcon={<ChevronDown size={12} />}>
-                        PREFERRED
-                    </Button>
+                    <Select
+                        value={formData.ssl ? 'require' : 'disable'} // Simplification for now
+                        onChange={(value) => handleChange('ssl', (value !== 'disable') as any)}
+                        options={SSL_MODE_OPTIONS}
+                    />
                 </div>
             </form>
         </Modal>
