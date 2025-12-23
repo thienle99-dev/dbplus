@@ -11,6 +11,7 @@ import TableContextMenu from './TableContextMenu';
 import DataToolsModal from './DataToolsModal';
 import { usePinnedTables } from '../hooks/usePinnedTables';
 import { useSchemas, useTables, useViews, useFunctions } from '../hooks/useDatabase';
+import { useActiveDatabaseOverride } from '../hooks/useActiveDatabaseOverride';
 import { connectionApi } from '../services/connectionApi';
 import CreateDatabaseModal from './connections/CreateDatabaseModal';
 import { invoke } from '@tauri-apps/api/core';
@@ -26,6 +27,7 @@ import SchemaDiffModal from './schema-diff/SchemaDiffModal';
 import { MockDataModal } from './mock-data/MockDataModal';
 import CreateCouchbaseBucketModal from './connections/CreateCouchbaseBucketModal';
 import CreateCouchbaseCollectionModal from './couchbase/CreateCouchbaseCollectionModal';
+import Skeleton from './ui/Skeleton';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomContextMenu';
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
@@ -108,6 +110,29 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   const { data: tables = [], isLoading: loadingTables } = useTables(connectionId, shouldFetch ? schemaName : undefined);
   const { data: views = [], isLoading: loadingViews } = useViews(connectionId, shouldFetch ? schemaName : undefined);
   const { data: functions = [], isLoading: loadingFunctions } = useFunctions(connectionId, shouldFetch ? schemaName : undefined);
+  const dbOverride = useActiveDatabaseOverride(connectionId);
+  const dbKey = dbOverride ?? '__default__';
+
+  const handleRefreshSchema = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['tables', connectionId, dbKey, schemaName] }),
+      queryClient.invalidateQueries({ queryKey: ['views', connectionId, dbKey, schemaName] }),
+      queryClient.invalidateQueries({ queryKey: ['functions', connectionId, dbKey, schemaName] }),
+    ]);
+    showToast(`${schemaTerm} '${schemaName}' refreshed`, 'success');
+  };
+
+  const handleRefreshTable = async (e: React.MouseEvent, tableName: string) => {
+    e.stopPropagation();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['columns', connectionId, dbKey, schemaName, tableName] }),
+      queryClient.invalidateQueries({ queryKey: ['indexes', connectionId, dbKey, schemaName, tableName] }),
+      queryClient.invalidateQueries({ queryKey: ['constraints', connectionId, dbKey, schemaName, tableName] }),
+      queryClient.invalidateQueries({ queryKey: ['tableStats', connectionId, dbKey, schemaName, tableName] }),
+    ]);
+    showToast(`${tableTerm} '${tableName}' refreshed`, 'success');
+  };
 
   // Determine Loading
   const loading = loadingTables || loadingViews || loadingFunctions;
@@ -239,16 +264,28 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
         className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors"
         onContextMenu={handleSchemaContextMenu}
       >
-        <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
-          <ChevronRight size={12} className="text-text-secondary" />
-        </div>
+        <ChevronRight size={12} className={`text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
         <Database size={14} className="text-accent" />
         <span className="truncate font-medium flex-1 text-left">{schemaName}</span>
+        <button
+          onClick={handleRefreshSchema}
+          className="p-1 rounded hover:bg-bg-active text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
+          title={`Refresh ${schemaTerm}`}
+        >
+          <RefreshCw size={12} className={loadingTables || loadingViews || loadingFunctions ? 'animate-spin' : ''} />
+        </button>
       </Collapsible.Trigger>
 
       <Collapsible.Content className="ml-2 border-l border-border-light overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
         {loading ? (
-          <div className="pl-6 py-1 text-[10px] text-text-secondary">Loading objects...</div>
+          <div className="space-y-1.5 py-2 pl-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center gap-2 pl-6 pr-3 py-1 animate-pulse">
+                <Skeleton className="w-3 h-3 rounded-full flex-shrink-0" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            ))}
+          </div>
         ) : !hasItems ? (
           <div className="pl-6 py-1 text-[10px] text-text-secondary">Empty {schemaTerm.toLowerCase()}</div>
         ) : (
@@ -267,6 +304,13 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
                       <Table size={13} className="flex-shrink-0 opacity-70" />
                       <span className="truncate flex-1">{table.name}</span>
                       {tablePinned && <Pin size={12} className="flex-shrink-0 text-accent opacity-60" />}
+                      <button
+                        onClick={(e) => handleRefreshTable(e, table.name)}
+                        className="p-1 rounded hover:bg-bg-active text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
+                        title={`Refresh ${tableTerm}`}
+                      >
+                        <RefreshCw size={11} />
+                      </button>
                     </div>
                   )
                 })}
@@ -352,6 +396,16 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             }}
           >
             View ER Diagram
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            icon={<RefreshCw size={14} />}
+            onClick={() => {
+              handleRefreshSchema();
+              setSchemaContextMenu(null);
+            }}
+          >
+            Refresh {schemaTerm}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem icon={<Plus size={14} />} onClick={() => {
@@ -527,6 +581,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
     }
   };
 
+  const dbOverride = useActiveDatabaseOverride(connectionId);
+  const dbKey = dbOverride ?? '__default__';
+
+  const handleRefreshAll = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId, dbKey] });
+    // This will also invalidate all sub-queries if they start with ['tables', connectionId, dbKey]
+    showToast('Schemas refreshed', 'success');
+  };
+
   return (
     <div className="flex flex-col pb-4">
       <div className="px-3 py-2 flex items-center justify-between">
@@ -534,6 +597,14 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
           {connectionType === 'couchbase' ? 'Scopes' : 'Schemas'}
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={handleRefreshAll}
+            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
+            title="Refresh all"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
           {/* Schema Filter Button */}
           <button
             onClick={() => setShowSchemaFilter(true)}
@@ -648,7 +719,14 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       </div>
 
       {loading ? (
-        <div className="p-4 text-xs text-text-secondary text-center">Loading schemas...</div>
+        <div className="px-3 py-2 space-y-2">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 animate-pulse">
+              <Skeleton className="w-4 h-4 rounded-sm flex-shrink-0" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
           <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">

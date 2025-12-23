@@ -137,6 +137,8 @@ impl ConnectionService {
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
+        let start_time = std::time::Instant::now();
+
         let mut result = match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
@@ -165,6 +167,9 @@ impl ConnectionService {
             }
             _ => return Err(anyhow::anyhow!("Unsupported database type")),
         };
+
+        let duration = start_time.elapsed();
+        result.execution_time_ms = Some(duration.as_millis() as u64);
 
         // Apply pagination if specified
         if let (Some(limit_val), Some(offset_val)) = (limit, offset) {

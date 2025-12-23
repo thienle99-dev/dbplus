@@ -51,6 +51,8 @@ pub struct QueryResult {
     pub has_more: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub row_metadata: Option<Vec<Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_time_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

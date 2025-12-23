@@ -13,6 +13,7 @@ import { useDatabases } from '../../hooks/useDatabase';
 import Select from '../ui/Select';
 import { Database } from 'lucide-react';
 import { extractApiErrorDetails } from '../../utils/apiError';
+import Skeleton from '../ui/Skeleton';
 
 export default function ScopeManagement() {
   const { connectionId } = useParams();
@@ -115,7 +116,16 @@ export default function ScopeManagement() {
       }
     >
       {isLoading ? (
-        <div className="text-center py-10 text-text-secondary">Loading scopes...</div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3 border border-border-light rounded-lg bg-bg-1 shadow-sm">
+              <Skeleton className="w-4 h-4 rounded-full" />
+              <Skeleton className="h-4 w-1/3" />
+              <div className="flex-1" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
+          ))}
+        </div>
       ) : filteredScopes.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-lg bg-bg-1">
           <Library size={48} className="mx-auto text-text-muted mb-4 opacity-50" />

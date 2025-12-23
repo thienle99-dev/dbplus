@@ -15,6 +15,7 @@ import {
     Scissors,
     ChevronRight,
     Sparkles,
+    RefreshCw,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +23,7 @@ import { useTabContext } from '../context/TabContext';
 import { useToast } from '../context/ToastContext';
 import { useDialog } from '../context/DialogContext';
 import { connectionApi } from '../services/connectionApi';
+import { useActiveDatabaseOverride } from '../hooks/useActiveDatabaseOverride';
 
 interface TableContextMenuProps {
     table: string;
@@ -135,6 +137,20 @@ export default function TableContextMenu({
             menuRef.current.style.top = `${adjustedY}px`;
         }
     }, [position]);
+
+    const handleRefresh = async () => {
+        const dbOverride = useActiveDatabaseOverride(connectionId);
+        const dbKey = dbOverride ?? '__default__';
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['columns', connectionId, dbKey, schema, table] }),
+            queryClient.invalidateQueries({ queryKey: ['indexes', connectionId, dbKey, schema, table] }),
+            queryClient.invalidateQueries({ queryKey: ['constraints', connectionId, dbKey, schema, table] }),
+            queryClient.invalidateQueries({ queryKey: ['tableStats', connectionId, dbKey, schema, table] }),
+            queryClient.invalidateQueries({ queryKey: ['triggers', connectionId, dbKey, schema, table] }),
+        ]);
+        showToast(`${objectTerm} '${table}' refreshed`, 'success');
+        onClose();
+    };
 
     const handleOpenInNewTab = () => {
         if (tabContext) {
@@ -257,6 +273,11 @@ export default function TableContextMenu({
             label: 'Open in new tab',
             icon: <ExternalLink size={14} />,
             onClick: handleOpenInNewTab,
+        },
+        {
+            label: `Refresh ${objectTerm}`,
+            icon: <RefreshCw size={14} />,
+            onClick: handleRefresh,
         },
         {
             label: 'Open structure',

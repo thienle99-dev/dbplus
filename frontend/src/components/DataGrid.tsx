@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import api from '../services/api';
 import { QueryResult } from '../types';
+import Skeleton from './ui/Skeleton';
 
 export default function DataGrid() {
   const { connectionId, schema, table } = useParams();
@@ -34,6 +35,12 @@ export default function DataGrid() {
       setLoading(false);
     }
   }, [connectionId, schema, table, page, pageSize]);
+
+  useEffect(() => {
+    setData(null);
+    setPage(0);
+    setError(null);
+  }, [connectionId, schema, table]);
 
   useEffect(() => {
     fetchData();
@@ -64,7 +71,42 @@ export default function DataGrid() {
   });
 
   if (loading && !data) {
-    return <div className="p-8 text-text-secondary">Loading data...</div>;
+    return (
+      <div className="flex flex-col h-full bg-bg-panel overflow-hidden">
+        <div className="p-4 border-b border-border-light flex justify-between items-center">
+          <Skeleton className="h-6 w-48" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
+        <div className="flex-1">
+          <table className="w-full border-collapse">
+            <thead className="bg-bg-0 border-b border-border-light">
+              <tr>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <th key={i} className="px-4 py-3 border-r border-border-light">
+                    <Skeleton className="h-4 w-24" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(15)].map((_, i) => (
+                <tr key={i} className="border-b border-border-light">
+                  {[1, 2, 3, 4, 5].map(j => (
+                    <td key={j} className="px-4 py-2 border-r border-border-light">
+                      <Skeleton className="h-3 w-4/5" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
