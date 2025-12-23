@@ -59,6 +59,8 @@ impl ConnectionService {
             ssh_key_file: Set(data.ssh_key_file),
             ssh_key_passphrase: Set(data.ssh_key_passphrase),
             is_read_only: Set(data.is_read_only),
+            environment: Set(data.environment),
+            safe_mode_level: Set(data.safe_mode_level),
             created_at: Set(Utc::now().into()),
             updated_at: Set(Utc::now().into()),
             ..Default::default()
@@ -110,6 +112,8 @@ impl ConnectionService {
             ssh_user: Set(data.ssh_user),
             ssh_auth_type: Set(data.ssh_auth_type),
             is_read_only: Set(data.is_read_only),
+            environment: Set(data.environment),
+            safe_mode_level: Set(data.safe_mode_level),
             updated_at: Set(Utc::now().into()),
             ..Default::default()
         };

@@ -174,6 +174,11 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                                 {connection.environment}
                             </span>
                         )}
+                        {connection.safe_mode_level !== undefined && connection.safe_mode_level > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-500">
+                                {connection.safe_mode_level === 1 ? 'SAFE' : 'STRICT'}
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2 text-xs font-medium">

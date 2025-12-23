@@ -192,12 +192,33 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
 
     const dbLabel = DATABASE_TYPES.find(t => t.id === formData.type)?.name || 'PostgreSQL';
 
+    const handleExport = () => {
+        const data = getConnectionData();
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.name.replace(/\s+/g, '_').toLowerCase()}_config.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const footer = (
         <div className="flex w-full items-center justify-between">
             <Button variant="ghost" className="flex items-center gap-2" rightIcon={<ChevronDown size={12} />}>
                 Over SSH
             </Button>
             <div className="flex gap-2">
+                <Button
+                    variant="secondary"
+                    onClick={handleExport}
+                    title="Export connection config to JSON"
+                >
+                    Save
+                </Button>
                 <Button variant="secondary" onClick={onClose}>
                     Cancel
                 </Button>

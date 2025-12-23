@@ -11,6 +11,14 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(Connections::Table)
                     .add_column(ColumnDef::new(Connections::StatusColor).string())
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Connections::Table)
                     .add_column(ColumnDef::new(Connections::Tags).string())
                     .to_owned(),
             )
@@ -23,6 +31,14 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(Connections::Table)
                     .drop_column(Connections::StatusColor)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Connections::Table)
                     .drop_column(Connections::Tags)
                     .to_owned(),
             )
