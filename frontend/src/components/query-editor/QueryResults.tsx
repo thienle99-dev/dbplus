@@ -815,6 +815,11 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     Total {totalCount.toLocaleString()} • Page {currentPage}/{totalPages}
                                 </span>
                             )}
+                            {result.execution_time_ms !== undefined && (
+                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
+                                    Time: <span className="text-accent font-medium">{result.execution_time_ms}ms</span>
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-2">

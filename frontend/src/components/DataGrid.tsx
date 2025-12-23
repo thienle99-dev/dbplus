@@ -182,6 +182,19 @@ export default function DataGrid() {
           <div className="p-8 text-center text-text-secondary">No rows found</div>
         )}
       </div>
+      <div className="px-4 py-2 border-t border-border-light bg-bg-panel flex items-center justify-between text-xs text-text-secondary">
+        <div className="flex items-center gap-4">
+          <span>{data.rows.length} rows fetched</span>
+          {data.execution_time_ms !== undefined && (
+            <span className="opacity-70 border-l border-border-light pl-4">
+              Execution time: <span className="text-accent font-medium">{data.execution_time_ms}ms</span>
+            </span>
+          )}
+        </div>
+        {data.total_count !== undefined && (
+          <div className="font-medium">Total: {data.total_count}</div>
+        )}
+      </div>
     </div>
   );
 }
