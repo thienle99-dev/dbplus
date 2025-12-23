@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReactJson from 'react-json-view';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Copy, Check, X, FileJson, AlignLeft, RefreshCw } from 'lucide-react';
+import { Copy, Check, X, FileJson, AlignLeft, RefreshCw, Search } from 'lucide-react';
 import { useSettingsStore } from '../../store/settingsStore';
 import Button from './Button';
 import { useToast } from '../../context/ToastContext';
@@ -30,6 +30,7 @@ export default function JsonEditorModal({
     const [mode, setMode] = useState<'text' | 'tree'>('tree');
     const [textValue, setTextValue] = useState('');
     const [jsonValue, setJsonValue] = useState<object>({});
+    const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -115,6 +116,43 @@ export default function JsonEditorModal({
         }
     };
 
+    const filteredJson = useMemo(() => {
+        if (!searchTerm) return jsonValue;
+        
+        const filter = (obj: any, term: string): any => {
+            if (typeof obj !== 'object' || obj === null) {
+                return String(obj).toLowerCase().includes(term.toLowerCase()) ? obj : undefined;
+            }
+            
+            if (Array.isArray(obj)) {
+                const filteredArr = obj
+                    .map(item => filter(item, term))
+                    .filter(item => item !== undefined);
+                return filteredArr.length > 0 ? filteredArr : undefined;
+            }
+            
+            const filteredObj: any = {};
+            let hasMatch = false;
+            
+            for (const key in obj) {
+                if (key.toLowerCase().includes(term.toLowerCase())) {
+                    filteredObj[key] = obj[key];
+                    hasMatch = true;
+                } else {
+                    const val = filter(obj[key], term);
+                    if (val !== undefined) {
+                        filteredObj[key] = val;
+                        hasMatch = true;
+                    }
+                }
+            }
+            
+            return hasMatch ? filteredObj : undefined;
+        };
+        
+        return filter(jsonValue, searchTerm) || {};
+    }, [jsonValue, searchTerm]);
+
     if (!isOpen) return null;
 
     return (
@@ -126,7 +164,16 @@ export default function JsonEditorModal({
                         <FileJson size={16} className="text-accent" />
                         {title}
                     </h3>
-                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" size={14} />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-8 pr-3 py-1 bg-bg-1 border border-border-subtle rounded-md text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent w-48 transition-all"
+                            />
+                        </div>
                         <div className="flex bg-bg-1 rounded-lg p-0.5 border border-border-subtle">
                             <button
                                 onClick={() => setMode('tree')}
@@ -154,7 +201,6 @@ export default function JsonEditorModal({
                             <Button variant="ghost" size="sm" onClick={onClose} icon={<X size={16} />} />
                         )}
                     </div>
-                </div>
 
                 {/* Toolbar (Text Mode Only) */}
                 {mode === 'text' && (
@@ -171,7 +217,7 @@ export default function JsonEditorModal({
                     {mode === 'tree' ? (
                         <div className="p-4 h-full overflow-auto custom-scrollbar">
                             <ReactJson
-                                src={jsonValue}
+                                src={filteredJson}
                                 theme={isDarkTheme(theme) ? 'ocean' : 'rjv-default'}
                                 style={{ backgroundColor: 'transparent', fontSize: '13px' }}
                                 onEdit={readOnly ? false : handleJsonChange}
@@ -196,6 +242,9 @@ export default function JsonEditorModal({
                                 bracketMatching: true,
                                 closeBrackets: true,
                                 autocompletion: true,
+                                highlightActiveLine: true,
+                                foldGutter: true,
+                                searchKeymap: true,
                             }}
                         />
                     )}

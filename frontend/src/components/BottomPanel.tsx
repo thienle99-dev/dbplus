@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { Code } from 'lucide-react';
 import { LogViewer } from './LogViewer';
 
 type TabType = 'sql';

@@ -6,7 +6,7 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Edit, Copy, MoreHorizontal, Trash2, Columns, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X, RefreshCw, Plus, ArrowRight, Edit, Copy, MoreHorizontal, Trash2, Columns, Maximize2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelectedRow } from '../../context/SelectedRowContext';
 import { useTablePage } from '../../context/TablePageContext';
@@ -103,6 +103,7 @@ export default function TableDataTab({
   const { connections } = useConnectionStore();
   const currentConnection = connections.find(c => c.id === connectionId);
   const [inlineEditingEnabled, setInlineEditingEnabled] = useState(true);
+  const [localSearch, setLocalSearch] = useState('');
 
   // Virtualization Ref
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -268,8 +269,16 @@ export default function TableDataTab({
     return [indexColumn, actionsColumn, ...dataColumns];
   }, [data?.columns, _columnsInfo, edits, onEdit, foreignKeys, connectionId, page, pageSize, inlineEditingEnabled, onDelete, onDuplicate, setSelectedRow, schema, table]);
 
+  const filteredRows = useMemo(() => {
+    if (!localSearch) return data?.rows || [];
+    const term = localSearch.toLowerCase();
+    return (data?.rows || []).filter(row => 
+      row.some(cell => String(cell).toLowerCase().includes(term))
+    );
+  }, [data?.rows, localSearch]);
+
   const tableInstance = useReactTable({
-    data: data?.rows || [],
+    data: filteredRows,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -357,12 +366,33 @@ export default function TableDataTab({
         >
           {isCouchbase ? 'Retrieve' : 'Run Filter'}
         </Button>
+
+        {/* Local Table Filter */}
+        <div className="flex items-center gap-2 border-l border-border-light pl-4 ml-auto">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" size={13} />
+            <input
+              className="h-7 px-8 bg-bg-2 border border-border-subtle rounded-md text-[11px] text-text-primary outline-none focus:ring-1 focus:ring-accent placeholder:text-text-tertiary/50 transition-all w-48 focus:w-64"
+              placeholder="Search in current batch..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+            />
+            {localSearch && (
+              <button
+                onClick={() => setLocalSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="px-3 py-1 bg-bg-2/30 border-b border-border-light/50 flex items-center justify-between text-[10px] text-text-tertiary">
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
           <span className="text-accent font-bold">
-            {data.rows.length} records
+            {filteredRows.length}{localSearch ? ` / ${data.rows.length}` : ''} records
           </span>
           <span className="opacity-40">│</span>
           {isCouchbase ? (

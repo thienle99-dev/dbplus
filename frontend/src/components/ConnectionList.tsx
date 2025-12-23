@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, Database, Trash } from 'lucide-react';
+import { Plus, Database, Trash, Search, X } from 'lucide-react';
 import { useConnections, useDeleteConnection } from '../hooks/useConnections';
 import { useState } from 'react';
 
@@ -12,6 +12,7 @@ export default function ConnectionList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const navigate = useNavigate();
   const dialog = useDialog();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,18 +36,38 @@ export default function ConnectionList() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">Connections</h1>
           <p className="text-text-secondary mt-1">Manage your database connections</p>
         </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md transition-colors font-medium"
-        >
-          <Plus size={18} />
-          New Connection
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+            <input
+              type="text"
+              placeholder="Search connections..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10 py-2 bg-bg-1 border border-border-light rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent w-64 transition-all"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md transition-colors font-medium h-[38px]"
+          >
+            <Plus size={18} />
+            New Connection
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -65,7 +86,12 @@ export default function ConnectionList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {connections.map((conn) => (
+          {connections.filter(c => 
+            c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            c.host.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            c.database.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.type.toLowerCase().includes(searchTerm.toLowerCase())
+          ).map((conn) => (
             <div
               key={conn.id}
               onClick={() => navigate(`/workspace/${conn.id}`)}

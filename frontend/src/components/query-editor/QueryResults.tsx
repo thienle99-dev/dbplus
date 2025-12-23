@@ -19,7 +19,7 @@ import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
 import { useDialog } from '../../context/DialogContext';
-import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Maximize2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Maximize2, Search } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 
@@ -63,6 +63,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     onChartConfigChange
 }) => {
     const [jsonCopied, setJsonCopied] = useState(false);
+    const [resultsSearchTerm, setResultsSearchTerm] = useState('');
 
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const editsRef = useRef<Record<number, Record<string, any>>>({});
@@ -354,9 +355,18 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const MAX_RENDER_ROWS = 5000;
     const displayRows = useMemo(() => {
         if (!result?.rows) return [];
-        if (renderAllRows) return result.rows;
-        return result.rows.slice(0, MAX_RENDER_ROWS);
-    }, [result, renderAllRows]);
+        let rows = result.rows;
+
+        if (resultsSearchTerm) {
+            const term = resultsSearchTerm.toLowerCase();
+            rows = rows.filter(row =>
+                row.some(cell => String(cell).toLowerCase().includes(term))
+            );
+        }
+
+        if (renderAllRows) return rows;
+        return rows.slice(0, MAX_RENDER_ROWS);
+    }, [result, renderAllRows, resultsSearchTerm]);
 
     const hasTruncatedRows = !!result?.rows && !renderAllRows && result.rows.length > MAX_RENDER_ROWS;
     const canPaginate =
@@ -898,6 +908,20 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 </span>
                             )}
                             
+                            {/* Results Search Bar */}
+                            {result.rows.length > 0 && viewMode === 'table' && (
+                                <div className="relative ml-4">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary" size={12} />
+                                    <input
+                                        type="text"
+                                        placeholder="Filter results..."
+                                        value={resultsSearchTerm}
+                                        onChange={(e) => setResultsSearchTerm(e.target.value)}
+                                        className="pl-6 pr-2 py-0.5 bg-bg-2 border border-border-light rounded-md text-[11px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/50 w-32 transition-all hover:w-48 focus:w-64"
+                                    />
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-1 bg-bg-2 p-0.5 rounded-lg border border-border-light ml-4">
                                 <button
                                     onClick={() => setViewMode('table')}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import { Database } from 'lucide-react';
+import { Database, Search, X } from 'lucide-react';
 import { TableColumn, TableStructureTabProps } from '../types';
 
 export default function TableStructureTab({ schema: schemaProp, table: tableProp }: TableStructureTabProps) {
@@ -11,6 +11,7 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
     const connectionId = params.connectionId;
     const [columns, setColumns] = useState<TableColumn[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (!connectionId || !schema || !table) return;
@@ -43,12 +44,32 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
     return (
         <div className="flex flex-col h-full bg-bg-0">
             <div className="p-2.5 border-b border-border-light bg-bg-1/50 backdrop-blur-sm">
-                <h3 className="text-xs font-semibold text-text-primary flex items-center gap-2.5">
-                    <div className="p-1 rounded-md bg-accent/10 text-accent">
-                        <Database size={14} />
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-text-primary flex items-center gap-2.5">
+                        <div className="p-1 rounded-md bg-accent/10 text-accent">
+                            <Database size={14} />
+                        </div>
+                        <span>Table Structure: <span className="text-accent">{schema}.{table}</span></span>
+                    </h3>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" size={13} />
+                        <input
+                            type="text"
+                            placeholder="Filter columns..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-8 pr-8 py-1 bg-bg-2 border border-border-light rounded-md text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent w-48 transition-all"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
                     </div>
-                    <span>Table Structure: <span className="text-accent">{schema}.{table}</span></span>
-                </h3>
+                </div>
             </div>
 
             <div className="flex-1 overflow-auto custom-scrollbar">
@@ -64,7 +85,10 @@ export default function TableStructureTab({ schema: schemaProp, table: tableProp
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border-light/50">
-                        {columns.map((col, index) => (
+                        {columns.filter(col => 
+                            col.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            col.data_type.toLowerCase().includes(searchTerm.toLowerCase())
+                        ).map((col, index) => (
                             <tr key={col.name} className="hover:bg-bg-1/50 transition-colors group">
                                 <td className="px-3 py-2 text-text-tertiary font-mono">{index + 1}</td>
                                 <td className="px-3 py-2 text-text-primary font-medium group-hover:text-accent transition-colors">{col.name}</td>
