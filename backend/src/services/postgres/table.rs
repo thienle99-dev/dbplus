@@ -1,7 +1,7 @@
 use crate::services::db_driver::{
     DependentRoutineInfo, DependentViewInfo, IndexInfo, PartitionChildInfo, PartitionInfo,
-    QueryResult, RoleInfo, StorageBloatInfo, TableComment, TableConstraints, TableDependencies,
-    TableGrant, TableStatistics, TriggerInfo,
+    QueryResult, ReferencingForeignKeyInfo, RoleInfo, StorageBloatInfo, TableComment,
+    TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;

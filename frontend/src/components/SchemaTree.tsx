@@ -497,6 +497,7 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
 
       {healthDashboard && healthDashboard.open && (
         <TableHealthDashboard
+          connectionId={connectionId!}
           schema={healthDashboard.schema}
           table={healthDashboard.table}
           onClose={() => setHealthDashboard(null)}

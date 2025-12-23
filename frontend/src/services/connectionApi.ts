@@ -191,4 +191,14 @@ export const connectionApi = {
         const response = await api.get(`/api/connections/${id}/functions`, { params: { schema } });
         return response.data;
     },
+
+    getStorageBloatInfo: async (id: string, schema: string, table: string): Promise<any> => {
+        const response = await api.get(`/api/connections/${id}/storage-info`, { params: { schema, table } });
+        return response.data;
+    },
+
+    getFkOrphans: async (id: string, schema: string, table: string): Promise<Array<{ constraint_name: string; foreign_key_columns: string[]; referenced_table: string; orphan_count: number }>> => {
+        const response = await api.get(`/api/connections/${id}/health/orphans`, { params: { schema, table } });
+        return response.data;
+    },
 };

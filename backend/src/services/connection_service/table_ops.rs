@@ -181,7 +181,7 @@ impl ConnectionService {
 
         let start_time = std::time::Instant::now();
 
-        let mut result = match connection.db_type.as_str() {
+        let result = match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 TableOperations::get_table_data(
