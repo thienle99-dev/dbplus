@@ -93,6 +93,8 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     initialTable?: string
   }>({ open: false, scope: DdlScope.Schema });
 
+  const [healthDashboard, setHealthDashboard] = useState<{ open: boolean; schema: string; table: string } | null>(null);
+
   const [dataTools, setDataTools] = useState<null | { mode: 'export' | 'import'; format: 'csv' | 'json' | 'sql'; schema: string; table: string }>(null);
 
   // Definition Modal State
@@ -371,6 +373,10 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             setMockDataModal({ open: true, table: contextMenu.table });
             setContextMenu(null);
           }}
+          onOpenHealth={() => {
+            setHealthDashboard({ open: true, schema: schemaName, table: contextMenu.table });
+            setContextMenu(null);
+          }}
           objectTerm={tableTerm}
         />
       )}
@@ -486,6 +492,14 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
           onSubmit={handleCreateCollection}
           scopeName={schemaName}
           bucketName={activeDatabase || 'default'}
+        />
+      )}
+
+      {healthDashboard && healthDashboard.open && (
+        <TableHealthDashboard
+          schema={healthDashboard.schema}
+          table={healthDashboard.table}
+          onClose={() => setHealthDashboard(null)}
         />
       )}
     </Collapsible.Root>
