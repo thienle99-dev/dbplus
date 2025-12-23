@@ -6,6 +6,7 @@ import { Copy, Check, X, FileJson, AlignLeft, RefreshCw } from 'lucide-react';
 import { useSettingsStore } from '../../store/settingsStore';
 import Button from './Button';
 import { useToast } from '../../context/ToastContext';
+import { isDarkTheme } from '../../utils/theme';
 
 interface JsonEditorModalProps {
     isOpen: boolean;
@@ -142,6 +143,13 @@ export default function JsonEditorModal({
                                 Text
                             </button>
                         </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCopy}
+                            icon={<Copy size={16} />}
+                            title="Copy JSON"
+                        />
                         {!readOnly && (
                             <Button variant="ghost" size="sm" onClick={onClose} icon={<X size={16} />} />
                         )}
@@ -164,7 +172,7 @@ export default function JsonEditorModal({
                         <div className="p-4 h-full overflow-auto custom-scrollbar">
                             <ReactJson
                                 src={jsonValue}
-                                theme={theme === 'dark' ? 'ocean' : 'rjv-default'}
+                                theme={isDarkTheme(theme) ? 'ocean' : 'rjv-default'}
                                 style={{ backgroundColor: 'transparent', fontSize: '13px' }}
                                 onEdit={readOnly ? false : handleJsonChange}
                                 onAdd={readOnly ? false : handleJsonChange}
@@ -179,7 +187,7 @@ export default function JsonEditorModal({
                         <CodeMirror
                             value={textValue}
                             height="100%"
-                            theme={theme === 'dark' ? oneDark : 'light'}
+                            theme={isDarkTheme(theme) ? oneDark : 'light'}
                             onChange={readOnly ? undefined : handleTextChange}
                             editable={!readOnly}
                             className="text-sm font-mono h-full"

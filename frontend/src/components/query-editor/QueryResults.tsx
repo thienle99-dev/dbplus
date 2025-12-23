@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { useSettingsStore } from '../../store/settingsStore';
+import { isDarkTheme } from '../../utils/theme';
 import { QueryResult } from '../../types';
 import { ChartConfig, ChartConfigData } from './ChartConfig';
 import { ChartRenderer } from './ChartRenderer';
@@ -61,6 +62,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, initialChartConfig,
     onChartConfigChange
 }) => {
+    const [jsonCopied, setJsonCopied] = useState(false);
 
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
     const editsRef = useRef<Record<number, Record<string, any>>>({});
@@ -1442,10 +1444,25 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                             )}
                         </div>
                     ) : (
-                        <div className="flex-1 overflow-hidden mx-2 mb-2 rounded-lg border border-border-subtle bg-bg-0 shadow-sm relative">
+                        <div className="flex-1 overflow-hidden mx-2 mb-2 rounded-lg border border-border-subtle bg-bg-0 shadow-sm relative group">
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(jsonValue);
+                                        setJsonCopied(true);
+                                        setTimeout(() => setJsonCopied(false), 2000);
+                                    } catch (err) {
+                                        console.error('Failed to copy', err);
+                                    }
+                                }}
+                                className="absolute right-4 top-2 z-10 p-1.5 bg-bg-2 border border-border-light rounded-md text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                                title="Copy JSON"
+                            >
+                                {jsonCopied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                            </button>
                             <CodeMirror
                                 value={jsonValue}
-                                theme={theme === 'dark' ? 'dark' : 'light'}
+                                theme={isDarkTheme(theme) ? 'dark' : 'light'}
                                 height="100%"
                                 readOnly
                                 basicSetup={{

@@ -1,7 +1,9 @@
 import ReactJson from 'react-json-view';
 import { useEffect, useMemo, useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 import { useSettingsStore } from '../store/settingsStore';
 import { computeExplainInsights } from '../utils/explainInsights';
+import { isDarkTheme } from '../utils/theme';
 
 interface ExecutionPlanViewProps {
     plan: any;
@@ -218,8 +220,9 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
     const { theme } = useSettingsStore();
     const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
     const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set<string>());
+    const [copied, setCopied] = useState(false);
 
-    const isDark = theme === 'dark';
+    const isDark = isDarkTheme(theme);
 
     const insights = useMemo(() => (plan ? computeExplainInsights(plan) : null), [plan]);
     const engine = insights?.engine;
@@ -427,19 +430,37 @@ function PlanAnalysis({ plan, loading, error, title, extraHeader }: ExecutionPla
             )}
 
             {(engine !== 'postgres' || viewMode === 'json') && (
-                <div className="text-sm font-mono">
+                <div className="text-sm font-mono relative group">
+                    <button
+                        onClick={async () => {
+                            try {
+                                const text = typeof plan === 'string' ? plan : JSON.stringify(plan, null, 2);
+                                await navigator.clipboard.writeText(text);
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 2000);
+                            } catch (err) {
+                                console.error('Failed to copy', err);
+                            }
+                        }}
+                        className="absolute right-4 top-2 z-10 p-1.5 bg-bg-2 border border-border-light rounded-md text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                        title="Copy JSON"
+                    >
+                        {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                    </button>
                     {typeof plan === 'string' ? (
-                        <pre className="whitespace-pre-wrap">{plan}</pre>
+                        <pre className="whitespace-pre-wrap p-3 bg-bg-0 rounded-lg border border-border-light">{plan}</pre>
                     ) : (
-                        <ReactJson
-                            src={plan}
-                            theme={isDark ? 'monokai' : 'rjv-default'}
-                            style={{ backgroundColor: 'transparent' }}
-                            name={false}
-                            displayDataTypes={false}
-                            enableClipboard={true}
-                            collapsed={2}
-                        />
+                        <div className="p-3 bg-bg-0 rounded-lg border border-border-light overflow-hidden">
+                            <ReactJson
+                                src={plan}
+                                theme={isDark ? 'ocean' : 'rjv-default'}
+                                style={{ backgroundColor: 'transparent' }}
+                                name={false}
+                                displayDataTypes={false}
+                                enableClipboard={false}
+                                collapsed={2}
+                            />
+                        </div>
                     )}
                 </div>
             )}
