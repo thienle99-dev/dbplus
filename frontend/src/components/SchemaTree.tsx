@@ -447,9 +447,6 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   );
 
   const schemas = useMemo(() => {
-    if (connectionType === 'couchbase') {
-      return rawSchemas.filter(s => s !== '_default' && s !== '_system');
-    }
     return rawSchemas;
   }, [rawSchemas, connectionType]);
 

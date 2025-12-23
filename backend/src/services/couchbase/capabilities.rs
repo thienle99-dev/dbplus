@@ -7,6 +7,7 @@ impl DriverCapabilities for CouchbaseDriver {
         vec![
             DriverCapability::Schemas,
             DriverCapability::Indexes,
+            DriverCapability::ColumnManagement,
             // Add others as implemented
         ]
     }
