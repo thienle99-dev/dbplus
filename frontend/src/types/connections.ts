@@ -30,7 +30,17 @@ export interface Connection {
   username?: string;
   password?: string;
   ssl?: boolean;
-  statusColor?: string;
+  status_color?: string;
+  tags?: string;
   environment?: string;
   safe_mode_level?: number;
+  ssh_enabled?: boolean;
+  ssh_host?: string;
+  ssh_port?: number;
+  ssh_user?: string;
+  ssh_auth_type?: string;
+  ssh_password?: string;
+  ssh_key_file?: string;
+  ssh_key_passphrase?: string;
+  is_read_only?: boolean;
 }

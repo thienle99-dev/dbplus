@@ -1,0 +1,1424 @@
+    Checking dbplus-backend v0.1.0 (/Users/thienle/Documents/personal/dbplus/backend)
+warning: unused import: `crate::services::db_driver::DatabaseDriver`
+  --> src/services/connection_service/table_ops.rs:59:13
+   |
+59 |         use crate::services::db_driver::DatabaseDriver;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::services::db_driver::DatabaseDriver`
+   --> src/services/connection_service/table_ops.rs:103:13
+    |
+103 |         use crate::services::db_driver::DatabaseDriver;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> src/services/couchbase/table.rs:11:5
+   |
+11 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:205:22
+    |
+205 |                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+    |                      ^^^^^^^^^^^^^^ multiple `get_table_data` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+204 -                 driver
+205 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+204 +                 TableOperations::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+help: disambiguate the method for candidate #2
+    |
+204 -                 driver
+205 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+204 +                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:211:22
+    |
+211 |                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+    |                      ^^^^^^^^^^^^^^ multiple `get_table_data` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+210 -                 driver
+211 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+210 +                 TableOperations::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+help: disambiguate the method for candidate #2
+    |
+210 -                 driver
+211 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+210 +                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:219:22
+    |
+219 |                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+    |                      ^^^^^^^^^^^^^^ multiple `get_table_data` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+218 -                 driver
+219 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+218 +                 TableOperations::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+help: disambiguate the method for candidate #2
+    |
+218 -                 driver
+219 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+218 +                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:226:22
+    |
+226 |                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+    |                      ^^^^^^^^^^^^^^ multiple `get_table_data` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+225 -                 driver
+226 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+225 +                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+help: disambiguate the method for candidate #2
+    |
+225 -                 driver
+226 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+225 +                 TableOperations::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:236:22
+    |
+236 |                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+    |                      ^^^^^^^^^^^^^^ multiple `get_table_data` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `CouchbaseDriver`
+   --> src/services/couchbase/table.rs:13:1
+    |
+ 13 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+235 -                 driver
+236 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+235 +                 DatabaseDriver::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+help: disambiguate the method for candidate #2
+    |
+235 -                 driver
+236 -                     .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+235 +                 TableOperations::get_table_data(&driver, schema, table, limit, offset, filter, document_id, fields)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:408:24
+    |
+408 |                 driver.get_table_constraints(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_constraints` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+408 -                 driver.get_table_constraints(schema, table).await
+408 +                 TableOperations::get_table_constraints(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+408 -                 driver.get_table_constraints(schema, table).await
+408 +                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:412:24
+    |
+412 |                 driver.get_table_constraints(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_constraints` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+412 -                 driver.get_table_constraints(schema, table).await
+412 +                 TableOperations::get_table_constraints(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+412 -                 driver.get_table_constraints(schema, table).await
+412 +                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:418:24
+    |
+418 |                 driver.get_table_constraints(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_constraints` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+418 -                 driver.get_table_constraints(schema, table).await
+418 +                 TableOperations::get_table_constraints(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+418 -                 driver.get_table_constraints(schema, table).await
+418 +                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:423:24
+    |
+423 |                 driver.get_table_constraints(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_constraints` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+423 -                 driver.get_table_constraints(schema, table).await
+423 +                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+423 -                 driver.get_table_constraints(schema, table).await
+423 +                 TableOperations::get_table_constraints(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:453:24
+    |
+453 |                 driver.get_table_statistics(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^ multiple `get_table_statistics` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+453 -                 driver.get_table_statistics(schema, table).await
+453 +                 TableOperations::get_table_statistics(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+453 -                 driver.get_table_statistics(schema, table).await
+453 +                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:457:24
+    |
+457 |                 driver.get_table_statistics(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^ multiple `get_table_statistics` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+457 -                 driver.get_table_statistics(schema, table).await
+457 +                 TableOperations::get_table_statistics(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+457 -                 driver.get_table_statistics(schema, table).await
+457 +                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:463:24
+    |
+463 |                 driver.get_table_statistics(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^ multiple `get_table_statistics` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+463 -                 driver.get_table_statistics(schema, table).await
+463 +                 TableOperations::get_table_statistics(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+463 -                 driver.get_table_statistics(schema, table).await
+463 +                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:468:24
+    |
+468 |                 driver.get_table_statistics(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^ multiple `get_table_statistics` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+468 -                 driver.get_table_statistics(schema, table).await
+468 +                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+468 -                 driver.get_table_statistics(schema, table).await
+468 +                 TableOperations::get_table_statistics(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:501:24
+    |
+501 |                 driver.get_table_indexes(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_indexes` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+501 -                 driver.get_table_indexes(schema, table).await
+501 +                 TableOperations::get_table_indexes(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+501 -                 driver.get_table_indexes(schema, table).await
+501 +                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:505:24
+    |
+505 |                 driver.get_table_indexes(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_indexes` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+505 -                 driver.get_table_indexes(schema, table).await
+505 +                 TableOperations::get_table_indexes(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+505 -                 driver.get_table_indexes(schema, table).await
+505 +                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:511:24
+    |
+511 |                 driver.get_table_indexes(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_indexes` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+511 -                 driver.get_table_indexes(schema, table).await
+511 +                 TableOperations::get_table_indexes(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+511 -                 driver.get_table_indexes(schema, table).await
+511 +                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:516:24
+    |
+516 |                 driver.get_table_indexes(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_indexes` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+516 -                 driver.get_table_indexes(schema, table).await
+516 +                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+516 -                 driver.get_table_indexes(schema, table).await
+516 +                 TableOperations::get_table_indexes(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:542:24
+    |
+542 |                 driver.get_table_triggers(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^ multiple `get_table_triggers` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+542 -                 driver.get_table_triggers(schema, table).await
+542 +                 TableOperations::get_table_triggers(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+542 -                 driver.get_table_triggers(schema, table).await
+542 +                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:546:24
+    |
+546 |                 driver.get_table_triggers(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^ multiple `get_table_triggers` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+546 -                 driver.get_table_triggers(schema, table).await
+546 +                 TableOperations::get_table_triggers(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+546 -                 driver.get_table_triggers(schema, table).await
+546 +                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:552:24
+    |
+552 |                 driver.get_table_triggers(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^ multiple `get_table_triggers` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+552 -                 driver.get_table_triggers(schema, table).await
+552 +                 TableOperations::get_table_triggers(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+552 -                 driver.get_table_triggers(schema, table).await
+552 +                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:557:24
+    |
+557 |                 driver.get_table_triggers(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^ multiple `get_table_triggers` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+557 -                 driver.get_table_triggers(schema, table).await
+557 +                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+557 -                 driver.get_table_triggers(schema, table).await
+557 +                 TableOperations::get_table_triggers(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:583:24
+    |
+583 |                 driver.get_table_comment(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+583 -                 driver.get_table_comment(schema, table).await
+583 +                 TableOperations::get_table_comment(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+583 -                 driver.get_table_comment(schema, table).await
+583 +                 DatabaseDriver::get_table_comment(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:587:24
+    |
+587 |                 driver.get_table_comment(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+587 -                 driver.get_table_comment(schema, table).await
+587 +                 TableOperations::get_table_comment(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+587 -                 driver.get_table_comment(schema, table).await
+587 +                 DatabaseDriver::get_table_comment(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:593:24
+    |
+593 |                 driver.get_table_comment(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+593 -                 driver.get_table_comment(schema, table).await
+593 +                 TableOperations::get_table_comment(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+593 -                 driver.get_table_comment(schema, table).await
+593 +                 DatabaseDriver::get_table_comment(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:598:24
+    |
+598 |                 driver.get_table_comment(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `get_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+598 -                 driver.get_table_comment(schema, table).await
+598 +                 DatabaseDriver::get_table_comment(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+598 -                 driver.get_table_comment(schema, table).await
+598 +                 TableOperations::get_table_comment(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:625:24
+    |
+625 |                 driver.set_table_comment(schema, table, comment).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `set_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+625 -                 driver.set_table_comment(schema, table, comment).await
+625 +                 TableOperations::set_table_comment(&driver, schema, table, comment).await
+    |
+help: disambiguate the method for candidate #2
+    |
+625 -                 driver.set_table_comment(schema, table, comment).await
+625 +                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:629:24
+    |
+629 |                 driver.set_table_comment(schema, table, comment).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `set_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+629 -                 driver.set_table_comment(schema, table, comment).await
+629 +                 TableOperations::set_table_comment(&driver, schema, table, comment).await
+    |
+help: disambiguate the method for candidate #2
+    |
+629 -                 driver.set_table_comment(schema, table, comment).await
+629 +                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:635:24
+    |
+635 |                 driver.set_table_comment(schema, table, comment).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `set_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+635 -                 driver.set_table_comment(schema, table, comment).await
+635 +                 TableOperations::set_table_comment(&driver, schema, table, comment).await
+    |
+help: disambiguate the method for candidate #2
+    |
+635 -                 driver.set_table_comment(schema, table, comment).await
+635 +                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:640:24
+    |
+640 |                 driver.set_table_comment(schema, table, comment).await
+    |                        ^^^^^^^^^^^^^^^^^ multiple `set_table_comment` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+640 -                 driver.set_table_comment(schema, table, comment).await
+640 +                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+    |
+help: disambiguate the method for candidate #2
+    |
+640 -                 driver.set_table_comment(schema, table, comment).await
+640 +                 TableOperations::set_table_comment(&driver, schema, table, comment).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:666:24
+    |
+666 |                 driver.get_table_permissions(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+666 -                 driver.get_table_permissions(schema, table).await
+666 +                 TableOperations::get_table_permissions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+666 -                 driver.get_table_permissions(schema, table).await
+666 +                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:670:24
+    |
+670 |                 driver.get_table_permissions(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+670 -                 driver.get_table_permissions(schema, table).await
+670 +                 TableOperations::get_table_permissions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+670 -                 driver.get_table_permissions(schema, table).await
+670 +                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:676:24
+    |
+676 |                 driver.get_table_permissions(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+676 -                 driver.get_table_permissions(schema, table).await
+676 +                 TableOperations::get_table_permissions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+676 -                 driver.get_table_permissions(schema, table).await
+676 +                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:681:24
+    |
+681 |                 driver.get_table_permissions(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+681 -                 driver.get_table_permissions(schema, table).await
+681 +                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+681 -                 driver.get_table_permissions(schema, table).await
+681 +                 TableOperations::get_table_permissions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:705:24
+    |
+705 |                 driver.list_roles().await
+    |                        ^^^^^^^^^^ multiple `list_roles` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+705 -                 driver.list_roles().await
+705 +                 TableOperations::list_roles(&driver).await
+    |
+help: disambiguate the method for candidate #2
+    |
+705 -                 driver.list_roles().await
+705 +                 DatabaseDriver::list_roles(&driver).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:709:24
+    |
+709 |                 driver.list_roles().await
+    |                        ^^^^^^^^^^ multiple `list_roles` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+709 -                 driver.list_roles().await
+709 +                 TableOperations::list_roles(&driver).await
+    |
+help: disambiguate the method for candidate #2
+    |
+709 -                 driver.list_roles().await
+709 +                 DatabaseDriver::list_roles(&driver).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:715:24
+    |
+715 |                 driver.list_roles().await
+    |                        ^^^^^^^^^^ multiple `list_roles` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+715 -                 driver.list_roles().await
+715 +                 TableOperations::list_roles(&driver).await
+    |
+help: disambiguate the method for candidate #2
+    |
+715 -                 driver.list_roles().await
+715 +                 DatabaseDriver::list_roles(&driver).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:720:24
+    |
+720 |                 driver.list_roles().await
+    |                        ^^^^^^^^^^ multiple `list_roles` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+720 -                 driver.list_roles().await
+720 +                 DatabaseDriver::list_roles(&driver).await
+    |
+help: disambiguate the method for candidate #2
+    |
+720 -                 driver.list_roles().await
+720 +                 TableOperations::list_roles(&driver).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:750:22
+    |
+750 |                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+    |                      ^^^^^^^^^^^^^^^^^^^^^ multiple `set_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+749 -                 driver
+750 -                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+749 +                 TableOperations::set_table_permissions(&driver, schema, table, grantee, privileges, grant_option)
+    |
+help: disambiguate the method for candidate #2
+    |
+749 -                 driver
+750 -                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+749 +                 DatabaseDriver::set_table_permissions(&driver, schema, table, grantee, privileges, grant_option)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:756:22
+    |
+756 |                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+    |                      ^^^^^^^^^^^^^^^^^^^^^ multiple `set_table_permissions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+755 -                 driver
+756 -                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+755 +                 TableOperations::set_table_permissions(&driver, schema, table, grantee, privileges, grant_option)
+    |
+help: disambiguate the method for candidate #2
+    |
+755 -                 driver
+756 -                     .set_table_permissions(schema, table, grantee, privileges, grant_option)
+755 +                 DatabaseDriver::set_table_permissions(&driver, schema, table, grantee, privileges, grant_option)
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:810:24
+    |
+810 |                 driver.get_table_dependencies(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_dependencies` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+810 -                 driver.get_table_dependencies(schema, table).await
+810 +                 TableOperations::get_table_dependencies(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+810 -                 driver.get_table_dependencies(schema, table).await
+810 +                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:814:24
+    |
+814 |                 driver.get_table_dependencies(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_dependencies` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+814 -                 driver.get_table_dependencies(schema, table).await
+814 +                 TableOperations::get_table_dependencies(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+814 -                 driver.get_table_dependencies(schema, table).await
+814 +                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:820:24
+    |
+820 |                 driver.get_table_dependencies(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_dependencies` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+820 -                 driver.get_table_dependencies(schema, table).await
+820 +                 TableOperations::get_table_dependencies(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+820 -                 driver.get_table_dependencies(schema, table).await
+820 +                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:825:24
+    |
+825 |                 driver.get_table_dependencies(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_table_dependencies` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+825 -                 driver.get_table_dependencies(schema, table).await
+825 +                 DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+825 -                 driver.get_table_dependencies(schema, table).await
+825 +                 TableOperations::get_table_dependencies(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:855:24
+    |
+855 |                 driver.get_storage_bloat_info(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_storage_bloat_info` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+855 -                 driver.get_storage_bloat_info(schema, table).await
+855 +                 TableOperations::get_storage_bloat_info(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+855 -                 driver.get_storage_bloat_info(schema, table).await
+855 +                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:859:24
+    |
+859 |                 driver.get_storage_bloat_info(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_storage_bloat_info` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+859 -                 driver.get_storage_bloat_info(schema, table).await
+859 +                 TableOperations::get_storage_bloat_info(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+859 -                 driver.get_storage_bloat_info(schema, table).await
+859 +                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:865:24
+    |
+865 |                 driver.get_storage_bloat_info(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_storage_bloat_info` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+865 -                 driver.get_storage_bloat_info(schema, table).await
+865 +                 TableOperations::get_storage_bloat_info(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+865 -                 driver.get_storage_bloat_info(schema, table).await
+865 +                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:870:24
+    |
+870 |                 driver.get_storage_bloat_info(schema, table).await
+    |                        ^^^^^^^^^^^^^^^^^^^^^^ multiple `get_storage_bloat_info` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+870 -                 driver.get_storage_bloat_info(schema, table).await
+870 +                 DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+870 -                 driver.get_storage_bloat_info(schema, table).await
+870 +                 TableOperations::get_storage_bloat_info(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:907:24
+    |
+907 |                 driver.get_partitions(schema, table).await
+    |                        ^^^^^^^^^^^^^^ multiple `get_partitions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `PostgresDriver`
+   --> src/services/postgres/mod.rs:176:1
+    |
+176 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+907 -                 driver.get_partitions(schema, table).await
+907 +                 TableOperations::get_partitions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+907 -                 driver.get_partitions(schema, table).await
+907 +                 DatabaseDriver::get_partitions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:911:24
+    |
+911 |                 driver.get_partitions(schema, table).await
+    |                        ^^^^^^^^^^^^^^ multiple `get_partitions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `SQLiteDriver`
+   --> src/services/sqlite/mod.rs:160:1
+    |
+160 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+911 -                 driver.get_partitions(schema, table).await
+911 +                 TableOperations::get_partitions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+911 -                 driver.get_partitions(schema, table).await
+911 +                 DatabaseDriver::get_partitions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:917:24
+    |
+917 |                 driver.get_partitions(schema, table).await
+    |                        ^^^^^^^^^^^^^^ multiple `get_partitions` found
+    |
+note: candidate #1 is defined in an impl of the trait `TableOperations` for the type `ClickHouseDriver`
+   --> src/services/clickhouse/mod.rs:328:1
+    |
+328 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+917 -                 driver.get_partitions(schema, table).await
+917 +                 TableOperations::get_partitions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+917 -                 driver.get_partitions(schema, table).await
+917 +                 DatabaseDriver::get_partitions(&driver, schema, table).await
+    |
+
+error[E0034]: multiple applicable items in scope
+   --> src/services/connection_service/table_ops.rs:922:24
+    |
+922 |                 driver.get_partitions(schema, table).await
+    |                        ^^^^^^^^^^^^^^ multiple `get_partitions` found
+    |
+note: candidate #1 is defined in an impl of the trait `DatabaseDriver` for the type `T`
+   --> src/services/db_driver.rs:339:1
+    |
+339 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl of the trait `TableOperations` for the type `MySqlDriver`
+   --> src/services/mysql/table.rs:12:1
+    |
+ 12 | #[async_trait]
+    | ^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+922 -                 driver.get_partitions(schema, table).await
+922 +                 DatabaseDriver::get_partitions(&driver, schema, table).await
+    |
+help: disambiguate the method for candidate #2
+    |
+922 -                 driver.get_partitions(schema, table).await
+922 +                 TableOperations::get_partitions(&driver, schema, table).await
+    |
+
+warning: value assigned to `tokens_before` is never read
+   --> src/services/autocomplete/parser.rs:227:17
+    |
+227 |         let mut tokens_before = Vec::new();
+    |                 ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+For more information about this error, try `rustc --explain E0034`.
+warning: `dbplus-backend` (bin "dbplus-backend") generated 4 warnings
+error: could not compile `dbplus-backend` (bin "dbplus-backend") due to 51 previous errors; 4 warnings emitted

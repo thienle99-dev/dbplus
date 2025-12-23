@@ -48,6 +48,8 @@ impl ConnectionService {
             ssl_ca_file: Set(data.ssl_ca_file),
             ssl_key_file: Set(data.ssl_key_file),
             ssl_cert_file: Set(data.ssl_cert_file),
+            status_color: Set(data.status_color),
+            tags: Set(data.tags),
             ssh_enabled: Set(data.ssh_enabled),
             ssh_host: Set(data.ssh_host),
             ssh_port: Set(data.ssh_port),
@@ -57,6 +59,8 @@ impl ConnectionService {
             ssh_key_file: Set(data.ssh_key_file),
             ssh_key_passphrase: Set(data.ssh_key_passphrase),
             is_read_only: Set(data.is_read_only),
+            environment: Set(data.environment),
+            safe_mode_level: Set(data.safe_mode_level),
             created_at: Set(Utc::now().into()),
             updated_at: Set(Utc::now().into()),
             ..Default::default()
@@ -78,13 +82,14 @@ impl ConnectionService {
             .await?
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
-        let encrypted_password = if data.password != existing.password {
+        let encrypted_password = if !data.password.is_empty() && data.password != existing.password
+        {
             self.encryption.encrypt(&data.password)?
         } else {
-            data.password
+            existing.password
         };
 
-        let active_model = connection::ActiveModel {
+        let mut active_model = connection::ActiveModel {
             id: Set(id),
             name: Set(data.name),
             db_type: Set(data.db_type),
@@ -99,18 +104,41 @@ impl ConnectionService {
             ssl_ca_file: Set(data.ssl_ca_file),
             ssl_key_file: Set(data.ssl_key_file),
             ssl_cert_file: Set(data.ssl_cert_file),
+            status_color: Set(data.status_color),
+            tags: Set(data.tags),
             ssh_enabled: Set(data.ssh_enabled),
             ssh_host: Set(data.ssh_host),
             ssh_port: Set(data.ssh_port),
             ssh_user: Set(data.ssh_user),
             ssh_auth_type: Set(data.ssh_auth_type),
-            ssh_password: Set(data.ssh_password),
-            ssh_key_file: Set(data.ssh_key_file),
-            ssh_key_passphrase: Set(data.ssh_key_passphrase),
             is_read_only: Set(data.is_read_only),
+            environment: Set(data.environment),
+            safe_mode_level: Set(data.safe_mode_level),
             updated_at: Set(Utc::now().into()),
             ..Default::default()
         };
+
+        if let Some(ssh_password) = data.ssh_password {
+            if !ssh_password.is_empty() {
+                active_model.ssh_password = Set(Some(self.encryption.encrypt(&ssh_password)?));
+            } else {
+                active_model.ssh_password = Set(existing.ssh_password);
+            }
+        } else {
+            active_model.ssh_password = Set(existing.ssh_password);
+        }
+
+        if let Some(passphrase) = data.ssh_key_passphrase {
+            if !passphrase.is_empty() {
+                active_model.ssh_key_passphrase = Set(Some(self.encryption.encrypt(&passphrase)?));
+            } else {
+                active_model.ssh_key_passphrase = Set(existing.ssh_key_passphrase);
+            }
+        } else {
+            active_model.ssh_key_passphrase = Set(existing.ssh_key_passphrase);
+        }
+
+        active_model.ssh_key_file = Set(data.ssh_key_file);
 
         active_model
             .update(&self.db)

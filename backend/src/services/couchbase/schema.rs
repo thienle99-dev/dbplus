@@ -46,7 +46,7 @@ impl SchemaIntrospection for CouchbaseDriver {
         let scopes = mgr
             .get_all_scopes(None)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to list collections: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
 
         let mut tables = Vec::new();
         if let Some(scope) = scopes.iter().find(|s| s.name() == schema) {

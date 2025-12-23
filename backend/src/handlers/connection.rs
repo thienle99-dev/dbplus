@@ -63,6 +63,10 @@ pub struct CreateConnectionRequest {
     pub environment: Option<String>,
     #[serde(default)]
     pub safe_mode_level: Option<i32>,
+    #[serde(default)]
+    pub status_color: Option<String>,
+    #[serde(default)]
+    pub tags: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -214,6 +218,8 @@ pub async fn create_connection(
         ssl_ca_file: payload.ssl_ca_file,
         ssl_key_file: payload.ssl_key_file,
         ssl_cert_file: payload.ssl_cert_file,
+        status_color: payload.status_color,
+        tags: payload.tags,
         ssh_enabled: payload.ssh_enabled,
         ssh_host: payload.ssh_host,
         ssh_port: payload.ssh_port,
@@ -288,6 +294,8 @@ pub async fn update_connection(
         ssl_ca_file: payload.ssl_ca_file,
         ssl_key_file: payload.ssl_key_file,
         ssl_cert_file: payload.ssl_cert_file,
+        status_color: payload.status_color,
+        tags: payload.tags,
         ssh_enabled: payload.ssh_enabled,
         ssh_host: payload.ssh_host,
         ssh_port: payload.ssh_port,
@@ -432,6 +440,8 @@ pub async fn test_connection(
         ssl_ca_file: payload.ssl_ca_file,
         ssl_key_file: payload.ssl_key_file,
         ssl_cert_file: payload.ssl_cert_file,
+        status_color: payload.status_color,
+        tags: payload.tags,
         ssh_enabled: payload.ssh_enabled,
         ssh_host: payload.ssh_host,
         ssh_port: payload.ssh_port,

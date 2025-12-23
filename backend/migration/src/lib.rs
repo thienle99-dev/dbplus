@@ -12,6 +12,7 @@ mod m20251217_000009_add_connection_advanced_fields;
 mod m20251217_000010_add_connection_environment;
 mod m20251219_000011_schema_cache;
 mod m20251220_000012_create_saved_filters;
+mod m20251222_000013_add_connection_status_and_tags;
 
 pub struct Migrator;
 
@@ -31,6 +32,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251217_000010_add_connection_environment::Migration),
             Box::new(m20251219_000011_schema_cache::Migration),
             Box::new(m20251220_000012_create_saved_filters::Migration),
+            Box::new(m20251222_000013_add_connection_status_and_tags::Migration),
         ]
     }
 }

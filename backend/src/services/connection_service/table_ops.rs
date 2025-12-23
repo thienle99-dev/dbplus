@@ -1,5 +1,5 @@
 use super::ConnectionService;
-use crate::services::driver::TableOperations;
+use crate::services::driver::{ColumnManagement, SchemaIntrospection, TableOperations};
 use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -19,29 +19,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
-
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_tables(&driver, schema).await
+                driver.get_tables(schema).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_tables(&driver, schema).await
+                driver.get_tables(schema).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_tables(&driver, schema).await
+                driver.get_tables(schema).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_tables(&driver, schema).await
+                driver.get_tables(schema).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -64,28 +62,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::create_table(&driver, schema, table).await
+                driver.create_table(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::create_table(&driver, schema, table).await
+                driver.create_table(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::create_table(&driver, schema, table).await
+                driver.create_table(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::create_table(&driver, schema, table).await
+                driver.create_table(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -93,7 +90,7 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
-                DatabaseDriver::create_table(&driver, schema, table).await
+                driver.create_table(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -108,28 +105,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::drop_table(&driver, schema, table).await
+                driver.drop_table(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::drop_table(&driver, schema, table).await
+                driver.drop_table(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::drop_table(&driver, schema, table).await
+                driver.drop_table(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::drop_table(&driver, schema, table).await
+                driver.drop_table(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -137,7 +133,7 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
-                DatabaseDriver::drop_table(&driver, schema, table).await
+                driver.drop_table(schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -157,28 +153,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_columns(&driver, schema, table).await
+                driver.get_columns(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_columns(&driver, schema, table).await
+                driver.get_columns(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_columns(&driver, schema, table).await
+                driver.get_columns(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_columns(&driver, schema, table).await
+                driver.get_columns(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -211,7 +206,6 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         let start_time = std::time::Instant::now();
@@ -219,6 +213,7 @@ impl ConnectionService {
         let mut result = match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
+<<<<<<< HEAD
                 DatabaseDriver::get_table_data(
                     &driver,
                     schema,
@@ -244,11 +239,23 @@ impl ConnectionService {
                     fields,
                 )
                 .await?
+=======
+                driver
+                    .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+                    .await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                driver
+                    .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+                    .await
+>>>>>>> c75259e44ac5697f83f01b36108bef29d73291bd
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
+<<<<<<< HEAD
                 DatabaseDriver::get_table_data(
                     &driver,
                     schema,
@@ -260,10 +267,16 @@ impl ConnectionService {
                     fields,
                 )
                 .await?
+=======
+                driver
+                    .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+                    .await
+>>>>>>> c75259e44ac5697f83f01b36108bef29d73291bd
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+<<<<<<< HEAD
                 DatabaseDriver::get_table_data(
                     &driver,
                     schema,
@@ -275,6 +288,11 @@ impl ConnectionService {
                     fields,
                 )
                 .await?
+=======
+                driver
+                    .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+                    .await
+>>>>>>> c75259e44ac5697f83f01b36108bef29d73291bd
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -282,6 +300,7 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+<<<<<<< HEAD
                 DatabaseDriver::get_table_data(
                     &driver,
                     schema,
@@ -293,6 +312,11 @@ impl ConnectionService {
                     fields,
                 )
                 .await?
+=======
+                driver
+                    .get_table_data(schema, table, limit, offset, filter, document_id, fields)
+                    .await
+>>>>>>> c75259e44ac5697f83f01b36108bef29d73291bd
             }
             _ => crate::services::db_driver::QueryResult {
                 columns: vec![],
@@ -331,28 +355,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::add_column(&driver, schema, table, column).await
+                driver.add_column(schema, table, column).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::add_column(&driver, schema, table, column).await
+                driver.add_column(schema, table, column).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::add_column(&driver, schema, table, column).await
+                driver.add_column(schema, table, column).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::add_column(&driver, schema, table, column).await
+                driver.add_column(schema, table, column).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -374,28 +397,35 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+                driver
+                    .alter_column(schema, table, column_name, new_def)
+                    .await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+                driver
+                    .alter_column(schema, table, column_name, new_def)
+                    .await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+                driver
+                    .alter_column(schema, table, column_name, new_def)
+                    .await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::alter_column(&driver, schema, table, column_name, new_def).await
+                driver
+                    .alter_column(schema, table, column_name, new_def)
+                    .await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -416,28 +446,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+                driver.drop_column(schema, table, column_name).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+                driver.drop_column(schema, table, column_name).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+                driver.drop_column(schema, table, column_name).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::drop_column(&driver, schema, table, column_name).await
+                driver.drop_column(schema, table, column_name).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -457,28 +486,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+                driver.get_table_constraints(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+                driver.get_table_constraints(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+                driver.get_table_constraints(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+                driver.get_table_constraints(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -510,28 +538,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+                driver.get_table_statistics(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+                driver.get_table_statistics(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+                driver.get_table_statistics(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+                driver.get_table_statistics(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -566,28 +593,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+                driver.get_table_indexes(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+                driver.get_table_indexes(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+                driver.get_table_indexes(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+                driver.get_table_indexes(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -615,28 +641,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+                driver.get_table_triggers(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+                driver.get_table_triggers(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+                driver.get_table_triggers(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+                driver.get_table_triggers(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -664,28 +689,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_comment(&driver, schema, table).await
+                driver.get_table_comment(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_comment(&driver, schema, table).await
+                driver.get_table_comment(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_comment(&driver, schema, table).await
+                driver.get_table_comment(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_comment(&driver, schema, table).await
+                driver.get_table_comment(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -714,28 +738,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+                driver.set_table_comment(schema, table, comment).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+                driver.set_table_comment(schema, table, comment).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+                driver.set_table_comment(schema, table, comment).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+                driver.set_table_comment(schema, table, comment).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -763,28 +786,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+                driver.get_table_permissions(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+                driver.get_table_permissions(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+                driver.get_table_permissions(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+                driver.get_table_permissions(schema, table).await
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -810,28 +832,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::list_roles(&driver).await
+                driver.list_roles().await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::list_roles(&driver).await
+                driver.list_roles().await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::list_roles(&driver).await
+                driver.list_roles().await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::list_roles(&driver).await
+                driver.list_roles().await
             }
             _ => Ok(vec![]),
         }
@@ -854,60 +875,35 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::set_table_permissions(
-                    &driver,
-                    schema,
-                    table,
-                    grantee,
-                    privileges,
-                    grant_option,
-                )
-                .await
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::set_table_permissions(
-                    &driver,
-                    schema,
-                    table,
-                    grantee,
-                    privileges,
-                    grant_option,
-                )
-                .await
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::set_table_permissions(
-                    &driver,
-                    schema,
-                    table,
-                    grantee,
-                    privileges,
-                    grant_option,
-                )
-                .await
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::set_table_permissions(
-                    &driver,
-                    schema,
-                    table,
-                    grantee,
-                    privileges,
-                    grant_option,
-                )
-                .await
+                driver
+                    .set_table_permissions(schema, table, grantee, privileges, grant_option)
+                    .await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
@@ -927,28 +923,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+                driver.get_table_dependencies(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+                driver.get_table_dependencies(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+                driver.get_table_dependencies(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_table_dependencies(&driver, schema, table).await
+                driver.get_table_dependencies(schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableDependencies {
                 views: vec![],
@@ -972,28 +967,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+                driver.get_storage_bloat_info(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+                driver.get_storage_bloat_info(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+                driver.get_storage_bloat_info(schema, table).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_storage_bloat_info(&driver, schema, table).await
+                driver.get_storage_bloat_info(schema, table).await
             }
             _ => Ok(crate::services::db_driver::StorageBloatInfo {
                 live_tuples: None,
@@ -1024,28 +1018,27 @@ impl ConnectionService {
         let password = self.encryption.decrypt(&connection.password)?;
         let connection = self.apply_database_override(connection);
 
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
-                DatabaseDriver::get_partitions(&driver, schema, table).await
+                driver.get_partitions(schema, table).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
-                DatabaseDriver::get_partitions(&driver, schema, table).await
+                driver.get_partitions(schema, table).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
                         .await?;
-                DatabaseDriver::get_partitions(&driver, schema, table).await
+                driver.get_partitions(schema, table).await
             }
             "mysql" | "mariadb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
-                DatabaseDriver::get_partitions(&driver, schema, table).await
+                driver.get_partitions(schema, table).await
             }
             _ => Ok(crate::services::db_driver::PartitionInfo {
                 is_partitioned: false,

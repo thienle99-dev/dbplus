@@ -441,3 +441,4 @@ mod tests {
             .any(|uc| uc.constraint_name == "idx_t_email" && uc.columns == vec!["email"]));
     }
 }
+

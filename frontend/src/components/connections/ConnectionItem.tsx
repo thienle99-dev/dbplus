@@ -93,7 +93,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
             placeholder: 'e.g. public_v2',
             confirmLabel: 'Create'
         }) || '').trim();
-        
+
         if (!name) {
             setMenuPosition(null);
             return;
@@ -145,30 +145,64 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="group flex items-center gap-3 p-3 rounded-xl bg-bg-1 shadow-sm hover:shadow-md hover:bg-bg-2 cursor-pointer transition-all duration-200"
+                className="group relative flex items-center gap-4 p-4 rounded-2xl bg-bg-2/40 hover:bg-bg-2/60 border border-white/[0.03] hover:border-white/[0.08] cursor-pointer transition-all duration-300 shadow-lg shadow-black/5"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
+                {/* Status Bar */}
+                <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.3)] transition-all group-hover:h-3/4 ${connection.status_color || 'bg-accent'}`} />
+
                 {/* Icon */}
-                <div className="shrink-0">
-                    {renderIcon()}
+                <div className="shrink-0 ml-1">
+                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center p-2 shadow-inner ring-1 ring-black/5">
+                        {renderIcon()}
+                    </div>
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-text-primary truncate leading-none mb-0.5">
+                        <span className="text-[15px] font-semibold text-text-primary tracking-tight">
                             {connection.name}
                         </span>
                         {isLocal && (
-                            <span className="text-xs font-semibold text-green-500 tracking-wide uppercase">(local)</span>
+                            <span className="text-[11px] font-bold text-[#22c55e] tracking-wide uppercase">(LOCAL)</span>
+                        )}
+                        {connection.environment && connection.environment !== 'development' && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${connection.environment === 'production' ? 'bg-error/20 text-error' : 'bg-accent/20 text-accent'
+                                }`}>
+                                {connection.environment}
+                            </span>
+                        )}
+                        {connection.safe_mode_level !== undefined && connection.safe_mode_level > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-500">
+                                {connection.safe_mode_level === 1 ? 'SAFE' : 'STRICT'}
+                            </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-text-muted truncate">
-                        <span className="truncate">{connection.host}</span>
-                        {connection.port && <span className="opacity-50">:{connection.port}</span>}
+
+                    <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className="text-text-muted/60 lowercase">{connection.host}</span>
+                        {connection.port && (
+                            <>
+                                <span className="text-text-muted/30 -mx-0.5">:</span>
+                                <span className="text-text-muted/40">{connection.port}</span>
+                            </>
+                        )}
+
+                        {connection.tags && (
+                            <div className="flex gap-1.5 ml-2 overflow-hidden">
+                                {connection.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                                    <span key={tag} className="px-1.5 py-0 bg-bg-3/50 border border-border-subtle/30 rounded text-[9px] text-text-secondary whitespace-nowrap">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Quick Actions Hidden by Default, Shown on Hover if needed, but the image is clean */}
             </div>
 
             {menuPosition && (
