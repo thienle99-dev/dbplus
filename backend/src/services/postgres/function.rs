@@ -99,4 +99,33 @@ impl FunctionOperations for PostgresFunction {
             owner: row.get(5),
         })
     }
+
+    async fn get_function_permissions(
+        &self,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
+        let client = self.pool.get().await?;
+        let sql = r#"
+            SELECT
+                (aclexplode(proacl)).grantee::regrole::text AS grantee,
+                (aclexplode(proacl)).privilege_type AS privilege,
+                (aclexplode(proacl)).is_grantable AS is_grantable
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = $1 AND p.proname = $2 AND p.prokind = 'f'
+        "#;
+
+        let rows = client.query(sql, &[&schema, &function_name]).await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| crate::services::db_driver::TableGrant {
+                grantee: row.get(0),
+                privilege: row.get(1),
+                grantor: None,
+                is_grantable: row.get(2),
+            })
+            .collect())
+    }
 }

@@ -160,4 +160,35 @@ export const connectionApi = {
         const response = await api.post('/api/autocomplete', data);
         return response.data;
     },
+
+    // Permissions
+    getRoles: async (id: string): Promise<Array<{ name: string; can_login: boolean }>> => {
+        const response = await api.get(`/api/connections/${id}/roles`);
+        return response.data;
+    },
+
+    getTablePermissions: async (id: string, schema: string, table: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
+        const response = await api.get(`/api/connections/${id}/permissions`, { params: { schema, table } });
+        return response.data;
+    },
+
+    getSchemaPermissions: async (id: string, schema: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
+        const response = await api.get(`/api/connections/${id}/permissions/schema`, { params: { schema } });
+        return response.data;
+    },
+
+    getFunctionPermissions: async (id: string, schema: string, function_name: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
+        const response = await api.get(`/api/connections/${id}/permissions/function`, { params: { schema, function: function_name } });
+        return response.data;
+    },
+
+    getTables: async (id: string, schema: string): Promise<Array<{ name: string; type: string }>> => {
+        const response = await api.get(`/api/connections/${id}/tables`, { params: { schema } });
+        return response.data;
+    },
+
+    listFunctions: async (id: string, schema: string): Promise<Array<{ name: string; return_type: string; argument_types: string[] }>> => {
+        const response = await api.get(`/api/connections/${id}/functions`, { params: { schema } });
+        return response.data;
+    },
 };

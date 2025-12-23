@@ -20,4 +20,3 @@ pub use view::ViewOperations;
 // pub use nosql::{CollectionInfo, DocumentResult};
 // pub use capabilities::{DriverCapability, DriverCapabilities, TransactionDriver, PreparedStatementDriver};
 // pub use extension::{StreamingDriver, BulkOperationsDriver, DatabaseManagementDriver};
-// pub use traits::{DriverMetadata, ConnectionPoolDriver, HealthCheckDriver, DriverHealth, HealthStatus};

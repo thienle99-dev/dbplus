@@ -363,6 +363,12 @@ pub trait DatabaseDriver:
         schema: &str,
         function_name: &str,
     ) -> Result<FunctionInfo>;
+    async fn get_schema_permissions(&self, schema: &str) -> Result<Vec<TableGrant>>;
+    async fn get_function_permissions(
+        &self,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<Vec<TableGrant>>;
     async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>>;
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value>;
 }
@@ -580,6 +586,18 @@ where
         function_name: &str,
     ) -> Result<FunctionInfo> {
         <Self as FunctionOperations>::get_function_definition(self, schema, function_name).await
+    }
+
+    async fn get_schema_permissions(&self, schema: &str) -> Result<Vec<TableGrant>> {
+        <Self as SchemaIntrospection>::get_schema_permissions(self, schema).await
+    }
+
+    async fn get_function_permissions(
+        &self,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<Vec<TableGrant>> {
+        <Self as FunctionOperations>::get_function_permissions(self, schema, function_name).await
     }
 
     async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>> {

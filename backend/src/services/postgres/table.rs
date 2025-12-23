@@ -1,7 +1,7 @@
 use crate::services::db_driver::{
     DependentRoutineInfo, DependentViewInfo, IndexInfo, PartitionChildInfo, PartitionInfo,
-    QueryResult, ReferencingForeignKeyInfo, RoleInfo, StorageBloatInfo, TableComment,
-    TableConstraints, TableDependencies, TableGrant, TableStatistics, TriggerInfo,
+    QueryResult, RoleInfo, StorageBloatInfo, TableComment, TableConstraints, TableDependencies,
+    TableGrant, TableStatistics, TriggerInfo,
 };
 use crate::services::driver::TableOperations;
 use anyhow::Result;
@@ -768,31 +768,47 @@ impl TableOperations for PostgresTable {
         let referencing_foreign_keys = client
             .query(
                 r#"
-                WITH target AS (
-                    SELECT c.oid AS relid
-                    FROM pg_class c
-                    JOIN pg_namespace n ON n.oid = c.relnamespace
-                    WHERE n.nspname = $1
-                      AND c.relname = $2
-                )
                 SELECT
-                    ns.nspname AS schema,
-                    cl.relname AS table,
+                    n.nspname AS schema,
+                    c.relname AS table,
                     con.conname AS constraint_name,
-                    array_agg(att_local.attname ORDER BY u.ord) AS columns,
-                    array_agg(att_ref.attname ORDER BY u.ord) AS referenced_columns,
+                    (SELECT array_agg(a.attname ORDER BY array_position(con.conkey, a.attnum)) 
+                     FROM pg_attribute a WHERE a.attrelid = c.oid AND a.attnum = ANY(con.conkey)) AS columns,
+                    (SELECT array_agg(a.attname ORDER BY array_position(con.confkey, a.attnum)) 
+                     FROM pg_attribute a WHERE a.attrelid = con.confrelid AND a.attnum = ANY(con.confkey)) AS referenced_columns,
                     CASE con.confupdtype
-                        WHEN 'a' THEN 'NO ACTION'
-                        WHEN 'r' THEN 'RESTRICT'
-                        WHEN 'c' THEN 'CASCADE'
-                        WHEN 'n' THEN 'SET NULL'
-                        WHEN 'd' THEN 'SET DEFAULT'
-                        ELSE con.confupdtype::text
+                        WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE'
+                        WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' ELSE con.confupdtype::text
                     END AS on_update,
                     CASE con.confdeltype
-                        WHEN 'a' THEN 'NO ACTION'
-                        WHEN 'r' THEN 'RESTRICT'
-                        WHEN 'c' THEN 'CASCADE'
+                        WHEN 'a' THEN 'NO ACTION' WHEN 'r' THEN 'RESTRICT' WHEN 'c' THEN 'CASCADE'
+                        WHEN 'n' THEN 'SET NULL' WHEN 'd' THEN 'SET DEFAULT' ELSE con.confdeltype::text
+                    END AS on_delete
+                FROM pg_constraint con
+                JOIN pg_class c ON c.oid = con.conrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE con.confrelid = (
+                    SELECT c.oid FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = $1 AND c.relname = $2
+                )
+                AND con.contype = 'f'
+                "#,
+                &[&schema, &table],
+            )
+            .await?
+            .into_iter()
+            .map(|r| ReferencingForeignKeyInfo {
+                schema: r.get(0),
+                table: r.get(1),
+                constraint_name: r.get(2),
+                columns: r.get(3),
+                referenced_columns: r.get(4),
+                on_update: r.get(5),
+                on_delete: r.get(6),
+            })
+            .collect::<Vec<_>>();
+
         Ok(TableDependencies {
             views,
             routines,
@@ -800,7 +816,11 @@ impl TableOperations for PostgresTable {
         })
     }
 
-    async fn detect_fk_orphans(&self, schema: &str, table: &str) -> Result<Vec<crate::services::db_driver::FkOrphanInfo>> {
+    async fn detect_fk_orphans(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<crate::services::db_driver::FkOrphanInfo>> {
         tracing::info!(
             "[PostgresTable] detect_fk_orphans - schema: {}, table: {}",
             schema,
@@ -810,7 +830,7 @@ impl TableOperations for PostgresTable {
         // Re-use logic to get constraints OR just query them directly here.
         // It's cleaner to query directly or reuse get_table_constraints if efficient.
         // Let's query directly to avoid overhead if get_table_constraints gets too much info.
-        
+
         let client = self.pool.get().await?;
 
         let fk_query = "
@@ -869,10 +889,11 @@ impl TableOperations for PostgresTable {
         for fk in fks.values() {
             // Build the check query
             // SELECT count(*) FROM local t LEFT JOIN foreign f ON t.c1=f.fc1 AND t.c2=f.fc2 WHERE f.fc1 IS NULL AND t.c1 IS NOT NULL ...
-            
+
             let local_table_quoted = format!("\"{}\".\"{}\"", schema, table); // Simple quoting, assumes valid identifiers
-            let foreign_table_quoted = format!("\"{}\".\"{}\"", fk.foreign_schema, fk.foreign_table);
-            
+            let foreign_table_quoted =
+                format!("\"{}\".\"{}\"", fk.foreign_schema, fk.foreign_table);
+
             let mut join_conditions = Vec::new();
             let mut null_checks = Vec::new();
             let mut not_null_checks = Vec::new();
@@ -882,16 +903,16 @@ impl TableOperations for PostgresTable {
                 // Quote columns
                 let lc = format!("\"{}\"", local_col);
                 let fc = format!("\"{}\"", foreign_col);
-                
+
                 join_conditions.push(format!("local.{} = foreign.{}", lc, fc));
                 null_checks.push(format!("foreign.{} IS NULL", fc));
                 not_null_checks.push(format!("local.{} IS NOT NULL", lc));
             }
 
-            // Combine logic: 
+            // Combine logic:
             // We want rows where match FAILED (f.pk is null) BUT local columns are NOT NULL via left join
             // AND match condition is (l.c1 = f.c1 AND l.c2 = f.c2)
-            
+
             let query = format!(
                 "SELECT count(*) FROM {} local LEFT JOIN {} foreign ON {} WHERE ({}) AND ({})",
                 local_table_quoted,
@@ -899,7 +920,7 @@ impl TableOperations for PostgresTable {
                 join_conditions.join(" AND "),
                 null_checks.get(0).unwrap(), // Any null in PK on RHS means no match
                 not_null_checks.join(" AND ") // All local FK cols must be non-null to be a candidate for orphan (unless Partial match logic? Postgres default is all keys must be non-null to require match, or if any is null, check is skipped usually unless MATCH FULL).
-                // Simplified: basic orphan check assumes if you have values, they must match.
+                                              // Simplified: basic orphan check assumes if you have values, they must match.
             );
 
             tracing::debug!("Orphan check query for {}: {}", fk.constraint_name, query);
@@ -908,16 +929,20 @@ impl TableOperations for PostgresTable {
                 Ok(row) => {
                     let count: i64 = row.get(0);
                     if count > 0 {
-                         results.push(crate::services::db_driver::FkOrphanInfo {
+                        results.push(crate::services::db_driver::FkOrphanInfo {
                             constraint_name: fk.constraint_name.clone(),
                             foreign_key_columns: fk.local_cols.clone(),
                             referenced_table: format!("{}.{}", fk.foreign_schema, fk.foreign_table),
                             orphan_count: count,
                         });
                     }
-                },
+                }
                 Err(e) => {
-                    tracing::error!("Failed to check orphans for constraint {}: {}", fk.constraint_name, e);
+                    tracing::error!(
+                        "Failed to check orphans for constraint {}: {}",
+                        fk.constraint_name,
+                        e
+                    );
                     // Optionally return error or just skip/log
                 }
             }

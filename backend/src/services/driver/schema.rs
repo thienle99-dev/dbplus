@@ -14,4 +14,10 @@ pub trait SchemaIntrospection: Send + Sync {
     async fn search_objects(&self, query: &str) -> Result<Vec<SearchResult>>;
     async fn get_schema_foreign_keys(&self, schema: &str) -> Result<Vec<SchemaForeignKey>>;
     async fn get_extensions(&self) -> Result<Vec<ExtensionInfo>>;
+    async fn get_schema_permissions(
+        &self,
+        _schema: &str,
+    ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
 }

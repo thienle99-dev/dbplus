@@ -291,4 +291,33 @@ impl SchemaIntrospection for PostgresSchema {
             })
             .collect())
     }
+
+    async fn get_schema_permissions(
+        &self,
+        schema: &str,
+    ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
+        let client = self.pool.get().await?;
+        // Use aclexplode to get permissions from pgcatalog
+        // This handles implicit owners, etc if possible, but mainly parsing the acl string.
+        let sql = r#"
+            SELECT
+                (aclexplode(nspacl)).grantee::regrole::text AS grantee,
+                (aclexplode(nspacl)).privilege_type AS privilege,
+                (aclexplode(nspacl)).is_grantable AS is_grantable
+            FROM pg_namespace
+            WHERE nspname = $1
+        "#;
+
+        let rows = client.query(sql, &[&schema]).await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| crate::services::db_driver::TableGrant {
+                grantee: row.get(0),
+                privilege: row.get(1),
+                grantor: None, // explicit grantor not easily available from simple aclexplode without more work, checking aclitem
+                is_grantable: row.get(2),
+            })
+            .collect())
+    }
 }

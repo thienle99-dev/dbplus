@@ -463,6 +463,89 @@ pub async fn set_table_permissions(
             (status, Json(json!({ "error": msg }))).into_response()
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct SchemaPermissionParams {
+    schema: String,
+}
+
+#[derive(Deserialize)]
+pub struct FunctionPermissionParams {
+    schema: String,
+    function: String,
+}
+
+// Get schema permissions
+pub async fn get_schema_permissions(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<SchemaPermissionParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /permissions/schema - connection_id: {}, schema: {}",
+        connection_id,
+        params.schema
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .get_schema_permissions(connection_id, &params.schema)
+        .await
+    {
+        Ok(grants) => (StatusCode::OK, Json(grants)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+
+// Get function permissions
+pub async fn get_function_permissions(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<FunctionPermissionParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /permissions/function - connection_id: {}, schema: {}, function: {}",
+        connection_id,
+        params.schema,
+        params.function
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .get_function_permissions(connection_id, &params.schema, &params.function)
+        .await
+    {
+        Ok(grants) => (StatusCode::OK, Json(grants)).into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
     }
 }
 
@@ -509,4 +592,3 @@ pub async fn get_fk_orphans(
         }
     }
 }
-

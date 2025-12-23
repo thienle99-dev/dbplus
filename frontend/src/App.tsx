@@ -22,6 +22,7 @@ import { ALL_THEME_CLASS_NAMES, getThemeClassName } from './constants/themes';
 import ConnectionTestOverlay from './components/ConnectionTestOverlay';
 import BucketManagement from './components/couchbase/BucketManagement';
 import ScopeManagement from './components/couchbase/ScopeManagement';
+import PermissionInspector from './components/permissions/PermissionInspector';
 
 const WorkspacePage = () => {
   useKeyboardShortcuts();
@@ -138,6 +139,7 @@ const WorkspacePage = () => {
                 <Route path="/diagram/:schema" element={<ERDiagramView />} />
                 <Route path="/buckets" element={<BucketManagement />} />
                 <Route path="/scopes" element={<ScopeManagement />} />
+                <Route path="/permissions" element={<PermissionInspector />} />
               </Routes>
             </div>
           </div>

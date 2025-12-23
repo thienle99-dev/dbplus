@@ -107,4 +107,44 @@ impl ConnectionService {
             _ => Ok(Vec::new()), // Extensions are PostgreSQL-specific
         }
     }
+    pub async fn get_function_permissions(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        function_name: &str,
+    ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
+        let connection = self
+            .get_connection_by_id(connection_id)
+            .await?
+            .ok_or(anyhow::anyhow!("Connection not found"))?;
+
+        let password = self.encryption.decrypt(&connection.password)?;
+        let connection = self.apply_database_override(connection);
+
+        use crate::services::driver::FunctionOperations;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_function_permissions(schema, function_name).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                driver.get_function_permissions(schema, function_name).await
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                driver.get_function_permissions(schema, function_name).await
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.get_function_permissions(schema, function_name).await
+            }
+            _ => Ok(vec![]),
+        }
+    }
 }

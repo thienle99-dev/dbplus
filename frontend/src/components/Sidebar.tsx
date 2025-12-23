@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid } from 'lucide-react';
+import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid, Shield } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
@@ -224,6 +224,17 @@ export default function Sidebar() {
               title="Switch Database (Cmd+K)"
             >
               <Database size={16} />
+            </button>
+            <button
+              onClick={() => navigate(`/workspace/${connectionId}/permissions`)}
+              className={`p-1.5 rounded-md transition-colors ${
+                location.pathname.includes('/permissions')
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+              }`}
+              title="Permissions"
+            >
+              <Shield size={16} />
             </button>
           </div>
 

@@ -263,6 +263,14 @@ async fn main() {
             get(handlers::table_info::get_table_dependencies),
         )
         .route(
+            "/api/connections/:id/permissions/schema",
+            get(handlers::table_info::get_schema_permissions),
+        )
+        .route(
+            "/api/connections/:id/permissions/function",
+            get(handlers::table_info::get_function_permissions),
+        )
+        .route(
             "/api/connections/:id/roles",
             get(handlers::table_info::list_roles),
         )
