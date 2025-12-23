@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid, Shield } from 'lucide-react';
+import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid, Shield, Monitor } from 'lucide-react';
 import SchemaTree from './SchemaTree';
+import ActivityMonitor from './tools/ActivityMonitor';
 import SavedQueriesList from './SavedQueriesList';
 import QueryHistory from './QueryHistory';
 import SettingsModal from './SettingsModal';
@@ -20,6 +21,7 @@ export default function Sidebar() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [showActivityMonitor, setShowActivityMonitor] = useState(false);
   const { tabs, activeTabId, ensureTabForRoute, setActiveTab: setActiveWorkspaceTab, closeTab, setTabLastPath } = useWorkspaceTabsStore();
   const { connections, fetchConnections } = useConnectionStore();
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -359,6 +361,14 @@ export default function Sidebar() {
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
         />
+
+        {/* Activity Monitor */}
+        {showActivityMonitor && connectionId && (
+          <ActivityMonitor
+            connectionId={connectionId}
+            onClose={() => setShowActivityMonitor(false)}
+          />
+        )}
 
         <CommandPalette
           isOpen={isCommandPaletteOpen}

@@ -5,6 +5,7 @@ mod foreign_key;
 mod function;
 mod query;
 mod schema;
+mod session;
 mod table;
 mod view;
 

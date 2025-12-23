@@ -4,6 +4,7 @@ mod database_ops;
 mod function_ops;
 mod query_ops;
 mod schema_ops;
+mod session_ops;
 mod table_ops;
 mod view_ops;
 

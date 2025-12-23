@@ -291,6 +291,14 @@ async fn main() {
             get(handlers::data_tools::backup_postgres_sql),
         )
         .route(
+            "/api/connections/:id/sessions",
+            get(handlers::connection::list_sessions),
+        )
+        .route(
+            "/api/connections/:id/sessions/:pid",
+            delete(handlers::connection::kill_session),
+        )
+        .route(
             "/api/connections/:id/export-ddl",
             post(handlers::export_ddl::export_postgres_ddl),
         )

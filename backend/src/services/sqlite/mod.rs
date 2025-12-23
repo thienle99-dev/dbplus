@@ -360,3 +360,16 @@ impl FunctionOperations for SQLiteDriver {
     }
 }
 
+#[async_trait]
+impl super::driver::SessionOperations for SQLiteDriver {
+    async fn get_active_sessions(&self) -> Result<Vec<super::db_driver::SessionInfo>> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for SQLite yet"
+        ))
+    }
+    async fn kill_session(&self, _pid: i32) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for SQLite yet"
+        ))
+    }
+}

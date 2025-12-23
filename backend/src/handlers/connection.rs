@@ -689,3 +689,47 @@ pub async fn get_connection_version(
         }
     }
 }
+
+pub async fn list_sessions(
+    State(db): State<DatabaseConnection>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let result = ConnectionService::new(db)
+        .expect("Failed to create connection service")
+        .get_active_sessions(id)
+        .await;
+
+    match result {
+        Ok(sessions) => (StatusCode::OK, Json(sessions)).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to list sessions: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            )
+                .into_response()
+        }
+    }
+}
+
+pub async fn kill_session(
+    State(db): State<DatabaseConnection>,
+    Path((id, pid)): Path<(Uuid, i32)>,
+) -> impl IntoResponse {
+    let result = ConnectionService::new(db)
+        .expect("Failed to create connection service")
+        .kill_session(id, pid)
+        .await;
+
+    match result {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => {
+            tracing::error!("Failed to kill session: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            )
+                .into_response()
+        }
+    }
+}

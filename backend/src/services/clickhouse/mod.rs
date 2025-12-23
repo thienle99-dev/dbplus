@@ -870,3 +870,17 @@ impl FunctionOperations for ClickHouseDriver {
         }
     }
 }
+
+#[async_trait]
+impl crate::services::driver::SessionOperations for ClickHouseDriver {
+    async fn get_active_sessions(&self) -> Result<Vec<crate::services::db_driver::SessionInfo>> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for ClickHouse yet"
+        ))
+    }
+    async fn kill_session(&self, _pid: i32) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for ClickHouse yet"
+        ))
+    }
+}

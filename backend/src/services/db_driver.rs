@@ -1,3 +1,4 @@
+use crate::services::driver::SessionOperations;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -269,6 +270,21 @@ pub struct FkOrphanInfo {
     pub orphan_count: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionInfo {
+    pub pid: i32,
+    pub user_name: Option<String>,
+    pub application_name: Option<String>,
+    pub client_addr: Option<String>,
+    pub backend_start: Option<String>,
+    pub query_start: Option<String>,
+    pub state: Option<String>,
+    pub query: Option<String>,
+    pub wait_event_type: Option<String>,
+    pub wait_event: Option<String>,
+    pub state_change: Option<String>,
+}
+
 use crate::services::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, NoSQLOperations, QueryDriver,
     SchemaIntrospection, TableOperations, ViewOperations,
@@ -371,6 +387,8 @@ pub trait DatabaseDriver:
     ) -> Result<Vec<TableGrant>>;
     async fn list_extensions(&self) -> Result<Vec<ExtensionInfo>>;
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value>;
+    async fn get_active_sessions(&self) -> Result<Vec<SessionInfo>>;
+    async fn kill_session(&self, pid: i32) -> Result<()>;
 }
 
 #[async_trait]
@@ -383,6 +401,7 @@ where
         + ColumnManagement
         + ViewOperations
         + FunctionOperations
+        + SessionOperations
         + Send
         + Sync,
 {
@@ -606,6 +625,14 @@ where
 
     async fn explain(&self, query: &str, analyze: bool) -> Result<serde_json::Value> {
         <Self as QueryDriver>::explain(self, query, analyze).await
+    }
+
+    async fn get_active_sessions(&self) -> Result<Vec<SessionInfo>> {
+        <Self as SessionOperations>::get_active_sessions(self).await
+    }
+
+    async fn kill_session(&self, pid: i32) -> Result<()> {
+        <Self as SessionOperations>::kill_session(self, pid).await
     }
 }
 

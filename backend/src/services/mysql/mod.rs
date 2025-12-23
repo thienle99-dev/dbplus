@@ -8,6 +8,7 @@ pub mod view;
 
 use crate::models::entities::connection as connection_entity;
 use anyhow::Result;
+use axum::async_trait;
 use mysql_async::{OptsBuilder, Pool};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -69,5 +70,19 @@ impl MySqlDriver {
         };
 
         Ok(Self::new(pool, flavor))
+    }
+}
+
+#[async_trait]
+impl crate::services::driver::SessionOperations for MySqlDriver {
+    async fn get_active_sessions(&self) -> Result<Vec<crate::services::db_driver::SessionInfo>> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for MySQL yet"
+        ))
+    }
+    async fn kill_session(&self, _pid: i32) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Session management not supported for MySQL yet"
+        ))
     }
 }
