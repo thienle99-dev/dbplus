@@ -73,6 +73,9 @@ impl QueryDriver for CouchbaseDriver {
                 offset: None,
                 has_more: None,
                 row_metadata: None,
+                execution_time_ms: None,
+                json: None,
+                display_mode: None,
             });
         }
 
@@ -96,11 +99,48 @@ impl QueryDriver for CouchbaseDriver {
             .await
             .map_err(|e| anyhow::anyhow!("Failed to decode rows: {}", e))?;
 
-        // Scan up to 50 rows to infer column names from all keys present
+        let rows_clone = rows.clone();
+
+        // Detect if all rows have the same single key (common for SELECT * FROM bucket)
+        let mut single_wrapper_key = None;
+        if !rows.is_empty() {
+            let mut detected_key: Option<String> = None;
+            let mut all_match = true;
+            for row in rows.iter().take(50) {
+                if let Some(obj) = row.as_object() {
+                    if obj.len() == 1 {
+                        let key = obj.keys().next().unwrap();
+                        if detected_key.is_none() {
+                            detected_key = Some(key.clone());
+                        } else if detected_key.as_ref() != Some(key) {
+                            all_match = false;
+                            break;
+                        }
+                    } else {
+                        all_match = false;
+                        break;
+                    }
+                } else {
+                    all_match = false;
+                    break;
+                }
+            }
+            if all_match {
+                single_wrapper_key = detected_key;
+            }
+        }
+
+        // Infer columns
         let mut column_set = std::collections::BTreeSet::new();
         let sample_size = rows.len().min(50);
         for i in 0..sample_size {
-            if let Some(obj) = rows[i].as_object() {
+            let target_value = if let Some(key) = &single_wrapper_key {
+                rows[i].get(key).unwrap_or(&Value::Null)
+            } else {
+                &rows[i]
+            };
+
+            if let Some(obj) = target_value.as_object() {
                 for key in obj.keys() {
                     column_set.insert(key.clone());
                 }
@@ -121,20 +161,19 @@ impl QueryDriver for CouchbaseDriver {
         let mut row_metadata = Vec::new();
 
         for row in rows {
-            if let Some(obj) = row.as_object() {
-                // Extract metadata fields
+            let target_value = if let Some(key) = &single_wrapper_key {
+                row.get(key).unwrap_or(&Value::Null).clone()
+            } else {
+                row.clone()
+            };
+
+            if let Some(obj) = target_value.as_object() {
+                // Extract metadata fields if available in original row or target
                 let mut meta = std::collections::HashMap::new();
-                if let Some(v) = obj.get("_cas") {
-                    meta.insert("_cas".to_string(), v.clone());
-                }
-                if let Some(v) = obj.get("_id") {
-                    meta.insert("_id".to_string(), v.clone());
-                }
-                if let Some(v) = obj.get("_expiry") {
-                    meta.insert("_expiry".to_string(), v.clone());
-                }
-                if let Some(v) = obj.get("_flags") {
-                    meta.insert("_flags".to_string(), v.clone());
+                for meta_key in ["_cas", "_id", "_expiry", "_flags"] {
+                    if let Some(v) = row.get(meta_key).or_else(|| obj.get(meta_key)) {
+                        meta.insert(meta_key.to_string(), v.clone());
+                    }
                 }
                 row_metadata.push(meta);
 
@@ -145,7 +184,7 @@ impl QueryDriver for CouchbaseDriver {
                 grid_rows.push(row_values);
             } else {
                 row_metadata.push(std::collections::HashMap::new());
-                grid_rows.push(vec![row]);
+                grid_rows.push(vec![target_value]);
             }
         }
 
@@ -164,6 +203,9 @@ impl QueryDriver for CouchbaseDriver {
                     .map(|m| serde_json::to_value(m).unwrap_or(Value::Null))
                     .collect(),
             ),
+            execution_time_ms: None,
+            json: Some(Value::Array(rows_clone)),
+            display_mode: Some("table".to_string()),
         })
     }
 

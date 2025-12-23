@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+import { useSettingsStore } from '../../store/settingsStore';
 import { QueryResult } from '../../types';
 import {
     getCoreRowModel,
@@ -66,6 +68,15 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
     const dialog = useDialog();
+    const { theme } = useSettingsStore();
+
+    const [viewMode, setViewMode] = useState<'table' | 'json'>(result?.display_mode === 'json' ? 'json' : 'table');
+
+    useEffect(() => {
+        if (result?.display_mode) {
+            setViewMode(result.display_mode);
+        }
+    }, [result?.display_mode]);
 
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
@@ -91,6 +102,23 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     useEffect(() => {
         editsRef.current = edits;
     }, [edits]);
+
+    const jsonValue = useMemo(() => {
+        if (result?.json) {
+            return JSON.stringify(result.json, null, 4);
+        }
+        if (!result || !result.columns || !result.rows) return '[]';
+
+        // Convert rows to objects if standard table results
+        const data = result.rows.map(row => {
+            const obj: Record<string, any> = {};
+            result.columns.forEach((col, idx) => {
+                obj[col] = row[idx];
+            });
+            return obj;
+        });
+        return JSON.stringify(data, null, 4);
+    }, [result]);
 
     const handleSaveChanges = async () => {
         if (!result || !result.column_metadata) return;
@@ -312,6 +340,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
     const columns = useMemo(() => {
         const helper = createColumnHelper<unknown[]>();
+        const rowNumberOffset = (offset || 0) + 1;
+
         const baseColumns: any[] = [
             helper.display({
                 id: '__select__',
@@ -347,6 +377,18 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     </div>
                 ),
                 size: 36,
+                enableSorting: false,
+                enableResizing: false,
+            }),
+            helper.display({
+                id: '__row_number__',
+                header: () => <div className="text-center w-full">#</div>,
+                cell: ({ row }) => (
+                    <div className="text-center w-full text-text-tertiary select-none font-mono text-[10px]">
+                        {rowNumberOffset + row.index}
+                    </div>
+                ),
+                size: 40,
                 enableSorting: false,
                 enableResizing: false,
             }),
@@ -820,6 +862,21 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     Time: <span className="text-accent font-medium">{result.execution_time_ms}ms</span>
                                 </span>
                             )}
+                            
+                            <div className="flex items-center gap-1 bg-bg-2 p-0.5 rounded-lg border border-border-light ml-4">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`px-2 py-0.5 text-xs rounded-md transition-all ${viewMode === 'table' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
+                                >
+                                    Table
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('json')}
+                                    className={`px-2 py-0.5 text-xs rounded-md transition-all ${viewMode === 'json' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
+                                >
+                                    JSON
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -1145,113 +1202,134 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                         </div>
                     )}
 
-                    {result.columns.length > 0 && (
-                        <div
-                            className="flex-1 overflow-auto rounded-lg border border-border-subtle shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
-                            ref={tableScrollRef}
-                            style={{ scrollbarGutter: 'stable' }}
-                        >
-                            {result.rows.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-text-tertiary">
-                                    <div className="text-4xl mb-4 opacity-50">📊</div>
-                                    <div className="text-sm font-medium">Query executed successfully</div>
-                                    <div className="text-xs mt-1 opacity-70">No rows returned</div>
-                                </div>
-                            ) : (
-                                <table
-                                    className="w-full text-left border-collapse"
-                                    style={{ width: tableInstance.getTotalSize(), tableLayout: 'fixed' }}
-                                >
-                                    <thead className="sticky top-0 z-20 bg-bg-1 backdrop-blur-md shadow-sm">
-                                        {tableInstance.getHeaderGroups().map((headerGroup) => (
-                                            <tr key={headerGroup.id}>
-                                                {headerGroup.headers.map((header) => (
-                                                    <th
-                                                        key={header.id}
-                                                        className="px-3 py-2 text-xs font-semibold text-text-secondary tracking-wide select-none border-b border-r border-border-subtle last:border-r-0 transition-colors hover:text-text-primary hover:bg-bg-2 relative"
-                                                        style={{
-                                                            width: header.getSize(),
-                                                        }}
-                                                    >
-                                                        <div
-                                                            className={`flex items-center gap-1.5 cursor-pointer ${header.column.getCanSort() ? '' : ''}`}
+                    {viewMode === 'table' ? (
+                        result.columns.length > 0 && (
+                            <div
+                                className="flex-1 overflow-auto rounded-lg border border-border-subtle shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
+                                ref={tableScrollRef}
+                                style={{ scrollbarGutter: 'stable' }}
+                            >
+                                {result.rows.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary">
+                                        <div className="text-4xl mb-4 opacity-50">📊</div>
+                                        <div className="text-sm font-medium">Query executed successfully</div>
+                                        <div className="text-xs mt-1 opacity-70">No rows returned</div>
+                                    </div>
+                                ) : (
+                                    <table
+                                        className="w-full border-collapse text-left"
+                                        style={{ minWidth: '100%', tableLayout: 'fixed' }}
+                                    >
+                                        <thead className="sticky top-0 z-20 bg-bg-1 glass shadow-sm border-b border-border-subtle">
+                                            {tableInstance.getHeaderGroups().map((headerGroup) => (
+                                                <tr key={headerGroup.id}>
+                                                    {headerGroup.headers.map((header) => (
+                                                        <th
+                                                            key={header.id}
+                                                            className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-tight border-r border-border-subtle last:border-r-0 hover:bg-bg-2 transition-colors cursor-pointer select-none group relative"
+                                                            style={{
+                                                                width: header.getSize(),
+                                                                minWidth: header.column.columnDef.minSize,
+                                                                maxWidth: header.column.columnDef.maxSize,
+                                                            }}
                                                             onClick={header.column.getToggleSortingHandler()}
                                                         >
-                                                            {flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                            {{
-                                                                asc: <span className="text-accent text-[9px] opacity-80">▲</span>,
-                                                                desc: <span className="text-accent text-[9px] opacity-80">▼</span>,
-                                                            }[header.column.getIsSorted() as string] ?? null}
-                                                        </div>
-                                                        <div
-                                                            onMouseDown={header.getResizeHandler()}
-                                                            onTouchStart={header.getResizeHandler()}
-                                                            className={`absolute right-0 top-2 bottom-2 w-[1px] bg-border-subtle hover:bg-accent hover:w-[2px] cursor-col-resize touch-none opacity-0 hover:opacity-100 transition-all ${header.column.getIsResizing() ? 'bg-accent w-[2px] opacity-100' : ''
-                                                                }`}
-                                                        />
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </thead>
-                                    <tbody className="font-sans">
-                                        {(() => {
-                                            const virtualItems = rowVirtualizer.getVirtualItems();
-                                            const totalSize = rowVirtualizer.getTotalSize();
-                                            const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
-                                            const last = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1] : null;
-                                            const paddingBottom = last ? totalSize - (last.start + last.size) : 0;
-                                            const colSpan = tableInstance.getAllLeafColumns().length;
+                                                            <div className="flex items-center gap-1.5 overflow-hidden">
+                                                                <span className="truncate flex-1">
+                                                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                                                </span>
+                                                                <span className="flex-shrink-0 w-3 h-3 flex items-center justify-center text-accent/50 group-hover:text-accent">
+                                                                    {{
+                                                                        asc: '↑',
+                                                                        desc: '↓',
+                                                                    }[header.column.getIsSorted() as string] ?? null}
+                                                                </span>
+                                                            </div>
 
-                                            return (
-                                                <>
-                                                    {paddingTop > 0 && (
-                                                        <tr>
-                                                            <td style={{ height: `${paddingTop}px` }} colSpan={colSpan} />
-                                                        </tr>
-                                                    )}
+                                                            <div
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className={`absolute right-0 top-0 h-full w-1 cursor-col-resize transition-all ${header.column.getIsResizing() ? 'bg-accent bg-opacity-50' : 'hover:bg-accent hover:bg-opacity-30'
+                                                                    }`}
+                                                            />
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </thead>
+                                        <tbody className="font-sans">
+                                            {(() => {
+                                                const virtualItems = rowVirtualizer.getVirtualItems();
+                                                const totalSize = rowVirtualizer.getTotalSize();
+                                                const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+                                                const last = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1] : null;
+                                                const paddingBottom = last ? totalSize - (last.start + last.size) : 0;
+                                                const colSpan = tableInstance.getAllLeafColumns().length;
 
-                                                    {virtualItems.map((virtualRow) => {
-                                                        const row = rowModelRows[virtualRow.index];
-                                                        return (
-                                                            <tr
-                                                                key={row.id}
-                                                                className={`
-                                                                
+                                                return (
+                                                    <>
+                                                        {paddingTop > 0 && (
+                                                            <tr>
+                                                                <td style={{ height: `${paddingTop}px` }} colSpan={colSpan} />
+                                                            </tr>
+                                                        )}
+
+                                                        {virtualItems.map((virtualRow) => {
+                                                            const row = rowModelRows[virtualRow.index];
+                                                            return (
+                                                                <tr
+                                                                    key={row.id}
+                                                                    className={`
+                                                                 
                                                                     hover:bg-bg-2 group transition-colors duration-150 ease-out border-b border-transparent hover:border-border-subtle
                                                                     ${virtualRow.index % 2 === 1 ? 'bg-bg-subtle' : ''}
                                                                 `}
-                                                            >
-                                                                {row.getVisibleCells().map((cell) => (
-                                                                    <td
-                                                                        key={cell.id}
-                                                                        className="px-3 py-1.5 border-r border-border-subtle last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
-                                                                        style={{
-                                                                            width: cell.column.getSize(),
-                                                                            maxWidth: cell.column.getSize(),
-                                                                        }}
-                                                                    >
-                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                    </td>
-                                                                ))}
-                                                            </tr>
-                                                        );
-                                                    })}
+                                                                >
+                                                                    {row.getVisibleCells().map((cell) => (
+                                                                        <td
+                                                                            key={cell.id}
+                                                                            className="px-3 py-1.5 border-r border-border-subtle last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                            style={{
+                                                                                width: cell.column.getSize(),
+                                                                                maxWidth: cell.column.getSize(),
+                                                                            }}
+                                                                        >
+                                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+                                                            );
+                                                        })}
 
-                                                    {paddingBottom > 0 && (
-                                                        <tr>
-                                                            <td style={{ height: `${paddingBottom}px` }} colSpan={colSpan} />
-                                                        </tr>
-                                                    )}
-                                                </>
-                                            );
-                                        })()}
-                                    </tbody>
-                                </table>
-                            )}
+                                                        {paddingBottom > 0 && (
+                                                            <tr>
+                                                                <td style={{ height: `${paddingBottom}px` }} colSpan={colSpan} />
+                                                            </tr>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        )
+                    ) : (
+                        <div className="flex-1 overflow-hidden mx-2 mb-2 rounded-lg border border-border-subtle bg-bg-0 shadow-sm relative">
+                            <CodeMirror
+                                value={jsonValue}
+                                theme={theme === 'dark' ? 'dark' : 'light'}
+                                height="100%"
+                                readOnly
+                                basicSetup={{
+                                    lineNumbers: true,
+                                    foldGutter: true,
+                                    dropCursor: true,
+                                    allowMultipleSelections: false,
+                                    indentOnInput: true,
+                                }}
+                                className="h-full w-full text-[13px] absolute inset-0 font-mono"
+                            />
                         </div>
                     )}
                 </div>

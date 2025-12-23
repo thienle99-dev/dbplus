@@ -17,6 +17,8 @@ export interface QueryResult {
   has_more?: boolean;
   row_metadata?: Record<string, any>[];
   execution_time_ms?: number;
+  json?: any;
+  display_mode?: 'table' | 'json';
 }
 
 export type EditState = Record<string, Record<number, unknown>>;

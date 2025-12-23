@@ -59,6 +59,9 @@ impl QueryDriver for MySqlDriver {
             offset: None,
             has_more: None,
             row_metadata: None,
+            execution_time_ms: None,
+            json: None,
+            display_mode: None,
         })
     }
 

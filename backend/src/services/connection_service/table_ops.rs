@@ -214,7 +214,9 @@ impl ConnectionService {
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
-        match connection.db_type.as_str() {
+        let start_time = std::time::Instant::now();
+
+        let mut result = match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_data(
@@ -227,7 +229,7 @@ impl ConnectionService {
                     document_id,
                     fields,
                 )
-                .await
+                .await?
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, &password).await?;
@@ -241,7 +243,7 @@ impl ConnectionService {
                     document_id,
                     fields,
                 )
-                .await
+                .await?
             }
             "clickhouse" => {
                 let driver =
@@ -257,7 +259,7 @@ impl ConnectionService {
                     document_id,
                     fields,
                 )
-                .await
+                .await?
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
@@ -272,7 +274,7 @@ impl ConnectionService {
                     document_id,
                     fields,
                 )
-                .await
+                .await?
             }
             "couchbase" => {
                 let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
@@ -290,9 +292,9 @@ impl ConnectionService {
                     document_id,
                     fields,
                 )
-                .await
+                .await?
             }
-            _ => Ok(crate::services::db_driver::QueryResult {
+            _ => crate::services::db_driver::QueryResult {
                 columns: vec![],
                 rows: vec![],
                 affected_rows: 0,
@@ -302,8 +304,16 @@ impl ConnectionService {
                 offset: Some(offset as i64),
                 has_more: None,
                 row_metadata: None,
-            }),
-        }
+                execution_time_ms: None,
+                json: None,
+                display_mode: None,
+            },
+        };
+
+        let duration = start_time.elapsed();
+        result.execution_time_ms = Some(duration.as_millis() as u64);
+
+        Ok(result)
     }
 
     pub async fn add_column(
