@@ -224,7 +224,6 @@ impl AutocompleteParser {
         cursor: usize,
     ) -> (HashMap<String, String>, Vec<Token>) {
         let mut aliases = HashMap::new();
-        let mut tokens_before = Vec::new();
 
         tracing::debug!("Extracting aliases from {} tokens", tokens.len());
 
@@ -372,7 +371,7 @@ impl AutocompleteParser {
             }
         }
 
-        tokens_before = tokens[..cursor_idx].to_vec();
+        let tokens_before = tokens[..cursor_idx].to_vec();
 
         tracing::debug!(
             "Alias extraction complete: {} aliases, {} tokens before cursor (out of {})",

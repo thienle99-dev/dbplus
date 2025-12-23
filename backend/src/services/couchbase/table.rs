@@ -18,11 +18,11 @@ impl TableOperations for CouchbaseDriver {
             .as_deref()
             .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
 
-        let query = format!(
-            "CREATE COLLECTION `{}`.`{}`.`{}`",
-            bucket_name, schema, table
-        );
-        QueryDriver::execute_query(self, &query).await?;
+        let bucket = self.cluster.bucket(bucket_name);
+        let mgr = bucket.collections();
+        mgr.create_collection(schema, table, None, None)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create collection: {}", e))?;
         Ok(())
     }
 
@@ -32,8 +32,11 @@ impl TableOperations for CouchbaseDriver {
             .as_deref()
             .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
 
-        let query = format!("DROP COLLECTION `{}`.`{}`.`{}`", bucket_name, schema, table);
-        QueryDriver::execute_query(self, &query).await?;
+        let bucket = self.cluster.bucket(bucket_name);
+        let mgr = bucket.collections();
+        mgr.drop_collection(schema, table, None)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to drop collection: {}", e))?;
         Ok(())
     }
 

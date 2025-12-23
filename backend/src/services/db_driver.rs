@@ -315,6 +315,23 @@ pub trait DatabaseDriver:
     async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies>;
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
+    async fn create_table(&self, schema: &str, table: &str) -> Result<()>;
+    async fn drop_table(&self, schema: &str, table: &str) -> Result<()>;
+    async fn update_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        updates: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64>;
+    async fn delete_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64>;
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()>;
     async fn alter_column(
         &self,
@@ -474,6 +491,43 @@ where
 
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo> {
         <Self as TableOperations>::get_partitions(self, schema, table).await
+    }
+
+    async fn create_table(&self, schema: &str, table: &str) -> Result<()> {
+        <Self as TableOperations>::create_table(self, schema, table).await
+    }
+
+    async fn drop_table(&self, schema: &str, table: &str) -> Result<()> {
+        <Self as TableOperations>::drop_table(self, schema, table).await
+    }
+
+    async fn update_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        updates: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64> {
+        <Self as TableOperations>::update_row(
+            self,
+            schema,
+            table,
+            primary_key,
+            updates,
+            row_metadata,
+        )
+        .await
+    }
+
+    async fn delete_row(
+        &self,
+        schema: &str,
+        table: &str,
+        primary_key: &std::collections::HashMap<String, serde_json::Value>,
+        row_metadata: Option<&std::collections::HashMap<String, serde_json::Value>>,
+    ) -> Result<u64> {
+        <Self as TableOperations>::delete_row(self, schema, table, primary_key, row_metadata).await
     }
 
     async fn add_column(&self, schema: &str, table: &str, column: &ColumnDefinition) -> Result<()> {
