@@ -54,24 +54,26 @@ export interface DatabaseManagementResponse {
 }
 
 export interface PermissionGrant {
-    grantee: string;
-    privilege: string;
-    is_grantable: boolean;
+  grantee: string;
+  privilege: string;
+  grantor?: string | null;
+  is_grantable: boolean;
 }
 
 // Backend maps to TableGrant for all object types (schema, table, function)
 export interface TableGrant {
-    grantee: string;
-    privilege: string;
-    is_grantable: boolean;
+  grantee: string;
+  privilege: string;
+  grantor?: string | null;
+  is_grantable: boolean;
 }
 
 export interface RoleInfo {
-    name: string;
-    is_superuser: boolean;
-    is_inherit: boolean;
-    is_create_role: boolean;
-    is_create_db: boolean;
-    can_login: boolean;
-    bypass_rls: boolean;
+  name: string;
+  is_superuser: boolean;
+  is_inherit: boolean;
+  is_create_role: boolean;
+  is_create_db: boolean;
+  can_login: boolean;
+  bypass_rls: boolean;
 }

@@ -1,3 +1,6 @@
+/* Import TablePlus Design System */
+@import "./styles/design-tokens.css";
+
 /* Fonts */
 @font-face {
   font-family: "SF Pro Display";
@@ -47,8 +50,7 @@
   font-display: swap;
 }
 
-/* Import TablePlus Design System */
-@import "./styles/design-tokens.css";
+
 
 @tailwind base;
 @tailwind components;
