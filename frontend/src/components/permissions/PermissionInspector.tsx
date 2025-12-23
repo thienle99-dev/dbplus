@@ -13,7 +13,6 @@ import {
     LayoutGrid
 } from 'lucide-react';
 import Select from '../ui/Select';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 
 export default function PermissionInspector() {
     const { connectionId } = useParams<{ connectionId: string }>();

@@ -52,9 +52,7 @@ impl ConnectionDriver for CouchbaseDriver {
 #[async_trait]
 impl crate::services::driver::SessionOperations for CouchbaseDriver {
     async fn get_active_sessions(&self) -> Result<Vec<crate::services::db_driver::SessionInfo>> {
-        Err(anyhow::anyhow!(
-            "Session management not supported for Couchbase yet"
-        ))
+        Ok(vec![])
     }
     async fn kill_session(&self, _pid: i32) -> Result<()> {
         Err(anyhow::anyhow!(

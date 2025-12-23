@@ -47,6 +47,10 @@ export default function Sidebar() {
     return map;
   }, [connections]);
 
+  const currentConnection = useMemo(() => {
+    return connections.find(c => c.id === connectionId);
+  }, [connections, connectionId]);
+
   useEffect(() => {
     if (!connectionId) return;
     const path = location.pathname + location.search;
@@ -210,34 +214,55 @@ export default function Sidebar() {
       {/* Main Sidebar Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-bg-1">
         {/* Search Header */}
-        <div className="p-4 border-b border-border-light space-y-4">
-          {/* Global Search Input */}
-          <div className="flex gap-2 items-center">
-            <Input
-              leftIcon={<Search size={14} className="text-text-tertiary" />}
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 bg-bg-2 border-transparent focus:bg-bg-0"
-            />
-            <button
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="p-2 bg-bg-2 border flex-shrink-0 border-border-light rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-2 transition-colors"
-              title="Switch Database (Cmd+K)"
-            >
-              <Database size={16} />
-            </button>
-            <button
-              onClick={() => navigate(`/workspace/${connectionId}/permissions`)}
-              className={`p-1.5 rounded-md transition-colors ${
-                location.pathname.includes('/permissions')
+        <div className="p-4 border-b border-border-light space-y-3">
+          {/* Connection & Actions Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-2 h-2 rounded-full bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] flex-shrink-0" />
+              <span className="text-sm font-semibold text-text-primary truncate">
+                {currentConnection?.name || 'Select Connection'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsCommandPaletteOpen(true)}
+                className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg transition-colors"
+                title="Switch Database (Cmd+K)"
+              >
+                <Database size={15} />
+              </button>
+              <button
+                onClick={() => navigate(`/workspace/${connectionId}/permissions`)}
+                className={`p-1.5 rounded-lg transition-colors ${location.pathname.includes('/permissions')
                   ? 'bg-accent text-white shadow-sm'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-              }`}
-              title="Permissions"
-            >
-              <Shield size={16} />
-            </button>
+                  }`}
+                title="Permissions"
+              >
+                <Shield size={15} />
+              </button>
+              <button
+                onClick={() => setShowActivityMonitor(true)}
+                className={`p-1.5 rounded-lg transition-colors ${showActivityMonitor
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                  }`}
+                title="Activity Monitor"
+              >
+                <Monitor size={15} />
+              </button>
+            </div>
+          </div>
+
+          {/* Full Width Search Input */}
+          <div className="w-full">
+            <Input
+              leftIcon={<Search size={14} className="text-text-tertiary" />}
+              placeholder="Search tables, views or queries..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-bg-2 border-transparent focus:bg-bg-0 focus:ring-1 focus:ring-border-subtle"
+            />
           </div>
 
           {/* Tab Navigation (Segmented Control style) */}

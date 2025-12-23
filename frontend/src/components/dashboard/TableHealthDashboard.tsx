@@ -13,7 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { connectionApi } from '../../services/connectionApi';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/Tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { formatBytes } from '../../utils/format';
 
 interface TableHealthDashboardProps {
@@ -209,7 +209,7 @@ const TableHealthDashboard: React.FC<TableHealthDashboardProps> = ({ connectionI
                                         <div>
                                             <p className="font-semibold text-blue-500 mb-1">About Table Bloat</p>
                                             In PostgreSQL, updates mark old rows as dead rather than removing them immediately. 
-                                            Vacuuming reclaims this space. High bloat (>20%) can degrade performance and waste disk space.
+                                            Vacuuming reclaims this space. High bloat (\u003e20%) can degrade performance and waste disk space.
                                         </div>
                                     </div>
                                 </>

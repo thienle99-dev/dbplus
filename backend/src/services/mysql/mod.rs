@@ -8,7 +8,7 @@ pub mod view;
 
 use crate::models::entities::connection as connection_entity;
 use anyhow::Result;
-use axum::async_trait;
+use async_trait::async_trait;
 use mysql_async::{OptsBuilder, Pool};
 
 #[derive(Clone, Copy, Debug, PartialEq)]

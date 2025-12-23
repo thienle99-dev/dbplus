@@ -1,5 +1,6 @@
 use super::ConnectionService;
 use crate::models::entities::{connection, connection::Entity as Connection};
+use crate::services::driver::ConnectionDriver;
 use anyhow::Result;
 use chrono::Utc;
 use sea_orm::*;
@@ -268,27 +269,27 @@ impl ConnectionService {
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
                 let driver = PostgresDriver::new(&connection, password).await?;
-                driver.test_connection().await
+                ConnectionDriver::test_connection(&driver).await
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, password).await?;
-                driver.test_connection().await
+                ConnectionDriver::test_connection(&driver).await
             }
             "clickhouse" => {
                 let driver =
                     crate::services::clickhouse::ClickHouseDriver::new(&connection, password)
                         .await?;
-                driver.test_connection().await
+                ConnectionDriver::test_connection(&driver).await
             }
             "mysql" | "mariadb" | "tidb" => {
                 let driver =
                     crate::services::mysql::MySqlDriver::from_model(&connection, password).await?;
-                driver.test_connection().await
+                ConnectionDriver::test_connection(&driver).await
             }
             "couchbase" => {
                 let driver =
                     crate::services::couchbase::CouchbaseDriver::new(&connection, password).await?;
-                driver.test_connection().await
+                ConnectionDriver::test_connection(&driver).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
