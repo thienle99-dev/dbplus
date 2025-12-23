@@ -8,7 +8,7 @@ export interface ModalProps {
     title?: React.ReactNode;
     children: React.ReactNode;
     footer?: React.ReactNode;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     showCloseButton?: boolean;
 }
 
@@ -48,6 +48,8 @@ export default function Modal({
         md: 'max-w-lg',
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
+        '2xl': 'max-w-7xl',
+        'full': 'max-w-[95vw]',
     };
 
     return createPortal(

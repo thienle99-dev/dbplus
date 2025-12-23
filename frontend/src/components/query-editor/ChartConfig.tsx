@@ -111,19 +111,39 @@ export const ChartConfig: React.FC<ChartConfigProps> = ({ columns, config, onCha
           <div className="bg-bg-2 border border-border-light rounded p-1.5 max-h-[100px] overflow-y-auto space-y-0.5">
             {columns.map(col => {
               const isActive = (config.yAxis || []).includes(col);
+              const color = config.colors?.[col];
+
               return (
-                <button
+                <div
                   key={col}
-                  onClick={() => handleYAxisToggle(col)}
-                  className={`w-full text-left px-2 py-1 rounded text-xs flex items-center justify-between transition-colors ${
+                  className={`w-full px-2 py-1 rounded text-xs flex items-center justify-between transition-colors ${
                     isActive
                       ? 'bg-accent/10 text-accent font-medium'
                       : 'text-text-secondary hover:bg-bg-3 hover:text-text-primary'
                   }`}
                 >
-                  <span className="truncate">{col}</span>
-                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
-                </button>
+                  <button
+                    onClick={() => handleYAxisToggle(col)}
+                    className="flex-1 text-left truncate mr-2"
+                  >
+                    {col}
+                  </button>
+                  {isActive && (
+                    <div className="flex items-center gap-2">
+                       <input
+                        type="color"
+                        value={color || '#3b82f6'}
+                        onChange={(e) => {
+                          const newColors = { ...(config.colors || {}), [col]: e.target.value };
+                          onChange({ ...config, colors: newColors });
+                        }}
+                        className="w-4 h-4 rounded-full overflow-hidden border-0 p-0 cursor-pointer bg-transparent"
+                        title="Pick color"
+                      />
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

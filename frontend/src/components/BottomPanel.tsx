@@ -12,7 +12,6 @@ interface BottomPanelProps {
 
 export function BottomPanel({ }: BottomPanelProps) {
     const [activeTab, setActiveTab] = useState<TabType>('sql');
-    const [isOpen, setIsOpen] = useState(false);
     const [panelHeight, setPanelHeight] = useState(() => {
         const saved = localStorage.getItem('bottom-panel-height');
         return saved ? parseInt(saved, 10) : 300;
@@ -52,20 +51,6 @@ export function BottomPanel({ }: BottomPanelProps) {
         }
     }, [isResizing]);
 
-    if (!isOpen) {
-        return (
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border-light">
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="w-full px-4 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-2 flex items-center justify-center gap-2"
-                >
-                    <ChevronUp size={14} />
-                    Show Panel
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div
             className="fixed bottom-0 left-0 right-0 z-40 bg-bg-1 border-t border-border-light flex flex-col"
@@ -96,13 +81,6 @@ export function BottomPanel({ }: BottomPanelProps) {
                         Logs
                     </button>
                 </div>
-                <button
-                    onClick={() => setIsOpen(false)}
-                    className="p-1 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded"
-                    title="Hide panel"
-                >
-                    <ChevronDown size={14} />
-                </button>
             </div>
 
             {/* Tab Content */}

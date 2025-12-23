@@ -15,7 +15,7 @@ import { useDialog } from '../context/DialogContext';
 type EditState = Record<number, Record<string, unknown>>;
 
 export default function RightSidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem('sidebar-width');
     return saved ? parseInt(saved, 10) : 384;

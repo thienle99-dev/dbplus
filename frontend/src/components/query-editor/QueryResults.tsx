@@ -18,8 +18,9 @@ import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
 import { useDialog } from '../../context/DialogContext';
-import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Save } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Maximize2 } from 'lucide-react';
 import Button from '../ui/Button';
+import Modal from '../ui/Modal';
 
 
 import type { ApiErrorDetails } from '../../utils/apiError';
@@ -57,7 +58,7 @@ interface QueryResultsProps {
 
 export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
-    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, onSaveChart, initialChartConfig,
+    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, initialChartConfig,
     onChartConfigChange
 }) => {
 
@@ -78,6 +79,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const { theme } = useSettingsStore();
 
     const [viewMode, setViewMode] = useState<'table' | 'json' | 'chart'>('table');
+    const [isChartModalOpen, setIsChartModalOpen] = useState(false);
     const [inlineEditingEnabled, setInlineEditingEnabled] = useState(true);
     const [metricChartConfig, setMetricChartConfig] = useState<ChartConfigData>({
         type: 'bar',
@@ -916,6 +918,17 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 </button>
                             </div>
 
+                            {viewMode === 'chart' && (
+                                <button
+                                    onClick={() => setIsChartModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg border border-transparent hover:border-border-light ml-2 transition-all"
+                                    title="Maximize Chart"
+                                >
+                                    <Maximize2 size={14} />
+                                    Maximize
+                                </button>
+                            )}
+
                             {/* Inline Edit Toggle */}
                             <div 
                                 className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none ml-2"
@@ -1396,18 +1409,36 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     config={metricChartConfig}
                                 />
                             </div>
-                            {onSaveChart && (
-                                <div className="p-2 border-t border-border-light bg-bg-1 flex justify-end">
-                                    <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => onSaveChart(metricChartConfig)}
-                                        className="h-8 text-xs gap-2"
-                                    >
-                                        <Save size={14} />
-                                        Save Chart Configuration
-                                    </Button>
-                                </div>
+
+                            {/* Chart Modal */}
+                            {isChartModalOpen && (
+                                <Modal
+                                    isOpen={true}
+                                    onClose={() => setIsChartModalOpen(false)}
+                                    title="Chart Visualization"
+                                    size="full"
+                                >
+                                    <div className="flex flex-col lg:flex-row gap-4 h-[80vh]">
+                                        <div className="w-full lg:w-1/4 border-b lg:border-b-0 lg:border-r border-border-light pb-4 lg:pb-0 lg:pr-4 overflow-y-auto shrink-0">
+                                            <h3 className="text-sm font-semibold text-text-primary mb-3">Configuration</h3>
+                                            <ChartConfig
+                                                columns={result.columns}
+                                                config={metricChartConfig}
+                                                onChange={setMetricChartConfig}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <ChartRenderer
+                                                data={result.rows.map(row => {
+                                                    const obj: Record<string, any> = {};
+                                                    result.columns.forEach((col, i) => obj[col] = row[i]);
+                                                    return obj;
+                                                })}
+                                                config={metricChartConfig}
+                                            />
+                                        </div>
+                                    </div>
+                                </Modal>
                             )}
                         </div>
                     ) : (

@@ -66,7 +66,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ data, config }) =>
             nameKey={nameKey}
           >
             {sanitizedData.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell key={`cell-${index}`} fill={config.colors?.[config.yAxis[0]] || COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip 
@@ -110,7 +110,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ data, config }) =>
             <Bar
               key={key}
               dataKey={key}
-              fill={COLORS[index % COLORS.length]}
+              fill={config.colors?.[key] || COLORS[index % COLORS.length]}
               radius={[4, 4, 0, 0]}
               maxBarSize={60}
             />
@@ -150,9 +150,9 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ data, config }) =>
             key={key}
             type="monotone"
             dataKey={key}
-            stroke={COLORS[index % COLORS.length]}
+            stroke={config.colors?.[key] || COLORS[index % COLORS.length]}
             strokeWidth={2}
-            dot={{ r: 3, fill: COLORS[index % COLORS.length] }}
+            dot={{ r: 3, fill: config.colors?.[key] || COLORS[index % COLORS.length] }}
             activeDot={{ r: 6 }}
           />
         ))}

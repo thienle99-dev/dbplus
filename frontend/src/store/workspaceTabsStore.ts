@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useTabStateStore } from './tabStateStore';
 
 export interface WorkspaceTab {
   id: string;
@@ -58,6 +59,9 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
   },
 
   closeTab: (tabId) => {
+    // Clean up tab state to free memory
+    useTabStateStore.getState().clearTabState(tabId);
+
     set((state) => {
       const idx = state.tabs.findIndex((t) => t.id === tabId);
       if (idx === -1) return state;

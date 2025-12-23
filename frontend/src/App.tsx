@@ -12,7 +12,6 @@ import Breadcrumbs from './components/ui/Breadcrumbs';
 import EmptyState from './components/EmptyState';
 import { SelectedRowProvider } from './context/SelectedRowContext';
 import { TablePageProvider } from './context/TablePageContext';
-import { BottomPanel } from './components/BottomPanel';
 import SkipToContent from './components/ui/SkipToContent';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import CommandPalette from './components/CommandPalette';
@@ -143,7 +142,6 @@ const WorkspacePage = () => {
             </div>
           </div>
           <RightSidebar />
-          <BottomPanel />
         </div>
         <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} connectionId={connectionId} />
         {connectionId && (
