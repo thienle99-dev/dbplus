@@ -514,52 +514,77 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
   const [createCouchbaseBucketOpen, setCreateCouchbaseBucketOpen] = useState(false);
 
-  // Visible schemas state (stored in localStorage)
-  const [visibleSchemas, setVisibleSchemas] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem(`visible-schemas:${connectionId}`);
-      return stored ? new Set(JSON.parse(stored)) : new Set(schemas);
-    } catch {
-      return new Set(schemas);
-    }
-  });
+    const dbOverride = useActiveDatabaseOverride(connectionId);
+    const dbKey = dbOverride ?? '__default__';
 
-  // Update visible schemas when schemas change (for new connections)
-  useEffect(() => {
-    if (schemas.length > 0 && visibleSchemas.size === 0) {
-      setVisibleSchemas(new Set(schemas));
-    }
-  }, [schemas]);
+    // Visible schemas state (stored in localStorage)
+    const [visibleSchemas, setVisibleSchemas] = useState<Set<string> | null>(null);
 
-  // Save to localStorage when visibleSchemas changes
-  useEffect(() => {
-    if (connectionId && visibleSchemas.size > 0) {
-      localStorage.setItem(`visible-schemas:${connectionId}`, JSON.stringify([...visibleSchemas]));
-    }
-  }, [visibleSchemas, connectionId]);
+    // Initial load and sync of visible schemas
+    useEffect(() => {
+        if (!connectionId) return;
+        
+        const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+        const stored = localStorage.getItem(storageKey);
+        
+        if (stored) {
+            try {
+                setVisibleSchemas(new Set(JSON.parse(stored)));
+            } catch (e) {
+                console.error('Failed to parse visible schemas from localStorage', e);
+                setVisibleSchemas(new Set(schemas));
+            }
+        } else if (schemas.length > 0) {
+            // Default to showing all schemas if none stored
+            setVisibleSchemas(new Set(schemas));
+        }
+    }, [connectionId, dbKey, schemas.length === 0]); // Re-run if schemas arrive or context changes
 
-  const toggleSchemaVisibility = (schema: string) => {
-    setVisibleSchemas(prev => {
-      const next = new Set(prev);
-      if (next.has(schema)) {
-        next.delete(schema);
-      } else {
-        next.add(schema);
-      }
-      return next;
-    });
-  };
+    // Update visible schemas when schemas change if we haven't initialized yet or if we want to ensure new schemas are visible
+    useEffect(() => {
+        if (schemas.length > 0 && visibleSchemas === null) {
+            const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+            const stored = localStorage.getItem(storageKey);
+            if (!stored) {
+                setVisibleSchemas(new Set(schemas));
+            }
+        }
+    }, [schemas, connectionId, dbKey, visibleSchemas]);
 
-  const toggleAllSchemas = () => {
-    if (visibleSchemas.size === schemas.length) {
-      setVisibleSchemas(new Set());
-    } else {
-      setVisibleSchemas(new Set(schemas));
-    }
-  };
+    // Save to localStorage when visibleSchemas changes
+    useEffect(() => {
+        if (connectionId && visibleSchemas) {
+            const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+            localStorage.setItem(storageKey, JSON.stringify([...visibleSchemas]));
+        }
+    }, [visibleSchemas, connectionId, dbKey]);
 
-  // Filter schemas based on visibility
-  const filteredSchemas = schemas.filter(schema => visibleSchemas.has(schema));
+    const toggleSchemaVisibility = (schema: string) => {
+        setVisibleSchemas(prev => {
+            const next = new Set(prev || schemas);
+            if (next.has(schema)) {
+                next.delete(schema);
+            } else {
+                next.add(schema);
+            }
+            return next;
+        });
+    };
+
+    const toggleAllSchemas = () => {
+        if (visibleSchemas && visibleSchemas.size === schemas.length) {
+            setVisibleSchemas(new Set());
+        } else {
+            setVisibleSchemas(new Set(schemas));
+        }
+    };
+
+    // Filter schemas based on visibility
+    // If visibleSchemas is null (initial loading), we show all schemas to avoid flickering/empty view
+    const filteredSchemas = useMemo(() => {
+        if (!visibleSchemas) return schemas;
+        return schemas.filter(schema => visibleSchemas.has(schema));
+    }, [schemas, visibleSchemas]);
 
   const handleOpenCreateDatabase = () => {
     if (!connectionId) return;
@@ -580,9 +605,6 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       showToast(message || 'Failed to create schema', 'error');
     }
   };
-
-  const dbOverride = useActiveDatabaseOverride(connectionId);
-  const dbKey = dbOverride ?? '__default__';
 
   const handleRefreshAll = async () => {
     await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId, dbKey] });
@@ -837,7 +859,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
                   size="sm"
                   onClick={toggleAllSchemas}
                 >
-                  {visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
+                  {visibleSchemas && visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
                 </Button>
                 <button
                   onClick={() => setShowSchemaFilter(false)}
@@ -864,7 +886,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
                       className="px-2 py-1 hover:bg-bg-2 rounded-lg transition-colors"
                     >
                       <Checkbox
-                        checked={visibleSchemas.has(schema)}
+                        checked={visibleSchemas?.has(schema) ?? false}
                         onChange={() => toggleSchemaVisibility(schema)}
                         label={schema}
                       />
@@ -875,7 +897,7 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
             </div>
 
             <div className="px-4 py-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary">
-              <span>{visibleSchemas.size} of {schemas.length} selected</span>
+              <span>{visibleSchemas?.size ?? 0} of {schemas.length} selected</span>
               <Button
                 variant="primary"
                 size="sm"
