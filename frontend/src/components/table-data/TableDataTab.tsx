@@ -387,14 +387,25 @@ export default function TableDataTab({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-bg-3/50 px-2 py-0.5 rounded-full border border-border-light/50">
-            <span className="font-bold text-[9px] uppercase tracking-tighter opacity-60">Inline Edit</span>
-            <button
-              onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
-              className={`w-6 h-3 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-active'}`}
+          <div 
+            className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none"
+            onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
+            title={inlineEditingEnabled ? "Disable Inline Editing" : "Enable Inline Editing"}
+          >
+            <span className={`font-bold text-[9px] uppercase tracking-widest transition-colors ${inlineEditingEnabled ? 'text-accent' : 'text-text-tertiary opacity-60'}`}>
+              Inline Edit
+            </span>
+            <div
+              className={`w-8 h-4 rounded-full relative transition-all duration-300 ${
+                inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
+              }`}
             >
-              <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transition-all ${inlineEditingEnabled ? 'right-0.5' : 'left-0.5'}`} />
-            </button>
+              <div 
+                className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
+                  inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+                }`}
+              />
+            </div>
           </div>
         </div>
       </div>

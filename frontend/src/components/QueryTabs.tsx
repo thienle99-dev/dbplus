@@ -31,7 +31,7 @@ export default function QueryTabs() {
       : connectionDefaultDb;
   const draftScopeKey = `${connectionId || 'no-connection'}::${effectiveDatabase || 'default'}`;
 
-  const { saveDraft, loadDrafts, deleteDraft } = useDraftPersistence(draftScopeKey);
+  const { saveDraft, loadDrafts, deleteDraft, clearAllDrafts } = useDraftPersistence(draftScopeKey);
 
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeTabId, setActiveTabId] = useState('');
@@ -160,7 +160,7 @@ export default function QueryTabs() {
   const closeTab = useCallback((id: string, e?: React.MouseEvent, force = false) => {
     e?.stopPropagation();
     setTabs(prev => {
-      if (prev.length === 1 && !force) return prev; // Don't close last tab unless forced
+      // Note: If last tab is closed, the logic below (newTabs.length === 0) handles re-creating a fresh default one.
 
       const tabToClose = prev.find(t => t.id === id);
 
@@ -175,7 +175,7 @@ export default function QueryTabs() {
       // but current logic assumes auto-save handles draft, so "Close" is safe to just close view.
       // "Force Close" usually implies "Delete Draft" too if we wanted to revert changes).
 
-      if (tabToClose?.isDraft && connectionId && force) {
+      if (connectionId) {
         deleteDraft(id);
       }
 
@@ -212,12 +212,24 @@ export default function QueryTabs() {
 
   const handleCloseOthers = () => {
     if (!contextMenu) return;
-    const itemsToKeep = tabs.filter(t => t.id === contextMenu.tabId);
-    setTabs(itemsToKeep);
+    const tabToKeep = tabs.find(t => t.id === contextMenu.tabId);
+    if (!tabToKeep) return;
+
+    // Delete drafts for all other tabs
+    tabs.forEach(t => {
+      if (t.id !== contextMenu.tabId && connectionId) {
+        deleteDraft(t.id);
+      }
+    });
+
+    setTabs([tabToKeep]);
     startTransition(() => setActiveTabId(contextMenu.tabId));
   };
 
   const handleCloseAll = () => {
+    if (connectionId) {
+      clearAllDrafts();
+    }
     // Re-initialize with one empty tab
     const newId = Math.random().toString(36).substr(2, 9);
     const initialTab: Tab = {

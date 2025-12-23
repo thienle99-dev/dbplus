@@ -16,7 +16,8 @@ import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
 import { useDialog } from '../../context/DialogContext';
-import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2 } from 'lucide-react';
+import Button from '../ui/Button';
 
 
 import type { ApiErrorDetails } from '../../utils/apiError';
@@ -71,6 +72,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const { theme } = useSettingsStore();
 
     const [viewMode, setViewMode] = useState<'table' | 'json'>(result?.display_mode === 'json' ? 'json' : 'table');
+    const [inlineEditingEnabled, setInlineEditingEnabled] = useState(true);
 
     useEffect(() => {
         if (result?.display_mode) {
@@ -427,7 +429,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     value={val}
                                     onSave={(newVal) => handleCellSave(rowIndex, col, newVal)}
                                     type={type as any}
-                                    isEditable={isEditable}
+                                    isEditable={isEditable && inlineEditingEnabled}
                                 />
                             );
                         },
@@ -446,17 +448,17 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={() => handleCloneRow(info.row.index)}
-                            className="text-text-secondary hover:text-accent p-1 transition-colors"
+                            className="p-1 hover:bg-bg-0 rounded-md text-text-secondary hover:text-accent transition-all active:scale-90"
                             title="Clone Row"
                         >
-                            📋
+                            <Copy size={12} />
                         </button>
                         <button
                             onClick={() => handleDeleteRow(info.row.index)}
-                            className="text-text-secondary hover:text-error p-1 transition-colors"
+                            className="p-1 hover:bg-error/10 rounded-md text-text-secondary hover:text-error transition-all active:scale-90"
                             title="Delete Row"
                         >
-                            🗑️
+                            <Trash2 size={12} />
                         </button>
                     </div>
                 ),
@@ -837,9 +839,9 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                 <div className="flex flex-col h-full">
                     <div className="relative z-30 p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                            <span className="font-bold text-[12px] text-text-primary px-2 py-1 bg-bg-2 rounded-lg border border-border-light shadow-sm">
                                 {result.affected_rows > 0
-                                    ? `Affected rows: ${result.affected_rows}`
+                                    ? `${result.affected_rows} rows affected`
                                     : `${result.rows.length} rows returned`}
                             </span>
                             {hasEditableColumns && (
@@ -876,6 +878,28 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 >
                                     JSON
                                 </button>
+                            </div>
+
+                            {/* Inline Edit Toggle */}
+                            <div 
+                                className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none ml-2"
+                                onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
+                                title={inlineEditingEnabled ? "Disable Inline Editing" : "Enable Inline Editing"}
+                            >
+                                <span className={`font-bold text-[9px] uppercase tracking-widest transition-colors ${inlineEditingEnabled ? 'text-accent' : 'text-text-tertiary opacity-60'}`}>
+                                    Inline Edit
+                                </span>
+                                <div
+                                    className={`w-8 h-4 rounded-full relative transition-all duration-300 ${
+                                        inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
+                                    }`}
+                                >
+                                    <div 
+                                        className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
+                                            inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+                                        }`}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -993,22 +1017,27 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
                             {/* Save Changes - Keep visible (critical action) */}
                             {pendingEditsCount > 0 && (
-                                <div className="flex items-center gap-2 border-l border-border-light pl-2">
-                                    <span className="text-accent font-semibold text-sm">{pendingEditsCount} modified</span>
-                                    <button
+                                <div className="flex items-center gap-2 border-l border-border-light pl-3 ml-2">
+                                    <span className="text-accent font-bold text-[11px] uppercase tracking-wider">{pendingEditsCount} modified</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={handleDiscardChanges}
-                                        className="px-2 py-1 text-text-secondary hover:text-text-primary text-xs hover:bg-bg-3 rounded"
                                         disabled={saving}
+                                        className="h-7 px-2.5 text-[11px]"
                                     >
                                         Discard
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
                                         onClick={handleSaveChanges}
-                                        className="px-3 py-1.5 bg-accent text-white rounded hover:bg-accent-hover text-sm font-medium"
                                         disabled={saving}
+                                        className="h-7 px-4 text-[11px] font-bold"
+                                        isLoading={saving}
                                     >
-                                        {saving ? 'Saving...' : 'Save'}
-                                    </button>
+                                        Save Changes
+                                    </Button>
                                 </div>
                             )}
 
