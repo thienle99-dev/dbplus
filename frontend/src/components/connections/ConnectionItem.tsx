@@ -181,19 +181,37 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs font-medium">
-                        <span className="text-text-muted/60 lowercase">{connection.host}</span>
-                        {connection.port && (
+                    <div className="flex items-center h-5 gap-3 mt-1 text-xs text-text-muted">
+                        <div className="flex items-center h-full">
+                            <span className="text-[11px] font-bold uppercase text-accent tracking-wide leading-none">
+                                {connection.type}
+                            </span>
+                        </div>
+
+                        <div className="w-px h-3 bg-border-default/40" />
+
+                        <div className="flex items-center h-full min-w-0">
+                            <span className="truncate hover:text-text-primary transition-colors leading-none">
+                                {connection.host}
+                                {connection.port && <span className="text-text-muted/50">:{connection.port}</span>}
+                            </span>
+                        </div>
+
+                        {connection.database && (
                             <>
-                                <span className="text-text-muted/30 -mx-0.5">:</span>
-                                <span className="text-text-muted/40">{connection.port}</span>
+                                <div className="w-px h-3 bg-border-default/40" />
+                                <div className="flex items-center h-full min-w-0">
+                                    <span className="text-text-primary truncate font-medium group-hover:text-accent transition-colors leading-none">
+                                        {connection.database}
+                                    </span>
+                                </div>
                             </>
                         )}
 
                         {connection.tags && (
-                            <div className="flex gap-1.5 ml-2 overflow-hidden">
+                            <div className="flex gap-1.5 ml-auto overflow-hidden shrink-0 h-full items-center">
                                 {connection.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
-                                    <span key={tag} className="px-1.5 py-0 bg-bg-3/50 border border-border-subtle/30 rounded text-[9px] text-text-secondary whitespace-nowrap">
+                                    <span key={tag} className="px-1.5 py-0.5 bg-bg-3/50 border border-border-subtle/30 rounded text-[9px] text-text-secondary whitespace-nowrap leading-none flex items-center">
                                         {tag}
                                     </span>
                                 ))}
