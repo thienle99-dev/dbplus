@@ -2,6 +2,7 @@ pub mod autocomplete;
 pub mod clickhouse;
 pub mod connection_service;
 pub mod couchbase;
+pub mod credential_service;
 pub mod dashboard_service;
 pub mod db_driver;
 pub mod ddl_generator;

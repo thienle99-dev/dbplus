@@ -43,6 +43,7 @@ ring = "0.17"
 base64 = "0.22"
 
 # Utilities
+keyring = "2"
 dashmap = "5.5"
 tokio-util = "0.7"
 uuid = { version = "1.0", features = ["serde", "v4"] }

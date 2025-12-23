@@ -136,7 +136,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         }
 
         return (
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center p-2 shadow-sm ring-1 ring-white/10">
+            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-white flex items-center justify-center p-2 shadow-sm ring-1 ring-white/10">
                 <IconComponent className={className} />
             </div>
         );
@@ -154,7 +154,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                 {/* Icon */}
                 <div className="shrink-0 ml-1">
-                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center p-2 shadow-inner ring-1 ring-black/5">
+                    <div className="w-11 h-11 flex-shrink-0 rounded-full bg-white flex items-center justify-center p-2 shadow-inner ring-1 ring-black/5">
                         {renderIcon()}
                     </div>
                 </div>

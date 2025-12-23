@@ -9,6 +9,7 @@ mod view_ops;
 
 use crate::models::entities::connection;
 use crate::models::entities::sqlite_attached_db;
+use crate::services::credential_service::CredentialService;
 use crate::services::encryption_service::EncryptionService;
 use anyhow::Result;
 
@@ -22,6 +23,7 @@ use std::sync::Arc;
 pub struct ConnectionService {
     db: DatabaseConnection,
     encryption: EncryptionService,
+    credentials: CredentialService,
     database_override: Option<String>,
     schema_cache: Option<Arc<SchemaCacheService>>,
 }
@@ -32,6 +34,7 @@ impl ConnectionService {
         Ok(Self {
             db,
             encryption: EncryptionService::new()?,
+            credentials: CredentialService::new(),
             database_override: None,
             schema_cache: None,
         })
