@@ -34,6 +34,7 @@ import {
 import { QueryResult } from '../types';
 import { computeResultDiff, DiffResult } from '../utils/resultDiff';
 import { ResultComparison } from './query-editor/ResultComparison';
+import { ChartConfigData } from './query-editor/ChartConfig';
 
 interface QueryEditorProps {
   initialSql?: string;
@@ -99,6 +100,7 @@ export default function QueryEditor({
   const [query, setQuery] = useState(initialSql || '');
   const [mode, setMode] = useState<'sql' | 'visual'>('sql');
   const [visualState, setVisualState] = useState<any>(initialMetadata || null);
+  const [chartConfig, setChartConfig] = useState<ChartConfigData | undefined>(undefined);
   const [editorView, setEditorView] = useState<EditorView | null>(null);
   const [hasSelection, setHasSelection] = useState(false);
 
@@ -121,8 +123,18 @@ export default function QueryEditor({
   useEffect(() => {
     if (initialSql !== undefined) setQuery(initialSql);
     if (initialMetadata) {
-      setVisualState(initialMetadata);
-      setMode('visual');
+      if (initialMetadata.chartConfig) {
+        setChartConfig(initialMetadata.chartConfig);
+      }
+      // Only switch to visual mode if it looks like a visual query
+      if (initialMetadata.table || initialMetadata.columns) {
+        setVisualState(initialMetadata);
+        setMode('visual');
+      } else {
+        // Keep visualState in sync in case it's mixed, but default to SQL mode
+        setVisualState(initialMetadata);
+        setMode('sql');
+      }
     } else if (initialSql !== undefined) {
       setMode('sql');
     }
@@ -329,22 +341,44 @@ export default function QueryEditor({
     return false;
   }, [editorView, execute, showToast, isDangerousQuery]);
 
-  const handleQuickSave = async () => {
-    if (!savedQueryId || !connectionId) return;
+  const getMetadataToSave = () => {
+    return {
+      ...(visualState || {}),
+      chartConfig
+    };
+  };
 
-    try {
+  const handleSaveChart = (config: ChartConfigData) => {
+    setChartConfig(config);
+    if (savedQueryId) {
+       handleQuickSaveWithConfig(config);
+    } else {
+       setIsSaveModalOpen(true);
+    }
+  };
+
+  const handleQuickSaveWithConfig = async (configOverride?: ChartConfigData) => {
+     if (!savedQueryId || !connectionId) return;
+     const meta = {
+        ...(visualState || {}),
+        chartConfig: configOverride || chartConfig
+     };
+
+     try {
       await updateSavedQuery.mutateAsync({
         id: savedQueryId,
         sql: query,
-        metadata: visualState
+        metadata: meta
       });
-      showToast('Query saved successfully', 'success');
+      showToast('Query and chart configuration saved', 'success');
       if (onSaveSuccess) onSaveSuccess();
     } catch (err: unknown) {
       console.error('Failed to save query:', err);
       showToast('Failed to save query', 'error');
     }
   };
+
+  const handleQuickSave = () => handleQuickSaveWithConfig();
 
   const handleInsertSnippet = (sql: string) => {
     setQuery(sql);
@@ -550,7 +584,7 @@ export default function QueryEditor({
           isOpen={true}
           onClose={() => setIsSaveModalOpen(false)}
           sql={query}
-          initial={{ name: queryName, metadata: visualState || undefined }}
+          initial={{ name: queryName, metadata: getMetadataToSave() }}
           mode="create"
           onSaved={({ id, name }) => {
             if (onSavedQueryCreated) onSavedQueryCreated(id, name);
@@ -731,10 +765,12 @@ export default function QueryEditor({
                 onPaginate={(limit, offset) => fetchPage(limit, offset)}
                 connectionId={connectionId || ''}
                 // Snapshot props
-                hasSnapshot={!!snapshot}
                 onSnapshot={handleSnapshot}
                 onCompareSnapshot={handleCompareSnapshot}
                 onClearSnapshot={handleClearSnapshot}
+                onSaveChart={handleSaveChart}
+                initialChartConfig={chartConfig}
+                onChartConfigChange={setChartConfig}
               />
             </div>
             <div className={`absolute inset-0 flex flex-col ${bottomTab === 'plan' ? 'z-10' : 'z-0 invisible'}`}>

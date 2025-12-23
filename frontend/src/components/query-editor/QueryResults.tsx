@@ -2,6 +2,8 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import CodeMirror from '@uiw/react-codemirror';
 import { useSettingsStore } from '../../store/settingsStore';
 import { QueryResult } from '../../types';
+import { ChartConfig, ChartConfigData } from './ChartConfig';
+import { ChartRenderer } from './ChartRenderer';
 import {
     getCoreRowModel,
     useReactTable,
@@ -16,7 +18,7 @@ import { EditableCell } from './EditableCell';
 import { useUpdateQueryResult, useDeleteQueryResult } from '../../hooks/useQuery';
 import { useToast } from '../../context/ToastContext';
 import { useDialog } from '../../context/DialogContext';
-import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Save } from 'lucide-react';
 import Button from '../ui/Button';
 
 
@@ -48,11 +50,15 @@ interface QueryResultsProps {
     onSnapshot?: (result: QueryResult) => void;
     onCompareSnapshot?: () => void;
     onClearSnapshot?: () => void;
+    onSaveChart?: (config: ChartConfigData) => void;
+    initialChartConfig?: ChartConfigData;
+    onChartConfigChange?: (config: ChartConfigData) => void;
 }
 
 export const QueryResults: React.FC<QueryResultsProps> = ({
     result, loading, error, errorDetails, onRefresh, lastSql, onPaginate, connectionId,
-    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot
+    hasSnapshot, onSnapshot, onCompareSnapshot, onClearSnapshot, onSaveChart, initialChartConfig,
+    onChartConfigChange
 }) => {
 
     const [edits, setEdits] = useState<Record<number, Record<string, any>>>({});
@@ -71,12 +77,35 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
     const dialog = useDialog();
     const { theme } = useSettingsStore();
 
-    const [viewMode, setViewMode] = useState<'table' | 'json'>(result?.display_mode === 'json' ? 'json' : 'table');
+    const [viewMode, setViewMode] = useState<'table' | 'json' | 'chart'>('table');
     const [inlineEditingEnabled, setInlineEditingEnabled] = useState(true);
+    const [metricChartConfig, setMetricChartConfig] = useState<ChartConfigData>({
+        type: 'bar',
+        xAxis: '',
+        yAxis: []
+    });
+
+    // Initialize/Sync chart config
+    useEffect(() => {
+        if (initialChartConfig) {
+            setMetricChartConfig(initialChartConfig);
+            if (initialChartConfig.xAxis && initialChartConfig.yAxis.length > 0) {
+                 setViewMode('chart');
+            }
+        }
+    }, [initialChartConfig]);
+
+    useEffect(() => {
+        if (onChartConfigChange) {
+            onChartConfigChange(metricChartConfig);
+        }
+    }, [metricChartConfig, onChartConfigChange]);
 
     useEffect(() => {
         if (result?.display_mode) {
-            setViewMode(result.display_mode);
+            // Only override if valid mode
+            if (result.display_mode === 'json') setViewMode('json');
+            else if (result.display_mode === 'table') setViewMode('table');
         }
     }, [result?.display_mode]);
 
@@ -878,6 +907,13 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 >
                                     JSON
                                 </button>
+                                <button
+                                    onClick={() => setViewMode('chart')}
+                                    className={`px-2 py-0.5 text-xs rounded-md transition-all flex items-center gap-1.5 ${viewMode === 'chart' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
+                                >
+                                    <BarChart3 size={12} />
+                                    Chart
+                                </button>
                             </div>
 
                             {/* Inline Edit Toggle */}
@@ -1343,6 +1379,37 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                 )}
                             </div>
                         )
+                    ) : viewMode === 'chart' ? (
+                        <div className="flex-1 flex flex-col overflow-hidden mx-2 mb-2 rounded-lg border border-border-subtle bg-bg-0 shadow-sm">
+                            <ChartConfig
+                                columns={result.columns}
+                                config={metricChartConfig}
+                                onChange={setMetricChartConfig}
+                            />
+                            <div className="flex-1 relative p-4 min-h-0 overflow-hidden">
+                                <ChartRenderer
+                                    data={result.rows.map(row => {
+                                        const obj: Record<string, any> = {};
+                                        result.columns.forEach((col, i) => obj[col] = row[i]);
+                                        return obj;
+                                    })}
+                                    config={metricChartConfig}
+                                />
+                            </div>
+                            {onSaveChart && (
+                                <div className="p-2 border-t border-border-light bg-bg-1 flex justify-end">
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => onSaveChart(metricChartConfig)}
+                                        className="h-8 text-xs gap-2"
+                                    >
+                                        <Save size={14} />
+                                        Save Chart Configuration
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <div className="flex-1 overflow-hidden mx-2 mb-2 rounded-lg border border-border-subtle bg-bg-0 shadow-sm relative">
                             <CodeMirror

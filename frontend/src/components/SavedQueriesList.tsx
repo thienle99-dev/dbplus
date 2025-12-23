@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Download, FolderPlus, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FolderPlus, Pencil, Plus, Search, Trash2, Upload, BarChart3 } from 'lucide-react';
 import {
   useCreateSavedQueryFolder,
   useDeleteSavedQuery,
@@ -371,7 +371,14 @@ export default function SavedQueriesList({
                           onClick={() => onSelectQuery(query.sql, query.metadata || undefined, query.name, query.id)}
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <h3 className="font-medium text-text-primary text-sm truncate pr-2">{query.name}</h3>
+                            <h3 className="font-medium text-text-primary text-sm truncate pr-2 flex items-center gap-1.5">
+                              {query.name}
+                              {query.metadata?.chartConfig && (
+                                <span title="Includes Chart" className="flex items-center">
+                                  <BarChart3 size={12} className="text-accent flex-shrink-0" />
+                                </span>
+                              )}
+                            </h3>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={(e) => {
@@ -425,7 +432,14 @@ export default function SavedQueriesList({
                       onClick={() => onSelectQuery(query.sql, query.metadata || undefined, query.name, query.id)}
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-medium text-text-primary text-sm truncate pr-2">{query.name}</h3>
+                        <h3 className="font-medium text-text-primary text-sm truncate pr-2 flex items-center gap-1.5">
+                          {query.name}
+                          {query.metadata?.chartConfig && (
+                            <span title="Includes Chart" className="flex items-center">
+                              <BarChart3 size={12} className="text-accent flex-shrink-0" />
+                            </span>
+                          )}
+                        </h3>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
