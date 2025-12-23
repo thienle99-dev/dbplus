@@ -287,6 +287,14 @@ impl TableOperations for PostgresDriver {
     ) -> Result<super::db_driver::PartitionInfo> {
         self.table.get_partitions(schema, table).await
     }
+
+    async fn detect_fk_orphans(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<super::db_driver::FkOrphanInfo>> {
+        self.table.detect_fk_orphans(schema, table).await
+    }
 }
 
 #[async_trait]

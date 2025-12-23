@@ -16,6 +16,7 @@ import {
     ChevronRight,
     Sparkles,
     RefreshCw,
+    Activity,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,6 +38,7 @@ interface TableContextMenuProps {
     onOpenImport: (format: 'csv' | 'json' | 'sql') => void;
     onExportDdl: () => void;
     onOpenMockData: () => void;
+    onOpenHealth: () => void;
     objectTerm?: string;
 }
 
@@ -63,6 +65,7 @@ export default function TableContextMenu({
     onOpenImport,
     onExportDdl,
     onOpenMockData,
+    onOpenHealth,
     objectTerm = 'Table',
 }: TableContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
@@ -283,6 +286,14 @@ export default function TableContextMenu({
             label: 'Open structure',
             icon: <Database size={14} />,
             onClick: handleOpenStructure,
+        },
+        {
+            label: 'Table Health',
+            icon: <Activity size={14} />,
+            onClick: () => {
+                onOpenHealth();
+                onClose();
+            },
         },
         {
             label: 'Mock Data Studio',

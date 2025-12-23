@@ -173,3 +173,11 @@ export interface FilterGroup {
     conditions: FilterCondition[];
     logic: 'AND' | 'OR';
 }
+
+export interface FkOrphanInfo {
+    constraint_name: string;
+    foreign_key_columns: string[];
+    referenced_table: string;
+    orphan_count: number;
+}
+

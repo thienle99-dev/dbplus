@@ -795,6 +795,48 @@ impl ConnectionService {
         }
     }
 
+    pub async fn detect_fk_orphans(
+        &self,
+        connection_id: Uuid,
+        schema: &str,
+        table: &str,
+    ) -> Result<Vec<crate::services::db_driver::FkOrphanInfo>> {
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
+
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                TableOperations::detect_fk_orphans(&driver, schema, table).await
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                TableOperations::detect_fk_orphans(&driver, schema, table).await
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                TableOperations::detect_fk_orphans(&driver, schema, table).await
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                TableOperations::detect_fk_orphans(&driver, schema, table).await
+            }
+            "couchbase" => {
+                let driver = crate::services::couchbase::connection::CouchbaseDriver::new(
+                    &connection,
+                    &password,
+                )
+                .await?;
+                TableOperations::detect_fk_orphans(&driver, schema, table).await
+            }
+            _ => Ok(vec![]),
+        }
+    }
+
     pub async fn get_table_dependencies(
         &self,
         connection_id: Uuid,

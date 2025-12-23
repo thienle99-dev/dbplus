@@ -32,6 +32,8 @@ import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from './ui/CustomC
 import Checkbox from './ui/Checkbox';
 import Button from './ui/Button';
 import { extractApiErrorDetails } from '../utils/apiError';
+import TableHealthDashboard from './dashboard/TableHealthDashboard';
+
 
 interface ObjectFolderProps {
   title: string;

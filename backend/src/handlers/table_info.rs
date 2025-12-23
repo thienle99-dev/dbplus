@@ -463,4 +463,50 @@ pub async fn set_table_permissions(
             (status, Json(json!({ "error": msg }))).into_response()
         }
     }
+    }
 }
+
+// Check for FK orphans
+pub async fn get_fk_orphans(
+    State(db): State<DatabaseConnection>,
+    headers: HeaderMap,
+    Path(connection_id): Path<Uuid>,
+    Query(params): Query<TableParams>,
+) -> impl IntoResponse {
+    tracing::info!(
+        "[API] GET /health/orphans - connection_id: {}, schema: {}, table: {}",
+        connection_id,
+        params.schema,
+        params.table
+    );
+
+    let service = ConnectionService::new(db)
+        .expect("Failed to create service")
+        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+
+    match service
+        .detect_fk_orphans(connection_id, &params.schema, &params.table)
+        .await
+    {
+        Ok(results) => {
+            tracing::info!(
+                "[API] GET /health/orphans - SUCCESS - found {} issues",
+                results.len()
+            );
+            (StatusCode::OK, Json(results)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("[API] GET /health/orphans - ERROR: {}", e);
+            let msg = e.to_string();
+             let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(json!({ "error": msg }))).into_response()
+        }
+    }
+}
+

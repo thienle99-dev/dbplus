@@ -261,6 +261,14 @@ pub struct TableDependencies {
     pub referencing_foreign_keys: Vec<ReferencingForeignKeyInfo>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FkOrphanInfo {
+    pub constraint_name: String,
+    pub foreign_key_columns: Vec<String>,
+    pub referenced_table: String,
+    pub orphan_count: i64,
+}
+
 use crate::services::driver::{
     ColumnManagement, ConnectionDriver, FunctionOperations, NoSQLOperations, QueryDriver,
     SchemaIntrospection, TableOperations, ViewOperations,

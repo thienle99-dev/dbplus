@@ -275,6 +275,10 @@ async fn main() {
             get(handlers::table_info::get_partitions),
         )
         .route(
+            "/api/connections/:id/health/orphans",
+            get(handlers::table_info::get_fk_orphans),
+        )
+        .route(
             "/api/connections/:id/backup/sql",
             get(handlers::data_tools::backup_postgres_sql),
         )

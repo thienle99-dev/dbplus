@@ -42,6 +42,13 @@ pub trait TableOperations: Send + Sync {
     async fn get_table_dependencies(&self, schema: &str, table: &str) -> Result<TableDependencies>;
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo>;
     async fn get_partitions(&self, schema: &str, table: &str) -> Result<PartitionInfo>;
+    async fn detect_fk_orphans(
+        &self,
+        _schema: &str,
+        _table: &str,
+    ) -> Result<Vec<crate::services::db_driver::FkOrphanInfo>> {
+        Err(anyhow::anyhow!("Operation not supported"))
+    }
 
     async fn create_table(&self, _schema: &str, _table: &str) -> Result<()> {
         Err(anyhow::anyhow!("Operation not supported"))

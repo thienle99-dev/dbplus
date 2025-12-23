@@ -793,47 +793,137 @@ impl TableOperations for PostgresTable {
                         WHEN 'a' THEN 'NO ACTION'
                         WHEN 'r' THEN 'RESTRICT'
                         WHEN 'c' THEN 'CASCADE'
-                        WHEN 'n' THEN 'SET NULL'
-                        WHEN 'd' THEN 'SET DEFAULT'
-                        ELSE con.confdeltype::text
-                    END AS on_delete
-                FROM target t
-                JOIN pg_constraint con
-                  ON con.confrelid = t.relid
-                 AND con.contype = 'f'
-                JOIN pg_class cl ON cl.oid = con.conrelid
-                JOIN pg_namespace ns ON ns.oid = cl.relnamespace
-                JOIN unnest(con.conkey) WITH ORDINALITY AS u(attnum, ord) ON true
-                JOIN unnest(con.confkey) WITH ORDINALITY AS ur(attnum, ord) ON ur.ord = u.ord
-                JOIN pg_attribute att_local
-                  ON att_local.attrelid = con.conrelid
-                 AND att_local.attnum = u.attnum
-                JOIN pg_attribute att_ref
-                  ON att_ref.attrelid = con.confrelid
-                 AND att_ref.attnum = ur.attnum
-                GROUP BY ns.nspname, cl.relname, con.conname, con.confupdtype, con.confdeltype
-                ORDER BY 1, 2, 3
-                "#,
-                &[&schema, &table],
-            )
-            .await?
-            .into_iter()
-            .map(|r| ReferencingForeignKeyInfo {
-                schema: r.get(0),
-                table: r.get(1),
-                constraint_name: r.get(2),
-                columns: r.get::<_, Vec<String>>(3),
-                referenced_columns: r.get::<_, Vec<String>>(4),
-                on_update: r.get(5),
-                on_delete: r.get(6),
-            })
-            .collect::<Vec<_>>();
-
         Ok(TableDependencies {
             views,
             routines,
             referencing_foreign_keys,
         })
+    }
+
+    async fn detect_fk_orphans(&self, schema: &str, table: &str) -> Result<Vec<crate::services::db_driver::FkOrphanInfo>> {
+        tracing::info!(
+            "[PostgresTable] detect_fk_orphans - schema: {}, table: {}",
+            schema,
+            table
+        );
+
+        // Re-use logic to get constraints OR just query them directly here.
+        // It's cleaner to query directly or reuse get_table_constraints if efficient.
+        // Let's query directly to avoid overhead if get_table_constraints gets too much info.
+        
+        let client = self.pool.get().await?;
+
+        let fk_query = "
+            SELECT 
+                tc.constraint_name,
+                kcu.column_name,
+                ccu.table_schema AS foreign_schema,
+                ccu.table_name AS foreign_table,
+                ccu.column_name AS foreign_column
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu 
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema = tc.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+                AND tc.table_schema = $1
+                AND tc.table_name = $2
+            ORDER BY tc.constraint_name, kcu.ordinal_position";
+
+        let fk_rows = client.query(fk_query, &[&schema, &table]).await?;
+
+        // Group by constraint name to handle composite keys
+        use std::collections::HashMap;
+        struct FkDef {
+            constraint_name: String,
+            local_cols: Vec<String>,
+            foreign_schema: String,
+            foreign_table: String,
+            foreign_cols: Vec<String>,
+        }
+
+        let mut fks: HashMap<String, FkDef> = HashMap::new();
+
+        for row in fk_rows {
+            let constraint_name: String = row.get(0);
+            let local_col: String = row.get(1);
+            let foreign_schema: String = row.get(2);
+            let foreign_table: String = row.get(3);
+            let foreign_col: String = row.get(4);
+
+            let entry = fks.entry(constraint_name.clone()).or_insert(FkDef {
+                constraint_name,
+                local_cols: Vec::new(),
+                foreign_schema,
+                foreign_table,
+                foreign_cols: Vec::new(),
+            });
+            entry.local_cols.push(local_col);
+            entry.foreign_cols.push(foreign_col);
+        }
+
+        let mut results = Vec::new();
+
+        for fk in fks.values() {
+            // Build the check query
+            // SELECT count(*) FROM local t LEFT JOIN foreign f ON t.c1=f.fc1 AND t.c2=f.fc2 WHERE f.fc1 IS NULL AND t.c1 IS NOT NULL ...
+            
+            let local_table_quoted = format!("\"{}\".\"{}\"", schema, table); // Simple quoting, assumes valid identifiers
+            let foreign_table_quoted = format!("\"{}\".\"{}\"", fk.foreign_schema, fk.foreign_table);
+            
+            let mut join_conditions = Vec::new();
+            let mut null_checks = Vec::new();
+            let mut not_null_checks = Vec::new();
+
+            for (i, local_col) in fk.local_cols.iter().enumerate() {
+                let foreign_col = &fk.foreign_cols[i];
+                // Quote columns
+                let lc = format!("\"{}\"", local_col);
+                let fc = format!("\"{}\"", foreign_col);
+                
+                join_conditions.push(format!("local.{} = foreign.{}", lc, fc));
+                null_checks.push(format!("foreign.{} IS NULL", fc));
+                not_null_checks.push(format!("local.{} IS NOT NULL", lc));
+            }
+
+            // Combine logic: 
+            // We want rows where match FAILED (f.pk is null) BUT local columns are NOT NULL via left join
+            // AND match condition is (l.c1 = f.c1 AND l.c2 = f.c2)
+            
+            let query = format!(
+                "SELECT count(*) FROM {} local LEFT JOIN {} foreign ON {} WHERE ({}) AND ({})",
+                local_table_quoted,
+                foreign_table_quoted,
+                join_conditions.join(" AND "),
+                null_checks.get(0).unwrap(), // Any null in PK on RHS means no match
+                not_null_checks.join(" AND ") // All local FK cols must be non-null to be a candidate for orphan (unless Partial match logic? Postgres default is all keys must be non-null to require match, or if any is null, check is skipped usually unless MATCH FULL).
+                // Simplified: basic orphan check assumes if you have values, they must match.
+            );
+
+            tracing::debug!("Orphan check query for {}: {}", fk.constraint_name, query);
+
+            match client.query_one(&query, &[]).await {
+                Ok(row) => {
+                    let count: i64 = row.get(0);
+                    if count > 0 {
+                         results.push(crate::services::db_driver::FkOrphanInfo {
+                            constraint_name: fk.constraint_name.clone(),
+                            foreign_key_columns: fk.local_cols.clone(),
+                            referenced_table: format!("{}.{}", fk.foreign_schema, fk.foreign_table),
+                            orphan_count: count,
+                        });
+                    }
+                },
+                Err(e) => {
+                    tracing::error!("Failed to check orphans for constraint {}: {}", fk.constraint_name, e);
+                    // Optionally return error or just skip/log
+                }
+            }
+        }
+
+        Ok(results)
     }
 
     async fn get_storage_bloat_info(&self, schema: &str, table: &str) -> Result<StorageBloatInfo> {
