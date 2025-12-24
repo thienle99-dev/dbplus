@@ -99,17 +99,19 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
              };
         }
 
-        if (url.includes('/columns')) return { command: 'schema_get_columns', args: { connectionId, schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } };
+        // Helper to extract schema/table from either data params or URL query string
+        const getParam = (key: string) => data?.params?.[key] || new URL('http://d' + url).searchParams.get(key);
+        
+        if (url.includes('/columns')) return { command: 'schema_get_columns', args: { connectionId, schema: getParam('schema'), table: getParam('table') } };
         
         // Table Info & Metadata
-        // Table Info & Metadata (Using regex/includes to handle query params which `endsWith` misses)
-        if (url.includes('/constraints')) return { command: 'get_table_constraints', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/indexes')) return { command: 'get_table_indexes', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/table-stats')) return { command: 'get_table_statistics', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/triggers')) return { command: 'get_table_triggers', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/partitions')) return { command: 'get_partitions', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/dependencies')) return { command: 'get_table_dependencies', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
-        if (url.includes('/storage-info')) return { command: 'get_storage_bloat_info', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/constraints')) return { command: 'get_table_constraints', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/indexes')) return { command: 'get_table_indexes', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/table-stats')) return { command: 'get_table_statistics', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/triggers')) return { command: 'get_table_triggers', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/partitions')) return { command: 'get_partitions', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/dependencies')) return { command: 'get_table_dependencies', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
+        if (url.includes('/storage-info')) return { command: 'get_storage_bloat_info', args: { connectionId, params: { schema: getParam('schema'), table: getParam('table') } } };
         
         if (url.endsWith('/table-comment')) {
             if (method === 'GET') return { command: 'get_table_comment', args: { connectionId, params: data?.params } };
