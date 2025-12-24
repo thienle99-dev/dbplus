@@ -4,13 +4,7 @@ use uuid::Uuid;
 
 impl ConnectionService {
     pub async fn get_schemas(&self, connection_id: Uuid) -> Result<Vec<String>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -51,13 +45,7 @@ impl ConnectionService {
     }
 
     pub async fn create_schema(&self, connection_id: Uuid, name: &str) -> Result<()> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -82,13 +70,7 @@ impl ConnectionService {
     }
 
     pub async fn drop_schema(&self, connection_id: Uuid, name: &str) -> Result<()> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -115,13 +97,7 @@ impl ConnectionService {
         connection_id: Uuid,
         schema: &str,
     ) -> Result<Vec<crate::services::db_driver::TableMetadata>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
         let database_name = connection.database.clone();
 
         use crate::services::db_driver::DatabaseDriver;
@@ -162,13 +138,7 @@ impl ConnectionService {
         connection_id: Uuid,
         schema: &str,
     ) -> Result<Vec<crate::services::db_driver::SchemaForeignKey>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::SchemaIntrospection;
         use crate::services::postgres_driver::PostgresDriver;
@@ -206,13 +176,7 @@ impl ConnectionService {
         connection_id: Uuid,
         schema: &str,
     ) -> Result<Vec<crate::services::db_driver::TableGrant>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;

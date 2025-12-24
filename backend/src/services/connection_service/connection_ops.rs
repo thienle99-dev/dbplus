@@ -27,11 +27,20 @@ impl ConnectionService {
             .ok_or(anyhow::anyhow!("Connection not found"))?;
 
         // Try getting from keychain first
+        // Try getting from keychain first
         let password = if let Ok(Some(p)) = self.credentials.get_password(&id, "password") {
             p
+        } else if connection.db_type == "sqlite" {
+            String::new()
         } else {
             // Fallback to database encryption for existing connections
-            self.encryption.decrypt(&connection.password)?
+            match self.encryption.decrypt(&connection.password) {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::warn!("Failed to decrypt password for connection {}: {}", id, e);
+                    String::new()
+                }
+            }
         };
 
         let connection = self.apply_database_override(connection);
