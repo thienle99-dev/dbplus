@@ -196,39 +196,6 @@ impl TableOperations for MongoDriver {
         Ok(indexes)
     }
 
-    async fn update_row(
-        &self,
-        schema: &str,
-        table: &str,
-        primary_key: &HashMap<String, Value>,
-        updates: &HashMap<String, Value>,
-        _row_metadata: Option<&HashMap<String, Value>>,
-    ) -> Result<u64> {
-        let db = self.client.database(schema);
-        let collection = db.collection::<Document>(table);
-
-        let filter = json_to_bson_filter(primary_key);
-        let update_doc = doc! { "$set": json_to_bson_doc(updates) };
-
-        let result = collection.update_one(filter, update_doc).await?;
-        Ok(result.modified_count)
-    }
-
-    async fn delete_row(
-        &self,
-        schema: &str,
-        table: &str,
-        primary_key: &HashMap<String, Value>,
-        _row_metadata: Option<&HashMap<String, Value>>,
-    ) -> Result<u64> {
-        let db = self.client.database(schema);
-        let collection = db.collection::<Document>(table);
-
-        let filter = json_to_bson_filter(primary_key);
-        let result = collection.delete_one(filter).await?;
-        Ok(result.deleted_count)
-    }
-
     async fn get_table_triggers(&self, _schema: &str, _table: &str) -> Result<Vec<TriggerInfo>> {
         Ok(vec![])
     }

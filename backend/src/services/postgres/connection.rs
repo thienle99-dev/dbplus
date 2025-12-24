@@ -1,5 +1,5 @@
 use crate::models::entities::connection as ConnectionModel;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use tokio_postgres::NoTls;
 
