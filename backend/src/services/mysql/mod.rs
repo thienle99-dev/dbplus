@@ -97,7 +97,7 @@ impl crate::services::driver::SessionOperations for MySqlDriver {
         Ok(rows
             .into_iter()
             .map(
-                |(id, user, host, db, command, time, state, info)| SessionInfo {
+                |(id, user, host, _db, command, _time, state, info)| SessionInfo {
                     pid: id as i32,
                     user_name: Some(user),
                     application_name: None,

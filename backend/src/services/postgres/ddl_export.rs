@@ -8,7 +8,7 @@ use deadpool_postgres::Pool;
 use std::fmt::Write;
 
 pub struct PostgresDdlExport {
-    pool: Pool,
+    _pool: Pool,
     schema: PostgresSchema,
     table: PostgresTable,
     view: PostgresView,
@@ -24,7 +24,7 @@ impl PostgresDdlExport {
         function: PostgresFunction,
     ) -> Self {
         Self {
-            pool,
+            _pool: pool,
             schema,
             table,
             view,

@@ -447,24 +447,6 @@ impl TableOperations for ClickHouseDriver {
             db, table
         );
 
-        #[derive(Deserialize, clickhouse::Row)]
-        struct StatsRow {
-            total_rows: Option<u64>,
-            total_bytes: Option<u64>,
-            metadata_modification_time: Option<i64>, // specialized datetime handling might be needed, using i64 (epoch) if consistent? actually CH returns DateTime
-        }
-        // Actually DateTime in CH maps to u32 (epoch) usually, or string?
-        // Let's use `u64` for numbers. For time, let's fetch as String or just ignore for strictness?
-        // Let's safe fetch time as generic or just use u32 which is standard unix time in CH (unless DateTime64).
-        // To be safe, let's use String for time.
-
-        #[derive(Deserialize, clickhouse::Row)]
-        struct StatsRowSafe {
-            total_rows: Option<u64>,
-            total_bytes: Option<u64>,
-            // we skip time to avoid parsing issues for now, or use String if we cast in query
-        }
-
         // We'll cast time to string in query to be safe
         let query = format!(
             "SELECT total_rows, total_bytes, toString(metadata_modification_time) FROM system.tables WHERE database = '{}' AND name = '{}'",
@@ -698,9 +680,9 @@ impl TableOperations for ClickHouseDriver {
 
         #[derive(Deserialize, clickhouse::Row)]
         struct PartRow {
-            partition: String,
-            name: String,
-            bytes: u64,
+            _partition: String,
+            _name: String,
+            _bytes: u64,
         }
 
         let _cursor = self
