@@ -1,5 +1,6 @@
 mod column;
 mod connection;
+mod ddl_export;
 mod function;
 mod query;
 mod schema;
@@ -23,6 +24,7 @@ use crate::models::entities::connection as ConnectionModel;
 use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
+use sqlx::SqlitePool;
 
 #[derive(Clone, Debug)]
 pub struct SqliteAttachedDatabase {
@@ -62,6 +64,10 @@ impl SQLiteDriver {
             view: SQLiteView::new(pool.clone()),
             function: SQLiteFunction::new(pool),
         })
+    }
+
+    pub fn pool(&self) -> &SqlitePool {
+        self.query.pool()
     }
 }
 

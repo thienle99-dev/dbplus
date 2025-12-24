@@ -1,5 +1,6 @@
 pub mod column;
 pub mod connection;
+pub mod ddl_export;
 pub mod function;
 pub mod query;
 pub mod schema;
@@ -7,8 +8,11 @@ pub mod table;
 pub mod view;
 
 use crate::models::entities::connection as connection_entity;
+use crate::services::db_driver::SessionInfo;
+use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
+use mysql_async::prelude::Queryable;
 use mysql_async::{OptsBuilder, Pool};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -75,14 +79,70 @@ impl MySqlDriver {
 
 #[async_trait]
 impl crate::services::driver::SessionOperations for MySqlDriver {
-    async fn get_active_sessions(&self) -> Result<Vec<crate::services::db_driver::SessionInfo>> {
-        Err(anyhow::anyhow!(
-            "Session management not supported for MySQL yet"
-        ))
+    async fn get_active_sessions(&self) -> Result<Vec<SessionInfo>> {
+        let mut conn = self.pool.get_conn().await?;
+        let query = "SELECT ID, USER, HOST, DB, COMMAND, TIME, STATE, INFO FROM information_schema.PROCESSLIST";
+
+        let rows: Vec<(
+            u64,
+            String,
+            String,
+            Option<String>,
+            String,
+            i64,
+            Option<String>,
+            Option<String>,
+        )> = conn.query(query).await?;
+
+        Ok(rows
+            .into_iter()
+            .map(
+                |(id, user, host, db, command, time, state, info)| SessionInfo {
+                    pid: id as i32,
+                    user_name: Some(user),
+                    application_name: None,
+                    client_addr: Some(host),
+                    backend_start: None,
+                    query_start: None,
+                    state: Some(format!("{} - {}", command, state.unwrap_or_default())),
+                    query: info,
+                    wait_event_type: None,
+                    wait_event: None,
+                    state_change: None,
+                },
+            )
+            .collect())
     }
-    async fn kill_session(&self, _pid: i32) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "Session management not supported for MySQL yet"
-        ))
+
+    async fn kill_session(&self, pid: i32) -> Result<()> {
+        let mut conn = self.pool.get_conn().await?;
+        let sql = format!("KILL {}", pid);
+        conn.query_drop(sql).await?;
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl DatabaseManagementDriver for MySqlDriver {
+    async fn create_database(&self, name: &str) -> Result<()> {
+        let mut conn = self.pool.get_conn().await?;
+        let sql = format!("CREATE DATABASE `{}`", name.replace("`", "``"));
+        conn.query_drop(sql).await?;
+        Ok(())
+    }
+
+    async fn drop_database(&self, name: &str) -> Result<()> {
+        let mut conn = self.pool.get_conn().await?;
+        let sql = format!("DROP DATABASE `{}`", name.replace("`", "``"));
+        conn.query_drop(sql).await?;
+        Ok(())
+    }
+
+    async fn create_schema(&self, name: &str) -> Result<()> {
+        self.create_database(name).await
+    }
+
+    async fn drop_schema(&self, name: &str) -> Result<()> {
+        self.drop_database(name).await
     }
 }

@@ -84,6 +84,19 @@ impl ConnectionService {
                     crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 driver.create_database(name).await
             }
+            "mysql" | "mariadb" | "tidb" => {
+                use crate::services::driver::extension::DatabaseManagementDriver;
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.create_database(name).await
+            }
+            "clickhouse" => {
+                use crate::services::driver::extension::DatabaseManagementDriver;
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                driver.create_database(name).await
+            }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_database"
             )),
@@ -118,6 +131,17 @@ impl ConnectionService {
                 use crate::services::driver::extension::DatabaseManagementDriver;
                 let driver =
                     crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                driver.drop_database(name).await
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                driver.drop_database(name).await
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
                 driver.drop_database(name).await
             }
             _ => Err(anyhow::anyhow!(

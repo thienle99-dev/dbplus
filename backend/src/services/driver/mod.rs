@@ -13,6 +13,7 @@ pub mod view;
 
 pub use base::{ConnectionDriver, QueryDriver};
 pub use column::ColumnManagement;
+pub use ddl_export::DdlExportDriver;
 pub use function::FunctionOperations;
 pub use nosql::NoSQLOperations;
 pub use schema::SchemaIntrospection;

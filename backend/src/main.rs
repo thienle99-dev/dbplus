@@ -292,7 +292,7 @@ async fn main() {
         )
         .route(
             "/api/connections/:id/export-ddl",
-            post(handlers::export_ddl::export_postgres_ddl),
+            post(handlers::export_ddl::export_ddl),
         )
         // Schema Diff routes
         .route(

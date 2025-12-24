@@ -5,10 +5,13 @@ use super::db_driver::{
     ViewInfo,
 };
 use super::driver::{
-    ColumnManagement, ConnectionDriver, FunctionOperations, QueryDriver, SchemaIntrospection,
-    TableOperations, ViewOperations,
+    ColumnManagement, ConnectionDriver, DdlExportDriver, FunctionOperations, QueryDriver,
+    SchemaIntrospection, TableOperations, ViewOperations,
 };
 use crate::models::entities::connection as ConnectionModel;
+use crate::models::export_ddl::{DdlObjectType, DdlScope, ExportDdlOptions};
+use crate::services::db_driver::SessionInfo;
+use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 use clickhouse::Client;
@@ -317,8 +320,68 @@ impl SchemaIntrospection for ClickHouseDriver {
 
         Ok(result)
     }
-    async fn search_objects(&self, _query: &str) -> Result<Vec<SearchResult>> {
-        Ok(vec![])
+    async fn search_objects(&self, query_str: &str) -> Result<Vec<SearchResult>> {
+        let like_query = format!("%{}%", query_str.replace("'", "''"));
+
+        // Tables and Views
+        let tables_query = format!(
+            "SELECT database, name, engine FROM system.tables WHERE name ILIKE '{}' LIMIT 50",
+            like_query
+        );
+
+        #[derive(Deserialize, clickhouse::Row)]
+        struct TableRow {
+            database: String,
+            name: String,
+            engine: String,
+        }
+
+        let mut cursor = self
+            .client
+            .query(&tables_query)
+            .fetch::<TableRow>()
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        let mut results = Vec::new();
+        while let Some(row) = cursor.next().await.map_err(|e| anyhow::anyhow!(e))? {
+            let r#type = if row.engine.contains("View") {
+                "VIEW".to_string()
+            } else {
+                "TABLE".to_string()
+            };
+            results.push(SearchResult {
+                schema: row.database,
+                name: row.name,
+                r#type,
+            });
+        }
+
+        // Functions
+        let funcs_query = format!(
+            "SELECT name FROM system.functions WHERE name ILIKE '{}' LIMIT 50",
+            like_query
+        );
+
+        #[derive(Deserialize, clickhouse::Row)]
+        struct FuncRow {
+            name: String,
+        }
+
+        let mut cursor = self
+            .client
+            .query(&funcs_query)
+            .fetch::<FuncRow>()
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        while let Some(row) = cursor.next().await.map_err(|e| anyhow::anyhow!(e))? {
+            results.push(SearchResult {
+                schema: "system".to_string(),
+                name: row.name,
+                r#type: "FUNCTION".to_string(),
+            });
+        }
+
+        Ok(results)
     }
     async fn get_schema_foreign_keys(&self, _schema: &str) -> Result<Vec<SchemaForeignKey>> {
         Ok(vec![])
@@ -873,14 +936,165 @@ impl FunctionOperations for ClickHouseDriver {
 
 #[async_trait]
 impl crate::services::driver::SessionOperations for ClickHouseDriver {
-    async fn get_active_sessions(&self) -> Result<Vec<crate::services::db_driver::SessionInfo>> {
-        Err(anyhow::anyhow!(
-            "Session management not supported for ClickHouse yet"
-        ))
+    async fn get_active_sessions(&self) -> Result<Vec<SessionInfo>> {
+        let query = "SELECT user, address, elapsed, query, CAST(query_id, 'Int32') as pid FROM system.processes";
+
+        #[derive(Deserialize, clickhouse::Row)]
+        struct ProcessRow {
+            user: String,
+            address: String,
+            elapsed: f64,
+            query: String,
+            pid: i32,
+        }
+
+        let mut cursor = self
+            .client
+            .query(query)
+            .fetch::<ProcessRow>()
+            .map_err(|e| anyhow::anyhow!(e))?;
+        let mut sessions = Vec::new();
+
+        while let Some(row) = cursor.next().await.map_err(|e| anyhow::anyhow!(e))? {
+            sessions.push(SessionInfo {
+                pid: row.pid,
+                user_name: Some(row.user),
+                application_name: None,
+                client_addr: Some(row.address),
+                backend_start: None,
+                query_start: None,
+                state: Some(format!("Running for {}s", row.elapsed)),
+                query: Some(row.query),
+                wait_event_type: None,
+                wait_event: None,
+                state_change: None,
+            });
+        }
+
+        Ok(sessions)
     }
+
     async fn kill_session(&self, _pid: i32) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "Session management not supported for ClickHouse yet"
-        ))
+        // pid in system.processes is usually a string (query_id)
+        // If we want to kill by PID, we might need query_id or initial_query_id.
+        // For now, ClickHouse usually kills queries by query_id.
+        // Let's assume pid passed here corresponds to query_id if castable,
+        // but ClickHouse query_ids are often UUIDs or custom strings.
+        // If the PID is numeric, we try to KILL QUERY WHERE query_id = 'pid'
+        let sql = format!("KILL QUERY WHERE query_id = '{}'", _pid);
+        self.execute(&sql).await?;
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl DatabaseManagementDriver for ClickHouseDriver {
+    async fn create_database(&self, name: &str) -> Result<()> {
+        let sql = format!("CREATE DATABASE `{}`", name.replace("`", "``"));
+        self.execute(&sql).await?;
+        Ok(())
+    }
+
+    async fn drop_database(&self, name: &str) -> Result<()> {
+        let sql = format!("DROP DATABASE `{}`", name.replace("`", "``"));
+        self.execute(&sql).await?;
+        Ok(())
+    }
+
+    async fn create_schema(&self, name: &str) -> Result<()> {
+        self.create_database(name).await
+    }
+
+    async fn drop_schema(&self, name: &str) -> Result<()> {
+        self.drop_database(name).await
+    }
+}
+
+#[async_trait]
+impl DdlExportDriver for ClickHouseDriver {
+    async fn export_ddl(&self, options: &ExportDdlOptions) -> Result<String> {
+        match options.scope {
+            DdlScope::Database => {
+                let db = options.database.as_deref().unwrap_or("");
+                let sql = format!("SHOW CREATE DATABASE `{}`", db.replace("`", "``"));
+                #[derive(serde::Deserialize, clickhouse::Row)]
+                struct DdlRow {
+                    statement: String,
+                }
+                let row: Option<DdlRow> = self
+                    .client
+                    .query(&sql)
+                    .fetch_optional()
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+                if let Some(row) = row {
+                    Ok(format!("{};", row.statement))
+                } else {
+                    Err(anyhow::anyhow!("Database {} not found", db))
+                }
+            }
+            DdlScope::Schema => {
+                let schema = options
+                    .schemas
+                    .as_ref()
+                    .and_then(|s| s.first())
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                let sql = format!("SHOW CREATE DATABASE `{}`", schema.replace("`", "``"));
+                #[derive(serde::Deserialize, clickhouse::Row)]
+                struct DdlRow {
+                    statement: String,
+                }
+                let row: Option<DdlRow> = self
+                    .client
+                    .query(&sql)
+                    .fetch_optional()
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+                if let Some(row) = row {
+                    Ok(format!("{};", row.statement))
+                } else {
+                    Err(anyhow::anyhow!("Database {} not found", schema))
+                }
+            }
+            DdlScope::Objects => {
+                let mut ddl = String::new();
+                if let Some(objects) = &options.objects {
+                    for obj in objects {
+                        let sql = match obj.object_type {
+                            DdlObjectType::Table => format!(
+                                "SHOW CREATE TABLE `{}`.`{}`",
+                                obj.schema.replace("`", "``"),
+                                obj.name.replace("`", "``")
+                            ),
+                            DdlObjectType::View => format!(
+                                "SHOW CREATE VIEW `{}`.`{}`",
+                                obj.schema.replace("`", "``"),
+                                obj.name.replace("`", "``")
+                            ),
+                            DdlObjectType::Function => {
+                                format!("SHOW CREATE FUNCTION `{}`", obj.name.replace("`", "``"))
+                            }
+                            _ => continue,
+                        };
+                        #[derive(serde::Deserialize, clickhouse::Row)]
+                        struct ObjDdlRow {
+                            statement: String,
+                        }
+                        let row: Option<ObjDdlRow> = self
+                            .client
+                            .query(&sql)
+                            .fetch_optional()
+                            .await
+                            .map_err(|e| anyhow::anyhow!(e))?;
+                        if let Some(row) = row {
+                            ddl.push_str(&row.statement);
+                            ddl.push_str(";\n\n");
+                        }
+                    }
+                }
+                Ok(ddl)
+            }
+        }
     }
 }

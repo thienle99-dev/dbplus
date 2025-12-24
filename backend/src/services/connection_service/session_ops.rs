@@ -17,6 +17,21 @@ impl ConnectionService {
                 let driver = PostgresDriver::new(&connection, &password).await?;
                 Ok(Box::new(driver))
             }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver =
+                    crate::services::mysql::MySqlDriver::from_model(&connection, &password).await?;
+                Ok(Box::new(driver))
+            }
+            "clickhouse" => {
+                let driver =
+                    crate::services::clickhouse::ClickHouseDriver::new(&connection, &password)
+                        .await?;
+                Ok(Box::new(driver))
+            }
+            "sqlite" => {
+                let driver = self.sqlite_driver(&connection, &password).await?;
+                Ok(Box::new(driver))
+            }
             // For other drivers that don't implement SessionOperations yet, we can either
             // return an error or return a dummy implementation.
             // For now, let's return an error for unsupported types.

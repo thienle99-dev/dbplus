@@ -1,15 +1,18 @@
 use crate::app_state::AppState;
 use crate::models::export_ddl::{ExportDdlOptions, ExportDdlResult};
+use crate::services::clickhouse::ClickHouseDriver;
 use crate::services::connection_service::ConnectionService;
+use crate::services::mysql::MySqlDriver;
 use crate::services::pg_dump::{is_pg_dump_available, run_pg_dump};
 use crate::services::postgres::PostgresDriver;
+use crate::services::sqlite::SQLiteDriver;
 use axum::{
     extract::{Path, State},
     Json,
 };
 use uuid::Uuid;
 
-pub async fn export_postgres_ddl(
+pub async fn export_ddl(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(options): Json<ExportDdlOptions>,
@@ -22,21 +25,17 @@ pub async fn export_postgres_ddl(
         .await
         .map_err(|e| e.to_string())?;
 
-    if conn.db_type != "postgres" {
-        return Err("Only PostgreSQL is supported for DDL Export currently".to_string());
-    }
-
     // Determine method
     let method = options.export_method.clone().unwrap_or_else(|| {
-        // Backward compatibility
-        if options.prefer_pg_dump && is_pg_dump_available() {
+        // Backward compatibility for Postgres
+        if conn.db_type == "postgres" && options.prefer_pg_dump && is_pg_dump_available() {
             "user_pg_dump".to_string()
         } else {
             "driver".to_string()
         }
     });
 
-    if method == "bundled_pg_dump" || method == "user_pg_dump" {
+    if (method == "bundled_pg_dump" || method == "user_pg_dump") && conn.db_type == "postgres" {
         let path = crate::utils::pg_dump_finder::get_pg_dump_path(
             &method,
             options.pg_dump_path.as_deref(),
@@ -66,15 +65,52 @@ pub async fn export_postgres_ddl(
             conn_for_driver.database = db.clone();
         }
 
-        let driver = PostgresDriver::new(&conn_for_driver, &password)
-            .await
-            .map_err(|e| e.to_string())?;
-
         use crate::services::driver::ddl_export::DdlExportDriver;
-        let ddl = driver
-            .export_ddl(&options)
-            .await
-            .map_err(|e| e.to_string())?;
+
+        let ddl = match conn.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&conn_for_driver, &password)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                driver
+                    .export_ddl(&options)
+                    .await
+                    .map_err(|e| e.to_string())?
+            }
+            "mysql" | "mariadb" | "tidb" => {
+                let driver = MySqlDriver::from_model(&conn_for_driver, &password)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                driver
+                    .export_ddl(&options)
+                    .await
+                    .map_err(|e| e.to_string())?
+            }
+            "sqlite" => {
+                let driver = SQLiteDriver::new(&conn_for_driver, &password)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                driver
+                    .export_ddl(&options)
+                    .await
+                    .map_err(|e| e.to_string())?
+            }
+            "clickhouse" => {
+                let driver = ClickHouseDriver::new(&conn_for_driver, &password)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                driver
+                    .export_ddl(&options)
+                    .await
+                    .map_err(|e| e.to_string())?
+            }
+            _ => {
+                return Err(format!(
+                    "DDL Export via driver is not supported for database type: {}",
+                    conn.db_type
+                ))
+            }
+        };
 
         Ok(Json(ExportDdlResult {
             ddl,

@@ -18,6 +18,10 @@ impl SQLiteQuery {
         Self { pool }
     }
 
+    pub fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
+
     pub async fn stream_ndjson(
         &self,
         query: &str,
@@ -318,4 +322,3 @@ impl QueryDriver for SQLiteQuery {
         Ok(Value::Array(plan))
     }
 }
-

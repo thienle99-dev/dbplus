@@ -86,8 +86,29 @@ impl TableOperations for MySqlDriver {
         let check_constraints = vec![];
 
         // Unique constraints
-        // Finding indexes that are unique but not primary?
-        let unique_constraints = vec![];
+        let unique_query = r#"
+            SELECT INDEX_NAME, COLUMN_NAME
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND NON_UNIQUE = 0 AND INDEX_NAME != 'PRIMARY'
+            ORDER BY INDEX_NAME, SEQ_IN_INDEX
+        "#;
+
+        let unique_raw: Vec<(String, String)> = conn.exec(unique_query, (schema, table)).await?;
+        let mut unique_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
+        for (name, col) in unique_raw {
+            unique_map.entry(name).or_insert_with(Vec::new).push(col);
+        }
+
+        let unique_constraints = unique_map
+            .into_iter()
+            .map(
+                |(name, cols)| crate::services::db_driver::UniqueConstraint {
+                    constraint_name: name,
+                    columns: cols,
+                },
+            )
+            .collect();
 
         Ok(TableConstraints {
             foreign_keys,
