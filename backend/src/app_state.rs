@@ -22,3 +22,22 @@ impl AppState {
         }
     }
 }
+
+// Axum state extraction
+impl axum::extract::FromRef<AppState> for DatabaseConnection {
+    fn from_ref(state: &AppState) -> Self {
+        state.db.clone()
+    }
+}
+
+impl axum::extract::FromRef<AppState> for Arc<DashMap<String, CancellationToken>> {
+    fn from_ref(state: &AppState) -> Self {
+        state.queries.clone()
+    }
+}
+
+impl axum::extract::FromRef<AppState> for Arc<crate::services::autocomplete::SchemaCacheService> {
+    fn from_ref(state: &AppState) -> Self {
+        state.schema_cache.clone()
+    }
+}

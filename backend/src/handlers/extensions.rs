@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, Query, State},
@@ -6,7 +7,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -17,13 +17,13 @@ pub struct DatabaseOverrideParams {
 }
 
 pub async fn list_extensions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<DatabaseOverrideParams>,
 ) -> impl IntoResponse {
     tracing::info!("[API] GET /extensions - connection_id: {}", connection_id);
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params

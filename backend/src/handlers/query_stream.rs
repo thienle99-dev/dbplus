@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     body::Body,
@@ -7,7 +8,6 @@ use axum::{
 };
 use bytes::Bytes;
 use futures_util::StreamExt;
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_json::json;
 use std::convert::Infallible;
@@ -24,14 +24,16 @@ pub struct ExecuteQueryStreamParams {
 }
 
 pub async fn execute_query_stream(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<ExecuteQueryStreamParams>,
 ) -> impl IntoResponse {
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     let (connection, password) = match service.get_connection_with_password(connection_id).await {
         Ok(v) => v,
@@ -52,7 +54,9 @@ pub async fn execute_query_stream(
 
     tokio::spawn(async move {
         async fn send_line(tx: &mpsc::Sender<Bytes>, value: serde_json::Value) {
-            let mut buf = serde_json::to_vec(&value).unwrap_or_else(|_| b"{\"type\":\"error\",\"message\":\"serialization failed\"}".to_vec());
+            let mut buf = serde_json::to_vec(&value).unwrap_or_else(|_| {
+                b"{\"type\":\"error\",\"message\":\"serialization failed\"}".to_vec()
+            });
             buf.push(b'\n');
             let _ = tx.send(Bytes::from(buf)).await;
         }

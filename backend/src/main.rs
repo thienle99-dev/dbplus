@@ -13,9 +13,7 @@ use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
 // Import from library
-use dbplus_backend::{init_app_state, init_database};
-
-mod routes;
+use dbplus_backend::{handlers, init_app_state, init_database};
 
 #[tokio::main]
 async fn main() {

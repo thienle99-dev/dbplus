@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::saved_filter_service::SavedFilterService;
 use axum::{
     extract::{Path, Query, State},
@@ -5,7 +6,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -24,11 +24,11 @@ pub struct ListSavedFilterParams {
 }
 
 pub async fn list_saved_filters(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ListSavedFilterParams>,
 ) -> impl IntoResponse {
-    let service = SavedFilterService::new(db);
+    let service = SavedFilterService::new(state.db.clone());
     match service
         .get_saved_filters(connection_id, &params.schema, &params.table)
         .await
@@ -39,11 +39,11 @@ pub async fn list_saved_filters(
 }
 
 pub async fn create_saved_filter(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateSavedFilterParams>,
 ) -> impl IntoResponse {
-    let service = SavedFilterService::new(db);
+    let service = SavedFilterService::new(state.db.clone());
     match service
         .create_saved_filter(
             connection_id,
@@ -60,10 +60,10 @@ pub async fn create_saved_filter(
 }
 
 pub async fn delete_saved_filter(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((_connection_id, filter_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    let service = SavedFilterService::new(db);
+    let service = SavedFilterService::new(state.db.clone());
     match service.delete_saved_filter(filter_id).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),

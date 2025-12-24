@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     body::Body,
@@ -5,7 +6,6 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
@@ -22,14 +22,16 @@ pub struct BackupSqlParams {
 }
 
 pub async fn execute_script(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(body): Json<ExecuteScriptBody>,
 ) -> impl IntoResponse {
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     let result = service.execute_script(connection_id, &body.script).await;
 
@@ -39,24 +41,36 @@ pub async fn execute_script(
             Json(json!({ "success": true, "statements_executed": statements_executed })),
         )
             .into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "message": e.to_string() }))).into_response(),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "message": e.to_string() })),
+        )
+            .into_response(),
     }
 }
 
 pub async fn backup_postgres_sql(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<BackupSqlParams>,
 ) -> impl IntoResponse {
     let header_db_override = crate::utils::request::database_override_from_headers(&headers);
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     let (connection, password) = match service.get_connection_with_password(connection_id).await {
         Ok(v) => v,
-        Err(e) => return (StatusCode::NOT_FOUND, Json(json!({ "message": e.to_string() }))).into_response(),
+        Err(e) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "message": e.to_string() })),
+            )
+                .into_response()
+        }
     };
 
     if connection.db_type.as_str() != "postgres" {

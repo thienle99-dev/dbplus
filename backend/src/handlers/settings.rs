@@ -1,9 +1,13 @@
+use crate::app_state::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     Json,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    Set,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
@@ -22,9 +26,10 @@ pub struct UpdateSettingRequest {
 
 /// Get a specific setting by key
 pub async fn get_setting(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(key): Path<String>,
 ) -> Result<Json<SettingResponse>, StatusCode> {
+    let db = state.db.clone();
     let setting = user_settings::Entity::find()
         .filter(user_settings::Column::Key.eq(&key))
         .one(&db)
@@ -42,8 +47,9 @@ pub async fn get_setting(
 
 /// Get all settings
 pub async fn get_all_settings(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<SettingResponse>>, StatusCode> {
+    let db = state.db.clone();
     let settings = user_settings::Entity::find()
         .all(&db)
         .await
@@ -62,10 +68,11 @@ pub async fn get_all_settings(
 
 /// Update or create a setting
 pub async fn update_setting(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(key): Path<String>,
     Json(payload): Json<UpdateSettingRequest>,
 ) -> Result<Json<SettingResponse>, StatusCode> {
+    let db = state.db.clone();
     // Try to find existing setting
     let existing = user_settings::Entity::find()
         .filter(user_settings::Column::Key.eq(&key))
@@ -107,9 +114,8 @@ pub async fn update_setting(
 }
 
 /// Reset all settings to defaults
-pub async fn reset_settings(
-    State(db): State<DatabaseConnection>,
-) -> Result<StatusCode, StatusCode> {
+pub async fn reset_settings(State(state): State<AppState>) -> Result<StatusCode, StatusCode> {
+    let db = state.db.clone();
     user_settings::Entity::delete_many()
         .exec(&db)
         .await
@@ -120,9 +126,10 @@ pub async fn reset_settings(
 
 /// Delete a specific setting
 pub async fn delete_setting(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(key): Path<String>,
 ) -> Result<StatusCode, StatusCode> {
+    let db = state.db.clone();
     user_settings::Entity::delete_many()
         .filter(user_settings::Column::Key.eq(&key))
         .exec(&db)

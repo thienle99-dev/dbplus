@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, State},
@@ -6,7 +7,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_json::Value;
 use uuid::Uuid;
@@ -29,7 +29,7 @@ pub struct DeleteRowRequest {
 }
 
 pub async fn update_result_row(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<UpdateRowRequest>,
@@ -44,7 +44,7 @@ pub async fn update_result_row(
     }
 
     // Use ConnectionService
-    let service = match ConnectionService::new(db.clone()) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
         )),
@@ -143,7 +143,7 @@ fn escape_value(v: &Value) -> String {
 }
 
 pub async fn delete_result_row(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<DeleteRowRequest>,
@@ -154,7 +154,7 @@ pub async fn delete_result_row(
     }
 
     // Use ConnectionService
-    let service = match ConnectionService::new(db.clone()) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(s) => s.with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
         )),

@@ -1,13 +1,13 @@
+use crate::app_state::AppState;
+use crate::services::saved_query_service::SavedQueryService;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    Json,
     response::IntoResponse,
+    Json,
 };
-use sea_orm::DatabaseConnection;
-use uuid::Uuid;
 use serde::Deserialize;
-use crate::services::saved_query_service::SavedQueryService;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct CreateSavedQueryParams {
@@ -30,10 +30,10 @@ pub struct UpdateSavedQueryParams {
 }
 
 pub async fn list_saved_queries(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = SavedQueryService::new(db);
+    let service = SavedQueryService::new(state.db.clone());
     match service.get_saved_queries(connection_id).await {
         Ok(queries) => (StatusCode::OK, Json(queries)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
@@ -41,11 +41,11 @@ pub async fn list_saved_queries(
 }
 
 pub async fn create_saved_query(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateSavedQueryParams>,
 ) -> impl IntoResponse {
-    let service = SavedQueryService::new(db);
+    let service = SavedQueryService::new(state.db.clone());
     match service
         .create_saved_query(
             connection_id,
@@ -64,11 +64,11 @@ pub async fn create_saved_query(
 }
 
 pub async fn update_saved_query(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((_connection_id, query_id)): Path<(Uuid, Uuid)>,
     Json(payload): Json<UpdateSavedQueryParams>,
 ) -> impl IntoResponse {
-    let service = SavedQueryService::new(db);
+    let service = SavedQueryService::new(state.db.clone());
     match service
         .update_saved_query(
             query_id,
@@ -87,10 +87,10 @@ pub async fn update_saved_query(
 }
 
 pub async fn delete_saved_query(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((_connection_id, query_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    let service = SavedQueryService::new(db);
+    let service = SavedQueryService::new(state.db.clone());
     match service.delete_saved_query(query_id).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),

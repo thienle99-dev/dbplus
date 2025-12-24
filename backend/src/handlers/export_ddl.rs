@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::models::export_ddl::{ExportDdlOptions, ExportDdlResult};
 use crate::services::connection_service::ConnectionService;
 use crate::services::pg_dump::{is_pg_dump_available, run_pg_dump};
@@ -6,15 +7,14 @@ use axum::{
     extract::{Path, State},
     Json,
 };
-use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 pub async fn export_postgres_ddl(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(options): Json<ExportDdlOptions>,
 ) -> Result<Json<ExportDdlResult>, String> {
-    let service = ConnectionService::new(db).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone()).map_err(|e| e.to_string())?;
 
     // Get connection details
     let (conn, password) = service

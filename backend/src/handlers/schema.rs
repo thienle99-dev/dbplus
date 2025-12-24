@@ -7,7 +7,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -47,13 +46,13 @@ pub struct SchemaManagementResponse {
 }
 
 pub async fn list_schemas(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<DatabaseOverrideParams>,
 ) -> impl IntoResponse {
     tracing::info!("[API] GET /schemas - connection_id: {}", connection_id);
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -76,7 +75,7 @@ pub async fn list_schemas(
 }
 
 pub async fn create_schema(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<DatabaseOverrideParams>,
@@ -104,7 +103,7 @@ pub async fn create_schema(
             .into_response();
     }
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -132,7 +131,7 @@ pub async fn create_schema(
 }
 
 pub async fn drop_schema(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path((connection_id, name)): Path<(Uuid, String)>,
     Query(params): Query<DatabaseOverrideParams>,
@@ -142,7 +141,7 @@ pub async fn drop_schema(
         return (StatusCode::BAD_REQUEST, "Schema name cannot be empty").into_response();
     }
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -194,7 +193,7 @@ pub async fn list_schema_metadata(
 }
 
 pub async fn list_tables(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -204,7 +203,7 @@ pub async fn list_tables(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -236,7 +235,7 @@ pub struct CreateTableRequest {
 }
 
 pub async fn create_table(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateTableRequest>,
@@ -246,7 +245,7 @@ pub async fn create_table(
         return (StatusCode::BAD_REQUEST, "Table name cannot be empty").into_response();
     }
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             payload
@@ -264,12 +263,12 @@ pub async fn create_table(
 }
 
 pub async fn drop_table(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ColumnParams>,
 ) -> impl IntoResponse {
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -287,7 +286,7 @@ pub async fn drop_table(
 }
 
 pub async fn list_columns(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ColumnParams>,
@@ -298,7 +297,7 @@ pub async fn list_columns(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -338,7 +337,7 @@ pub struct TableDataParams {
 }
 
 pub async fn get_table_data(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableDataParams>,
@@ -356,7 +355,7 @@ pub async fn get_table_data(
         params.document_id
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -408,7 +407,7 @@ pub struct AddColumnParams {
 }
 
 pub async fn add_column(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<AddColumnParams>,
@@ -421,7 +420,7 @@ pub async fn add_column(
         params.table,
         column_def.name
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -460,7 +459,7 @@ pub struct AlterColumnParams {
 }
 
 pub async fn alter_column(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path((connection_id, column_name)): Path<(Uuid, String)>,
     Query(params): Query<AlterColumnParams>,
@@ -473,7 +472,7 @@ pub async fn alter_column(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -512,7 +511,7 @@ pub async fn alter_column(
 }
 
 pub async fn drop_column(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path((connection_id, column_name)): Path<(Uuid, String)>,
     Query(params): Query<ColumnParams>,
@@ -524,7 +523,7 @@ pub async fn drop_column(
         params.schema,
         params.table
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params
@@ -568,7 +567,7 @@ pub struct ViewDefinitionParams {
 }
 
 pub async fn list_views(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ViewParams>,
@@ -578,7 +577,7 @@ pub async fn list_views(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
@@ -596,7 +595,7 @@ pub async fn list_views(
 }
 
 pub async fn get_view_definition(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<ViewDefinitionParams>,
@@ -607,7 +606,7 @@ pub async fn get_view_definition(
         params.schema,
         params.view
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
@@ -639,7 +638,7 @@ pub struct FunctionDefinitionParams {
 }
 
 pub async fn list_functions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<FunctionParams>,
@@ -649,7 +648,7 @@ pub async fn list_functions(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
@@ -670,7 +669,7 @@ pub async fn list_functions(
 }
 
 pub async fn get_function_definition(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<FunctionDefinitionParams>,
@@ -681,7 +680,7 @@ pub async fn get_function_definition(
         params.schema,
         params.function
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(crate::utils::request::database_override_from_headers(
             &headers,
@@ -702,7 +701,7 @@ pub async fn get_function_definition(
 }
 
 pub async fn get_schema_foreign_keys(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -712,7 +711,7 @@ pub async fn get_schema_foreign_keys(
         connection_id,
         params.schema
     );
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
         .with_database_override(
             params

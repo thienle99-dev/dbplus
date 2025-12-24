@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::models::entities::{connection::Entity as Connection, sqlite_attached_db};
 use axum::{
     extract::{Path, State},
@@ -7,7 +8,8 @@ use axum::{
 };
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, Set,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -21,7 +23,9 @@ fn is_valid_schema_name(name: &str) -> bool {
         return false;
     }
     let mut chars = name.chars();
-    let Some(first) = chars.next() else { return false };
+    let Some(first) = chars.next() else {
+        return false;
+    };
     if !(first.is_ascii_alphabetic() || first == '_') {
         return false;
     }
@@ -44,9 +48,10 @@ pub struct CreateSqliteAttachmentRequest {
 }
 
 pub async fn list_sqlite_attachments(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
 ) -> impl IntoResponse {
+    let db = state.db.clone();
     let conn = match Connection::find_by_id(connection_id).one(&db).await {
         Ok(Some(c)) => c,
         Ok(None) => return (StatusCode::NOT_FOUND, "Connection not found").into_response(),
@@ -84,10 +89,11 @@ pub async fn list_sqlite_attachments(
 }
 
 pub async fn create_sqlite_attachment(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateSqliteAttachmentRequest>,
 ) -> impl IntoResponse {
+    let db = state.db.clone();
     let name = payload.name.trim().to_string();
     let file_path = payload.file_path.trim().to_string();
     if !is_valid_schema_name(&name) {
@@ -140,9 +146,10 @@ pub async fn create_sqlite_attachment(
 }
 
 pub async fn delete_sqlite_attachment(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((connection_id, name)): Path<(Uuid, String)>,
 ) -> impl IntoResponse {
+    let db = state.db.clone();
     let name = name.trim().to_string();
     if name.is_empty() {
         return (StatusCode::BAD_REQUEST, "Attachment name cannot be empty").into_response();

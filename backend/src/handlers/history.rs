@@ -1,9 +1,9 @@
+use crate::app_state::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -27,11 +27,11 @@ pub struct HistoryResponse {
 
 /// GET /api/connections/:id/history
 pub async fn get_history(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<GetHistoryQuery>,
 ) -> Result<Json<HistoryResponse>, (StatusCode, String)> {
-    let service = HistoryService::new(db);
+    let service = HistoryService::new(state.db.clone());
 
     let history = service
         .get_history(connection_id, params.limit)
@@ -43,10 +43,10 @@ pub async fn get_history(
 
 /// DELETE /api/connections/:id/history
 pub async fn clear_history(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let service = HistoryService::new(db);
+    let service = HistoryService::new(state.db.clone());
 
     service
         .clear_history(connection_id)
@@ -58,10 +58,10 @@ pub async fn clear_history(
 
 /// DELETE /api/connections/:id/history/:entry_id
 pub async fn delete_history_entry(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((connection_id, entry_id)): Path<(Uuid, Uuid)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let service = HistoryService::new(db);
+    let service = HistoryService::new(state.db.clone());
 
     service
         .delete_entry(connection_id, entry_id)
@@ -78,11 +78,11 @@ pub struct DeleteHistoryEntriesRequest {
 
 /// POST /api/connections/:id/history/delete
 pub async fn delete_history_entries(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<DeleteHistoryEntriesRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let service = HistoryService::new(db);
+    let service = HistoryService::new(state.db.clone());
 
     service
         .delete_entries(connection_id, payload.ids)
@@ -103,11 +103,11 @@ pub struct AddHistoryRequest {
 
 /// POST /api/connections/:id/history
 pub async fn add_history(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<AddHistoryRequest>,
 ) -> Result<Json<query_history::Model>, (StatusCode, String)> {
-    let service = HistoryService::new(db);
+    let service = HistoryService::new(state.db.clone());
 
     let entry = service
         .add_entry(

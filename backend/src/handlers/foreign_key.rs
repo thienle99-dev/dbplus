@@ -1,10 +1,10 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use crate::services::postgres::{ForeignKeyInfo, PostgresDriver};
 use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -15,11 +15,11 @@ pub struct SchemaParams {
 }
 
 pub async fn get_foreign_keys(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Query(params): Query<SchemaParams>,
 ) -> Result<Json<Vec<ForeignKeyInfo>>, String> {
-    let service = ConnectionService::new(db).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone()).map_err(|e| e.to_string())?;
 
     // Get connection details
     let (conn, password) = service

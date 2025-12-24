@@ -1,10 +1,10 @@
+use crate::app_state::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -21,10 +21,10 @@ pub struct UpdateFolderParams {
 }
 
 pub async fn list_folders(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = SavedQueryFolderService::new(db);
+    let service = SavedQueryFolderService::new(state.db.clone());
     match service.list_folders(connection_id).await {
         Ok(folders) => (StatusCode::OK, Json(folders)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
@@ -32,11 +32,11 @@ pub async fn list_folders(
 }
 
 pub async fn create_folder(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(connection_id): Path<Uuid>,
     Json(payload): Json<CreateFolderParams>,
 ) -> impl IntoResponse {
-    let service = SavedQueryFolderService::new(db);
+    let service = SavedQueryFolderService::new(state.db.clone());
     match service.create_folder(connection_id, payload.name).await {
         Ok(folder) => (StatusCode::CREATED, Json(folder)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
@@ -44,11 +44,11 @@ pub async fn create_folder(
 }
 
 pub async fn update_folder(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((_connection_id, folder_id)): Path<(Uuid, Uuid)>,
     Json(payload): Json<UpdateFolderParams>,
 ) -> impl IntoResponse {
-    let service = SavedQueryFolderService::new(db);
+    let service = SavedQueryFolderService::new(state.db.clone());
     match service.update_folder(folder_id, payload.name).await {
         Ok(folder) => (StatusCode::OK, Json(folder)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
@@ -56,13 +56,12 @@ pub async fn update_folder(
 }
 
 pub async fn delete_folder(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((_connection_id, folder_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
-    let service = SavedQueryFolderService::new(db);
+    let service = SavedQueryFolderService::new(state.db.clone());
     match service.delete_folder(folder_id).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }
-

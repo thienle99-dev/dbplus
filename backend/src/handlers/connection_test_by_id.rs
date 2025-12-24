@@ -1,9 +1,20 @@
+use crate::app_state::AppState;
+use crate::handlers::connection::TestConnectionResponse;
+use crate::services::connection_service::ConnectionService;
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
+use uuid::Uuid;
+
 // Test existing connection by ID (without exposing password)
 pub async fn test_connection_by_id(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);

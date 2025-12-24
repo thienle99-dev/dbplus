@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::models::entities::connection;
 use crate::services::connection_service::ConnectionService;
 use crate::services::driver::QueryDriver;
@@ -7,7 +8,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use uuid::Uuid;
 
 use chrono::Utc;
@@ -75,8 +75,8 @@ pub struct SwitchDatabaseRequest {
 }
 
 // List all connections
-pub async fn list_connections(State(db): State<DatabaseConnection>) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+pub async fn list_connections(State(state): State<AppState>) -> impl IntoResponse {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -112,10 +112,10 @@ pub async fn list_connections(State(db): State<DatabaseConnection>) -> impl Into
 
 // Get connection by ID
 pub async fn get_connection(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -147,10 +147,10 @@ pub async fn get_connection(
 
 // Create new connection
 pub async fn create_connection(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Json(payload): Json<CreateConnectionRequest>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -246,11 +246,11 @@ pub async fn create_connection(
 
 // Update connection
 pub async fn update_connection(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(payload): Json<CreateConnectionRequest>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -322,7 +322,7 @@ pub async fn update_connection(
 
 // Switch database for a saved connection (without changing other fields)
 pub async fn switch_database(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(payload): Json<SwitchDatabaseRequest>,
 ) -> impl IntoResponse {
@@ -338,7 +338,7 @@ pub async fn switch_database(
             .into_response();
     }
 
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -358,10 +358,10 @@ pub async fn switch_database(
 
 // Delete connection
 pub async fn delete_connection(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -386,10 +386,10 @@ struct TestConnectionResponse {
 
 // Test connection
 pub async fn test_connection(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Json(payload): Json<CreateConnectionRequest>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -510,10 +510,10 @@ pub async fn test_connection(
 
 // Test existing connection by ID (without exposing password)
 pub async fn test_connection_by_id(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(service) => service,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -598,10 +598,10 @@ pub async fn test_connection_by_id(
 
 /// Get database version for a connection by ID
 pub async fn get_connection_version(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let service = match ConnectionService::new(db) {
+    let service = match ConnectionService::new(state.db.clone()) {
         Ok(s) => s,
         Err(e) => {
             tracing::error!("Failed to create ConnectionService: {}", e);
@@ -691,10 +691,10 @@ pub async fn get_connection_version(
 }
 
 pub async fn list_sessions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let result = ConnectionService::new(db)
+    let result = ConnectionService::new(state.db.clone())
         .expect("Failed to create connection service")
         .get_active_sessions(id)
         .await;
@@ -713,10 +713,10 @@ pub async fn list_sessions(
 }
 
 pub async fn kill_session(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path((id, pid)): Path<(Uuid, i32)>,
 ) -> impl IntoResponse {
-    let result = ConnectionService::new(db)
+    let result = ConnectionService::new(state.db.clone())
         .expect("Failed to create connection service")
         .kill_session(id, pid)
         .await;

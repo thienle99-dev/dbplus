@@ -1,10 +1,10 @@
+use crate::app_state::AppState;
 use crate::services::mock_data::generator::GenerationConfig;
 use crate::services::mock_data::service::MockDataService;
 use axum::{
     extract::{Json, State},
     response::IntoResponse,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -15,10 +15,10 @@ pub struct MockDataRequest {
 }
 
 pub async fn preview_mock_data(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Json(payload): Json<MockDataRequest>,
 ) -> impl IntoResponse {
-    let service = MockDataService::new(db);
+    let service = MockDataService::new(state.db.clone());
 
     match service
         .preview_data(payload.connection_id, payload.config)
@@ -30,10 +30,10 @@ pub async fn preview_mock_data(
 }
 
 pub async fn generate_mock_data_sql(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Json(payload): Json<MockDataRequest>,
 ) -> impl IntoResponse {
-    let service = MockDataService::new(db);
+    let service = MockDataService::new(state.db.clone());
 
     match service
         .generate_sql_insert(payload.connection_id, payload.config)

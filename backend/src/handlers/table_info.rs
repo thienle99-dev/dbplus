@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::services::connection_service::ConnectionService;
 use axum::{
     extract::{Path, Query, State},
@@ -6,7 +7,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
@@ -35,7 +35,7 @@ pub struct SetTablePermissionsBody {
 
 // Get table constraints (foreign keys, check constraints, unique constraints)
 pub async fn get_table_constraints(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -47,9 +47,11 @@ pub async fn get_table_constraints(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_table_constraints(connection_id, &params.schema, &params.table)
         .await
@@ -72,7 +74,7 @@ pub async fn get_table_constraints(
 
 // Get table statistics (row count, sizes, timestamps)
 pub async fn get_table_statistics(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -84,9 +86,11 @@ pub async fn get_table_statistics(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_table_statistics(connection_id, &params.schema, &params.table)
         .await
@@ -108,7 +112,7 @@ pub async fn get_table_statistics(
 
 // Get table indexes
 pub async fn get_table_indexes(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -120,9 +124,11 @@ pub async fn get_table_indexes(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_table_indexes(connection_id, &params.schema, &params.table)
         .await
@@ -143,7 +149,7 @@ pub async fn get_table_indexes(
 
 // Get table triggers
 pub async fn get_table_triggers(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -155,9 +161,11 @@ pub async fn get_table_triggers(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
     match service
         .get_table_triggers(connection_id, &params.schema, &params.table)
         .await
@@ -178,7 +186,7 @@ pub async fn get_table_triggers(
 
 // Get table comment
 pub async fn get_table_comment(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -190,9 +198,11 @@ pub async fn get_table_comment(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_table_comment(connection_id, &params.schema, &params.table)
@@ -201,7 +211,9 @@ pub async fn get_table_comment(
         Ok(comment) => (StatusCode::OK, Json(comment)).into_response(),
         Err(e) => {
             let msg = e.to_string();
-            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
                 StatusCode::BAD_REQUEST
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -213,7 +225,7 @@ pub async fn get_table_comment(
 
 // Set table comment (comment=null clears)
 pub async fn set_table_comment(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(body): Json<SetTableCommentBody>,
@@ -225,9 +237,11 @@ pub async fn set_table_comment(
         body.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .set_table_comment(connection_id, &body.schema, &body.table, body.comment)
@@ -236,7 +250,9 @@ pub async fn set_table_comment(
         Ok(()) => (StatusCode::OK, Json(json!({ "success": true }))).into_response(),
         Err(e) => {
             let msg = e.to_string();
-            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
                 StatusCode::BAD_REQUEST
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -248,7 +264,7 @@ pub async fn set_table_comment(
 
 // Get table permissions/grants
 pub async fn get_table_permissions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -260,9 +276,11 @@ pub async fn get_table_permissions(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_table_permissions(connection_id, &params.schema, &params.table)
@@ -271,7 +289,9 @@ pub async fn get_table_permissions(
         Ok(grants) => (StatusCode::OK, Json(grants)).into_response(),
         Err(e) => {
             let msg = e.to_string();
-            let status = if msg.to_lowercase().contains("not supported") || msg.to_lowercase().contains("unsupported") {
+            let status = if msg.to_lowercase().contains("not supported")
+                || msg.to_lowercase().contains("unsupported")
+            {
                 StatusCode::BAD_REQUEST
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -283,7 +303,7 @@ pub async fn get_table_permissions(
 
 // Get table dependencies (views, routines, referencing foreign keys)
 pub async fn get_table_dependencies(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -295,9 +315,11 @@ pub async fn get_table_dependencies(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_table_dependencies(connection_id, &params.schema, &params.table)
@@ -320,7 +342,7 @@ pub async fn get_table_dependencies(
 
 // Get storage & bloat info
 pub async fn get_storage_bloat_info(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -332,9 +354,11 @@ pub async fn get_storage_bloat_info(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_storage_bloat_info(connection_id, &params.schema, &params.table)
@@ -357,7 +381,7 @@ pub async fn get_storage_bloat_info(
 
 // Get partition information
 pub async fn get_partitions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -369,9 +393,11 @@ pub async fn get_partitions(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_partitions(connection_id, &params.schema, &params.table)
@@ -394,15 +420,17 @@ pub async fn get_partitions(
 
 // List roles/users (Postgres)
 pub async fn list_roles(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
 ) -> impl IntoResponse {
     tracing::info!("[API] GET /roles - connection_id: {}", connection_id);
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service.list_roles(connection_id).await {
         Ok(roles) => (StatusCode::OK, Json(roles)).into_response(),
@@ -422,7 +450,7 @@ pub async fn list_roles(
 
 // Set table permissions (overwrites explicit grants for that grantee on the table)
 pub async fn set_table_permissions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Json(body): Json<SetTablePermissionsBody>,
@@ -435,9 +463,11 @@ pub async fn set_table_permissions(
         body.grantee
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .set_table_permissions(
@@ -478,7 +508,7 @@ pub struct FunctionPermissionParams {
 
 // Get schema permissions
 pub async fn get_schema_permissions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<SchemaPermissionParams>,
@@ -489,9 +519,11 @@ pub async fn get_schema_permissions(
         params.schema
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_schema_permissions(connection_id, &params.schema)
@@ -514,7 +546,7 @@ pub async fn get_schema_permissions(
 
 // Get function permissions
 pub async fn get_function_permissions(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<FunctionPermissionParams>,
@@ -526,9 +558,11 @@ pub async fn get_function_permissions(
         params.function
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .get_function_permissions(connection_id, &params.schema, &params.function)
@@ -551,7 +585,7 @@ pub async fn get_function_permissions(
 
 // Check for FK orphans
 pub async fn get_fk_orphans(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Path(connection_id): Path<Uuid>,
     Query(params): Query<TableParams>,
@@ -563,9 +597,11 @@ pub async fn get_fk_orphans(
         params.table
     );
 
-    let service = ConnectionService::new(db)
+    let service = ConnectionService::new(state.db.clone())
         .expect("Failed to create service")
-        .with_database_override(crate::utils::request::database_override_from_headers(&headers));
+        .with_database_override(crate::utils::request::database_override_from_headers(
+            &headers,
+        ));
 
     match service
         .detect_fk_orphans(connection_id, &params.schema, &params.table)
@@ -581,7 +617,7 @@ pub async fn get_fk_orphans(
         Err(e) => {
             tracing::error!("[API] GET /health/orphans - ERROR: {}", e);
             let msg = e.to_string();
-             let status = if msg.to_lowercase().contains("not supported")
+            let status = if msg.to_lowercase().contains("not supported")
                 || msg.to_lowercase().contains("unsupported")
             {
                 StatusCode::BAD_REQUEST
