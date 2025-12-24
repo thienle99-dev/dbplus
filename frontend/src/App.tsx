@@ -1,7 +1,10 @@
 import { Routes, Route, useParams } from 'react-router-dom';
 import { WifiOff, RotateCcw, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { ConnectionsDashboard } from './components/connections/ConnectionsDashboard';
+import { MainLayout } from './components/MainLayout';
+import { HomeDashboard } from './components/HomeDashboard';
+import { ConnectionsView } from './components/ConnectionsView';
+import { GlobalQueriesView } from './components/GlobalQueriesView';
 import Sidebar from './components/Sidebar';
 import TableDataView from './components/TableDataView';
 import QueryTabs from './components/QueryTabs';
@@ -201,7 +204,14 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<ConnectionsDashboard />} />
+        {/* Global Layout (Home, Connections, Settings) */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomeDashboard />} />
+          <Route path="/connections" element={<ConnectionsView />} />
+          <Route path="/queries" element={<GlobalQueriesView />} />
+        </Route>
+
+        {/* Workspace Layout (Active Connection) */}
         <Route path="/workspace/:connectionId/*" element={<WorkspacePage />} />
       </Routes>
     </>

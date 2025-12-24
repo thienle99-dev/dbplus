@@ -135,8 +135,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         }
 
         return (
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-[var(--color-primary-transparent)] flex items-center justify-center p-2 shadow-[0_0_15px_var(--color-primary-transparent)] ring-1 ring-white/10 group-hover:bg-[var(--color-primary-transparent)] transition-all duration-300">
-                <IconComponent className="w-full h-full text-[var(--color-primary-default)] drop-shadow-[0_0_6px_var(--color-primary-transparent)]" />
+            <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-[var(--color-primary-transparent)] flex items-center justify-center p-2 shadow-sm ring-1 ring-border-light group-hover:bg-[var(--color-primary-transparent)] transition-all duration-300">
+                <IconComponent className="w-full h-full text-[var(--color-primary-default)]" />
             </div>
         );
     };
@@ -144,7 +144,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="group relative flex items-center gap-3 p-3 rounded-2xl glass hover:bg-white/[0.05] cursor-pointer transition-all duration-500 hover:scale-[1.01] hover:shadow-lg hover:shadow-[var(--color-primary-transparent)] ring-1 ring-white/5 overflow-hidden"
+                className="group relative flex items-center gap-3 p-2.5 rounded-xl glass hover:bg-bg-hover cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md ring-1 ring-border-light overflow-hidden bg-bg-panel"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
@@ -153,7 +153,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                 {/* Info Section */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h3 className="text-sm font-bold text-white tracking-tight truncate group-hover:text-indigo-300 transition-colors">
+                    <h3 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-[var(--color-primary-default)] transition-colors">
                         {connection.name}
                     </h3>
 

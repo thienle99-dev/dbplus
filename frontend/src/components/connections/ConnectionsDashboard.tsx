@@ -58,6 +58,11 @@ export const ConnectionsDashboard: React.FC = () => {
         onRestore={() => setDataToolsMode('restore')}
         onCreate={() => setIsDbSelectorOpen(true)}
         onSettings={() => setIsSettingsOpen(true)}
+        onNavigate={(tab) => {
+          if (tab === 'dashboard') navigate('/');
+          if (tab === 'connections') navigate('/');
+          if (tab === 'queries') navigate('/queries'); // Assuming a global queries route exists or placeholder
+        }}
       />
 
       {/* Main Content Area */}

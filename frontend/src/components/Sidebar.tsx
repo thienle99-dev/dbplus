@@ -110,12 +110,12 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-white/5 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-30 backdrop-blur-xl"
+      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-30 backdrop-blur-xl"
       style={{ width: `${sidebarWidth}px` }}
       data-tauri-drag-region
     >
       {/* Vertical Workspace Tabs Rail */}
-      <div className="w-[60px] border-r border-white/5 bg-black/10 flex flex-col items-center py-3 gap-2">
+      <div className="w-[60px] border-r border-border-light bg-bg-sunken flex flex-col items-center py-3 gap-2">
         <button
           onClick={() => navigate('/')}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${location.pathname === '/'
@@ -190,13 +190,29 @@ export default function Sidebar() {
           })}
         </div>
 
-        <div className="p-1 pt-2 border-t border-border-light w-full flex justify-center">
+        <div className="p-1 pt-2 border-t border-border-light w-full flex flex-col items-center gap-2 mt-auto">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
             className="w-10 h-10 rounded-xl border border-border-light bg-bg-1 text-text-secondary hover:text-accent hover:border-accent hover:bg-bg-0 transition-all flex items-center justify-center shadow-sm"
             title="Open connection/database (Cmd+K)"
           >
             <span className="text-lg leading-none pb-0.5">+</span>
+          </button>
+
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-10 h-10 rounded-xl border border-transparent hover:bg-bg-0 text-text-secondary hover:text-primary transition-all flex items-center justify-center"
+            title="Settings"
+          >
+            <Settings size={20} />
+          </button>
+
+          <button
+            onClick={() => navigate('/')}
+            className="w-10 h-10 rounded-xl border border-transparent hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition-all flex items-center justify-center"
+            title="Disconnect"
+          >
+            <LogOut size={20} />
           </button>
         </div>
       </div>
@@ -269,8 +285,8 @@ export default function Sidebar() {
           <div className="flex bg-bg-2 p-1 rounded-xl border border-border-light">
             <button
               onClick={() => setActiveTab('items')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'items'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'items'
+                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="Explorer"
@@ -280,8 +296,8 @@ export default function Sidebar() {
             </button>
             <button
               onClick={() => setActiveTab('queries')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'queries'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'queries'
+                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="Saved Queries"
@@ -291,8 +307,8 @@ export default function Sidebar() {
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === 'history'
-                ? 'bg-bg-0 text-text-primary shadow-sm ring-1 ring-border-subtle'
+              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'history'
+                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}
               title="History"
@@ -364,23 +380,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-white/5 space-y-1 bg-white/5 glass z-10 mx-2 mb-2 rounded-2xl">
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-text-secondary hover:text-white transition-all uppercase tracking-widest ring-1 ring-white/5"
-          >
-            <Settings size={14} />
-            Settings
-          </button>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-xs font-bold text-text-secondary transition-all uppercase tracking-widest"
-          >
-            <LogOut size={14} />
-            Disconnect
-          </button>
-        </div>
+
 
         <SettingsModal
           isOpen={isSettingsOpen}

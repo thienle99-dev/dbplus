@@ -23,36 +23,45 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_schemas(&self) -> Result<Vec<String>> {
-        let bucket_name = match &self.bucket_name {
-            Some(name) => name,
-            None => return Ok(vec![]),
-        };
-        let bucket = self.cluster.bucket(bucket_name);
-        let mgr = bucket.collections();
-        let scopes = mgr
-            .get_all_scopes(None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
-        Ok(scopes.iter().map(|s| s.name().to_string()).collect())
+        if let Some(bucket_name) = &self.bucket_name {
+            let bucket = self.cluster.bucket(bucket_name);
+            let mgr = bucket.collections();
+            let scopes = mgr
+                .get_all_scopes(None)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
+            Ok(scopes.iter().map(|s| s.name().to_string()).collect())
+        } else {
+            // If no bucket selected, list buckets as "schemas"
+            let mgr = self.cluster.buckets();
+            let buckets = mgr.get_all_buckets(None).await?;
+            Ok(buckets.iter().map(|b| b.name.clone()).collect())
+        }
     }
 
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>> {
-        let bucket_name = match &self.bucket_name {
-            Some(name) => name,
-            None => return Ok(vec![]),
+        let (bucket_name, scope_name) = if let Some(bn) = &self.bucket_name {
+            (bn.as_str(), schema)
+        } else {
+            // If no bucket currently selected, treat 'schema' arg as the bucket name
+            // and default to listing collections in '_default' scope
+            (schema, "_default")
         };
+
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        let scopes = mgr
-            .get_all_scopes(None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
+
+        // We need to check if the bucket exists and get its scopes
+        // If getting scopes fails, it might mean the bucket doesn't exist or is unreachable
+        let scopes = mgr.get_all_scopes(None).await.map_err(|e| {
+            anyhow::anyhow!("Failed to list scopes for bucket {}: {}", bucket_name, e)
+        })?;
 
         let mut tables = Vec::new();
-        if let Some(scope) = scopes.iter().find(|s| s.name() == schema) {
+        if let Some(scope) = scopes.iter().find(|s| s.name() == scope_name) {
             for col in scope.collections() {
                 tables.push(TableInfo {
-                    schema: schema.to_string(),
+                    schema: schema.to_string(), // Keep original schema arg references
                     name: col.name().to_string(),
                     table_type: "COLLECTION".to_string(),
                 });
@@ -62,13 +71,15 @@ impl SchemaIntrospection for CouchbaseDriver {
     }
 
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<TableColumn>> {
-        let bucket = match &self.bucket_name {
-            Some(name) => name,
-            None => return Ok(vec![]),
+        let (bucket_name, _scope_name) = if let Some(bn) = &self.bucket_name {
+            (bn.as_str(), schema)
+        } else {
+            (schema, "_default")
         };
+
         let query = format!(
             "SELECT * FROM `{}`.`{}`.`{}` LIMIT 1",
-            bucket, schema, table
+            bucket_name, _scope_name, table
         );
 
         let driver_query =

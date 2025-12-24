@@ -4,7 +4,6 @@ import { DatabaseSelectorModalProps } from '../../types';
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
 import { PostgresIcon, MysqlIcon, ClickHouseIcon, SqliteIcon, MongoIcon, RedisIcon, AmazonRedshiftIcon, MariaDBIcon, SQLServerIcon, CassandraIcon, BigQueryIcon, LibSQLIcon, DuckDBIcon, OracleIcon, CockroachDBIcon, SnowflakeIcon, CouchbaseIcon, TiDBIcon } from '../icons/DatabaseIcons';
 import Modal from '../ui/Modal';
-import Input from '../ui/Input';
 import Button from '../ui/Button';
 
 export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ isOpen, onClose, onSelect }) => {
@@ -23,20 +22,27 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
     };
 
     const footer = (
-        <div className="flex w-full items-center justify-between">
-            <Button variant="secondary" onClick={onClose}>
+        <div className="flex w-full items-center justify-between px-2">
+            <button
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-full bg-bg-2 hover:bg-bg-3 font-semibold text-text-secondary transition-colors text-sm"
+            >
                 Cancel
-            </Button>
-            <div className="flex gap-2">
-                <Button variant="secondary">Import from URL</Button>
-                <Button variant="secondary">New Group</Button>
-                <Button
-                    variant="primary"
+            </button>
+            <div className="flex gap-3">
+                <button className="px-5 py-2.5 rounded-full bg-bg-2 hover:bg-bg-3 font-semibold text-text-secondary transition-colors text-sm">
+                    Import from URL
+                </button>
+                <button className="px-5 py-2.5 rounded-full bg-bg-2 hover:bg-bg-3 font-semibold text-text-secondary transition-colors text-sm">
+                    New Group
+                </button>
+                <button
                     onClick={handleSelect}
                     disabled={!selectedDb || !DATABASE_TYPES.find((db) => db.id === selectedDb)?.isAvailable}
+                    className="px-8 py-2.5 rounded-full bg-[var(--color-primary-default)] hover:opacity-90 text-white font-bold transition-all text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Create
-                </Button>
+                </button>
             </div>
         </div>
     );
@@ -45,53 +51,33 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Select Connection Type"
+            title=""
             size="xl"
             footer={footer}
+            className="bg-white" // Force white background for this specific modal style
         >
-            <div className="space-y-6">
-                {/* Search */}
-                <Input
-                    leftIcon={<Search size={16} />}
-                    placeholder="Search for connection... (⌘F)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                />
+            <div className="space-y-8 pt-2">
+                {/* Search Pill */}
+                <div className="relative group mx-1">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-text-disabled group-focus-within:text-[var(--color-primary-default)] transition-colors" size={20} />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search for connection... (⌘F)"
+                        autoFocus
+                        className="w-full bg-black/5 hover:bg-black/[0.07] focus:bg-white border-2 border-transparent focus:border-[var(--color-primary-default)] rounded-full py-3.5 pl-14 pr-6 text-[15px] font-medium text-text-primary placeholder:text-text-disabled outline-none transition-all"
+                    />
+                </div>
 
                 {/* Database Grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-5 p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
                     {filteredDatabases.map((db) => {
                         const isSelected = selectedDb === db.id;
                         const isDisabled = !db.isAvailable;
 
-                        // Function to get distinct background color for each DB type
-                        const getBrandColor = (id: string) => {
-                            switch (id) {
-                                case 'postgres': return 'bg-[#fff]'; // Postgres Blue
-                                case 'mysql': return 'bg-[#fff]';    // MySQL Blue
-                                case 'mariadb': return 'bg-[#fff]';  // MariaDB Brown
-                                case 'sqlite': return 'bg-[#fff]';   // SQLite Dark Blue
-                                case 'mongo': return 'bg-[#fff]';    // Mongo Green
-                                case 'redis': return 'bg-[#fff]';    // Redis Red
-                                case 'sqlserver': return 'bg-[#fff]'; // SQL Server Red
-                                case 'oracle': return 'bg-[#fff]';   // Oracle Red
-                                case 'cockroach': return 'bg-[#fff]'; // Cockroach Purple
-                                case 'cassandra': return 'bg-[#fff]'; // Cassandra Blue
-                                case 'clickhouse': return 'bg-[#fff]'; // ClickHouse Yellow
-                                case 'snowflake': return 'bg-[#fff]'; // Snowflake Blue
-                                case 'redshift': return 'bg-[#fff]';  // Redshift Cyan (Simulated)
-                                case 'bigquery': return 'bg-[#fff]';  // Google Blue
-                                case 'duckdb': return 'bg-[#fff]';    // DuckDB Yellow
-                                case 'tidb': return 'bg-[#fff]';      // TiDB dark
-                                default: return 'bg-gray-600';
-                            }
-                        };
-
                         const renderIcon = () => {
-                            const className = "w-full h-full object-contain p-2"; // Add padding to keep logo safe zone
-                            // For icons on colored backgrounds, we might want to ensure they look good.
-                            // Most logos are fine on their brand.
+                            const className = "w-full h-full object-contain p-3";
                             switch (db.id) {
                                 case 'postgres': return <PostgresIcon className={className} />;
                                 case 'redshift': return <AmazonRedshiftIcon className={className} />;
@@ -115,9 +101,6 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                             }
                         };
 
-                        const Icon = renderIcon();
-                        const brandBg = getBrandColor(db.id);
-
                         return (
                             <button
                                 key={db.id}
@@ -127,47 +110,27 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                     }
                                 }}
                                 disabled={isDisabled}
-                                title={isDisabled ? `${db.name} - Coming Soon` : db.name}
                                 className={`
-                                    group flex flex-col items-center gap-4 p-4 rounded-2xl transition-all relative outline-none glass border border-white/5
+                                    group flex flex-col items-center gap-4 p-6 rounded-[20px] transition-all relative outline-none
                                     ${isSelected && db.isAvailable
-                                        ? 'bg-[var(--color-primary-transparent)] shadow-2xl shadow-[var(--color-primary-transparent)]/20 scale-105 z-10 ring-2 ring-[var(--color-primary-default)]/40'
-                                        : 'bg-white/5 shadow-sm hover:shadow-xl hover:bg-white/10 hover:border-white/10'
+                                        ? 'bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] scale-105 z-10 ring-2 ring-[var(--color-primary-default)]'
+                                        : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-1'
                                     }
-                                    ${isDisabled
-                                        ? 'opacity-30 grayscale cursor-not-allowed'
-                                        : 'cursor-pointer animate-in fade-in zoom-in duration-300'
-                                    }
+                                    ${isDisabled ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}
                                 `}
                             >
-                                {/* Icon Container with Specific Brand Color */}
-                                <div className={`w-14 h-14 rounded-2xl ${brandBg} flex items-center justify-center shadow-inner ring-1 ring-black/5 group-hover:scale-105 transition-transform duration-200`}>
-                                    {/* For some logos, we might want a white circle BEHIND them if they clash? 
-                                        Most brand logos work on their brand color if they are white variants.
-                                        But our icons are full color PNGs. 
-                                        Putting a full color PNG on a brand color background might be bad (e.g. Orange Logo on Orange BG). 
-                                        
-                                        User asked for 'background màu đặc trưng' (Specific Color Background).
-                                        TablePlus usually puts a White/Light Logo on Brand Color Background.
-                                        If our icons are colored, we might need a white container inside?
-                                        OR we trust the transparent PNGs to look okay.
-                                        
-                                        Let's stick to the user Request: "Add background distinctive color".
-                                    */}
-                                    <div className="w-full h-full p-0 drop-shadow-sm">
-                                        {Icon ? Icon : <span className="text-black text-lg font-bold">{db.abbreviation}</span>}
-                                    </div>
+                                {/* Icon Container */}
+                                <div className="w-16 h-16 flex items-center justify-center">
+                                    {renderIcon() || <span className="text-2xl font-black">{db.abbreviation}</span>}
                                 </div>
+
                                 {/* Label */}
-                                <span className={`text-[10px] font-black uppercase tracking-[0.1em] text-center transition-colors ${isSelected ? 'text-[var(--color-primary-default)]' : 'text-text-secondary group-hover:text-text-primary'}`}>
+                                <span className={`text-[11px] font-black uppercase tracking-widest text-center transition-colors ${isSelected ? 'text-[var(--color-primary-default)]' : 'text-text-secondary group-hover:text-text-primary'}`}>
                                     {db.name}
                                 </span>
 
                                 {isDisabled && (
-                                    <span className="absolute top-2 right-2 flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-border opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-border"></span>
-                                    </span>
+                                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-slate-200" />
                                 )}
                             </button>
                         );
