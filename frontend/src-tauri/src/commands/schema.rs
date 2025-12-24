@@ -31,17 +31,7 @@ pub async fn schema_list_schemas(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    driver.list_schemas()
+    conn_service.get_schemas(uuid)
         .await
         .map_err(|e| e.to_string())
 }
@@ -59,17 +49,7 @@ pub async fn schema_list_tables(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let tables = driver.list_tables(&schema)
+    let tables = conn_service.get_tables(uuid, &schema)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -79,7 +59,7 @@ pub async fn schema_list_tables(
         .map(|t| TableRef {
             schema: schema.clone(),
             name: t.name,
-            table_type: t.table_type.unwrap_or_else(|| "TABLE".to_string()),
+            table_type: t.table_type,
         })
         .collect();
 
@@ -100,17 +80,7 @@ pub async fn schema_get_columns(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let columns = driver.list_columns(&schema, &table)
+    let columns = conn_service.get_columns(uuid, &schema, &table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -121,8 +91,8 @@ pub async fn schema_get_columns(
             name: c.name,
             data_type: c.data_type,
             is_nullable: c.is_nullable,
-            is_primary_key: c.is_primary_key.unwrap_or(false),
-            is_foreign_key: c.is_foreign_key.unwrap_or(false),
+            is_primary_key: c.is_primary_key,
+            is_foreign_key: c.is_foreign_key,
             default_value: c.default_value,
         })
         .collect();
@@ -143,17 +113,7 @@ pub async fn schema_list_functions(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let result = driver.list_functions(&schema)
+    let result = conn_service.list_functions(uuid, &schema)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -173,17 +133,7 @@ pub async fn schema_list_views(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let result = driver.list_views(&schema)
+    let result = conn_service.list_views(uuid, &schema)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -204,17 +154,7 @@ pub async fn schema_get_view_definition(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    driver.get_view_definition(&schema, &view)
+    conn_service.get_view_definition(uuid, &schema, &view)
         .await
         .map_err(|e| e.to_string())
 }
@@ -233,17 +173,7 @@ pub async fn schema_get_function_definition(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    driver.get_function_definition(&schema, &function)
+    conn_service.get_function_definition(uuid, &schema, &function)
         .await
         .map_err(|e| e.to_string())
 }
@@ -261,17 +191,7 @@ pub async fn schema_get_schema_foreign_keys(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let result = driver.get_schema_foreign_keys(&schema)
+    let result = conn_service.get_schema_foreign_keys(uuid, &schema)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -290,22 +210,13 @@ pub async fn schema_list_schema_metadata(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
+    let metadata = conn_service.get_schema_metadata(uuid, &schema)
         .await
         .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // This usually returns a summary of the schema
-    let tables = driver.list_tables(&schema).await.map_err(|e| e.to_string())?;
     
     Ok(serde_json::json!({
         "schema": schema,
-        "table_count": tables.len(),
-        "tables": tables
+        "table_count": metadata.len(),
+        "tables": metadata
     }))
 }

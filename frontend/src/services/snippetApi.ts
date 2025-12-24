@@ -1,23 +1,23 @@
-import { invoke } from '@tauri-apps/api/core';
+import api from './api';
 import { QuerySnippet, CreateSnippetParams, UpdateSnippetParams } from '../types/snippet';
 
 export const snippetApi = {
     getSnippets: async (): Promise<QuerySnippet[]> => {
-        return await invoke('list_snippets');
+        const { data } = await api.get<QuerySnippet[]>('/api/snippets');
+        return data;
     },
 
     createSnippet: async (params: CreateSnippetParams): Promise<QuerySnippet> => {
-        return await invoke('create_snippet', { request: params });
+        const { data } = await api.post<QuerySnippet>('/api/snippets', params);
+        return data;
     },
 
     updateSnippet: async (id: string, params: UpdateSnippetParams): Promise<QuerySnippet> => {
-        return await invoke('update_snippet', { 
-            id: parseInt(id), 
-            request: params 
-        });
+        const { data } = await api.put<QuerySnippet>(`/api/snippets/${id}`, params);
+        return data;
     },
 
     deleteSnippet: async (id: string): Promise<void> => {
-        await invoke('delete_snippet', { id: parseInt(id) });
+        await api.delete(`/api/snippets/${id}`);
     },
 };

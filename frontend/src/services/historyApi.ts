@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import api from './api';
 
 export interface QueryHistoryEntry {
     id: string;
@@ -25,9 +25,8 @@ export interface AddHistoryRequest {
 
 export const historyApi = {
     async getHistory(connectionId: string, limit = 100): Promise<HistoryResponse> {
-        const history = await invoke<QueryHistoryEntry[]>('get_history', {
-            connectionId,
-            limit
+        const { data: history } = await api.get<QueryHistoryEntry[]>(`/api/connections/${connectionId}/history`, {
+            params: { limit }
         });
         
         return { history };
@@ -37,18 +36,16 @@ export const historyApi = {
         connectionId: string,
         entry: AddHistoryRequest
     ): Promise<QueryHistoryEntry> {
-        return await invoke('add_history', {
-            connectionId,
-            request: {
-                query: entry.sql,
-                execution_time_ms: entry.execution_time,
-                status: entry.success ? 'success' : 'error',
-                error_message: entry.error_message
-            }
+        const { data } = await api.post<QueryHistoryEntry>(`/api/connections/${connectionId}/history`, {
+            query: entry.sql,
+            execution_time_ms: entry.execution_time,
+            status: entry.success ? 'success' : 'error',
+            error_message: entry.error_message
         });
+        return data;
     },
 
     async clearHistory(connectionId: string): Promise<void> {
-        await invoke('clear_history', { connectionId });
+        await api.delete(`/api/connections/${connectionId}/history`);
     },
 };

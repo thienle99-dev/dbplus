@@ -20,18 +20,7 @@ pub async fn search_objects(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::SearchDriver;
-    let result = driver.search(&request.query)
+    let result = conn_service.search_objects(uuid, &request.query)
         .await
         .map_err(|e| e.to_string())?;
 

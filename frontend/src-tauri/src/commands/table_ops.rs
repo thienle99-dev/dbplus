@@ -15,7 +15,6 @@ pub struct ColumnDefinition {
     pub name: String,
     pub data_type: String,
     pub is_nullable: bool,
-    pub is_primary_key: Option<bool>,
     pub default_value: Option<String>,
 }
 
@@ -59,20 +58,9 @@ pub async fn create_table(
     request: CreateTableRequest,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
         .map_err(|e| e.to_string())?;
 
     // Convert to backend column definition
@@ -81,12 +69,11 @@ pub async fn create_table(
             name: c.name,
             data_type: c.data_type,
             is_nullable: c.is_nullable,
-            is_primary_key: c.is_primary_key,
             default_value: c.default_value,
         }
     }).collect();
 
-    driver.create_table(&request.schema, &request.table_name, &columns)
+    conn_service.create_table(uuid, &request.schema, &request.table_name)
         .await
         .map_err(|e| e.to_string())
 }
@@ -98,23 +85,12 @@ pub async fn drop_table(
     request: DropTableRequest,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    driver.drop_table(&request.schema, &request.table_name)
+    conn_service.drop_table(uuid, &request.schema, &request.table_name)
         .await
         .map_err(|e| e.to_string())
 }
@@ -126,31 +102,19 @@ pub async fn add_column(
     request: AddColumnRequest,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
         .map_err(|e| e.to_string())?;
 
     let column_def = dbplus_backend::services::db_driver::ColumnDefinition {
         name: request.column_name,
         data_type: request.data_type,
         is_nullable: request.is_nullable,
-        is_primary_key: None,
         default_value: request.default_value,
     };
 
-    driver.add_column(&request.schema, &request.table, &column_def)
+    conn_service.add_column(uuid, &request.schema, &request.table, column_def)
         .await
         .map_err(|e| e.to_string())
 }
@@ -162,23 +126,12 @@ pub async fn drop_column(
     request: DropColumnRequest,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    driver.drop_column(&request.schema, &request.table, &request.column_name)
+    conn_service.drop_column(uuid, &request.schema, &request.table, &request.column_name)
         .await
         .map_err(|e| e.to_string())
 }
@@ -190,24 +143,12 @@ pub async fn create_schema(
     schema_name: String,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let sql = format!("CREATE SCHEMA {}", schema_name);
-    driver.query(&sql)
+    conn_service.create_schema(uuid, &schema_name)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -221,24 +162,12 @@ pub async fn drop_schema(
     schema_name: String,
 ) -> Result<(), String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let sql = format!("DROP SCHEMA {} CASCADE", schema_name);
-    driver.query(&sql)
+    conn_service.drop_schema(uuid, &schema_name)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -260,31 +189,15 @@ pub async fn get_table_data(
     request: GetTableDataRequest,
 ) -> Result<serde_json::Value, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
     let limit = request.limit.unwrap_or(100);
     let offset = request.offset.unwrap_or(0);
-    
-    let sql = format!(
-        "SELECT * FROM {}.{} LIMIT {} OFFSET {}",
-        request.schema, request.table, limit, offset
-    );
 
-    let result = driver.query(&sql)
+    let result = conn_service.get_table_data(uuid, &request.schema, &request.table, limit, offset)
         .await
         .map_err(|e| e.to_string())?;
 

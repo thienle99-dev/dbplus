@@ -5,12 +5,12 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SavedQuery {
-    pub id: i32,
+    pub id: String,
     pub connection_id: String,
     pub name: String,
     pub query: String,
     pub description: Option<String>,
-    pub folder_id: Option<i32>,
+    pub folder_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -20,7 +20,7 @@ pub struct CreateSavedQueryRequest {
     pub name: String,
     pub query: String,
     pub description: Option<String>,
-    pub folder_id: Option<i32>,
+    pub folder_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,7 +28,7 @@ pub struct UpdateSavedQueryRequest {
     pub name: String,
     pub query: String,
     pub description: Option<String>,
-    pub folder_id: Option<i32>,
+    pub folder_id: Option<String>,
 }
 
 #[tauri::command]
@@ -49,12 +49,12 @@ pub async fn list_saved_queries(
         .map_err(|e| e.to_string())?;
 
     Ok(queries.into_iter().map(|q| SavedQuery {
-        id: q.id,
+        id: q.id.to_string(),
         connection_id: q.connection_id.to_string(),
         name: q.name,
         query: q.query,
         description: q.description,
-        folder_id: q.folder_id,
+        folder_id: q.folder_id.map(|id| id.to_string()),
         created_at: q.created_at.to_string(),
         updated_at: q.updated_at.to_string(),
     }).collect())
@@ -72,13 +72,17 @@ pub async fn create_saved_query(
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
+    let folder_uuid = request.folder_id
+        .map(|id| Uuid::parse_str(&id).map_err(|e| e.to_string()))
+        .transpose()?;
+    
     let new_query = saved_query::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
         connection_id: Set(uuid),
         name: Set(request.name),
         query: Set(request.query),
         description: Set(request.description),
-        folder_id: Set(request.folder_id),
+        folder_id: Set(folder_uuid),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
     };
@@ -88,12 +92,12 @@ pub async fn create_saved_query(
         .map_err(|e| e.to_string())?;
 
     Ok(SavedQuery {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
         query: result.query,
         description: result.description,
-        folder_id: result.folder_id,
+        folder_id: result.folder_id.map(|id| id.to_string()),
         created_at: result.created_at.to_string(),
         updated_at: result.updated_at.to_string(),
     })
@@ -103,7 +107,7 @@ pub async fn create_saved_query(
 pub async fn update_saved_query(
     state: State<'_, AppState>,
     connection_id: String,
-    query_id: i32,
+    query_id: String,
     request: UpdateSavedQueryRequest,
 ) -> Result<SavedQuery, String> {
     use dbplus_backend::models::entities::saved_query;
@@ -111,19 +115,24 @@ pub async fn update_saved_query(
     use chrono::Utc;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let query_uuid = Uuid::parse_str(&query_id).map_err(|e| e.to_string())?;
     
-    let query = saved_query::Entity::find_by_id(query_id)
+    let query = saved_query::Entity::find_by_id(query_uuid)
         .filter(saved_query::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
         .map_err(|e| e.to_string())?
         .ok_or_else(|| "Saved query not found".to_string())?;
 
+    let folder_uuid = request.folder_id
+        .map(|id| Uuid::parse_str(&id).map_err(|e| e.to_string()))
+        .transpose()?;
+    
     let mut active: saved_query::ActiveModel = query.into();
     active.name = Set(request.name);
     active.query = Set(request.query);
     active.description = Set(request.description);
-    active.folder_id = Set(request.folder_id);
+    active.folder_id = Set(folder_uuid);
     active.updated_at = Set(Utc::now().into());
 
     let result = active.update(&state.db)
@@ -131,12 +140,12 @@ pub async fn update_saved_query(
         .map_err(|e| e.to_string())?;
 
     Ok(SavedQuery {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
         query: result.query,
         description: result.description,
-        folder_id: result.folder_id,
+        folder_id: result.folder_id.map(|id| id.to_string()),
         created_at: result.created_at.to_string(),
         updated_at: result.updated_at.to_string(),
     })
@@ -146,14 +155,15 @@ pub async fn update_saved_query(
 pub async fn delete_saved_query(
     state: State<'_, AppState>,
     connection_id: String,
-    query_id: i32,
+    query_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::saved_query;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let query_uuid = Uuid::parse_str(&query_id).map_err(|e| e.to_string())?;
     
-    let query = saved_query::Entity::find_by_id(query_id)
+    let query = saved_query::Entity::find_by_id(query_uuid)
         .filter(saved_query::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -170,7 +180,7 @@ pub async fn delete_saved_query(
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SavedQueryFolder {
-    pub id: i32,
+    pub id: String,
     pub connection_id: String,
     pub name: String,
     pub created_at: String,
@@ -205,7 +215,7 @@ pub async fn list_folders(
         .map_err(|e| e.to_string())?;
 
     Ok(folders.into_iter().map(|f| SavedQueryFolder {
-        id: f.id,
+        id: f.id.to_string(),
         connection_id: f.connection_id.to_string(),
         name: f.name,
         created_at: f.created_at.to_string(),
@@ -238,7 +248,7 @@ pub async fn create_folder(
         .map_err(|e| e.to_string())?;
 
     Ok(SavedQueryFolder {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
         created_at: result.created_at.to_string(),
@@ -250,7 +260,7 @@ pub async fn create_folder(
 pub async fn update_folder(
     state: State<'_, AppState>,
     connection_id: String,
-    folder_id: i32,
+    folder_id: String,
     request: UpdateFolderRequest,
 ) -> Result<SavedQueryFolder, String> {
     use dbplus_backend::models::entities::saved_query_folder;
@@ -258,8 +268,9 @@ pub async fn update_folder(
     use chrono::Utc;
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let folder_uuid = Uuid::parse_str(&folder_id).map_err(|e| e.to_string())?;
     
-    let folder = saved_query_folder::Entity::find_by_id(folder_id)
+    let folder = saved_query_folder::Entity::find_by_id(folder_uuid)
         .filter(saved_query_folder::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -275,7 +286,7 @@ pub async fn update_folder(
         .map_err(|e| e.to_string())?;
 
     Ok(SavedQueryFolder {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
         created_at: result.created_at.to_string(),
@@ -287,14 +298,15 @@ pub async fn update_folder(
 pub async fn delete_folder(
     state: State<'_, AppState>,
     connection_id: String,
-    folder_id: i32,
+    folder_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::saved_query_folder;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let folder_uuid = Uuid::parse_str(&folder_id).map_err(|e| e.to_string())?;
     
-    let folder = saved_query_folder::Entity::find_by_id(folder_id)
+    let folder = saved_query_folder::Entity::find_by_id(folder_uuid)
         .filter(saved_query_folder::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -311,19 +323,21 @@ pub async fn delete_folder(
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SavedFilter {
-    pub id: i32,
+    pub id: String,
     pub connection_id: String,
-    pub table_name: String,
-    pub filter_name: String,
-    pub filter_json: String,
+    pub schema: String,
+    pub table_ref: String,
+    pub name: String,
+    pub filter: String,
     pub created_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSavedFilterRequest {
-    pub table_name: String,
-    pub filter_name: String,
-    pub filter_json: String,
+    pub schema: String,
+    pub table_ref: String,
+    pub name: String,
+    pub filter: String,
 }
 
 #[tauri::command]
@@ -338,17 +352,18 @@ pub async fn list_saved_filters(
     
     let filters = saved_filter::Entity::find()
         .filter(saved_filter::Column::ConnectionId.eq(uuid))
-        .order_by_asc(saved_filter::Column::FilterName)
+        .order_by_asc(saved_filter::Column::Name)
         .all(&state.db)
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(filters.into_iter().map(|f| SavedFilter {
-        id: f.id,
+        id: f.id.to_string(),
         connection_id: f.connection_id.to_string(),
-        table_name: f.table_name,
-        filter_name: f.filter_name,
-        filter_json: f.filter_json,
+        schema: f.schema,
+        table_ref: f.table_ref,
+        name: f.name,
+        filter: f.filter,
         created_at: f.created_at.to_string(),
     }).collect())
 }
@@ -368,9 +383,10 @@ pub async fn create_saved_filter(
     let new_filter = saved_filter::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
         connection_id: Set(uuid),
-        table_name: Set(request.table_name),
-        filter_name: Set(request.filter_name),
-        filter_json: Set(request.filter_json),
+        schema: Set(request.schema),
+        table_ref: Set(request.table_ref),
+        name: Set(request.name),
+        filter: Set(request.filter),
         created_at: Set(Utc::now().into()),
     };
 
@@ -379,11 +395,12 @@ pub async fn create_saved_filter(
         .map_err(|e| e.to_string())?;
 
     Ok(SavedFilter {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
-        table_name: result.table_name,
-        filter_name: result.filter_name,
-        filter_json: result.filter_json,
+        schema: result.schema,
+        table_ref: result.table_ref,
+        name: result.name,
+        filter: result.filter,
         created_at: result.created_at.to_string(),
     })
 }
@@ -392,14 +409,15 @@ pub async fn create_saved_filter(
 pub async fn delete_saved_filter(
     state: State<'_, AppState>,
     connection_id: String,
-    filter_id: i32,
+    filter_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::saved_filter;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let filter_uuid = Uuid::parse_str(&filter_id).map_err(|e| e.to_string())?;
     
-    let filter = saved_filter::Entity::find_by_id(filter_id)
+    let filter = saved_filter::Entity::find_by_id(filter_uuid)
         .filter(saved_filter::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await

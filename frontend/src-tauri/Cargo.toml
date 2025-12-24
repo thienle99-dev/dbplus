@@ -27,11 +27,11 @@ reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 
 # Backend library
-dbplus_backend = { path = "../../../backend" }
+dbplus-backend = { path = "../../backend" }
 
 # Database dependencies (required by backend)
 sea-orm = { version = "0.12", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
-migration = { path = "../../../backend/migration" }
+migration = { path = "../../backend/migration" }
 uuid = { version = "1.0", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0"

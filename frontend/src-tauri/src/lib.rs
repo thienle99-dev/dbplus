@@ -1,5 +1,6 @@
 use tauri::Manager;
 
+#[path = "commands/mod.rs"]
 mod commands;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

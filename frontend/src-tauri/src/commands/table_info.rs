@@ -20,18 +20,7 @@ pub async fn get_table_constraints(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_constraints(&params.schema, &params.table)
+    let result = conn_service.get_table_constraints(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -48,18 +37,7 @@ pub async fn get_table_statistics(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_statistics(&params.schema, &params.table)
+    let result = conn_service.get_table_statistics(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -76,18 +54,7 @@ pub async fn get_table_indexes(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_indexes(&params.schema, &params.table)
+    let result = conn_service.get_table_indexes(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -104,18 +71,7 @@ pub async fn get_table_triggers(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_triggers(&params.schema, &params.table)
+    let result = conn_service.get_table_triggers(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -132,18 +88,7 @@ pub async fn get_table_comment(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_description(&params.schema, &params.table)
+    let result = conn_service.get_table_comment(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -162,18 +107,7 @@ pub async fn set_table_comment(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    driver.set_table_description(&schema, &table, comment)
+    conn_service.set_table_comment(uuid, &schema, &table, comment.as_deref())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -190,18 +124,7 @@ pub async fn get_table_permissions(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_permissions(&params.schema, &params.table)
+    let result = conn_service.get_table_permissions(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -218,18 +141,7 @@ pub async fn get_table_dependencies(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_table_dependencies(&params.schema, &params.table)
+    let result = conn_service.get_table_dependencies(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -246,18 +158,7 @@ pub async fn get_storage_bloat_info(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_storage_bloat_info(&params.schema, &params.table)
+    let result = conn_service.get_storage_bloat_info(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -274,18 +175,7 @@ pub async fn get_partitions(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_partitions(&params.schema, &params.table)
+    let result = conn_service.get_partitions(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -302,18 +192,7 @@ pub async fn get_fk_orphans(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_fk_orphans(&params.schema, &params.table)
+    let result = conn_service.detect_fk_orphans(uuid, &params.schema, &params.table)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -329,18 +208,7 @@ pub async fn list_roles(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.list_roles()
+    let result = conn_service.list_roles(uuid)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -362,18 +230,7 @@ pub async fn get_schema_permissions(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_schema_permissions(&params.schema)
+    let result = conn_service.get_schema_permissions(uuid, &params.schema)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -396,18 +253,7 @@ pub async fn get_function_permissions(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    use dbplus_backend::services::db_driver::TableMetadataDriver;
-    let result = driver.get_function_permissions(&params.schema, &params.function)
+    let result = conn_service.get_function_permissions(uuid, &params.schema, &params.function)
         .await
         .map_err(|e| e.to_string())?;
 

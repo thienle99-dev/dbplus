@@ -1,32 +1,34 @@
-import { invoke } from '@tauri-apps/api/core';
-import { SettingResponse, UpdateSettingRequest } from '../types/settings';
+import api from './api';
+import { SettingResponse } from '../types/settings';
 
 export const settingsApi = {
     // Get all settings
     getAllSettings: async (): Promise<SettingResponse[]> => {
-        return await invoke('get_all_settings');
+        const { data } = await api.get<SettingResponse[]>('/api/settings');
+        return data;
     },
 
     // Get a specific setting by key
     getSetting: async (key: string): Promise<SettingResponse> => {
-        return await invoke('get_setting', { key });
+        const { data } = await api.get<SettingResponse>(`/api/settings/${key}`);
+        return data;
     },
 
     // Update or create a setting
     updateSetting: async (key: string, value: any): Promise<SettingResponse> => {
-        return await invoke('update_setting', {
-            key,
-            request: { value: JSON.stringify(value) }
+        const { data } = await api.put<SettingResponse>(`/api/settings/${key}`, { 
+            value: JSON.stringify(value) 
         });
+        return data;
     },
 
     // Delete a setting
     deleteSetting: async (key: string): Promise<void> => {
-        await invoke('delete_setting', { key });
+        await api.delete(`/api/settings/${key}`);
     },
 
     // Reset all settings to defaults
     resetSettings: async (): Promise<void> => {
-        await invoke('reset_settings');
+        await api.post('/api/settings/reset');
     },
 };

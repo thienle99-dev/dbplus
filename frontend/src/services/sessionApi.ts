@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import api from './api';
 
 export interface SessionInfo {
     pid: number;
@@ -16,10 +16,11 @@ export interface SessionInfo {
 
 export const sessionApi = {
     getSessions: async (connectionId: string): Promise<SessionInfo[]> => {
-        return await invoke('list_sessions', { id: connectionId });
+        const { data } = await api.get<SessionInfo[]>(`/api/connections/${connectionId}/sessions`);
+        return data;
     },
     killSession: async (connectionId: string, pid: number): Promise<void> => {
-        await invoke('kill_session', { id: connectionId, pid });
+        await api.delete(`/api/connections/${connectionId}/sessions/${pid}`);
     },
 };
 
