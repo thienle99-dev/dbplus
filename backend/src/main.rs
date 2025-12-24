@@ -9,18 +9,13 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Router,
 };
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{Database, DatabaseConnection};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
-mod app_state;
-mod config;
-mod handlers;
-mod models;
-mod services;
-mod utils;
-use app_state::AppState;
+// Import from library
+use dbplus_backend::{init_app_state, init_database};
+
+mod routes;
 
 #[tokio::main]
 async fn main() {
@@ -40,19 +35,18 @@ async fn main() {
 
     // Database URL (SQLite)
     let database_url = format!("sqlite://{}?mode=rwc", db_path);
-    tracing::info!("Using database at: {}", database_url);
 
-    // Connect to database
-    let db: DatabaseConnection = Database::connect(database_url)
-        .await
-        .expect("Failed to connect to database");
+    // Initialize database and run migrations
+    let db = match init_database(&database_url).await {
+        Ok(db) => db,
+        Err(e) => {
+            tracing::error!("Failed to initialize database: {}", e);
+            return;
+        }
+    };
 
-    // Run migrations
-    Migrator::up(&db, None)
-        .await
-        .expect("Failed to run migrations");
-
-    let state = AppState::new(db);
+    // Initialize app state
+    let state = init_app_state(db);
 
     // build our application with a route
     let app = Router::new()

@@ -72,6 +72,10 @@ mongodb = "3.1.0"
 [workspace]
 members = [".", "migration"]
 
+[lib]
+name = "dbplus_backend"
+path = "src/lib.rs"
+
 # Windows-specific configuration to hide console window
 [[bin]]
 name = "dbplus-backend"
