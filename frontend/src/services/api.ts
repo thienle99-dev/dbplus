@@ -99,16 +99,17 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
              };
         }
 
-        if (url.endsWith('/columns')) return { command: 'schema_get_columns', args: { connectionId, schema: data?.params?.schema, table: data?.params?.table } };
+        if (url.includes('/columns')) return { command: 'schema_get_columns', args: { connectionId, schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } };
         
         // Table Info & Metadata
-        if (url.endsWith('/constraints')) return { command: 'get_table_constraints', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/indexes')) return { command: 'get_table_indexes', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/table-stats')) return { command: 'get_table_statistics', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/triggers')) return { command: 'get_table_triggers', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/partitions')) return { command: 'get_partitions', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/dependencies')) return { command: 'get_table_dependencies', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/storage-info')) return { command: 'get_storage_bloat_info', args: { connectionId, params: data?.params } };
+        // Table Info & Metadata (Using regex/includes to handle query params which `endsWith` misses)
+        if (url.includes('/constraints')) return { command: 'get_table_constraints', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/indexes')) return { command: 'get_table_indexes', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/table-stats')) return { command: 'get_table_statistics', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/triggers')) return { command: 'get_table_triggers', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/partitions')) return { command: 'get_partitions', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/dependencies')) return { command: 'get_table_dependencies', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
+        if (url.includes('/storage-info')) return { command: 'get_storage_bloat_info', args: { connectionId, params: { schema: new URL('http://d' + url).searchParams.get('schema'), table: new URL('http://d' + url).searchParams.get('table') } } };
         
         if (url.endsWith('/table-comment')) {
             if (method === 'GET') return { command: 'get_table_comment', args: { connectionId, params: data?.params } };
@@ -129,7 +130,7 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
         if (url.endsWith('/fk-orphans')) return { command: 'get_fk_orphans', args: { connectionId, params: data?.params } };
 
         // Query execution
-        if (url.endsWith('/execute')) return { command: 'execute_query', args: { connectionId, sql: data?.sql, options: data?.options } };
+        if (url.endsWith('/execute')) return { command: 'execute_query', args: { connectionId, request: { sql: data?.query || data?.sql, database: data?.database } } };
 
         // DDL Export
         if (url.endsWith('/export-ddl')) return { command: 'export_ddl', args: { connectionId, request: data } };
