@@ -1,84 +1,99 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Home, Link2, Terminal, User, LogOut, Layers } from 'lucide-react';
 
 interface SidebarProps {
-    onBackup: () => void;
-    onRestore: () => void;
-    onCreate: () => void;
+    onBackup?: () => void;
+    onRestore?: () => void;
+    onCreate?: () => void;
     onSettings: () => void;
+    activeTab?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onBackup, onRestore, onCreate, onSettings }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashboard' }) => {
     return (
-        <div className="w-[280px] h-full bg-bg-1 flex flex-col items-center py-8 px-6 border-r border-border">
+        <div className="w-[280px] h-[calc(100vh-40px)] m-5 flex flex-col items-start py-10 px-8 rounded-[32px] glass z-50 overflow-hidden">
             {/* Logo */}
-            <div className="mb-6">
-                <div className="w-32 h-32 flex items-center justify-center">
-                    <img
-                        src="/logo-dbplus.png"
-                        alt="App Logo"
-                        className="w-full h-full object-contain"
-                    />
+            <div className="flex items-center gap-3 mb-12 px-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary-default)] to-[var(--color-primary-active)] rounded-xl flex items-center justify-center shadow-lg transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                    <Layers size={22} className="text-white" />
                 </div>
+                <h1 className="text-xl font-black tracking-tight text-white uppercase italic">
+                    Bentley <span className="text-indigo-400 not-italic">DB</span>
+                </h1>
             </div>
 
-            {/* App Name */}
-            <h1 className="text-2xl font-bold text-text-primary mb-1">DBPlus</h1>
-            <p className="text-sm text-text-secondary mb-12">Version 1.0.0</p>
-
-            {/* Action Buttons */}
-            <div className="w-full space-y-2 mt-auto">
-                <ActionButton
-                    icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                    }
-                    label="Backup database..."
-                    onClick={onBackup}
+            {/* Navigation */}
+            <nav className="w-full space-y-6">
+                <NavItem
+                    icon={<Home size={20} />}
+                    label="Dashboard"
+                    isActive={activeTab === 'dashboard'}
                 />
-                <ActionButton
-                    icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                        </svg>
-                    }
-                    label="Restore database..."
-                    onClick={onRestore}
+                <NavItem
+                    icon={<Link2 size={20} />}
+                    label="Connections"
+                    isActive={activeTab === 'connections'}
                 />
-                <ActionButton
-                    icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                    }
-                    label="Create connection..."
-                    onClick={onCreate}
+                <NavItem
+                    icon={<Terminal size={20} />}
+                    label="Queries"
+                    isActive={activeTab === 'queries'}
                 />
-                <ActionButton
-                    icon={<Settings size={16} />}
+                <NavItem
+                    icon={<Settings size={20} />}
                     label="Settings"
+                    isActive={activeTab === 'settings'}
                     onClick={onSettings}
                 />
+                <NavItem
+                    icon={<User size={20} />}
+                    label="Profile"
+                    isActive={activeTab === 'profile'}
+                />
+            </nav>
+
+            {/* Bottom Section */}
+            <div className="mt-auto w-full pt-6 border-t border-white/5 px-2">
+                <button
+                    onClick={() => { }}
+                    className="flex items-center gap-3 text-text-secondary hover:text-white transition-all group"
+                >
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                        <LogOut size={16} />
+                    </div>
+                    <span className="text-sm font-medium">Profile</span>
+                </button>
             </div>
         </div>
     );
 };
 
-interface ActionButtonProps {
+interface NavItemProps {
     icon: React.ReactNode;
     label: string;
-    onClick: () => void;
+    isActive?: boolean;
+    onClick?: () => void;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ icon, label, onClick }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-secondary hover:bg-bg-2 hover:text-text-primary transition-colors text-sm font-medium"
+            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ring-1 ring-white/10'
+                : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
         >
-            <span className="flex-shrink-0">{icon}</span>
-            <span>{label}</span>
+            <span className={`transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-indigo-400' : ''}`}>
+                {icon}
+            </span>
+            <span className="text-[15px] font-semibold tracking-wide">
+                {label}
+            </span>
+            {isActive && (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]" />
+            )}
         </button>
     );
 };
+

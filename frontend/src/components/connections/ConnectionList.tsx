@@ -58,14 +58,14 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                         {!searchQuery && (
                             <button
                                 onClick={onAdd}
-                                className="mt-4 text-accent hover:text-accent-hover text-sm font-medium transition-colors"
+                                className="mt-4 text-[var(--color-primary-default)] hover:text-[var(--color-primary-active)] text-sm font-black uppercase tracking-widest transition-all"
                             >
                                 Create your first connection
                             </button>
                         )}
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-4 px-6 pb-6 mt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pb-6 mt-4 px-4">
                         {filteredConnections.map((connection, index) => (
                             <ConnectionItem
                                 key={connection.id}

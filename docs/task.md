@@ -463,6 +463,15 @@ While the core IPC commands are implemented, some features are currently limited
 
 ### Backend Todo (from IPC stubs)
 
+- [x] `list_databases`: Listing databases for a connection (Implemented)
+- [x] `create_database`: Creating a new database (Implemented)
+- [x] `drop_database`: Dropping an existing database (Implemented)
+- [x] `execute_query`: Executing arbitrary SQL queries (Implemented)
+- [x] `explain_query`: Getting the execution plan for a query (Implemented)
+- [x] `update_result_row`: Updating a specific row (Implemented)
+- [x] `delete_result_row`: Deleting a specific row (Implemented)
+- [x] `list_extensions`: Listing installed/available database extensions (Implemented)
+- [x] `install_extension`: Installing a new extension (Implemented)
 - [x] `execute_script`: Running a large SQL script (Implemented via `QueryDriver`)
 - [x] `backup_postgres_sql`: Generating a backup for Postgres databases (Implemented)
 - [x] `list_sqlite_attachments`: Listing attached SQLite databases (Implemented)

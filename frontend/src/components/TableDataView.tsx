@@ -366,37 +366,37 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
   }, []);
 
   return (
-    <div className="flex flex-col pb-[20px] h-full bg-bg-0 rounded-2xl overflow-hidden shadow-sm border border-border-light">
-      <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-1.5">
-        <div className="flex p-0.5 bg-bg-2 rounded-xl border border-border-light">
+    <div className="flex flex-col pb-[20px] h-full bg-transparent overflow-hidden">
+      <div className="flex items-center justify-between border-b border-white/5 bg-bg-1/30 backdrop-blur-xl p-3 rounded-t-2xl shadow-sm z-10">
+        <div className="flex p-1 bg-black/20 rounded-[14px] border border-white/5 shadow-inner">
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
-              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
+              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+              : 'text-text-secondary hover:text-white hover:bg-white/5'
               }`}
           >
-            <Table size={13} />
+            <Table size={13} strokeWidth={2.5} className={activeTab === 'data' ? "text-[var(--color-primary-default)]" : ""} />
             Data
           </button>
           <button
             onClick={() => setActiveTab('structure')}
-            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
-              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
+              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+              : 'text-text-secondary hover:text-white hover:bg-white/5'
               }`}
           >
-            <Database size={13} />
+            <Database size={13} strokeWidth={2.5} className={activeTab === 'structure' ? "text-[var(--color-primary-default)]" : ""} />
             Structure
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`px-3.5 py-1.5 text-xs font-medium flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
-              ? 'text-text-primary bg-bg-active shadow-sm ring-1 ring-border-subtle'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
+              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+              : 'text-text-secondary hover:text-white hover:bg-white/5'
               }`}
           >
-            <Info size={13} />
+            <Info size={13} strokeWidth={2.5} className={activeTab === 'info' ? "text-[var(--color-primary-default)]" : ""} />
             Info
           </button>
         </div>

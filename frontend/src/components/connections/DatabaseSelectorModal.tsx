@@ -129,14 +129,14 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 disabled={isDisabled}
                                 title={isDisabled ? `${db.name} - Coming Soon` : db.name}
                                 className={`
-                                    group flex flex-col items-center gap-3 p-4 rounded-xl transition-all relative outline-none
+                                    group flex flex-col items-center gap-4 p-4 rounded-2xl transition-all relative outline-none glass border border-white/5
                                     ${isSelected && db.isAvailable
-                                        ? 'bg-accent/10 shadow-lg shadow-accent/10 scale-105 z-10 ring-1 ring-accent/20'
-                                        : 'bg-bg-1 shadow-sm hover:shadow-md hover:bg-bg-2/80'
+                                        ? 'bg-[var(--color-primary-transparent)] shadow-2xl shadow-[var(--color-primary-transparent)]/20 scale-105 z-10 ring-2 ring-[var(--color-primary-default)]/40'
+                                        : 'bg-white/5 shadow-sm hover:shadow-xl hover:bg-white/10 hover:border-white/10'
                                     }
                                     ${isDisabled
-                                        ? 'opacity-50 grayscale cursor-not-allowed'
-                                        : 'cursor-pointer'
+                                        ? 'opacity-30 grayscale cursor-not-allowed'
+                                        : 'cursor-pointer animate-in fade-in zoom-in duration-300'
                                     }
                                 `}
                             >
@@ -159,7 +159,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                     </div>
                                 </div>
                                 {/* Label */}
-                                <span className={`text-xs font-medium text-center transition-colors ${isSelected ? 'text-accent' : 'text-text-secondary group-hover:text-text-primary'}`}>
+                                <span className={`text-[10px] font-black uppercase tracking-[0.1em] text-center transition-colors ${isSelected ? 'text-[var(--color-primary-default)]' : 'text-text-secondary group-hover:text-text-primary'}`}>
                                     {db.name}
                                 </span>
 

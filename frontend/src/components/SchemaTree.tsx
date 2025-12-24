@@ -52,13 +52,13 @@ function ObjectFolder({ title, icon, children, count, defaultOpen, className }: 
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Collapsible.Trigger className={`flex items-center gap-1.5 w-full pl-6 pr-3 py-1 hover:bg-bg-2 text-xs text-text-secondary select-none transition-colors group ${className}`}>
-        <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
-          <ChevronRight size={10} className="text-text-tertiary group-hover:text-text-secondary" />
+      <Collapsible.Trigger className={`flex items-center gap-2.5 w-full pl-6 pr-4 py-2 hover:bg-white/5 text-xs text-text-secondary select-none transition-all group ${className} hover:text-white`}>
+        <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}>
+          <ChevronRight size={10} className="text-white/20 group-hover:text-[var(--color-primary-default)]" />
         </div>
         {icon}
-        <span className="flex-1 text-left font-medium">{title}</span>
-        {count !== undefined && <span className="text-[10px] text-text-tertiary bg-bg-3 px-1.5 rounded-full">{count}</span>}
+        <span className="flex-1 text-left font-bold uppercase tracking-widest text-[10px]">{title}</span>
+        {count !== undefined && <span className="text-[9px] font-black text-[var(--color-primary-default)] bg-[var(--color-primary-transparent)] px-2 py-0.5 rounded-full ring-1 ring-[var(--color-primary-subtle)]">{count}</span>}
       </Collapsible.Trigger>
       <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
         {children}

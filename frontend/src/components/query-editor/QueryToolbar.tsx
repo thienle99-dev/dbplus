@@ -75,7 +75,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     }, []);
 
     return (
-        <div className="h-11 px-3 md:px-4 border-b border-border-light bg-bg-1 glass flex items-center justify-between sticky top-0 z-20 gap-2">
+        <div className="h-11 px-3 md:px-4 border-b border-white/5 bg-bg-1/20 backdrop-blur-xl flex items-center justify-between sticky top-0 z-20 gap-2 shadow-sm">
             <div className="flex items-center gap-2">
                 <Button
                     onClick={onExecute}

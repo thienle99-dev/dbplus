@@ -272,7 +272,7 @@ export default function TableDataTab({
   const filteredRows = useMemo(() => {
     if (!localSearch) return data?.rows || [];
     const term = localSearch.toLowerCase();
-    return (data?.rows || []).filter(row => 
+    return (data?.rows || []).filter(row =>
       row.some(cell => String(cell).toLowerCase().includes(term))
     );
   }, [data?.rows, localSearch]);
@@ -297,7 +297,7 @@ export default function TableDataTab({
   return (
     <>
       {/* Generic Toolbar for SQL and NoSQL */}
-      <div className="px-3 py-1.5 border-b border-border-light flex flex-wrap items-center gap-4 bg-bg-1/80 backdrop-blur-md glass shadow-sm">
+      <div className="px-3 py-2 border-b border-white/5 flex flex-wrap items-center gap-4 bg-bg-1/20 backdrop-blur-xl shadow-sm z-10 relative">
         {isCouchbase && (
           <>
             {/* Bucket Selector */}
@@ -389,7 +389,7 @@ export default function TableDataTab({
         </div>
       </div>
 
-      <div className="px-3 py-1 bg-bg-2/30 border-b border-border-light/50 flex items-center justify-between text-[10px] text-text-tertiary">
+      <div className="px-3 py-1.5 bg-black/20 border-b border-white/5 flex items-center justify-between text-[10px] text-text-tertiary">
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
           <span className="text-accent font-bold">
             {filteredRows.length}{localSearch ? ` / ${data.rows.length}` : ''} records
@@ -417,7 +417,7 @@ export default function TableDataTab({
         </div>
 
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none"
             onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
             title={inlineEditingEnabled ? "Disable Inline Editing" : "Enable Inline Editing"}
@@ -426,21 +426,19 @@ export default function TableDataTab({
               Inline Edit
             </span>
             <div
-              className={`w-8 h-4 rounded-full relative transition-all duration-300 ${
-                inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
-              }`}
-            >
-              <div 
-                className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
-                  inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+              className={`w-8 h-4 rounded-full relative transition-all duration-300 ${inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
                 }`}
+            >
+              <div
+                className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+                  }`}
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-3 py-2 border-b border-border-light flex justify-between items-center bg-bg-1/50 backdrop-blur-md glass">
+      <div className="px-3 py-2 border-b border-white/5 flex justify-between items-center bg-bg-1/20 backdrop-blur-lg">
         <div className="flex items-center gap-3">
           <h2 className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest px-1 py-0.5 rounded bg-bg-2 border border-border-light/50">
             {!isCouchbase && `${schema}.${table}`}

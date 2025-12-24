@@ -45,7 +45,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
       placeholder: 'My Queries',
       confirmLabel: 'Create'
     });
-    
+
     if (!folderName?.trim()) return;
     try {
       const created = await createFolder.mutateAsync({ name: folderName.trim() });
@@ -133,7 +133,7 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-xl bg-bg-1 glass border border-border-light px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent h-20 resize-none transition-all"
+            className="w-full rounded-xl bg-black/20 border border-white/10 px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent h-20 resize-none transition-all shadow-inner"
             placeholder="What does this query do?"
           />
         </div>
@@ -153,11 +153,11 @@ export default function SaveQueryModal({ isOpen, onClose, sql, initial, mode = '
           <select
             value={folderId}
             onChange={(e) => setFolderId(e.target.value)}
-            className="w-full rounded-xl bg-bg-1 glass border border-border-light px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+            className="w-full rounded-xl bg-black/20 border border-white/10 px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all appearance-none"
           >
-            <option value="">No folder</option>
+            <option value="" className="bg-bg-1 text-text-primary">No folder</option>
             {folders.map((f) => (
-              <option key={f.id} value={f.id}>
+              <option key={f.id} value={f.id} className="bg-bg-1 text-text-primary">
                 {f.name}
               </option>
             ))}

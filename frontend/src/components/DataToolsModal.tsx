@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { Download, Upload, X } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
+import Modal from './ui/Modal';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import type { Connection } from '../types';
@@ -249,279 +250,275 @@ export default function DataToolsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-1 rounded-lg shadow-xl w-[720px] max-w-[95vw] max-h-[85vh] border border-border flex flex-col overflow-hidden">
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <h3 className="font-semibold text-text-primary">{title}</h3>
-          <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      size="lg"
+    >
+      <div className="space-y-3">
+        {!fixedConnectionId && connections && (
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-text-secondary w-28">Connection</div>
+            <select
+              value={selectedConnectionId}
+              onChange={(e) => setSelectedConnectionId(e.target.value)}
+              className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
+            >
+              {connections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {!fixedConnectionId && (mode === 'backup' || mode === 'restore') && (
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-text-secondary w-28">Database</div>
+            <input
+              value={databaseOverride}
+              onChange={(e) => setDatabaseOverride(e.target.value)}
+              placeholder="(optional) override database"
+              className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
+            />
+          </div>
+        )}
+
+        {fixedTable && (
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-text-secondary w-28">Target table</div>
+            <div className="flex-1 text-xs font-mono text-text-primary break-all">
+              {fixedSchema}.{fixedTable}
+            </div>
+          </div>
+        )}
+
+        {!fixedTable && (mode === 'export' || mode === 'import') && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-text-secondary w-28">Schema</div>
+              <input
+                value={schema}
+                onChange={(e) => setSchema(e.target.value)}
+                className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-text-secondary w-28">Table</div>
+              <input
+                value={table}
+                onChange={(e) => setTable(e.target.value)}
+                className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 border border-border rounded bg-bg-0 p-2">
+          {(['export', 'import', 'backup', 'restore'] as Mode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`px-3 py-1.5 rounded text-xs border transition-colors ${mode === m
+                ? 'bg-bg-2 border-accent text-text-primary'
+                : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                }`}
+            >
+              {m === 'export' ? 'Export' : m === 'import' ? 'Import' : m === 'backup' ? 'Backup' : 'Restore'}
+            </button>
+          ))}
         </div>
 
-        <div className="p-4 space-y-3 overflow-auto">
-          {!fixedConnectionId && connections && (
+        {mode === 'export' && (
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="text-xs text-text-secondary w-28">Connection</div>
+              <div className="text-xs text-text-secondary w-28">Format</div>
               <select
-                value={selectedConnectionId}
-                onChange={(e) => setSelectedConnectionId(e.target.value)}
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as any)}
                 className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
               >
-                {connections.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+                <option value="sql">SQL (INSERT)</option>
               </select>
             </div>
-          )}
-
-          {!fixedConnectionId && (mode === 'backup' || mode === 'restore') && (
             <div className="flex items-center gap-2">
-              <div className="text-xs text-text-secondary w-28">Database</div>
+              <div className="text-xs text-text-secondary w-28">Row limit</div>
               <input
-                value={databaseOverride}
-                onChange={(e) => setDatabaseOverride(e.target.value)}
-                placeholder="(optional) override database"
+                type="number"
+                min={1}
+                value={exportLimit}
+                onChange={(e) => setExportLimit(Number(e.target.value))}
                 className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
               />
             </div>
-          )}
-
-          {fixedTable && (
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-text-secondary w-28">Target table</div>
-              <div className="flex-1 text-xs font-mono text-text-primary break-all">
-                {fixedSchema}.{fixedTable}
-              </div>
-            </div>
-          )}
-
-          {!fixedTable && (mode === 'export' || mode === 'import') && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-text-secondary w-28">Schema</div>
-                <input
-                  value={schema}
-                  onChange={(e) => setSchema(e.target.value)}
-                  className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-text-secondary w-28">Table</div>
-                <input
-                  value={table}
-                  onChange={(e) => setTable(e.target.value)}
-                  className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2 border border-border rounded bg-bg-0 p-2">
-            {(['export', 'import', 'backup', 'restore'] as Mode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`px-3 py-1.5 rounded text-xs border transition-colors ${mode === m
-                    ? 'bg-bg-2 border-accent text-text-primary'
-                    : 'bg-bg-0 border-border text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                  }`}
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={loading || !canUseTableTools}
+                onClick={() => void handleExport()}
+                leftIcon={<Download size={14} />}
               >
-                {m === 'export' ? 'Export' : m === 'import' ? 'Import' : m === 'backup' ? 'Backup' : 'Restore'}
-              </button>
-            ))}
+                Export
+              </Button>
+            </div>
           </div>
+        )}
 
-          {mode === 'export' && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-text-secondary w-28">Format</div>
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as any)}
-                  className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
-                >
-                  <option value="csv">CSV</option>
-                  <option value="json">JSON</option>
-                  <option value="sql">SQL (INSERT)</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-text-secondary w-28">Row limit</div>
-                <input
-                  type="number"
-                  min={1}
-                  value={exportLimit}
-                  onChange={(e) => setExportLimit(Number(e.target.value))}
-                  className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={loading || !canUseTableTools}
-                  onClick={() => void handleExport()}
-                  leftIcon={<Download size={14} />}
-                >
-                  Export
-                </Button>
-              </div>
+        {mode === 'import' && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-text-secondary w-28">Format</div>
+              <select
+                value={importFormat}
+                onChange={(e) => {
+                  setImportFormat(e.target.value as any);
+                  setImportFileName('');
+                  setImportPreview(null);
+                  setImportScript('');
+                }}
+                className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
+              >
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+                <option value="sql">SQL Script</option>
+              </select>
             </div>
-          )}
 
-          {mode === 'import' && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-text-secondary w-28">Format</div>
-                <select
-                  value={importFormat}
-                  onChange={(e) => {
-                    setImportFormat(e.target.value as any);
-                    setImportFileName('');
-                    setImportPreview(null);
-                    setImportScript('');
-                  }}
-                  className="flex-1 bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary"
-                >
-                  <option value="csv">CSV</option>
-                  <option value="json">JSON</option>
-                  <option value="sql">SQL Script</option>
-                </select>
-              </div>
+            <Checkbox
+              checked={truncateFirst}
+              onChange={(checked) => setTruncateFirst(checked)}
+              label="Clear table before import (TRUNCATE/DELETE)"
+              className="text-xs"
+            />
 
-              <Checkbox
-                checked={truncateFirst}
-                onChange={(checked) => setTruncateFirst(checked)}
-                label="Clear table before import (TRUNCATE/DELETE)"
-                className="text-xs"
-              />
-
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-text-secondary truncate">
-                  {importFileName ? `File: ${importFileName}` : 'Choose a file to import'}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={loading || !canUseTableTools}
-                  onClick={handleChooseImportFile}
-                  leftIcon={<Upload size={14} />}
-                >
-                  Choose file
-                </Button>
-                <input
-                  ref={importFileInputRef}
-                  type="file"
-                  accept={importFormat === 'sql' ? '.sql,text/plain' : importFormat === 'json' ? 'application/json,.json' : '.csv,text/csv'}
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      await handleFile(file);
-                      showToast('File loaded', 'success');
-                    } catch (err: any) {
-                      showToast(err?.message || 'Failed to load file', 'error');
-                    } finally {
-                      e.target.value = '';
-                    }
-                  }}
-                />
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-text-secondary truncate">
+                {importFileName ? `File: ${importFileName}` : 'Choose a file to import'}
               </div>
-
-              {importPreview && (
-                <div className="text-xs text-text-secondary">
-                  Loaded: {importPreview.rows.length} rows, {importPreview.columns.length} columns
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={loading || !canUseTableTools || !importScript.trim()}
-                  onClick={() => void handleImportRun()}
-                >
-                  Run import
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {mode === 'backup' && (
-            <div className="space-y-2">
-              <div className="text-xs text-text-secondary">
-                Postgres only. Uses local <span className="font-mono">pg_dump</span> with <span className="font-mono">--column-inserts</span>.
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={loading || !connectionId}
-                  onClick={() => void handleBackupDownload()}
-                  leftIcon={<Download size={14} />}
-                >
-                  Download SQL backup
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {mode === 'restore' && (
-            <div className="space-y-2">
-              <div className="text-xs text-text-secondary">
-                Restore runs the SQL script via <span className="font-mono">/execute-script</span>. Prefer INSERT-based dumps.
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-text-secondary truncate">
-                  {importFileName ? `File: ${importFileName}` : 'Choose a .sql file to restore'}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={loading || !connectionId}
-                  onClick={handleChooseRestoreFile}
-                  leftIcon={<Upload size={14} />}
-                >
-                  Choose file
-                </Button>
-              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={loading || !canUseTableTools}
+                onClick={handleChooseImportFile}
+                leftIcon={<Upload size={14} />}
+              >
+                Choose file
+              </Button>
               <input
-                ref={restoreFileInputRef}
+                ref={importFileInputRef}
                 type="file"
-                accept=".sql,text/plain"
+                accept={importFormat === 'sql' ? '.sql,text/plain' : importFormat === 'json' ? 'application/json,.json' : '.csv,text/csv'}
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   try {
-                    setImportFormat('sql');
                     await handleFile(file);
-                    showToast('SQL loaded', 'success');
+                    showToast('File loaded', 'success');
                   } catch (err: any) {
-                    showToast(err?.message || 'Failed to load SQL', 'error');
+                    showToast(err?.message || 'Failed to load file', 'error');
                   } finally {
                     e.target.value = '';
                   }
                 }}
               />
-              <div className="flex justify-end">
-                <Button
-                  variant="danger"
-                  size="sm"
-                  disabled={loading || !connectionId || !importScript.trim()}
-                  onClick={() => void handleRestoreSql()}
-                >
-                  Restore
-                </Button>
-              </div>
             </div>
-          )}
-        </div>
+
+            {importPreview && (
+              <div className="text-xs text-text-secondary">
+                Loaded: {importPreview.rows.length} rows, {importPreview.columns.length} columns
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={loading || !canUseTableTools || !importScript.trim()}
+                onClick={() => void handleImportRun()}
+              >
+                Run import
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'backup' && (
+          <div className="space-y-2">
+            <div className="text-xs text-text-secondary">
+              Postgres only. Uses local <span className="font-mono">pg_dump</span> with <span className="font-mono">--column-inserts</span>.
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={loading || !connectionId}
+                onClick={() => void handleBackupDownload()}
+                leftIcon={<Download size={14} />}
+              >
+                Download SQL backup
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'restore' && (
+          <div className="space-y-2">
+            <div className="text-xs text-text-secondary">
+              Restore runs the SQL script via <span className="font-mono">/execute-script</span>. Prefer INSERT-based dumps.
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-text-secondary truncate">
+                {importFileName ? `File: ${importFileName}` : 'Choose a .sql file to restore'}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={loading || !connectionId}
+                onClick={handleChooseRestoreFile}
+                leftIcon={<Upload size={14} />}
+              >
+                Choose file
+              </Button>
+            </div>
+            <input
+              ref={restoreFileInputRef}
+              type="file"
+              accept=".sql,text/plain"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  setImportFormat('sql');
+                  await handleFile(file);
+                  showToast('SQL loaded', 'success');
+                } catch (err: any) {
+                  showToast(err?.message || 'Failed to load SQL', 'error');
+                } finally {
+                  e.target.value = '';
+                }
+              }}
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={loading || !connectionId || !importScript.trim()}
+                onClick={() => void handleRestoreSql()}
+              >
+                Restore
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

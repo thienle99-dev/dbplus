@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Theme = 'dark' | 'soft-pink' | 'light' | 'solar' | 'midnight' | 'gruvbox-dark' | 'gruvbox-light' | 'wibu-pink' | 'wibu-sakura' | 'wibu-ocean' | 'wibu-sunset' | 'wibu-neon' | 'macos-dark' | 'macos-light' | 'system';
+export type Theme = 'dark' | 'soft-pink' | 'light' | 'solar' | 'midnight' | 'gruvbox-dark' | 'gruvbox-light' | 'wibu-pink' | 'wibu-sakura' | 'wibu-ocean' | 'wibu-sunset' | 'wibu-neon' | 'macos-dark' | 'macos-light' | 'bentley' | 'system';
 
 export interface AppSettings {
     // General
@@ -58,8 +58,8 @@ const defaultSettings: AppSettings = {
     autoComplete: true,
 
     // Theme
-    theme: 'dark',
-    accentColor: '#4f83ff',
+    theme: 'bentley',
+    accentColor: '#b0d0ff',
 
     // Query
     defaultLimit: 100,

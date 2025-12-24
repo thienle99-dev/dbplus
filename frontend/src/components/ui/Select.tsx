@@ -85,15 +85,15 @@ export default function Select({
                 disabled={disabled}
                 className={`
           w-full flex items-center justify-between gap-2
-          rounded-xl bg-bg-2 border border-border-subtle
+          rounded-xl bg-black/20 border border-white/10
           text-text-primary shadow-sm
           transition-all duration-200
           ${sizeClasses[size]}
           ${disabled
-                        ? 'opacity-50 cursor-not-allowed bg-bg-2/80'
-                        : 'hover:bg-bg-0 hover:border-border-light focus:outline-none focus:bg-bg-0 focus:border-accent/40 focus:ring-4 focus:ring-accent/10'
+                        ? 'opacity-50 cursor-not-allowed bg-black/10'
+                        : 'hover:bg-black/30 hover:border-white/20 focus:outline-none focus:bg-black/40 focus:border-accent/50 focus:ring-4 focus:ring-accent/10'
                     }
-          ${isOpen ? 'bg-bg-0 ring-4 ring-accent/10 border-accent/40' : ''}
+          ${isOpen ? 'bg-black/40 ring-4 ring-accent/10 border-accent/50' : ''}
         `}
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -118,8 +118,8 @@ export default function Select({
                 <div
                     className="
             absolute z-50 w-full mt-2
-            bg-bg-1/95 backdrop-blur-xl border border-border-light rounded-2xl
-            shadow-2xl ring-1 ring-black/5
+            bg-bg-1/90 backdrop-blur-xl border border-white/10 rounded-2xl
+            shadow-2xl ring-1 ring-black/20
             max-h-[320px] overflow-hidden
             animate-in fade-in slide-in-from-top-2 duration-300 ease-out
           "

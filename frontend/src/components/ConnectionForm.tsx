@@ -165,29 +165,31 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-bg-overlay/50 backdrop-blur-sm data-[state=open]:animate-overlayShow" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[600px] translate-x-[-50%] translate-y-[-50%] rounded-[var(--radius-lg)] bg-bg-1 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-border-light flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center p-5 border-b border-border-light bg-bg-2">
-            <Dialog.Title className="text-lg font-semibold text-text-primary flex items-center gap-2">
-              <Database size={18} className="text-accent" />
-              New Connection
+        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-md data-[state=open]:animate-overlayShow z-50" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[32px] bg-white/5 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-white/5 flex flex-col overflow-hidden glass z-50">
+          <div className="flex justify-between items-center px-8 py-6 border-b border-white/5 bg-white/5">
+            <Dialog.Title className="text-2xl font-black text-white tracking-tight flex items-center gap-3 uppercase italic">
+              <div className="w-10 h-10 bg-[var(--color-primary-transparent)] rounded-xl flex items-center justify-center ring-1 ring-[var(--color-primary-subtle)]">
+                <Database size={20} className="text-[var(--color-primary-default)]" />
+              </div>
+              New <span className="text-[var(--color-primary-default)] not-italic">Connection</span>
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-text-secondary hover:text-text-primary transition-colors p-1 hover:bg-bg-3 rounded-md" aria-label="Close">
-                <X size={20} />
+              <button className="text-white/40 hover:text-white transition-all p-2 hover:bg-white/10 rounded-xl" aria-label="Close">
+                <X size={24} />
               </button>
             </Dialog.Close>
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-5 pt-4 bg-bg-1">
-              <div className="flex border-b border-border-light">
+            <div className="px-8 pt-6 bg-transparent">
+              <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 glass">
                 <button
                   type="button"
                   onClick={() => setActiveTab('general')}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${activeTab === 'general'
-                    ? 'text-accent border-accent'
-                    : 'text-text-secondary border-transparent hover:text-text-primary'
+                  className={`flex-1 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'general'
+                    ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                     }`}
                 >
                   General
@@ -195,34 +197,34 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                 <button
                   type="button"
                   onClick={() => setActiveTab('ssh')}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'ssh'
-                    ? 'text-accent border-accent'
-                    : 'text-text-secondary border-transparent hover:text-text-primary'
+                  className={`flex-1 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'ssh'
+                    ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <Terminal size={14} />
+                  <Terminal size={14} strokeWidth={2.5} />
                   SSH Tunnel
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('ssl')}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'ssl'
-                    ? 'text-accent border-accent'
-                    : 'text-text-secondary border-transparent hover:text-text-primary'
+                  className={`flex-1 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'ssl'
+                    ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <Shield size={14} />
+                  <Shield size={14} strokeWidth={2.5} />
                   SSL / TLS
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('advanced')}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'advanced'
-                    ? 'text-accent border-accent'
-                    : 'text-text-secondary border-transparent hover:text-text-primary'
+                  className={`flex-1 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'advanced'
+                    ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <Lock size={14} />
+                  <Lock size={14} strokeWidth={2.5} />
                   Advanced
                 </button>
               </div>
@@ -487,18 +489,18 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
               </div>
 
-              <div className="flex justify-end gap-3 p-5 border-t border-border-light bg-bg-1">
+              <div className="flex justify-end gap-3 px-8 py-6 border-t border-white/5 bg-white/5">
                 <Button
                   variant="ghost"
                   onClick={handleTestConnection}
                   disabled={testing || loading}
-                  className="mr-auto"
+                  className="mr-auto text-white/40 hover:text-[var(--color-primary-default)] hover:bg-[var(--color-primary-transparent)] rounded-xl font-bold uppercase tracking-widest text-[11px]"
                   isLoading={testing}
                 >
                   Test Connection
                 </Button>
                 <Dialog.Close asChild>
-                  <Button variant="secondary">
+                  <Button variant="secondary" className="bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold uppercase tracking-widest text-[11px] border border-white/5">
                     Cancel
                   </Button>
                 </Dialog.Close>
@@ -506,6 +508,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
                   type="submit"
                   disabled={loading || testing}
                   isLoading={loading}
+                  className="bg-gradient-to-r from-[var(--color-primary-default)] to-[var(--color-primary-active)] hover:opacity-90 text-white rounded-xl font-bold px-6 uppercase tracking-widest text-[11px] shadow-[0_4px_15px_var(--color-primary-transparent)]"
                 >
                   Create Connection
                 </Button>

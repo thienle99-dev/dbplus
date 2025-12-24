@@ -82,9 +82,9 @@ export default function Modal({
             >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                         {title && (
-                            <h2 className="text-lg font-semibold text-text-primary">
+                            <h2 className="text-lg font-bold text-white tracking-tight">
                                 {title}
                             </h2>
                         )}
@@ -92,13 +92,14 @@ export default function Modal({
                             <button
                                 onClick={onClose}
                                 className="
-                  p-1.5
-                  rounded-md
-                  text-text-secondary
-                  hover:text-text-primary
-                  hover:bg-bg-2
-                  transition-colors
-                "
+                                  p-1.5
+                                  rounded-lg
+                                  text-text-secondary
+                                  hover:text-white
+                                  hover:bg-white/10
+                                  transition-all
+                                  duration-200
+                                "
                                 aria-label="Close modal"
                             >
                                 <X size={18} />
@@ -108,13 +109,13 @@ export default function Modal({
                 )}
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
                     {children}
                 </div>
 
                 {/* Footer */}
                 {footer && (
-                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border-light">
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/5">
                         {footer}
                     </div>
                 )}

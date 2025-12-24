@@ -111,7 +111,6 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     };
 
     const renderIcon = () => {
-        const className = "w-full h-full object-contain";
         let IconComponent = DatabaseIcon;
 
         switch (connection.type) {
@@ -136,8 +135,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         }
 
         return (
-            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-white flex items-center justify-center p-2 shadow-sm ring-1 ring-white/10">
-                <IconComponent className={className} />
+            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-[var(--color-primary-transparent)] flex items-center justify-center p-2 shadow-[0_0_15px_var(--color-primary-transparent)] ring-1 ring-white/10 group-hover:bg-[var(--color-primary-transparent)] transition-all duration-300">
+                <IconComponent className="w-full h-full text-[var(--color-primary-default)] drop-shadow-[0_0_6px_var(--color-primary-transparent)]" />
             </div>
         );
     };
@@ -145,82 +144,34 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="group relative flex items-center gap-4 p-4 rounded-2xl bg-bg-2/40 hover:bg-bg-2/60 border border-white/[0.03] hover:border-white/[0.08] cursor-pointer transition-all duration-300 shadow-lg shadow-black/5"
+                className="group relative flex items-center gap-3 p-3 rounded-2xl glass hover:bg-white/[0.05] cursor-pointer transition-all duration-500 hover:scale-[1.01] hover:shadow-lg hover:shadow-[var(--color-primary-transparent)] ring-1 ring-white/5 overflow-hidden"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
-                {/* Status Bar */}
-                <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.3)] transition-all group-hover:h-3/4 ${connection.status_color || 'bg-accent'}`} />
+                {/* Icon Section */}
+                {renderIcon()}
 
-                {/* Icon */}
-                <div className="shrink-0 ml-1">
-                    <div className="w-11 h-11 flex-shrink-0 rounded-full bg-white flex items-center justify-center p-2 shadow-inner ring-1 ring-black/5">
-                        {renderIcon()}
-                    </div>
-                </div>
+                {/* Info Section */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <h3 className="text-sm font-bold text-white tracking-tight truncate group-hover:text-indigo-300 transition-colors">
+                        {connection.name}
+                    </h3>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-semibold text-text-primary tracking-tight">
-                            {connection.name}
+                    <div className="flex items-center gap-2 mt-1 overflow-hidden">
+                        <span className="text-[11px] text-text-secondary truncate font-medium">
+                            {connection.host}
                         </span>
                         {isLocal && (
-                            <span className="text-[11px] font-bold text-[#22c55e] tracking-wide uppercase">(LOCAL)</span>
+                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-widest ring-1 ring-emerald-500/30">Local</span>
                         )}
-                        {connection.environment && connection.environment !== 'development' && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${connection.environment === 'production' ? 'bg-error/20 text-error' : 'bg-accent/20 text-accent'
-                                }`}>
-                                {connection.environment}
-                            </span>
-                        )}
-                        {connection.safe_mode_level !== undefined && connection.safe_mode_level > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-500">
-                                {connection.safe_mode_level === 1 ? 'SAFE' : 'STRICT'}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center h-5 gap-3 mt-1 text-xs text-text-muted">
-                        <div className="flex items-center h-full">
-                            <span className="text-[11px] font-bold uppercase text-accent tracking-wide leading-none">
-                                {connection.type}
-                            </span>
-                        </div>
-
-                        <div className="w-px h-3 bg-border-default/40" />
-
-                        <div className="flex items-center h-full min-w-0">
-                            <span className="truncate hover:text-text-primary transition-colors leading-none">
-                                {connection.host}
-                                {connection.port && <span className="text-text-muted/50">:{connection.port}</span>}
-                            </span>
-                        </div>
-
-                        {connection.database && (
-                            <>
-                                <div className="w-px h-3 bg-border-default/40" />
-                                <div className="flex items-center h-full min-w-0">
-                                    <span className="text-text-primary truncate font-medium group-hover:text-accent transition-colors leading-none">
-                                        {connection.database}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-
-                        {connection.tags && (
-                            <div className="flex gap-1.5 ml-auto overflow-hidden shrink-0 h-full items-center">
-                                {connection.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
-                                    <span key={tag} className="px-1.5 py-0.5 bg-bg-3/50 border border-border-subtle/30 rounded text-[9px] text-text-secondary whitespace-nowrap leading-none flex items-center">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
+                        {connection.environment === 'production' && (
+                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold uppercase tracking-widest ring-1 ring-red-500/30">Prod</span>
                         )}
                     </div>
                 </div>
 
-                {/* Quick Actions Hidden by Default, Shown on Hover if needed, but the image is clean */}
+                {/* Animated Accent Line */}
+                <div className="absolute bottom-[1px] left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-primary-default)] to-transparent group-hover:w-2/3 transition-all duration-500 opacity-60 rounded-full" />
             </div>
 
             {menuPosition && (

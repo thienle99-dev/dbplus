@@ -22,29 +22,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onAdd }) 
     }, []);
 
     return (
-        <div className="px-6 py-4 bg-bg-1/40 sticky top-0 z-10 backdrop-blur-md">
-            <div className="flex items-center gap-4">
-                {/* Add Button */}
-                <button
-                    onClick={onAdd}
-                    className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg transition-all"
-                    title="Create connection"
-                >
-                    <Plus size={20} />
-                </button>
-
+        <div className="px-10 py-6 sticky top-0 z-10">
+            <div className="flex items-center gap-6">
                 {/* Search Input */}
-                <div className="flex-1 relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors" size={16} />
+                <div className="flex-1 relative group max-w-2xl">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-indigo-400 transition-colors" size={18} />
                     <input
                         ref={inputRef}
                         type="text"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        placeholder="Search for connection... (⌘F)"
-                        className="w-full bg-bg-2/50 border border-border-subtle focus:border-accent/50 focus:ring-4 focus:ring-accent/10 rounded-xl py-2 pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted outline-none transition-all"
+                        placeholder="Search connections... (⌘F)"
+                        className="w-full bg-white/5 border border-white/5 focus:border-[var(--color-primary-default)] focus:bg-white/10 rounded-[20px] py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder:text-white/20 outline-none transition-all glass shadow-none ring-1 ring-white/5"
                     />
                 </div>
+
+                {/* Add Button */}
+                <button
+                    onClick={onAdd}
+                    className="h-12 px-6 flex items-center gap-2 bg-gradient-to-r from-[var(--color-primary-default)] to-[var(--color-primary-active)] hover:opacity-90 text-white rounded-[20px] font-bold text-sm tracking-wide transition-all shadow-[0_4px_15px_var(--color-primary-transparent)] hover:shadow-[0_8px_25px_var(--color-primary-transparent)] active:scale-95"
+                >
+                    <Plus size={18} strokeWidth={3} />
+                    <span>NEW CONNECTION</span>
+                </button>
             </div>
         </div>
     );

@@ -27,17 +27,17 @@ export default function ObjectDefinitionModal({
   const { showToast } = useToast();
 
   const isView = type === 'view';
-  
+
   // Only fetch if isOpen to avoid unnecessary requests when hidden
   const { data: viewDef, isLoading: loadingView } = useViewDefinition(
-      connectionId, 
-      schema, 
-      (isOpen && isView) ? objectName : undefined
+    connectionId,
+    schema,
+    (isOpen && isView) ? objectName : undefined
   );
   const { data: funcDef, isLoading: loadingFunc } = useFunctionDefinition(
-      connectionId, 
-      schema, 
-      (isOpen && !isView) ? objectName : undefined
+    connectionId,
+    schema,
+    (isOpen && !isView) ? objectName : undefined
   );
 
   const definition = isView ? viewDef?.definition : funcDef?.definition;
@@ -65,37 +65,37 @@ export default function ObjectDefinitionModal({
           </div>
         ) : (
           <>
-             <div className="flex items-center justify-between px-4 py-2 bg-bg-2 border-b border-border">
-                <div className="text-sm text-text-secondary">
-                   Owner: <span className="text-text-primary font-medium">{owner || '-'}</span>
-                   {!isView && funcDef && (
-                     <span className="ml-4">
-                        Language: <span className="text-text-primary font-medium">{funcDef.language || '-'}</span>
-                        <span className="ml-4 text-text-tertiary">|</span>
-                        <span className="ml-4">
-                            Returns: <span className="text-text-primary font-medium">{funcDef.return_type || '-'}</span>
-                        </span>
-                     </span>
-                   )}
-                </div>
-                <button
-                   onClick={handleCopy}
-                   className="flex items-center gap-1.5 px-2 py-1 hover:bg-bg-3 rounded text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
-                >
-                   <Copy size={12} />
-                   Copy
-                </button>
-             </div>
-             <div className="flex-1 overflow-hidden">
-                <CodeMirror
-                   value={definition || '-- No definition found'}
-                   height="100%"
-                   theme={theme === 'dark' ? 'dark' : 'light'}
-                   extensions={[sql()]}
-                   editable={false}
-                   className="h-full text-sm"
-                />
-             </div>
+            <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
+              <div className="text-sm text-text-secondary">
+                Owner: <span className="text-text-primary font-medium">{owner || '-'}</span>
+                {!isView && funcDef && (
+                  <span className="ml-4">
+                    Language: <span className="text-text-primary font-medium">{funcDef.language || '-'}</span>
+                    <span className="ml-4 text-text-tertiary">|</span>
+                    <span className="ml-4">
+                      Returns: <span className="text-text-primary font-medium">{funcDef.return_type || '-'}</span>
+                    </span>
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-2 py-1 hover:bg-bg-3 rounded text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <Copy size={12} />
+                Copy
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <CodeMirror
+                value={definition || '-- No definition found'}
+                height="100%"
+                theme={theme === 'dark' ? 'dark' : 'light'}
+                extensions={[sql()]}
+                editable={false}
+                className="h-full text-sm"
+              />
+            </div>
           </>
         )}
       </div>

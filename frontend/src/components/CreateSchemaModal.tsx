@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { X, Database } from 'lucide-react';
+
+import Modal from './ui/Modal';
+import Input from './ui/Input';
+import Button from './ui/Button';
 
 interface CreateSchemaModalProps {
     isOpen: boolean;
@@ -44,76 +47,48 @@ export default function CreateSchemaModal({ isOpen, onClose, onSubmit }: CreateS
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+    const footer = (
+        <div className="flex justify-end gap-2">
+            <Button
+                variant="secondary"
                 onClick={handleClose}
-            />
-
-            {/* Modal */}
-            <div className="relative bg-bg-1 border border-border rounded-lg shadow-xl w-full max-w-md mx-4">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <div className="flex items-center gap-2">
-                        <Database size={18} className="text-accent" />
-                        <h2 className="text-base font-semibold text-text-primary">Create New Schema</h2>
-                    </div>
-                    <button
-                        onClick={handleClose}
-                        className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
-                        aria-label="Close"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    <div>
-                        <label htmlFor="schema-name" className="block text-sm font-medium text-text-primary mb-2">
-                            Schema Name
-                        </label>
-                        <input
-                            id="schema-name"
-                            type="text"
-                            value={schemaName}
-                            onChange={(e) => {
-                                setSchemaName(e.target.value);
-                                setError('');
-                            }}
-                            placeholder="e.g., public, my_schema"
-                            className={`w-full px-3 py-2 bg-bg-2 border rounded text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent ${error ? 'border-red-500' : 'border-border'
-                                }`}
-                            autoFocus
-                        />
-                        {error && (
-                            <p className="mt-1 text-xs text-red-500">{error}</p>
-                        )}
-                        <p className="mt-1 text-xs text-text-secondary">
-                            Must start with a letter or underscore. Only letters, numbers, and underscores allowed.
-                        </p>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 text-sm font-medium bg-accent hover:bg-accent-hover text-white rounded transition-colors"
-                        >
-                            Create Schema
-                        </button>
-                    </div>
-                </form>
-            </div>
+            >
+                Cancel
+            </Button>
+            <Button
+                variant="primary"
+                onClick={() => handleSubmit({ preventDefault: () => { } } as any)}
+            >
+                Create Schema
+            </Button>
         </div>
+    );
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create New Schema"
+            size="sm"
+            footer={footer}
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <Input
+                        label="Schema Name"
+                        id="schema-name"
+                        value={schemaName}
+                        onChange={(e) => {
+                            setSchemaName(e.target.value);
+                            setError('');
+                        }}
+                        placeholder="e.g., public, my_schema"
+                        error={error}
+                        helperText="Must start with a letter or underscore. Only letters, numbers, and underscores allowed."
+                        autoFocus
+                    />
+                </div>
+            </form>
+        </Modal>
     );
 }

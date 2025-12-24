@@ -86,7 +86,7 @@ export default function ERDiagramModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-bg-0 border-2 border-border rounded-lg shadow-2xl flex flex-col overflow-hidden"
+                className="bg-bg-1/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/5"
                 style={{
                     width: size.width,
                     height: size.height,
@@ -97,7 +97,7 @@ export default function ERDiagramModal({
                 onMouseDown={handleMouseDown}
             >
                 {/* Header */}
-                <div className="modal-header flex items-center justify-between px-4 py-3 bg-bg-1 border-b border-border cursor-move">
+                <div className="modal-header flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10 cursor-move">
                     <div className="flex items-center gap-2">
                         <Network size={18} className="text-accent" />
                         <span className="font-semibold text-text-primary">ER Diagram - {schema}</span>

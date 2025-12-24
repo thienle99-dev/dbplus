@@ -36,35 +36,40 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const themes = Object.values(THEME_CONFIGS);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-overlay backdrop-blur-sm">
-            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[600px] bg-bg-1 border border-border-light rounded-lg shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[700px] bg-white/5 border border-white/5 rounded-[32px] shadow-2xl flex flex-col glass overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
-                    <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
+                <div className="flex items-center justify-between px-8 py-6 border-b border-white/5">
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3 uppercase italic">
+                        <div className="w-10 h-10 bg-[var(--color-primary-transparent)] rounded-xl flex items-center justify-center ring-1 ring-[var(--color-primary-subtle)]">
+                            <SettingsIcon size={20} className="text-[var(--color-primary-default)]" />
+                        </div>
+                        Application <span className="text-[var(--color-primary-default)] not-italic">Settings</span>
+                    </h2>
                     <button
                         onClick={onClose}
-                        className="p-1 hover:bg-bg-2 rounded transition-colors"
+                        className="p-2 hover:bg-white/10 rounded-xl transition-all"
                     >
-                        <X size={20} className="text-text-secondary" />
+                        <X size={24} className="text-white/40 hover:text-white" />
                     </button>
                 </div>
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar */}
-                    <div className="w-48 border-r border-border-light bg-bg-0 p-2">
+                    <div className="w-56 border-r border-white/5 bg-white/5 p-4 flex flex-col gap-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                  w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors
-                  ${activeTab === tab.id
-                                        ? 'bg-accent text-white'
-                                        : 'text-text-secondary hover:bg-bg-2 hover:text-text-primary'
+                                    w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold uppercase tracking-widest transition-all
+                                    ${activeTab === tab.id
+                                        ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                                        : 'text-text-secondary hover:bg-white/5 hover:text-white'
                                     }
-                `}
+                                `}
                             >
-                                {tab.icon}
+                                <span className={activeTab === tab.id ? "text-[var(--color-primary-default)]" : ""}>{tab.icon}</span>
                                 <span>{tab.label}</span>
                             </button>
                         ))}
@@ -223,10 +228,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                             key={theme.value}
                                                             onClick={() => settings.setTheme(theme.value)}
                                                             className={`
-                                                                relative group flex flex-col p-2 space-y-2 rounded-lg border text-left transition-all overflow-hidden
+                                                                relative group flex flex-col p-2 space-y-2 rounded-2xl border text-left transition-all overflow-hidden
                                                                 ${settings.theme === theme.value
-                                                                    ? 'bg-primary-transparent border-accent ring-1 ring-accent'
-                                                                    : 'bg-bg-1 border-border-light hover:bg-bg-2 hover:border-text-secondary'
+                                                                    ? 'bg-[var(--color-primary-transparent)] border-[var(--color-primary-default)] ring-1 ring-[var(--color-primary-default)]'
+                                                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
                                                                 }
                                                             `}
                                                         >
@@ -244,7 +249,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                                                             <div className="flex flex-col px-1">
                                                                 <div className="flex items-center justify-between w-full">
-                                                                    <span className={`text-sm font-medium ${settings.theme === theme.value ? 'text-accent' : 'text-text-primary'}`}>
+                                                                    <span className={`text-sm font-black uppercase tracking-tight ${settings.theme === theme.value ? 'text-[var(--color-primary-default)]' : 'text-text-primary'}`}>
                                                                         {theme.label}
                                                                     </span>
                                                                 </div>
@@ -378,10 +383,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border-light">
+                <div className="flex items-center justify-between px-8 py-5 border-t border-white/5 bg-white/5">
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="md"
+                        className="text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-xl font-bold uppercase tracking-widest text-[11px]"
                         onClick={async () => {
                             const confirmed = await dialog.confirm({
                                 title: 'Reset Settings',
@@ -389,7 +395,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 confirmLabel: 'Reset',
                                 variant: 'destructive'
                             });
-                            
+
                             if (confirmed) {
                                 settings.resetSettings();
                             }
@@ -397,10 +403,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     >
                         Reset to Defaults
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                         <Button
                             variant="primary"
                             size="md"
+                            className="bg-[var(--color-primary-default)] hover:opacity-90 text-white rounded-xl font-bold px-8 uppercase tracking-widest text-[11px] shadow-[0_4px_15px_var(--color-primary-transparent)]"
                             onClick={onClose}
                         >
                             Done

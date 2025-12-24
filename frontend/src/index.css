@@ -154,102 +154,99 @@ textarea:not([rows]) {
 /* === END RESETS === */
 
 :root {
-  /* === DARK MODE (Default - TablePlus Style + MacOS 15 Geometry) === */
+  /* === UNIVERSAL BENTLEY STYLE BASE === */
+  /* This style is applied to ALL themes. Themes only override the colors. */
 
-  /* Background - Cool Dark (Not Black) */
-  --color-bg-default: #1f1f24;
-  /* App background / Main panel */
-  --color-bg-panel: #1b1c21;
-  /* Sidebar (left) */
-  --color-bg-hover: #2f3137;
-  /* Row hover / Hover surface */
-  --color-bg-active: #24262b;
-  /* Active / Table Surface */
-  --color-bg-elevated: #2b2d33;
-  /* Modal, Dropdown */
-  --color-bg-sunken: #18191d;
+  /* Background - Base Dark (Bentley Default) */
+  --color-bg-default: #08090a;
+  --color-bg-panel: rgba(18, 19, 21, 0.75);
+  --color-bg-hover: rgba(30, 32, 35, 0.85);
+  --color-bg-active: rgba(40, 42, 46, 0.9);
+  --color-bg-elevated: rgba(35, 36, 38, 0.9);
+  --color-bg-sunken: #050607;
 
   /* Surface */
-  --color-surface-raised: #24262b;
-  /* Table surface */
-  --color-surface-sunken: #1f1f24;
-  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --color-surface-raised: rgba(30, 32, 35, 0.85);
+  --color-surface-sunken: #08090a;
+  --color-surface-overlay: rgba(10, 11, 13, 0.85);
 
-  /* Text */
-  --color-text-primary: #e6e6e6;
-  --color-text-secondary: #b5b5b5;
-  --color-text-muted: #8a8a8a;
-  --color-text-disabled: #5f5f5f;
-  --color-text-accent: #5c7cfa;
-  --color-text-inverse: #1f1f24;
+  /* Glassmorphism - Standard Bentley Look */
+  --glass-bg: rgba(10, 11, 13, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(24px);
 
-  /* Border - Ultra-Thin macOS style */
-  --color-border-default: rgba(255, 255, 255, 0.05);
-  /* Divider */
+  /* Text - Dark Mode Defaults */
+  --color-text-primary: #f0f1f2;
+  --color-text-secondary: rgba(240, 241, 242, 0.65);
+  --color-text-muted: rgba(240, 241, 242, 0.4);
+  --color-text-disabled: rgba(240, 241, 242, 0.2);
+  --color-text-accent: #b0d0ff;
+  --color-text-inverse: #08090a;
+
+  /* Border - Global Style */
+  --color-border-default: rgba(255, 255, 255, 0.08);
   --color-border-light: rgba(255, 255, 255, 0.04);
-  /* Border subtle */
-  --color-border-strong: rgba(255, 255, 255, 0.08);
-  /* Border strong */
-  --color-border-subtle: rgba(255, 255, 255, 0.03);
-  --color-border-focus: rgba(92, 124, 250, 0.5);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-focus: #b0d0ff;
 
-  /* MacOS 15 Geometry - Rounded & Smooth */
-  --radius-sm: 0.375rem; /* 6px */
-  --radius-md: 0.625rem; /* 10px */
-  --radius-lg: 0.875rem; /* 14px */
-  --radius-xl: 1.125rem; /* 18px */
-
-  /* Primary */
-  --color-primary-default: #5c7cfa;
-  --color-primary-hover: #4c6ef5;
-  --color-primary-active: #3b5bdb;
-  --color-primary-subtle: rgba(92, 124, 250, 0.18);
-  /* Soft BG */
-  --color-primary-transparent: rgba(92, 124, 250, 0.18);
-  --color-primary-muted: rgba(92, 124, 250, 0.1);
+  /* Primary / Accents (Bentley Default) */
+  --color-primary-default: #b0d0ff;
+  --color-primary-hover: #98c1ff;
+  --color-primary-active: #80b2ff;
+  --color-primary-subtle: rgba(176, 208, 255, 0.1);
+  --color-primary-transparent: rgba(176, 208, 255, 0.15);
+  --color-primary-muted: #151a24;
 
   /* Semantic */
-  --color-success: #51cf66;
-  --color-success-bg: rgba(81, 207, 102, 0.15);
-  --color-warning: #fcc419;
-  --color-warning-bg: rgba(252, 196, 25, 0.15);
-  --color-error: #ff6b6b;
-  --color-error-bg: rgba(255, 107, 107, 0.15);
-  --color-info: #4dabf7;
+  --color-success: #50c878;
+  --color-success-bg: rgba(80, 200, 120, 0.15);
+  --color-warning: #ffd60a;
+  --color-warning-bg: rgba(255, 214, 10, 0.15);
+  --color-error: #ff453a;
+  --color-error-bg: rgba(255, 69, 58, 0.15);
+  --color-info: #0a84ff;
+
+  /* Geometry - Bentley Premium Rounding */
+  --radius-sm: 0.5rem;
+  /* 8px */
+  --radius-md: 0.875rem;
+  /* 14px */
+  --radius-lg: 1.25rem;
+  /* 20px */
+  --radius-xl: 1.75rem;
+  /* 28px */
+  --radius-2xl: 2.25rem;
+  /* 36px */
+
+  /* Shadows - Deep & Premium */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 20px var(--color-primary-transparent);
 
   /* Special */
-  --color-accent-glow: rgba(92, 124, 250, 0.3);
-  --color-focus-ring: #5c7cfa;
-  --color-selection-bg: rgba(92, 124, 250, 0.25);
+  --color-accent-glow: var(--shadow-glow);
+  --color-focus-ring: var(--color-primary-subtle);
+  --color-selection-bg: var(--color-primary-subtle);
   --color-selection-text: #ffffff;
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #5c7cfa 0%, #4c6ef5 100%);
-  --gradient-subtle: linear-gradient(
-    180deg,
-    rgba(92, 124, 250, 0.08) 0%,
-    transparent 100%
-  );
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-default) 0%, var(--color-primary-active) 100%);
+  --gradient-bentley: radial-gradient(circle at 20% 20%, var(--color-primary-transparent) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, var(--color-success-bg) 0%, transparent 40%);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6);
-  /* Modal shadow spec */
-  --shadow-glow: 0 0 15px rgba(92, 124, 250, 0.2);
+  /* Code Syntax - Optimized for high clarity */
+  --code-keyword: #ff79c6;
+  --code-string: #50c878;
+  --code-number: #ffd60a;
+  --code-comment: #6272a4;
+  --code-type: #8be9fd;
+  --code-function: #bd93f9;
+  --code-variable: #f8f8f2;
 
-  /* Code Syntax */
-  --code-keyword: #5c7cfa;
-  --code-string: #69db7c;
-  --code-number: #ffd43b;
-  --code-comment: #8a8a8a;
-  --code-type: #e6e6e6;
-  /* Identifier/Type */
-  --code-function: #9775fa;
-  --code-variable: #e6e6e6;
-
-  /* Legacy support */
+  /* Legacy support / Mapping */
   --bg-0: var(--color-bg-default);
   --bg-1: var(--color-bg-panel);
   --bg-2: var(--color-bg-hover);
@@ -262,10 +259,7 @@ textarea:not([rows]) {
   --error: var(--color-error);
   --success: var(--color-success);
   --warning: var(--color-warning);
-  --color-divider: var(--color-border-strong);
-  --input-border: var(--color-border-default);
-  --color-border: var(--color-border-default);
-  --primary: var(--color-primary-default);
+  --accent-color: var(--color-primary-default);
 
   /* Typography */
   --font-sans: "SF Pro Display", "Inter", system-ui, -apple-system,
@@ -277,12 +271,18 @@ textarea:not([rows]) {
   /* === COMPONENT SIZING SYSTEM === */
 
   /* Typography Scale */
-  --text-2xs: 0.5625rem; /* 9px */
-  --text-xs: 0.6875rem; /* 11px */
-  --text-sm: 0.8125rem; /* 13px */
-  --text-base: 0.875rem; /* 14px */
-  --text-lg: 1rem; /* 16px */
-  --text-xl: 1.125rem; /* 18px */
+  --text-2xs: 0.5625rem;
+  /* 9px */
+  --text-xs: 0.6875rem;
+  /* 11px */
+  --text-sm: 0.8125rem;
+  /* 13px */
+  --text-base: 0.875rem;
+  /* 14px */
+  --text-lg: 1rem;
+  /* 16px */
+  --text-xl: 1.125rem;
+  /* 18px */
 
   /* Line Heights */
   --leading-tight: 1.25;
@@ -290,43 +290,72 @@ textarea:not([rows]) {
   --leading-relaxed: 1.75;
 
   /* Spacing Scale */
-  --space-1: 0.25rem; /* 4px */
-  --space-2: 0.5rem; /* 8px */
-  --space-3: 0.75rem; /* 12px */
-  --space-4: 1rem; /* 16px */
-  --space-5: 1.25rem; /* 20px */
-  --space-6: 1.5rem; /* 24px */
-  --space-8: 2rem; /* 32px */
-  --space-10: 2.5rem; /* 40px */
-  --space-12: 3rem; /* 48px */
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-5: 1.25rem;
+  /* 20px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-10: 2.5rem;
+  /* 40px */
+  --space-12: 3rem;
+  /* 48px */
 
   /* Component Heights */
-  --component-height-sm: 2rem; /* 32px */
-  --component-height-md: 2.5rem; /* 40px */
-  --component-height-lg: 3rem; /* 48px */
+  --component-height-sm: 2rem;
+  /* 32px */
+  --component-height-md: 2.5rem;
+  /* 40px */
+  --component-height-lg: 3rem;
+  /* 48px */
 
   /* Table */
-  --table-row-height: 2.25rem; /* 36px */
-  --table-header-height: 2.5rem; /* 40px */
-  --table-cell-padding-x: 0.75rem; /* 12px */
-  --table-cell-padding-y: 0.375rem; /* 6px */
-  --table-header-padding-x: 0.75rem; /* 12px */
-  --table-header-padding-y: 0.5rem; /* 8px */
+  --table-row-height: 2.25rem;
+  /* 36px */
+  --table-header-height: 2.5rem;
+  /* 40px */
+  --table-cell-padding-x: 0.75rem;
+  /* 12px */
+  --table-cell-padding-y: 0.375rem;
+  /* 6px */
+  --table-header-padding-x: 0.75rem;
+  /* 12px */
+  --table-header-padding-y: 0.5rem;
+  /* 8px */
 
   /* Buttons */
-  --button-padding-x-sm: 0.75rem; /* 12px */
-  --button-padding-y-sm: 0.375rem; /* 6px */
-  --button-padding-x-md: 1rem; /* 16px */
-  --button-padding-y-md: 0.5rem; /* 8px */
-  --button-padding-x-lg: 1.5rem; /* 24px */
-  --button-padding-y-lg: 0.75rem; /* 12px */
+  --button-padding-x-sm: 0.75rem;
+  /* 12px */
+  --button-padding-y-sm: 0.375rem;
+  /* 6px */
+  --button-padding-x-md: 1rem;
+  /* 16px */
+  --button-padding-y-md: 0.5rem;
+  /* 8px */
+  --button-padding-x-lg: 1.5rem;
+  /* 24px */
+  --button-padding-y-lg: 0.75rem;
+  /* 12px */
 
   /* Input Fields */
-  --input-height-sm: 2rem; /* 32px */
-  --input-height-md: 2.5rem; /* 40px */
-  --input-height-lg: 3rem; /* 48px */
-  --input-padding-x: 0.75rem; /* 12px */
-  --input-padding-y: 0.5rem; /* 8px */
+  --input-height-sm: 2rem;
+  /* 32px */
+  --input-height-md: 2.5rem;
+  /* 40px */
+  --input-height-lg: 3rem;
+  /* 48px */
+  --input-padding-x: 0.75rem;
+  /* 12px */
+  --input-padding-y: 0.5rem;
+  /* 8px */
 }
 
 /* Dark theme class for consistency */
@@ -337,78 +366,38 @@ textarea:not([rows]) {
 
 .light,
 .theme-light {
-  /* === LIGHT MODE === */
-
-  /* Background */
+  /* === LIGHT MODE - Bentley Style === */
   --color-bg-default: #ffffff;
-  --color-bg-panel: #f9fafb;
-  --color-bg-hover: #f3f4f6;
-  --color-bg-active: #e5e7eb;
-  --color-bg-elevated: #ffffff;
-  --color-bg-sunken: #f3f4f6;
+  --color-bg-panel: rgba(245, 245, 247, 0.75);
+  --color-bg-hover: rgba(230, 230, 235, 0.8);
+  --color-bg-active: rgba(210, 210, 220, 0.85);
 
-  /* Surface */
-  --color-surface-raised: #ffffff;
-  --color-surface-sunken: #f3f4f6;
-  --color-surface-overlay: rgba(255, 255, 255, 0.95);
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(0, 0, 0, 0.05);
 
-  /* Text */
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #6b7280;
-  --color-text-disabled: #9ca3af;
-  --color-text-accent: #db2777;
-  --color-text-inverse: #f9fafb;
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: rgba(60, 60, 67, 0.6);
+  --color-text-accent: #ec4899;
 
-  /* Border */
-  --color-border-default: rgba(0, 0, 0, 0.05);
+  --color-border-default: rgba(0, 0, 0, 0.06);
   --color-border-light: rgba(0, 0, 0, 0.03);
-  --color-border-strong: rgba(0, 0, 0, 0.08);
-  --color-border-subtle: rgba(0, 0, 0, 0.04);
-  --color-border-focus: rgba(236, 72, 153, 0.5);
 
-  /* Primary */
   --color-primary-default: #ec4899;
   --color-primary-hover: #db2777;
   --color-primary-active: #be185d;
   --color-primary-subtle: rgba(236, 72, 153, 0.08);
   --color-primary-transparent: rgba(236, 72, 153, 0.12);
-  --color-primary-muted: #fce7f3;
 
-  /* Shadows */
+  /* Shadows for Light Mode */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 20px rgba(236, 72, 153, 0.2);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
 
-  /* Special */
-  --color-accent-glow: rgba(236, 72, 153, 0.2);
-  --color-focus-ring: rgba(236, 72, 153, 0.4);
-  --color-selection-bg: rgba(236, 72, 153, 0.25);
-  --color-selection-text: #111827;
-
-  /* Legacy support */
   --bg-0: var(--color-bg-default);
   --bg-1: var(--color-bg-panel);
   --bg-2: var(--color-bg-hover);
   --bg-3: var(--color-bg-active);
-}
-
-/* Keep existing theme classes for backward compatibility */
-.theme-light {
-  --bg-0: #ffffff;
-  --bg-1: #f3f4f6;
-  --bg-2: #e5e7eb;
-  --bg-3: #d1d5db;
-  --border: rgba(0, 0, 0, 0.1);
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --accent: #ec4899;
-  --accent-muted: rgba(236, 72, 153, 0.1);
+  --accent: var(--color-primary-default);
 }
 
 .theme-solar {
@@ -439,29 +428,38 @@ textarea:not([rows]) {
 }
 
 .theme-midnight {
-  --bg-0: #0f172a;
-  --bg-1: #1e293b;
-  --bg-2: #334155;
-  --bg-3: #475569;
-  --border: rgba(255, 255, 255, 0.1);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent: #38bdf8;
-  --accent-muted: rgba(56, 189, 248, 0.15);
+  --color-bg-default: #0a1122;
+  --color-bg-panel: rgba(20, 30, 50, 0.75);
+  --color-bg-hover: rgba(40, 60, 90, 0.85);
+
+  --color-text-primary: #f8fafc;
+  --color-text-accent: #38bdf8;
+
+  --color-primary-default: #38bdf8;
+  --color-primary-transparent: rgba(56, 189, 248, 0.15);
+  --color-primary-subtle: rgba(56, 189, 248, 0.1);
+
+  --bg-0: var(--color-bg-default);
+  --bg-1: var(--color-bg-panel);
+  --bg-2: var(--color-bg-hover);
+  --accent: var(--color-primary-default);
 }
 
 /* Soft Pink Premium - Default Design System Theme */
 .theme-soft-pink {
-  /* Uses the new design system variables */
+  --color-bg-default: #120a12;
+  --color-bg-panel: rgba(30, 15, 30, 0.75);
+  --color-bg-hover: rgba(50, 30, 50, 0.85);
+
+  --color-text-accent: #ffb6c1;
+  --color-primary-default: #ff9baf;
+  --color-primary-transparent: rgba(255, 155, 175, 0.15);
+  --color-primary-subtle: rgba(255, 155, 175, 0.1);
+
   --bg-0: var(--color-bg-default);
   --bg-1: var(--color-bg-panel);
   --bg-2: var(--color-bg-hover);
-  --bg-3: var(--color-bg-active);
-  --border: var(--color-border-default);
-  --text-primary: var(--color-text-primary);
-  --text-secondary: var(--color-text-secondary);
   --accent: var(--color-primary-default);
-  --accent-muted: var(--color-primary-subtle);
 }
 
 /* Wibu Pink - Classic Kawaii/Magical Girl */
@@ -790,8 +788,102 @@ textarea:not([rows]) {
   --color-selection-text: #000000;
 }
 
+/* Bentley Style - Luxury & Glassmorphism */
+.theme-bentley {
+  /* Background - Deep Dark / Black Finish */
+  --bg-0: #08090a;
+  --bg-1: rgba(18, 19, 21, 0.7);
+  /* Deep Glass Surface */
+  --bg-2: rgba(28, 29, 32, 0.8);
+  --bg-3: rgba(40, 42, 46, 0.9);
+  --border: rgba(255, 255, 255, 0.08);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(10, 11, 13, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: blur(16px);
+
+  /* Text - High Clarity */
+  --text-primary: #f0f1f2;
+  --text-secondary: rgba(240, 241, 242, 0.65);
+  --accent: #b0d0ff;
+  /* Silver Ice Blue */
+  --accent-muted: rgba(176, 208, 255, 0.15);
+
+  /* Semantic - Bentley Emerald / British Racing Green */
+  --success: #50c878;
+  --error: #ff453a;
+  --warning: #ffd60a;
+
+  /* === NEW DESIGN SYSTEM MAPPING === */
+  --color-bg-default: #08090a;
+  --color-bg-panel: rgba(18, 19, 21, 0.75);
+  --color-bg-hover: rgba(30, 32, 35, 0.85);
+  --color-bg-active: rgba(40, 42, 46, 0.9);
+  --color-bg-elevated: rgba(35, 36, 38, 0.9);
+  --color-bg-sunken: #050607;
+
+  --color-surface-raised: rgba(30, 32, 35, 0.85);
+  --color-surface-sunken: #08090a;
+  --color-surface-overlay: rgba(10, 11, 13, 0.85);
+
+  --color-text-primary: #f0f1f2;
+  --color-text-secondary: rgba(240, 241, 242, 0.65);
+  --color-text-muted: rgba(240, 241, 242, 0.4);
+  --color-text-disabled: rgba(240, 241, 242, 0.2);
+  --color-text-accent: #b0d0ff;
+  --color-text-inverse: #08090a;
+
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.04);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-focus: #b0d0ff;
+
+  --color-primary-default: #b0d0ff;
+  --color-primary-hover: #98c1ff;
+  --color-primary-active: #80b2ff;
+  --color-primary-subtle: rgba(176, 208, 255, 0.1);
+  --color-primary-transparent: rgba(176, 208, 255, 0.15);
+  --color-primary-muted: #151a24;
+
+  --color-success: #50c878;
+  --color-success-bg: rgba(80, 200, 120, 0.15);
+  --color-warning: #ffd60a;
+  --color-warning-bg: rgba(255, 214, 10, 0.15);
+  --color-error: #ff453a;
+  --color-error-bg: rgba(255, 69, 58, 0.15);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 20px -3px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 25px rgba(176, 208, 255, 0.2);
+
+  --color-accent-glow: rgba(176, 208, 255, 0.2);
+  --color-focus-ring: rgba(176, 208, 255, 0.5);
+  --color-selection-bg: rgba(176, 208, 255, 0.25);
+  --color-selection-text: #ffffff;
+}
+
+.theme-bentley body {
+  background-image: var(--gradient-bentley);
+  background-attachment: fixed;
+}
+
+.theme-bentley .glass {
+  background: rgba(12, 13, 15, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
 body {
   background-color: var(--bg-0);
+  background-image: var(--gradient-bentley);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
@@ -801,9 +893,11 @@ body {
 }
 
 .glass {
-  background-color: var(--glass-bg, rgba(255, 255, 255, 0.1));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  background: var(--glass-bg, rgba(12, 13, 15, 0.65));
+  backdrop-filter: var(--glass-blur, blur(24px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(24px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .premium-card {
@@ -868,6 +962,7 @@ body {
 }
 
 @keyframes pulse-slow {
+
   0%,
   100% {
     opacity: 1;
@@ -925,20 +1020,16 @@ body {
 
 /* Mask for horizontal scroll fading */
 .mask-linear-fade {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 1rem,
-    black calc(100% - 1rem),
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 1rem,
-    black calc(100% - 1rem),
-    transparent
-  );
+  -webkit-mask-image: linear-gradient(to right,
+      transparent,
+      black 1rem,
+      black calc(100% - 1rem),
+      transparent);
+  mask-image: linear-gradient(to right,
+      transparent,
+      black 1rem,
+      black calc(100% - 1rem),
+      transparent);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -956,17 +1047,17 @@ body {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, 
-    var(--color-bg-hover) 25%, 
-    var(--color-bg-active) 50%, 
-    var(--color-bg-hover) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--color-bg-hover) 25%,
+      var(--color-bg-active) 50%,
+      var(--color-bg-hover) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
   border-radius: var(--radius-sm);
@@ -978,9 +1069,12 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }

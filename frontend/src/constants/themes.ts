@@ -118,6 +118,13 @@ export const THEME_CONFIGS: Record<Theme, ThemeConfig> = {
         category: 'standard',
         description: 'Xcode light theme inspired',
     },
+    bentley: {
+        value: 'bentley',
+        label: 'Bentley Style',
+        emoji: '💎',
+        category: 'premium',
+        description: 'Luxury deep dark theme with glassmorphism',
+    },
 };
 
 // Helper to get theme display name with emoji
@@ -150,6 +157,7 @@ export const THEME_CLASS_NAMES: Record<Theme, string> = {
     'wibu-neon': 'theme-wibu-neon',
     'macos-dark': 'theme-macos-dark',
     'macos-light': 'theme-macos-light',
+    bentley: 'theme-bentley',
     system: '', // System doesn't have a direct class
 };
 

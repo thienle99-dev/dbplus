@@ -110,12 +110,12 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1 border-r pb-[20px] pt-8 border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20"
+      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-white/5 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20 backdrop-blur-xl"
       style={{ width: `${sidebarWidth}px` }}
       data-tauri-drag-region
     >
       {/* Vertical Workspace Tabs Rail */}
-      <div className="w-[60px] border-r border-border-light bg-bg-2 flex flex-col items-center py-3 gap-2">
+      <div className="w-[60px] border-r border-white/5 bg-black/10 flex flex-col items-center py-3 gap-2">
         <button
           onClick={() => navigate('/')}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${location.pathname === '/'
@@ -365,19 +365,19 @@ export default function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border-light space-y-1 bg-bg-1 glass z-10">
+        <div className="p-4 border-t border-white/5 space-y-1 bg-white/5 glass z-10 mx-2 mb-2 rounded-2xl">
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-bg-2 rounded-xl text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-text-secondary hover:text-white transition-all uppercase tracking-widest ring-1 ring-white/5"
           >
-            <Settings size={16} />
+            <Settings size={14} />
             Settings
           </button>
           <button
             onClick={() => navigate('/')}
-            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-error-50 hover:text-error rounded-xl text-sm text-text-secondary transition-colors"
+            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-xs font-bold text-text-secondary transition-all uppercase tracking-widest"
           >
-            <LogOut size={16} />
+            <LogOut size={14} />
             Disconnect
           </button>
         </div>

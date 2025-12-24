@@ -351,20 +351,20 @@ export default function QueryEditor({
   const handleSaveChart = (config: ChartConfigData) => {
     setChartConfig(config);
     if (savedQueryId) {
-       handleQuickSaveWithConfig(config);
+      handleQuickSaveWithConfig(config);
     } else {
-       setIsSaveModalOpen(true);
+      setIsSaveModalOpen(true);
     }
   };
 
   const handleQuickSaveWithConfig = async (configOverride?: ChartConfigData) => {
-     if (!savedQueryId || !connectionId) return;
-     const meta = {
-        ...(visualState || {}),
-        chartConfig: configOverride || chartConfig
-     };
+    if (!savedQueryId || !connectionId) return;
+    const meta = {
+      ...(visualState || {}),
+      chartConfig: configOverride || chartConfig
+    };
 
-     try {
+    try {
       await updateSavedQuery.mutateAsync({
         id: savedQueryId,
         sql: query,
@@ -666,9 +666,9 @@ export default function QueryEditor({
             height: splitMode === 'vertical' ? '100%' : `${editorHeight}px`,
             width: splitMode === 'vertical' ? '50%' : '100%'
           }}
-          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-border-light flex flex-col shrink-0`}
+          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-white/5 flex flex-col shrink-0 overflow-hidden rounded-2xl m-2 glass shadow-lg`}
         >
-          <div className="flex-1 overflow-hidden flex relative">
+          <div className="flex-1 overflow-hidden flex relative bg-white/[0.02]">
             <CodeMirror
               value={query}
               height="100%"
@@ -714,23 +714,23 @@ export default function QueryEditor({
         )}
 
         {/* Results Section */}
-        <div className="flex-1 flex flex-col min-h-0 bg-bg-0">
-          <div className="flex items-center justify-between border-b border-border-light bg-bg-1 p-2">
-            <div className="flex p-0.5 bg-bg-2 rounded-xl border border-border-light">
+        <div className="flex-1 flex flex-col min-h-0 bg-transparent py-2 pr-2">
+          <div className="flex items-center justify-between border-b border-white/5 bg-white/5 p-3 glass rounded-t-2xl">
+            <div className="flex p-1 bg-white/5 rounded-[14px] border border-white/5 glass">
               <button
                 onClick={() => setBottomTab('results')}
-                className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'results'
-                  ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-border-subtle'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'results'
+                  ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                  : 'text-text-secondary hover:text-white hover:bg-white/5'
                   }`}
               >
                 Results
               </button>
               <button
                 onClick={() => setBottomTab('plan')}
-                className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'plan'
-                  ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-border-subtle'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'plan'
+                  ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                  : 'text-text-secondary hover:text-white hover:bg-white/5'
                   }`}
               >
                 Execution Plan
@@ -738,9 +738,9 @@ export default function QueryEditor({
               {snapshot && (
                 <button
                   onClick={() => setBottomTab('comparison')}
-                  className={`px-5 py-2 text-sm font-medium flex items-center gap-2.5 transition-all rounded-lg ${bottomTab === 'comparison'
-                    ? 'text-text-primary bg-bg-0 shadow-sm ring-1 ring-border-subtle'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
+                  className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'comparison'
+                    ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
+                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                     }`}
                 >
                   Diff Comparison
@@ -749,7 +749,7 @@ export default function QueryEditor({
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative bg-white/[0.02] rounded-b-2xl border-x border-b border-white/5 glass">
             <div className={`absolute inset-0 flex flex-col ${bottomTab === 'results' ? 'z-10' : 'z-0 invisible'}`}>
               <QueryResults
                 result={result}

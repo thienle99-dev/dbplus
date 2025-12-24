@@ -542,60 +542,62 @@ export default function QueryTabs() {
       <div className="flex h-full bg-bg-0">
         {/* Left Sidebar for Saved Queries / History */}
         <div className={clsx(
-          "border-r border-border-light bg-bg-1 glass transition-all duration-200 z-10",
-          sidebarView ? "w-64" : "w-12"
+          "border-r border-white/5 bg-white/5 glass transition-all duration-300 z-10 m-2 rounded-2xl overflow-hidden",
+          sidebarView ? "w-64" : "w-14"
         )}>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full py-4">
             <button
               onClick={() => setSidebarView(sidebarView === 'saved' ? null : 'saved')}
               className={clsx(
-                "p-3 hover:bg-bg-2 transition-colors border-b border-border-subtle",
-                sidebarView === 'saved' && "bg-bg-2 text-accent"
+                "p-4 hover:bg-white/10 transition-all text-text-secondary rounded-xl mx-2",
+                sidebarView === 'saved' && "bg-[var(--color-primary-transparent)] text-[var(--color-primary-default)]"
               )}
               title="Saved Queries"
             >
-              <BookMarked size={18} />
+              <BookMarked size={20} />
             </button>
             <button
               onClick={() => setSidebarView(sidebarView === 'history' ? null : 'history')}
               className={clsx(
-                "p-3 hover:bg-bg-2 transition-colors border-b border-border-subtle",
-                sidebarView === 'history' && "bg-bg-2 text-accent"
+                "p-4 hover:bg-white/10 transition-all text-text-secondary rounded-xl mx-2 mt-2",
+                sidebarView === 'history' && "bg-[var(--color-primary-transparent)] text-[var(--color-primary-default)]"
               )}
               title="Query History"
             >
-              <History size={18} />
+              <History size={20} />
             </button>
 
             {/* Sidebar Content */}
-            {sidebarView === 'saved' && (
-              <SavedQueriesList onSelectQuery={handleLoadQuery} />
-            )}
-            {sidebarView === 'history' && (
-              <QueryHistory onSelectQuery={handleLoadQuery} />
-            )}
+            <div className="flex-1 overflow-auto mt-4 px-2">
+              {sidebarView === 'saved' && (
+                <SavedQueriesList onSelectQuery={handleLoadQuery} />
+              )}
+              {sidebarView === 'history' && (
+                <QueryHistory onSelectQuery={handleLoadQuery} />
+              )}
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 relative bg-bg-default">
-          <div className="flex items-center bg-bg-1 glass border-b border-border-light overflow-x-auto no-scrollbar scroll-smooth px-2 h-10">
+        <div className="flex-1 flex flex-col min-w-0 relative bg-transparent py-2 pr-2">
+          <div className="flex items-center bg-white/5 glass border-b border-white/5 overflow-x-auto no-scrollbar scroll-smooth px-3 h-12 rounded-t-2xl">
             {tabs.map(tab => (
               <div
                 key={tab.id}
                 onClick={() => startTransition(() => setActiveTabId(tab.id))}
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 className={clsx(
-                  "group flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium transition-all duration-200 cursor-pointer min-w-[100px] max-w-[180px] select-none rounded-md mx-0.5",
+                  "group flex items-center gap-2.5 px-4 py-2 text-[13px] font-bold transition-all duration-300 cursor-pointer min-w-[120px] max-w-[200px] select-none rounded-[14px] mx-1 relative",
                   activeTabId === tab.id
-                    ? "bg-bg-active text-text-primary shadow-sm"
-                    : "text-text-secondary hover:bg-bg-1 hover:text-text-primary"
+                    ? "bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]"
+                    : "text-text-secondary hover:bg-white/5 hover:text-white"
                 )}
               >
                 {tab.type === 'table' ? (
-                  <Database size={14} className={activeTabId === tab.id ? "text-accent" : ""} />
+                  <Database size={15} className={activeTabId === tab.id ? "text-[var(--color-primary-default)]" : ""} />
                 ) : (
-                  <FileCode size={14} className={activeTabId === tab.id ? "text-accent" : ""} />
+                  <FileCode size={15} className={activeTabId === tab.id ? "text-[var(--color-primary-default)]" : ""} />
                 )}
 
                 {editingTabId === tab.id ? (
@@ -610,7 +612,7 @@ export default function QueryTabs() {
                       if (e.key === 'Escape') setEditingTabId(null);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 bg-bg-2 text-text-primary px-1 py-0.5 rounded outline-none min-w-[50px] h-5 text-sm"
+                    className="flex-1 bg-white/10 text-white px-2 py-1 rounded-lg outline-none min-w-[50px] h-6 text-xs"
                   />
                 ) : (
                   <span
@@ -628,39 +630,43 @@ export default function QueryTabs() {
 
                 {tab.pinned && (
                   <div title="Pinned">
-                    <Pin size={12} className="text-accent" />
+                    <Pin size={12} className="text-[var(--color-primary-default)]" />
                   </div>
                 )}
 
 
                 {(tab.isDraft || tab.isDirty) && (
-                  <span className="w-2 h-2 rounded-full bg-warning" title="Unsaved changes" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]" title="Unsaved changes" />
                 )}
                 {tab.isSleeping && (
-                  <span className="text-[9px] uppercase font-bold tracking-wider text-text-tertiary border border-border-light px-1 rounded ml-1 select-none">Paused</span>
+                  <span className="text-[9px] uppercase font-black tracking-widest text-white/30 border border-white/10 px-1.5 rounded-md ml-1 select-none">Paused</span>
                 )}
                 <button
                   onClick={(e) => closeTab(tab.id, e)}
                   className={clsx(
-                    "p-0.5 rounded hover:bg-bg-3 opacity-0 group-hover:opacity-100 transition-opacity",
+                    "p-1 rounded-lg hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all",
                     tabs.length === 1 && "hidden"
                   )}
                 >
-                  <X size={12} />
+                  <X size={14} />
                 </button>
+
+                {activeTabId === tab.id && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-[var(--color-primary-default)] rounded-full shadow-[0_0_10px_var(--color-primary-transparent)]" />
+                )}
               </div>
             ))}
             <button
               onClick={() => addTab()}
-              className="p-1.5 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-1 rounded-md transition-colors"
+              className="p-2 ml-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
               title="New Query Tab"
               aria-label="New Query Tab (Ctrl+T)"
             >
-              <Plus size={14} />
+              <Plus size={18} strokeWidth={2.5} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative bg-white/[0.02] rounded-b-2xl border-x border-b border-white/5 glass">
             {tabs.map(tab => {
               const isActive = activeTabId === tab.id;
 
@@ -673,7 +679,7 @@ export default function QueryTabs() {
               return (
                 <div
                   key={tab.id}
-                  className="absolute inset-0 flex-col bg-bg-0 z-10"
+                  className="absolute inset-0 flex-col bg-transparent z-10"
                   style={{ display: displayStyle }}
                 >
                   <Suspense fallback={<div className="flex h-full items-center justify-center text-text-secondary">Loading component...</div>}>

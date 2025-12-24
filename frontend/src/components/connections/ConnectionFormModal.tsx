@@ -257,9 +257,9 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         >
             <form onSubmit={handleSubmit} className="space-y-4">
                 {(error || testMessage) && (
-                    <div className={`px-4 py-3 border rounded-xl text-sm flex items-start gap-3 ${testStatus === 'success'
-                        ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                        : 'bg-red-500/10 border-red-500/30 text-error'
+                    <div className={`px-4 py-3 border rounded-xl text-xs font-black uppercase tracking-widest flex items-start gap-3 glass ${testStatus === 'success'
+                        ? 'bg-[var(--color-success-bg)] border-[var(--color-success-border)] text-[var(--color-success-text)]'
+                        : 'bg-[var(--color-error-bg)] border-[var(--color-error-border)] text-[var(--color-error-text)]'
                         }`}>
                         <span>{error || testMessage}</span>
                     </div>
@@ -293,10 +293,10 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                         </div>
                         <div className="flex-1" />
                         <Input
-                            placeholder="Tags (comma separated)"
+                            placeholder="TAGS (OPTIONAL)"
                             value={formData.tags}
                             onChange={(e) => handleChange('tags', e.target.value)}
-                            className="flex-1"
+                            className="flex-1 font-black uppercase tracking-widest text-[10px]"
                         />
                     </div>
                 </div>
