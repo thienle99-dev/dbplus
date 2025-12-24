@@ -10,6 +10,7 @@ export interface CreateConnectionRequest {
     username?: string;
     password?: string;
     ssl?: boolean;
+    id?: string;
 }
 
 export interface UpdateConnectionRequest extends Partial<CreateConnectionRequest> {
@@ -90,17 +91,17 @@ export const connectionApi = {
     },
 
     // Get all schemas
-    getSchemas: async (id: string, options?: { database?: string }): Promise<string[]> => {
+    getSchemas: async (id: string, _options?: { database?: string }): Promise<string[]> => {
         const { data } = await api.get<string[]>(`/api/connections/${id}/schemas`);
         return data;
     },
 
-    createSchema: async (id: string, name: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
+    createSchema: async (id: string, name: string, _options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
         await api.post(`/api/connections/${id}/schemas`, { name });
         return { success: true, message: 'Schema created successfully' };
     },
 
-    createTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
+    createTable: async (id: string, schema: string, table: string, _options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
         await api.post(`/api/connections/${id}/tables`, { 
             schema, 
             table_name: table,
@@ -109,11 +110,11 @@ export const connectionApi = {
         return { success: true, message: 'Table created successfully' };
     },
 
-    dropTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<void> => {
+    dropTable: async (id: string, schema: string, table: string, _options?: { database?: string }): Promise<void> => {
         await api.delete(`/api/connections/${id}/tables?schema=${schema}&table=${table}`);
     },
 
-    dropSchema: async (id: string, name: string, options?: { database?: string }): Promise<void> => {
+    dropSchema: async (id: string, name: string, _options?: { database?: string }): Promise<void> => {
         await api.delete(`/api/connections/${id}/schemas/${name}`);
     },
 

@@ -17,7 +17,7 @@ interface ConnectionState {
     fetchConnections: () => Promise<void>;
     createConnection: (connection: Omit<Connection, 'id'>) => Promise<Connection>;
     testConnection: (id: string) => Promise<boolean>;
-    testConnectionDetails: (connection: Omit<Connection, 'id'>) => Promise<{ success: boolean; message?: string }>;
+    testConnectionDetails: (connection: Omit<Connection, 'id'> & { id?: string }) => Promise<{ success: boolean; message?: string }>;
 
     // Sorting
     sortOption: { field: 'name' | 'type' | 'host'; direction: 'asc' | 'desc' };
@@ -134,7 +134,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
         }
     },
 
-    testConnectionDetails: async (connectionData: Omit<Connection, 'id'>) => {
+    testConnectionDetails: async (connectionData: Omit<Connection, 'id'> & { id?: string }) => {
         try {
             const result = await connectionApi.testDetails({
                 name: connectionData.name,
@@ -144,6 +144,7 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
                 database: connectionData.database,
                 username: connectionData.username,
                 password: connectionData.password,
+                id: connectionData.id,
             });
             return result;
         } catch (error) {

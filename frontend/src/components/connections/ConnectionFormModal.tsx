@@ -32,6 +32,7 @@ const DEFAULT_FORM_DATA = {
     ssl: false,
     environment: 'development',
     safe_mode_level: '1', // using string for select
+    id: undefined as string | undefined,
 };
 
 const SAFE_MODE_OPTIONS = [
@@ -99,6 +100,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     user: initialValues.username || '',
                     environment: initialValues.environment || 'development',
                     safe_mode_level: String(initialValues.safe_mode_level ?? 1),
+                    id: (initialValues as any).id,
                 }));
             } else {
                 const nextType = initialType || DEFAULT_FORM_DATA.type;
@@ -132,6 +134,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         tags: formData.tags,
         environment: formData.environment,
         safe_mode_level: parseInt(formData.safe_mode_level) || 1,
+        id: formData.id,
     });
 
     const handleChange = (field: keyof typeof formData, value: string) => {

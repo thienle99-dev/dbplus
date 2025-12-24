@@ -11,15 +11,31 @@ const log = (type: 'request' | 'response' | 'error', message: string, data?: any
 
 // Map URL patterns to Tauri commands
 const routeToCommand = (method: string, url: string, data?: any): { command: string, args: any } | null => {
+    // Global routes check first to avoid ambiguity with IDs (e.g. 'test' being caught as an ID)
+    if (url === '/api/connections/test' && method === 'POST') return { command: 'test_connection', args: { request: data } };
+
     // Connection ID extraction
     const connMatch = url.match(/\/api\/connections\/([^/]+)/);
     const connectionId = connMatch ? connMatch[1] : null;
 
-    if (url.includes('/api/connections') && method === 'GET' && !connectionId) {
-        return { command: 'list_connections', args: {} };
+    if (url.includes('/api/connections') && !connectionId) {
+        if (method === 'GET') return { command: 'list_connections', args: {} };
+        if (method === 'POST') return { command: 'create_connection', args: { request: data } };
     }
 
     if (connectionId) {
+        // Basic CRUD for specific connection
+        // Exact match on ID means we are operating on the connection resource itself
+        // (Removing query params for match check if any, though usually url is clean here or needs sanitization)
+        // Check if the URL *ends* with the ID (possibly followed by query params which we assume aren't part of regex match group 1 usually, but let's be careful).
+        // The regex `connMatch` is `/\/api\/connections\/([^/]+)/`.
+        // If the URL is exactly `/api/connections/123`, `connMatch[0]` is `/api/connections/123`.
+        const matchString = `/api/connections/${connectionId}`;
+        if (url === matchString || url.startsWith(`${matchString}?`)) {
+            if (method === 'GET') return { command: 'get_connection', args: { id: connectionId } };
+            if (method === 'PUT') return { command: 'update_connection', args: { id: connectionId, request: data } };
+            if (method === 'DELETE') return { command: 'delete_connection', args: { id: connectionId } };
+        }
         // Core connection routes
         if (url.endsWith('/version')) return { command: 'get_connection', args: { id: connectionId } };
         if (url.endsWith('/test') && method === 'POST') return { command: 'test_connection_by_id', args: { id: connectionId } };
@@ -98,7 +114,6 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
     }
 
     // Global routes
-    if (url === '/api/connections/test' && method === 'POST') return { command: 'test_connection', args: { request: data } };
     if (url === '/api/autocomplete' && method === 'POST') return { command: 'autocomplete_suggest', args: { request: data } };
     
     if (url === '/api/settings') {

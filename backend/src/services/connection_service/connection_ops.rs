@@ -267,8 +267,35 @@ impl ConnectionService {
 
         match connection.db_type.as_str() {
             "postgres" | "cockroachdb" | "cockroach" => {
-                let driver = PostgresDriver::new(&connection, password).await?;
-                ConnectionDriver::test_connection(&driver).await
+                // Try connecting to the specified database first
+                match PostgresDriver::new(&connection, password).await {
+                    Ok(driver) => ConnectionDriver::test_connection(&driver).await,
+                    Err(e) => {
+                        tracing::error!("Initial Postgres connection failed: {}", e);
+                        let err_msg = e.to_string().to_lowercase();
+                        // If database does not exist, try connecting to 'postgres' to verify credentials
+                        if err_msg.contains("does not exist")
+                            || err_msg.contains("3d000")
+                            || (err_msg.contains("database") && err_msg.contains("not exist"))
+                        {
+                            match PostgresDriver::new_for_test(&connection, password).await {
+                                Ok(driver) => {
+                                    match ConnectionDriver::test_connection(&driver).await {
+                                        Ok(_) => {
+                                            // If we can connect to 'postgres', but not the target DB,
+                                            // we return a specific error to let the user know credentials are good.
+                                            Err(anyhow::anyhow!("Credentials valid, but database '{}' does not exist.", connection.database))
+                                        }
+                                        Err(_) => Err(e), // Return original error if fallback test fails
+                                    }
+                                }
+                                Err(_) => Err(e), // Return original error if fallback creation fails
+                            }
+                        } else {
+                            Err(e)
+                        }
+                    }
+                }
             }
             "sqlite" => {
                 let driver = self.sqlite_driver(&connection, password).await?;

@@ -54,6 +54,8 @@ pub struct CreateConnectionRequest {
     pub status_color: Option<String>,
     #[serde(default)]
     pub tags: Option<String>,
+    #[serde(default)]
+    pub id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -123,8 +125,13 @@ pub async fn create_connection(
     use dbplus_backend::models::entities::connection;
     use chrono::Utc;
     
+    println!("[Create Connection] Request received: name={}, type={}", request.name, request.db_type);
+
     let service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            println!("[Create Connection] Service init failed: {}", e);
+            e.to_string()
+        })?;
     
     // Validate required fields for non-SQLite connections
     if request.db_type.as_str() != "sqlite" {
@@ -132,6 +139,7 @@ pub async fn create_connection(
             || request.port.unwrap_or(0) <= 0
             || request.username.as_deref().unwrap_or("").trim().is_empty()
         {
+            println!("[Create Connection] Validation failed: Missing required fields");
             return Err("Missing required connection fields (host/port/username)".to_string());
         }
         if request.db_type != "clickhouse"
@@ -141,10 +149,12 @@ pub async fn create_connection(
             && request.db_type != "couchbase"
             && request.database.trim().is_empty()
         {
+            println!("[Create Connection] Validation failed: Missing database");
             return Err("Missing database".to_string());
         }
     }
 
+    // ... (rest of field extraction matches original) ...
     let (host, port, username, password) = if request.db_type.as_str() == "sqlite" {
         ("".to_string(), 0, "".to_string(), "".to_string())
     } else {
@@ -195,9 +205,16 @@ pub async fn create_connection(
         updated_at: Utc::now().into(),
     };
 
-    service.create_connection(model)
-        .await
-        .map_err(|e| e.to_string())
+    match service.create_connection(model).await {
+        Ok(result) => {
+            println!("[Create Connection] Success: id={}", result.id);
+            Ok(result)
+        },
+        Err(e) => {
+            println!("[Create Connection] Backend failed: {}", e);
+            Err(e.to_string())
+        }
+    }
 }
 
 #[tauri::command]
@@ -344,7 +361,25 @@ pub async fn test_connection(
         updated_at: Utc::now().into(),
     };
 
-    match service.test_connection(model, request.password.as_deref().unwrap_or("")).await {
+    let password = if request.password.clone().unwrap_or_default().is_empty() {
+        if let Some(id_str) = &request.id {
+             if let Ok(uuid) = Uuid::parse_str(id_str) {
+                 if let Ok((_, stored_pass)) = service.get_connection_with_password(uuid).await {
+                     stored_pass
+                 } else {
+                     "".to_string()
+                 }
+             } else {
+                 "".to_string()
+             }
+        } else {
+            "".to_string()
+        }
+    } else {
+        request.password.clone().unwrap_or_default()
+    };
+
+    match service.test_connection(model, &password).await {
         Ok(_) => {
             Ok(TestConnectionResponse {
                 success: true,
@@ -353,6 +388,7 @@ pub async fn test_connection(
         }
         Err(e) => {
             let error_msg = format!("{}", e);
+            println!("[Connection Test Failed]: {}", error_msg); // Added log
             let message = if error_msg.contains("connection refused")
                 || error_msg.contains("Connection refused")
                 || error_msg.contains("actively refused it")
@@ -408,6 +444,7 @@ pub async fn test_connection_by_id(
         }
         Err(e) => {
             let error_msg = format!("{}", e);
+            println!("[Connection Test Failed (ID)]: {}", error_msg); // Added log
             let message = if error_msg.contains("connection refused")
                 || error_msg.contains("Connection refused")
                 || error_msg.contains("actively refused it")
