@@ -1,10 +1,12 @@
 use crate::services::schema_diff::extractor::*;
 use deadpool_postgres::Pool;
 
+#[allow(dead_code)]
 pub struct PostgresSchemaExtractor {
     pool: Pool,
 }
 
+#[allow(dead_code)]
 impl PostgresSchemaExtractor {
     pub fn new(pool: Pool) -> Self {
         Self { pool }

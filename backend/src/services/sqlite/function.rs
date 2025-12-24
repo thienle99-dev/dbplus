@@ -4,13 +4,11 @@ use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::sqlite::SqlitePool;
 
-pub struct SQLiteFunction {
-    pool: SqlitePool,
-}
+pub struct SQLiteFunction {}
 
 impl SQLiteFunction {
-    pub fn new(pool: SqlitePool) -> Self {
-        Self { pool }
+    pub fn new(_pool: SqlitePool) -> Self {
+        Self {}
     }
 }
 
@@ -37,11 +35,8 @@ impl FunctionOperations for SQLiteFunction {
             function_name
         );
 
-        Err(anyhow::anyhow!("SQLite does not support user-defined functions in the same way as PostgreSQL"))
+        Err(anyhow::anyhow!(
+            "SQLite does not support user-defined functions in the same way as PostgreSQL"
+        ))
     }
 }
-
-
-
-
-

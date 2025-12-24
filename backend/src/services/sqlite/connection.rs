@@ -33,8 +33,7 @@ impl SQLiteConnection {
             db_path
         );
 
-        let options = SqliteConnectOptions::from_str(db_path)?
-            .create_if_missing(true);
+        let options = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
 
         let attachments = attachments.to_vec();
         let pool = SqlitePoolOptions::new()
@@ -69,17 +68,8 @@ impl SQLiteConnection {
         tracing::info!("[SQLiteConnection] Connection pool created successfully");
         Ok(Self { pool })
     }
-
-    pub async fn new_for_test(connection: &ConnectionModel::Model, _password: &str) -> Result<Self> {
-        Self::new(connection, _password).await
-    }
 }
 
 fn quote_ident(s: &str) -> String {
     format!("\"{}\"", s.replace('"', "\"\""))
 }
-
-
-
-
-

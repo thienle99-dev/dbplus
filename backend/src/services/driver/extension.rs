@@ -2,15 +2,13 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::Value;
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait StreamingDriver: Send + Sync {
-    async fn stream_query(
-        &self,
-        query: &str,
-        batch_size: usize,
-    ) -> Result<Vec<Vec<Value>>>;
+    async fn stream_query(&self, query: &str, batch_size: usize) -> Result<Vec<Vec<Value>>>;
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait BulkOperationsDriver: Send + Sync {
     async fn bulk_insert(
@@ -29,12 +27,7 @@ pub trait BulkOperationsDriver: Send + Sync {
         where_clause: &str,
     ) -> Result<u64>;
 
-    async fn bulk_delete(
-        &self,
-        schema: &str,
-        table: &str,
-        where_clause: &str,
-    ) -> Result<u64>;
+    async fn bulk_delete(&self, schema: &str, table: &str, where_clause: &str) -> Result<u64>;
 }
 
 #[async_trait]

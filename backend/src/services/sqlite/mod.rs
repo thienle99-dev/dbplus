@@ -32,7 +32,6 @@ pub struct SqliteAttachedDatabase {
 }
 
 pub struct SQLiteDriver {
-    connection: SQLiteConnection,
     query: SQLiteQuery,
     schema: SQLiteSchema,
     table: SQLiteTable,
@@ -56,22 +55,6 @@ impl SQLiteDriver {
         let pool = conn.pool().clone();
 
         Ok(Self {
-            connection: conn,
-            query: SQLiteQuery::new(pool.clone()),
-            schema: SQLiteSchema::new(pool.clone()),
-            table: SQLiteTable::new(pool.clone()),
-            column: SQLiteColumn::new(pool.clone()),
-            view: SQLiteView::new(pool.clone()),
-            function: SQLiteFunction::new(pool),
-        })
-    }
-
-    pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
-        let conn = SQLiteConnection::new_for_test(connection, password).await?;
-        let pool = conn.pool().clone();
-
-        Ok(Self {
-            connection: conn,
             query: SQLiteQuery::new(pool.clone()),
             schema: SQLiteSchema::new(pool.clone()),
             table: SQLiteTable::new(pool.clone()),

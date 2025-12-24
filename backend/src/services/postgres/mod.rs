@@ -64,10 +64,6 @@ impl PostgresDriver {
         })
     }
 
-    pub fn foreign_key(&self) -> &PostgresForeignKey {
-        &self.foreign_key
-    }
-
     pub async fn new_for_test(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         let conn = PostgresConnection::new_for_test(connection, password).await?;
         let pool = conn.pool().clone();
@@ -91,11 +87,8 @@ impl PostgresDriver {
         })
     }
 
-    pub async fn create_database_if_not_exists(
-        connection: &ConnectionModel::Model,
-        password: &str,
-    ) -> Result<()> {
-        PostgresConnection::create_database_if_not_exists(connection, password).await
+    pub fn foreign_key(&self) -> &PostgresForeignKey {
+        &self.foreign_key
     }
 }
 

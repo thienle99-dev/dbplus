@@ -22,6 +22,7 @@ pub trait DriverCapabilities {
     }
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait TransactionDriver: Send + Sync {
     async fn begin_transaction(&self) -> Result<String>;
@@ -29,8 +30,13 @@ pub trait TransactionDriver: Send + Sync {
     async fn rollback_transaction(&self, transaction_id: &str) -> Result<()>;
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait PreparedStatementDriver: Send + Sync {
     async fn prepare(&self, query: &str) -> Result<String>;
-    async fn execute_prepared(&self, statement_id: &str, params: &[&dyn ToString]) -> Result<crate::services::db_driver::QueryResult>;
+    async fn execute_prepared(
+        &self,
+        statement_id: &str,
+        params: &[&dyn ToString],
+    ) -> Result<crate::services::db_driver::QueryResult>;
 }

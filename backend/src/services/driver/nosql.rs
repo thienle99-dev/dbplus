@@ -2,6 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::Value;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct CollectionInfo {
     pub name: String,
@@ -9,12 +10,14 @@ pub struct CollectionInfo {
     pub size: Option<u64>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DocumentResult {
     pub documents: Vec<Value>,
     pub total: Option<u64>,
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait NoSQLOperations: Send + Sync {
     async fn list_collections(&self, database: &str) -> Result<Vec<CollectionInfo>>;

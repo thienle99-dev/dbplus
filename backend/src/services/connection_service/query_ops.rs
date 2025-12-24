@@ -54,6 +54,11 @@ impl ConnectionService {
                         .await?;
                 QueryDriver::execute_script(&driver, script).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                QueryDriver::execute_script(&driver, script).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -165,6 +170,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::execute_query(&driver, query).await?
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::execute_query(&driver, query).await?
+            }
             _ => return Err(anyhow::anyhow!("Unsupported database type")),
         };
 
@@ -227,6 +237,11 @@ impl ConnectionService {
                         .await?;
                 QueryDriver::execute(&driver, query).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                QueryDriver::execute(&driver, query).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -271,6 +286,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
                         .await?;
+                QueryDriver::explain(&driver, query, analyze).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 QueryDriver::explain(&driver, query, analyze).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -318,6 +338,11 @@ impl ConnectionService {
                     crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
                         .await?;
                 driver.search_objects(query).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                crate::services::driver::SchemaIntrospection::search_objects(&driver, query).await
             }
             _ => Ok(vec![]),
         }

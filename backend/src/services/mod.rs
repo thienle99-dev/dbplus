@@ -10,6 +10,7 @@ pub mod driver;
 pub mod encryption_service;
 pub mod history_service;
 pub mod mock_data;
+pub mod mongo;
 pub mod mysql;
 pub mod pg_dump;
 pub mod postgres;

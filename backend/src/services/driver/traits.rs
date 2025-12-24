@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+#[allow(dead_code)]
 pub trait DriverMetadata {
     fn driver_name(&self) -> &'static str;
     fn driver_version(&self) -> &'static str;
@@ -9,6 +10,7 @@ pub trait DriverMetadata {
     fn supports_prepared_statements(&self) -> bool;
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait ConnectionPoolDriver: Send + Sync {
     async fn get_pool_size(&self) -> Result<usize>;
@@ -16,11 +18,13 @@ pub trait ConnectionPoolDriver: Send + Sync {
     async fn get_idle_connections(&self) -> Result<usize>;
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub trait HealthCheckDriver: Send + Sync {
     async fn health_check(&self) -> Result<DriverHealth>;
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DriverHealth {
     pub status: HealthStatus,
@@ -28,6 +32,7 @@ pub struct DriverHealth {
     pub error: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HealthStatus {
     Healthy,

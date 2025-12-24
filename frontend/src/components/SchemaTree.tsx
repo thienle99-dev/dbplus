@@ -210,17 +210,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
     if (connectionType === 'sqlite' && schemaName === 'main') {
       showToast('Cannot detach main database', 'error'); return;
     }
-    
+
     let msg = `Are you sure you want to drop ${schemaTerm.toLowerCase()} "${schemaName}"?`;
     let title = `Drop ${schemaTerm}`;
     let confirmLabel = 'Drop';
 
     if (connectionType === 'sqlite') {
-       msg = `Are you sure you want to detach attached database "${schemaName}"?`;
-       title = 'Detach Database';
-       confirmLabel = 'Detach';
+      msg = `Are you sure you want to detach attached database "${schemaName}"?`;
+      title = 'Detach Database';
+      confirmLabel = 'Detach';
     }
-    
+
     const confirmed = await dialog.confirm({
       title,
       message: msg,
@@ -397,6 +397,15 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             Export DDL...
           </ContextMenuItem>
           <ContextMenuItem
+            icon={<FileCode size={14} />}
+            onClick={() => {
+              navigate(`/workspace/${connectionId}/query`, { state: { newQuery: true, schema: schemaName } });
+              setSchemaContextMenu(null);
+            }}
+          >
+            New Query
+          </ContextMenuItem>
+          <ContextMenuItem
             icon={<Network size={14} />}
             onClick={() => {
               setErDiagramOpen(true);
@@ -531,77 +540,77 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   const [schemaDiffOpen, setSchemaDiffOpen] = useState(false);
   const [createCouchbaseBucketOpen, setCreateCouchbaseBucketOpen] = useState(false);
 
-    const dbOverride = useActiveDatabaseOverride(connectionId);
-    const dbKey = dbOverride ?? '__default__';
+  const dbOverride = useActiveDatabaseOverride(connectionId);
+  const dbKey = dbOverride ?? '__default__';
 
-    // Visible schemas state (stored in localStorage)
-    const [visibleSchemas, setVisibleSchemas] = useState<Set<string> | null>(null);
+  // Visible schemas state (stored in localStorage)
+  const [visibleSchemas, setVisibleSchemas] = useState<Set<string> | null>(null);
 
-    // Initial load and sync of visible schemas
-    useEffect(() => {
-        if (!connectionId) return;
-        
-        const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
-        const stored = localStorage.getItem(storageKey);
-        
-        if (stored) {
-            try {
-                setVisibleSchemas(new Set(JSON.parse(stored)));
-            } catch (e) {
-                console.error('Failed to parse visible schemas from localStorage', e);
-                setVisibleSchemas(new Set(schemas));
-            }
-        } else if (schemas.length > 0) {
-            // Default to showing all schemas if none stored
-            setVisibleSchemas(new Set(schemas));
-        }
-    }, [connectionId, dbKey, schemas.length === 0]); // Re-run if schemas arrive or context changes
+  // Initial load and sync of visible schemas
+  useEffect(() => {
+    if (!connectionId) return;
 
-    // Update visible schemas when schemas change if we haven't initialized yet or if we want to ensure new schemas are visible
-    useEffect(() => {
-        if (schemas.length > 0 && visibleSchemas === null) {
-            const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
-            const stored = localStorage.getItem(storageKey);
-            if (!stored) {
-                setVisibleSchemas(new Set(schemas));
-            }
-        }
-    }, [schemas, connectionId, dbKey, visibleSchemas]);
+    const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+    const stored = localStorage.getItem(storageKey);
 
-    // Save to localStorage when visibleSchemas changes
-    useEffect(() => {
-        if (connectionId && visibleSchemas) {
-            const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
-            localStorage.setItem(storageKey, JSON.stringify([...visibleSchemas]));
-        }
-    }, [visibleSchemas, connectionId, dbKey]);
+    if (stored) {
+      try {
+        setVisibleSchemas(new Set(JSON.parse(stored)));
+      } catch (e) {
+        console.error('Failed to parse visible schemas from localStorage', e);
+        setVisibleSchemas(new Set(schemas));
+      }
+    } else if (schemas.length > 0) {
+      // Default to showing all schemas if none stored
+      setVisibleSchemas(new Set(schemas));
+    }
+  }, [connectionId, dbKey, schemas.length === 0]); // Re-run if schemas arrive or context changes
 
-    const toggleSchemaVisibility = (schema: string) => {
-        setVisibleSchemas(prev => {
-            const next = new Set(prev || schemas);
-            if (next.has(schema)) {
-                next.delete(schema);
-            } else {
-                next.add(schema);
-            }
-            return next;
-        });
-    };
+  // Update visible schemas when schemas change if we haven't initialized yet or if we want to ensure new schemas are visible
+  useEffect(() => {
+    if (schemas.length > 0 && visibleSchemas === null) {
+      const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) {
+        setVisibleSchemas(new Set(schemas));
+      }
+    }
+  }, [schemas, connectionId, dbKey, visibleSchemas]);
 
-    const toggleAllSchemas = () => {
-        if (visibleSchemas && visibleSchemas.size === schemas.length) {
-            setVisibleSchemas(new Set());
-        } else {
-            setVisibleSchemas(new Set(schemas));
-        }
-    };
+  // Save to localStorage when visibleSchemas changes
+  useEffect(() => {
+    if (connectionId && visibleSchemas) {
+      const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
+      localStorage.setItem(storageKey, JSON.stringify([...visibleSchemas]));
+    }
+  }, [visibleSchemas, connectionId, dbKey]);
 
-    // Filter schemas based on visibility
-    // If visibleSchemas is null (initial loading), we show all schemas to avoid flickering/empty view
-    const filteredSchemas = useMemo(() => {
-        if (!visibleSchemas) return schemas;
-        return schemas.filter(schema => visibleSchemas.has(schema));
-    }, [schemas, visibleSchemas]);
+  const toggleSchemaVisibility = (schema: string) => {
+    setVisibleSchemas(prev => {
+      const next = new Set(prev || schemas);
+      if (next.has(schema)) {
+        next.delete(schema);
+      } else {
+        next.add(schema);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllSchemas = () => {
+    if (visibleSchemas && visibleSchemas.size === schemas.length) {
+      setVisibleSchemas(new Set());
+    } else {
+      setVisibleSchemas(new Set(schemas));
+    }
+  };
+
+  // Filter schemas based on visibility
+  // If visibleSchemas is null (initial loading), we show all schemas to avoid flickering/empty view
+  const filteredSchemas = useMemo(() => {
+    if (!visibleSchemas) return schemas;
+    return schemas.filter(schema => visibleSchemas.has(schema));
+  }, [schemas, visibleSchemas]);
 
   const handleOpenCreateDatabase = () => {
     if (!connectionId) return;
@@ -642,6 +651,14 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
             title="Refresh all"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            onClick={() => navigate(`/workspace/${connectionId}/query`, { state: { newQuery: true } })}
+            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
+            title="New SQL Query (Ctrl+T)"
+          >
+            <FileCode size={14} />
           </button>
 
           {/* Schema Filter Button */}
@@ -757,105 +774,113 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         </div>
       </div>
 
-      {loading ? (
-        <div className="px-3 py-2 space-y-2">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 animate-pulse">
-              <Skeleton className="w-4 h-4 rounded-sm flex-shrink-0" />
-              <Skeleton className="h-4 w-3/4" />
+      {
+        loading ? (
+          <div className="px-3 py-2 space-y-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="flex items-center gap-2 px-3 py-1.5 animate-pulse">
+                <Skeleton className="w-4 h-4 rounded-sm flex-shrink-0" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+            <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">
+              <AlertTriangle className="w-6 h-6 text-error" />
             </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-          <div className="w-12 h-12 rounded-full bg-error-50 flex items-center justify-center mb-3">
-            <AlertTriangle className="w-6 h-6 text-error" />
-          </div>
 
-          <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
-          <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
-            Unable to connect to the database. Please check your connection settings.
-          </p>
+            <h3 className="text-sm font-semibold text-text-primary mb-1">Connection Failed</h3>
+            <p className="text-xs text-text-secondary mb-4 max-w-[250px]">
+              Unable to connect to the database. Please check your connection settings.
+            </p>
 
-          <div className="w-full max-w-[260px] bg-bg-2 border border-border-light rounded-md p-2.5 mb-4 text-left">
-            <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
-              {(() => {
-                const err = error as any;
-                const data = err.response?.data;
-                if (typeof data === 'string') return data;
-                return data?.message || err.message || 'Unknown error';
-              })()}
+            <div className="w-full max-w-[260px] bg-bg-2 border border-border-light rounded-md p-2.5 mb-4 text-left">
+              <div className="text-[10px] font-mono text-error break-all leading-tight max-h-[80px] overflow-y-auto custom-scrollbar">
+                {(() => {
+                  const err = error as any;
+                  const data = err.response?.data;
+                  if (typeof data === 'string') return data;
+                  return data?.message || err.message || 'Unknown error';
+                })()}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
+                className="gap-2"
+              >
+                <RefreshCw size={14} />
+                Retry
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="gap-2"
+              >
+                <ArrowLeft size={14} />
+                Go Back
+              </Button>
             </div>
           </div>
+        ) : (
+          filteredSchemas.map((schemaName: string) => {
+            return (
+              <SchemaNode
+                key={schemaName}
+                schemaName={schemaName}
+                connectionId={connectionId!}
+                searchTerm={searchTerm}
+                defaultOpen={schemas.length === 1}
+                connectionType={connectionType}
+                showPinnedOnly={showPinnedOnly}
+              />
+            );
+          })
+        )
+      }
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] })}
-              className="gap-2"
-            >
-              <RefreshCw size={14} />
-              Retry
-            </Button>
+      {
+        createDbOpen && (
+          <CreateDatabaseModal
+            open={createDbOpen}
+            onOpenChange={setCreateDbOpen}
+            connectionId={connectionId!}
+            onCreated={async () => {
+              await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+            }}
+          />
+        )
+      }
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="gap-2"
-            >
-              <ArrowLeft size={14} />
-              Go Back
-            </Button>
-          </div>
-        </div>
-      ) : (
-        filteredSchemas.map((schemaName: string) => {
-          return (
-            <SchemaNode
-              key={schemaName}
-              schemaName={schemaName}
-              connectionId={connectionId!}
-              searchTerm={searchTerm}
-              defaultOpen={schemas.length === 1}
-              connectionType={connectionType}
-              showPinnedOnly={showPinnedOnly}
-            />
-          );
-        })
-      )}
+      {
+        createCouchbaseBucketOpen && (
+          <CreateCouchbaseBucketModal
+            open={createCouchbaseBucketOpen}
+            onOpenChange={setCreateCouchbaseBucketOpen}
+            connectionId={connectionId!}
+            onCreated={async () => {
+              await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
+              await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+            }}
+          />
+        )
+      }
 
-      {createDbOpen && (
-        <CreateDatabaseModal
-          open={createDbOpen}
-          onOpenChange={setCreateDbOpen}
-          connectionId={connectionId!}
-          onCreated={async () => {
-            await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
-          }}
-        />
-      )}
-
-      {createCouchbaseBucketOpen && (
-        <CreateCouchbaseBucketModal
-          open={createCouchbaseBucketOpen}
-          onOpenChange={setCreateCouchbaseBucketOpen}
-          connectionId={connectionId!}
-          onCreated={async () => {
-            await queryClient.invalidateQueries({ queryKey: ['databases', connectionId] });
-            await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
-          }}
-        />
-      )}
-
-      {sqliteToolsOpen && (
-        <SqliteToolsModal
-          isOpen={sqliteToolsOpen}
-          onClose={() => setSqliteToolsOpen(false)}
-          connectionId={connectionId!}
-        />
-      )}
+      {
+        sqliteToolsOpen && (
+          <SqliteToolsModal
+            isOpen={sqliteToolsOpen}
+            onClose={() => setSqliteToolsOpen(false)}
+            connectionId={connectionId!}
+          />
+        )
+      }
 
       <CreateSchemaModal
         isOpen={createSchemaOpen}
@@ -864,68 +889,70 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       />
 
       {/* Schema Filter Modal */}
-      {showSchemaFilter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 backdrop-blur-sm">
-          <div className="bg-bg-1 border border-border-light rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-border-light flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary">Visible Schemas</h3>
-              <div className="flex items-center gap-2">
+      {
+        showSchemaFilter && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 backdrop-blur-sm">
+            <div className="bg-bg-1 border border-border-light rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-border-light flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-text-primary">Visible Schemas</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleAllSchemas}
+                  >
+                    {visibleSchemas && visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                  <button
+                    onClick={() => setShowSchemaFilter(false)}
+                    className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto flex-1 p-3">
+                {schemas.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-text-secondary">
+                    No schemas available
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {schemas.map(schema => (
+                      <div
+                        key={schema}
+                        className="px-2 py-1 hover:bg-bg-2 rounded-lg transition-colors"
+                      >
+                        <Checkbox
+                          checked={visibleSchemas?.has(schema) ?? false}
+                          onChange={() => toggleSchemaVisibility(schema)}
+                          label={schema}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="px-4 py-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary">
+                <span>{visibleSchemas?.size ?? 0} of {schemas.length} selected</span>
                 <Button
-                  variant="ghost"
+                  variant="primary"
                   size="sm"
-                  onClick={toggleAllSchemas}
-                >
-                  {visibleSchemas && visibleSchemas.size === schemas.length ? 'Deselect All' : 'Select All'}
-                </Button>
-                <button
                   onClick={() => setShowSchemaFilter(false)}
-                  className="p-1 hover:bg-bg-2 rounded transition-colors text-text-secondary hover:text-text-primary"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
+                  Done
+                </Button>
               </div>
             </div>
-
-            {/* Content */}
-            <div className="overflow-y-auto flex-1 p-3">
-              {schemas.length === 0 ? (
-                <div className="text-center py-8 text-sm text-text-secondary">
-                  No schemas available
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {schemas.map(schema => (
-                    <div
-                      key={schema}
-                      className="px-2 py-1 hover:bg-bg-2 rounded-lg transition-colors"
-                    >
-                      <Checkbox
-                        checked={visibleSchemas?.has(schema) ?? false}
-                        onChange={() => toggleSchemaVisibility(schema)}
-                        label={schema}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="px-4 py-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary">
-              <span>{visibleSchemas?.size ?? 0} of {schemas.length} selected</span>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowSchemaFilter(false)}
-              >
-                Done
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Schema Diff Modal */}
       <SchemaDiffModal
@@ -933,6 +960,6 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         onClose={() => setSchemaDiffOpen(false)}
         connectionId={connectionId || ''}
       />
-    </div>
+    </div >
   );
 }

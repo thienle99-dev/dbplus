@@ -44,6 +44,11 @@ impl ConnectionService {
                 .await?;
                 DatabaseDriver::get_tables(&driver, schema).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_tables(&driver, schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -81,6 +86,11 @@ impl ConnectionService {
                 .await?;
                 TableOperations::create_table(&driver, schema, table).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                TableOperations::create_table(&driver, schema, table).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -116,6 +126,11 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                TableOperations::drop_table(&driver, schema, table).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 TableOperations::drop_table(&driver, schema, table).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
@@ -158,6 +173,11 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                DatabaseDriver::get_columns(&driver, schema, table).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_columns(&driver, schema, table).await
             }
             _ => Ok(vec![]),
@@ -247,6 +267,21 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                TableOperations::get_table_data(
+                    &driver,
+                    schema,
+                    table,
+                    limit,
+                    offset,
+                    filter,
+                    document_id,
+                    fields,
+                )
+                .await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 TableOperations::get_table_data(
                     &driver,
                     schema,
@@ -426,6 +461,11 @@ impl ConnectionService {
                 .await?;
                 DatabaseDriver::get_table_constraints(&driver, schema, table).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_table_constraints(&driver, schema, table).await
+            }
             _ => Ok(crate::services::db_driver::TableConstraints {
                 foreign_keys: vec![],
                 check_constraints: vec![],
@@ -470,6 +510,11 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                DatabaseDriver::get_table_statistics(&driver, schema, table).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_statistics(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableStatistics {
@@ -521,6 +566,11 @@ impl ConnectionService {
                 .await?;
                 DatabaseDriver::get_table_indexes(&driver, schema, table).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_table_indexes(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -563,6 +613,11 @@ impl ConnectionService {
                 .await?;
                 DatabaseDriver::get_table_triggers(&driver, schema, table).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_table_triggers(&driver, schema, table).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -603,6 +658,11 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                DatabaseDriver::get_table_comment(&driver, schema, table).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_comment(&driver, schema, table).await
             }
             _ => Ok(crate::services::db_driver::TableComment { comment: None }),
@@ -648,6 +708,11 @@ impl ConnectionService {
                 .await?;
                 DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::set_table_comment(&driver, schema, table, comment).await
+            }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
@@ -688,6 +753,11 @@ impl ConnectionService {
                     &password,
                 )
                 .await?;
+                DatabaseDriver::get_table_permissions(&driver, schema, table).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_table_permissions(&driver, schema, table).await
             }
             _ => Ok(vec![]),
@@ -988,6 +1058,19 @@ impl ConnectionService {
                 )
                 .await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                TableOperations::update_row(
+                    &driver,
+                    schema,
+                    table,
+                    &primary_key,
+                    &updates,
+                    row_metadata.as_ref(),
+                )
+                .await
+            }
             _ => Err(anyhow::anyhow!(
                 "Update row via TableOperations not supported for this driver yet"
             )),
@@ -1012,6 +1095,18 @@ impl ConnectionService {
                 )
                 .await?;
 
+                TableOperations::delete_row(
+                    &driver,
+                    schema,
+                    table,
+                    &primary_key,
+                    row_metadata.as_ref(),
+                )
+                .await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 TableOperations::delete_row(
                     &driver,
                     schema,

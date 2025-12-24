@@ -132,40 +132,4 @@ impl PostgresConnection {
             }
         }
     }
-
-    pub async fn create_database_if_not_exists(
-        connection: &ConnectionModel::Model,
-        password: &str,
-    ) -> Result<()> {
-        let mut cfg = Config::new();
-        cfg.host = Some(connection.host.clone());
-        cfg.port = Some(connection.port as u16);
-        cfg.dbname = Some("postgres".to_string());
-        cfg.user = Some(connection.username.clone());
-        cfg.password = Some(password.to_string());
-        cfg.manager = Some(ManagerConfig {
-            recycling_method: RecyclingMethod::Fast,
-        });
-
-        let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls)?;
-        let client = pool.get().await?;
-
-        let db_name = &connection.database;
-        let query = "SELECT 1 FROM pg_database WHERE datname = $1";
-
-        let exists = client.query_opt(query, &[db_name]).await?;
-
-        if exists.is_none() {
-            let escaped_name = db_name.replace("\"", "\"\"");
-            let create_query = format!("CREATE DATABASE \"{}\"", escaped_name);
-            client.execute(&create_query, &[]).await.with_context(|| {
-                format!(
-                    "Failed to create database '{}'. Make sure you have the necessary privileges.",
-                    db_name
-                )
-            })?;
-        }
-
-        Ok(())
-    }
 }

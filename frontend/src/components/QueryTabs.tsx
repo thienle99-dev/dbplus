@@ -20,7 +20,7 @@ export default function QueryTabs() {
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { tabs: workspaceTabs, activeTabId: activeWorkspaceTabId } = useWorkspaceTabsStore();
+  const { tabs: workspaceTabs, activeTabId: activeWorkspaceTabId, updateTabDatabase } = useWorkspaceTabsStore();
   const { connections } = useConnectionStore();
 
   const connectionDefaultDb = connections.find((c) => c.id === connectionId)?.database;
@@ -41,6 +41,7 @@ export default function QueryTabs() {
 
   // Sleep Tab Logic
   const prevActiveTabIdRef = useRef<string | null>(null);
+  const handledKeys = useRef(new Set<string>());
   const SLEEP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
   // Track active state transitions
@@ -315,6 +316,10 @@ export default function QueryTabs() {
   // Auto-open table or query from navigation state (when clicking from SchemaTree or Sidebar)
   useEffect(() => {
     const state = location.state as any;
+    if (!state || Object.keys(state).length === 0 || handledKeys.current.has(location.key)) return;
+
+    // Mark this location key as handled
+    handledKeys.current.add(location.key);
 
     // Handle opening a table
     if (state?.openTable) {
@@ -340,7 +345,7 @@ export default function QueryTabs() {
     }
 
     // Handle loading a query (from Saved Queries or History in Sidebar)
-    if (state?.sql) {
+    else if (state?.sql) {
       const { sql, metadata, name, id } = state;
       const normalizedSql = typeof sql === 'string' ? sql.trim() : '';
 
@@ -397,7 +402,17 @@ export default function QueryTabs() {
       // Clear the state properly using navigate
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, activeTabId, tabs, navigate, location.pathname]);
+
+    // Handle opening a new query tab
+    else if (state?.newQuery) {
+      if (state.schema && activeWorkspaceTabId) {
+        updateTabDatabase(activeWorkspaceTabId, state.schema);
+      }
+      addTab();
+      // Clear the state properly using navigate
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.key, activeTabId, tabs, navigate, location.pathname, addTab, activeWorkspaceTabId, updateTabDatabase]);
 
   const handleLoadQuery = useCallback((sql: string, metadata?: Record<string, any>) => {
     // Update current tab's SQL and metadata using functional setState

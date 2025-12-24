@@ -41,6 +41,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_schemas(&driver).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_schemas(&driver).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -137,6 +142,9 @@ impl ConnectionService {
             "couchbase" => Arc::new(
                 crate::services::couchbase::CouchbaseDriver::new(&connection, &password).await?,
             ),
+            "mongodb" | "mongo" => {
+                Arc::new(crate::services::mongo::MongoDriver::new(&connection, &password).await?)
+            }
             _ => return Ok(vec![]),
         };
 
@@ -185,6 +193,11 @@ impl ConnectionService {
                         .await?;
                 driver.get_schema_foreign_keys(schema).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                driver.get_schema_foreign_keys(schema).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -228,6 +241,11 @@ impl ConnectionService {
                 let driver =
                     crate::services::couchbase::CouchbaseDriver::new(&connection, &password)
                         .await?;
+                DatabaseDriver::get_schema_permissions(&driver, schema).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 DatabaseDriver::get_schema_permissions(&driver, schema).await
             }
             _ => Ok(vec![]),

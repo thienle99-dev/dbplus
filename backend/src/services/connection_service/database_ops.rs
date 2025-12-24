@@ -40,6 +40,11 @@ impl ConnectionService {
                         .await?;
                 DatabaseDriver::get_databases(&driver).await
             }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                DatabaseDriver::get_databases(&driver).await
+            }
             _ => Ok(vec![]),
         }
     }
@@ -73,6 +78,12 @@ impl ConnectionService {
                 let driver = CouchbaseDriver::new(&connection, &password).await?;
                 driver.create_database(name).await
             }
+            "mongodb" | "mongo" => {
+                use crate::services::driver::extension::DatabaseManagementDriver;
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
+                driver.create_database(name).await
+            }
             _ => Err(anyhow::anyhow!(
                 "Unsupported database type for create_database"
             )),
@@ -101,6 +112,12 @@ impl ConnectionService {
             "couchbase" => {
                 use crate::services::couchbase::CouchbaseDriver;
                 let driver = CouchbaseDriver::new(&connection, &password).await?;
+                driver.drop_database(name).await
+            }
+            "mongodb" | "mongo" => {
+                use crate::services::driver::extension::DatabaseManagementDriver;
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, &password).await?;
                 driver.drop_database(name).await
             }
             _ => Err(anyhow::anyhow!(

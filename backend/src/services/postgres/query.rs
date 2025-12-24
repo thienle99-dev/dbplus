@@ -298,89 +298,6 @@ fn format_interval(months: i32, days: i32, microseconds: i64) -> String {
     parts.join(" ")
 }
 
-fn decode_domain_value(
-    inner: &PgType,
-    raw: &[u8],
-) -> Result<Value, Box<dyn std::error::Error + Sync + Send>> {
-    if *inner == PgType::BOOL {
-        let v = <bool as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::Bool(v));
-    }
-
-    if *inner == PgType::INT2 {
-        let v = <i16 as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::Number(v.into()));
-    }
-    if *inner == PgType::INT4 {
-        let v = <i32 as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::Number(v.into()));
-    }
-    if *inner == PgType::INT8 {
-        let v = <i64 as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::Number(v.into()));
-    }
-
-    if *inner == PgType::FLOAT4 {
-        let v = <f32 as FromSql>::from_sql(inner, raw)? as f64;
-        return Ok(Value::Number(
-            serde_json::Number::from_f64(v).unwrap_or_else(|| serde_json::Number::from(0)),
-        ));
-    }
-    if *inner == PgType::FLOAT8 {
-        let v = <f64 as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::Number(
-            serde_json::Number::from_f64(v).unwrap_or_else(|| serde_json::Number::from(0)),
-        ));
-    }
-
-    if *inner == PgType::NUMERIC {
-        let v = <Decimal as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-
-    if *inner == PgType::UUID {
-        let v = <Uuid as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-
-    if *inner == PgType::DATE {
-        let v = <NaiveDate as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-    if *inner == PgType::TIME {
-        let v = <NaiveTime as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-    if *inner == PgType::TIMESTAMP {
-        let v = <NaiveDateTime as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-    if *inner == PgType::TIMESTAMPTZ {
-        let v = <DateTime<Utc> as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-
-    if *inner == PgType::INET {
-        let v = <IpAddr as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(v.to_string()));
-    }
-
-    if *inner == PgType::BYTEA {
-        let v = <Vec<u8> as FromSql>::from_sql(inner, raw)?;
-        return Ok(Value::String(base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            &v,
-        )));
-    }
-
-    // Best-effort fallback: some domain base types (like enums) use text representation.
-    if let Ok(s) = postgres_protocol::types::text_from_sql(raw) {
-        return Ok(Value::String(s.to_string()));
-    }
-
-    Ok(Value::Null)
-}
-
 fn decode_range_value_to_string(
     inner: &PgType,
     raw: &[u8],
@@ -952,7 +869,6 @@ enum ColumnDecoder {
     NaiveDate,
     NaiveTime,
     DateTimeUtc,
-    DateTimeLocal,
     Inet,
     Text,
     ArrayString,
@@ -1371,13 +1287,6 @@ fn decode_with_decoder(
 
         ColumnDecoder::DateTimeUtc => row
             .try_get::<_, Option<DateTime<Utc>>>(idx)
-            .ok()
-            .flatten()
-            .map(|v| Value::String(v.to_string()))
-            .unwrap_or(Value::Null),
-
-        ColumnDecoder::DateTimeLocal => row
-            .try_get::<_, Option<DateTime<Local>>>(idx)
             .ok()
             .flatten()
             .map(|v| Value::String(v.to_string()))

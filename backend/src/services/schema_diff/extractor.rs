@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Represents a complete schema snapshot
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchemaSnapshot {
     pub schema_name: String,
@@ -10,6 +11,7 @@ pub struct SchemaSnapshot {
 }
 
 /// Table definition
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TableDefinition {
     pub name: String,

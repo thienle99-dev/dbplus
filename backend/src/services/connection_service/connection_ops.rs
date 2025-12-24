@@ -263,7 +263,6 @@ impl ConnectionService {
         connection: connection::Model,
         password: &str,
     ) -> Result<()> {
-        use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
 
         match connection.db_type.as_str() {
@@ -289,6 +288,11 @@ impl ConnectionService {
             "couchbase" => {
                 let driver =
                     crate::services::couchbase::CouchbaseDriver::new(&connection, password).await?;
+                ConnectionDriver::test_connection(&driver).await
+            }
+            "mongodb" | "mongo" => {
+                let driver =
+                    crate::services::mongo::MongoDriver::new(&connection, password).await?;
                 ConnectionDriver::test_connection(&driver).await
             }
             _ => Err(anyhow::anyhow!("Unsupported database type")),
