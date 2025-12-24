@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:19999';
+import { invoke } from '@tauri-apps/api/core';
 
 export interface QueryHistoryEntry {
     id: string;
@@ -25,47 +25,30 @@ export interface AddHistoryRequest {
 
 export const historyApi = {
     async getHistory(connectionId: string, limit = 100): Promise<HistoryResponse> {
-        const response = await fetch(
-            `${API_BASE}/api/connections/${connectionId}/history?limit=${limit}`
-        );
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch history: ${response.statusText}`);
-        }
-
-        return response.json();
+        const history = await invoke<QueryHistoryEntry[]>('get_history', {
+            connectionId,
+            limit
+        });
+        
+        return { history };
     },
 
     async addHistory(
         connectionId: string,
         entry: AddHistoryRequest
     ): Promise<QueryHistoryEntry> {
-        const response = await fetch(
-            `${API_BASE}/api/connections/${connectionId}/history`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(entry),
+        return await invoke('add_history', {
+            connectionId,
+            request: {
+                query: entry.sql,
+                execution_time_ms: entry.execution_time,
+                status: entry.success ? 'success' : 'error',
+                error_message: entry.error_message
             }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Failed to add history: ${response.statusText}`);
-        }
-
-        return response.json();
+        });
     },
 
     async clearHistory(connectionId: string): Promise<void> {
-        const response = await fetch(
-            `${API_BASE}/api/connections/${connectionId}/history`,
-            {
-                method: 'DELETE',
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`Failed to clear history: ${response.statusText}`);
-        }
+        await invoke('clear_history', { connectionId });
     },
 };

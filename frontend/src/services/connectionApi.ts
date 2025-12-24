@@ -1,4 +1,4 @@
-import api from './api';
+import { invoke } from '@tauri-apps/api/core';
 import { Connection, CreateDatabaseRequest, DatabaseManagementResponse } from '../types';
 
 export interface CreateConnectionRequest {
@@ -25,54 +25,46 @@ export interface SqliteAttachment {
 export const connectionApi = {
     // Get all connections
     getAll: async (): Promise<Connection[]> => {
-        const response = await api.get('/api/connections');
-        return response.data;
+        return await invoke('list_connections');
     },
 
     // Get single connection by ID
     getById: async (id: string): Promise<Connection> => {
-        const response = await api.get(`/api/connections/${id}`);
-        return response.data;
+        return await invoke('get_connection', { id });
     },
 
     // Create new connection
     create: async (data: CreateConnectionRequest): Promise<Connection> => {
-        const response = await api.post('/api/connections', data);
-        return response.data;
+        return await invoke('create_connection', { request: data });
     },
 
     // Update existing connection
     update: async (id: string, data: Partial<CreateConnectionRequest>): Promise<Connection> => {
-        const response = await api.put(`/api/connections/${id}`, data);
-        return response.data;
+        return await invoke('update_connection', { id, request: data });
     },
 
     switchDatabase: async (id: string, database: string): Promise<Connection> => {
-        const response = await api.patch(`/api/connections/${id}/database`, { database });
-        return response.data;
+        return await invoke('switch_database', { id, request: { database } });
     },
 
     // Delete connection
     delete: async (id: string): Promise<void> => {
-        await api.delete(`/api/connections/${id}`);
+        await invoke('delete_connection', { id });
     },
 
     // Test connection
     test: async (id: string): Promise<{ success: boolean; message?: string }> => {
-        const response = await api.post(`/api/connections/${id}/test`);
-        return response.data;
+        return await invoke('test_connection_by_id', { id });
     },
 
     // Test connection parameters (ad-hoc)
     testDetails: async (data: CreateConnectionRequest): Promise<{ success: boolean; message?: string }> => {
         const payload = { ...data, ssl: data.ssl ?? false };
-        const response = await api.post('/api/connections/test', payload);
-        return response.data;
+        return await invoke('test_connection', { request: payload });
     },
 
     getDatabases: async (id: string): Promise<string[]> => {
-        const response = await api.get(`/api/connections/${id}/databases`);
-        return response.data;
+        return await invoke('list_databases', { connectionId: id });
     },
 
     createDatabase: async (
@@ -81,75 +73,111 @@ export const connectionApi = {
     ): Promise<DatabaseManagementResponse> => {
         const payload: CreateDatabaseRequest =
             typeof request === 'string' ? { name: request } : request;
-        const response = await api.post(`/api/connections/${id}/databases`, payload);
-        return response.data;
+        await invoke('create_database', { connectionId: id, request: payload });
+        return { success: true, message: 'Database created successfully' };
     },
 
     dropDatabase: async (id: string, name: string): Promise<void> => {
-        await api.delete(`/api/connections/${id}/databases/${encodeURIComponent(name)}`);
+        await invoke('drop_database', { connectionId: id, name });
     },
 
     // Get all schemas
     getSchemas: async (id: string, options?: { database?: string }): Promise<string[]> => {
-        const response = await api.get(`/api/connections/${id}/schemas`, { params: options });
-        return response.data;
+        return await invoke('schema_list_schemas', { connectionId: id });
     },
 
     createSchema: async (id: string, name: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post(`/api/connections/${id}/schemas`, { name }, { params: options });
-        return response.data;
+        await invoke('create_schema', { connectionId: id, schemaName: name });
+        return { success: true, message: 'Schema created successfully' };
     },
 
     createTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<{ success: boolean; message: string }> => {
-        const response = await api.post(`/api/connections/${id}/tables`, { schema, table, database: options?.database });
-        return response.data;
+        await invoke('create_table', { 
+            connectionId: id, 
+            request: { 
+                schema, 
+                table_name: table,
+                columns: [] // This would need to be passed from the caller
+            } 
+        });
+        return { success: true, message: 'Table created successfully' };
     },
 
     dropTable: async (id: string, schema: string, table: string, options?: { database?: string }): Promise<void> => {
-        await api.delete(`/api/connections/${id}/tables`, {
-            params: { schema, table, ...options },
+        await invoke('drop_table', { 
+            connectionId: id, 
+            request: { schema, table_name: table } 
         });
     },
 
     dropSchema: async (id: string, name: string, options?: { database?: string }): Promise<void> => {
-        await api.delete(`/api/connections/${id}/schemas/${encodeURIComponent(name)}`, { params: options });
+        await invoke('drop_schema', { connectionId: id, schemaName: name });
     },
 
     getSchemaMetadata: async (id: string, schema: string): Promise<Array<{ table_name: string; columns: string[] }>> => {
-        const response = await api.get(`/api/connections/${id}/schema-metadata`, { params: { schema } });
-        return response.data;
+        const tables = await invoke<Array<{ name: string }>>('schema_list_tables', { 
+            connectionId: id, 
+            schema 
+        });
+        
+        // Get columns for each table
+        const metadata = await Promise.all(
+            tables.map(async (table) => {
+                const columns = await invoke<Array<{ name: string }>>('schema_get_columns', {
+                    connectionId: id,
+                    schema,
+                    table: table.name
+                });
+                return {
+                    table_name: table.name,
+                    columns: columns.map(c => c.name)
+                };
+            })
+        );
+        
+        return metadata;
     },
+
     // Get table constraints (FKs, etc.)
     getTableConstraints: async (id: string, schema: string, table: string): Promise<any> => {
-        // Use 'any' or import TableConstraints from types
-        const response = await api.get(`/api/connections/${id}/constraints`, { params: { schema, table } });
-        return response.data;
+        return await invoke('get_table_constraints', { 
+            connectionId: id, 
+            params: { schema, table } 
+        });
     },
 
     listSqliteAttachments: async (id: string): Promise<SqliteAttachment[]> => {
-        const response = await api.get(`/api/connections/${id}/sqlite/attachments`);
-        return response.data;
+        return await invoke('list_sqlite_attachments', { connectionId: id });
     },
 
     createSqliteAttachment: async (
         id: string,
         payload: { name: string; file_path: string; read_only?: boolean }
     ): Promise<SqliteAttachment> => {
-        const response = await api.post(`/api/connections/${id}/sqlite/attachments`, {
-            ...payload,
-            read_only: payload.read_only ?? false,
+        await invoke('attach_sqlite_database', { 
+            connectionId: id, 
+            request: { 
+                name: payload.name, 
+                file_path: payload.file_path, 
+                read_only: payload.read_only ?? false 
+            } 
         });
-        return response.data;
+        return {
+            name: payload.name,
+            file_path: payload.file_path,
+            read_only: payload.read_only ?? false
+        };
     },
 
     deleteSqliteAttachment: async (id: string, name: string): Promise<void> => {
-        await api.delete(`/api/connections/${id}/sqlite/attachments/${encodeURIComponent(name)}`);
+        await invoke('detach_sqlite_database', { connectionId: id, name });
     },
 
     getVersion: async (id: string): Promise<string> => {
-        const response = await api.get(`/api/connections/${id}/version`);
-        return response.data.version;
+        const result = await invoke<{ version: string }>('get_connection', { id });
+        return result.version || 'Unknown';
     },
+
     getAutocompleteSuggestions: async (data: {
         sql: string;
         cursor_pos: number;
@@ -157,48 +185,54 @@ export const connectionApi = {
         database_name: string;
         active_schema?: string;
     }): Promise<Array<{ label: string, insert_text: string, kind: string, detail?: string, score: number }>> => {
-        const response = await api.post('/api/autocomplete', data);
-        return response.data;
+        return await invoke('autocomplete_suggest', { request: data });
     },
 
     // Permissions
     getRoles: async (id: string): Promise<Array<{ name: string; can_login: boolean }>> => {
-        const response = await api.get(`/api/connections/${id}/roles`);
-        return response.data;
+        return await invoke('list_roles', { connectionId: id });
     },
 
     getTablePermissions: async (id: string, schema: string, table: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
-        const response = await api.get(`/api/connections/${id}/permissions`, { params: { schema, table } });
-        return response.data;
+        return await invoke('get_table_permissions', { 
+            connectionId: id, 
+            params: { schema, table } 
+        });
     },
 
     getSchemaPermissions: async (id: string, schema: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
-        const response = await api.get(`/api/connections/${id}/permissions/schema`, { params: { schema } });
-        return response.data;
+        return await invoke('get_schema_permissions', { 
+            connectionId: id, 
+            params: { schema } 
+        });
     },
 
     getFunctionPermissions: async (id: string, schema: string, function_name: string): Promise<Array<{ grantee: string; privilege: string; is_grantable: boolean }>> => {
-        const response = await api.get(`/api/connections/${id}/permissions/function`, { params: { schema, function: function_name } });
-        return response.data;
+        return await invoke('get_function_permissions', { 
+            connectionId: id, 
+            params: { schema, function: function_name } 
+        });
     },
 
     getTables: async (id: string, schema: string): Promise<Array<{ name: string; type: string }>> => {
-        const response = await api.get(`/api/connections/${id}/tables`, { params: { schema } });
-        return response.data;
+        return await invoke('schema_list_tables', { connectionId: id, schema });
     },
 
     listFunctions: async (id: string, schema: string): Promise<Array<{ name: string; return_type: string; argument_types: string[] }>> => {
-        const response = await api.get(`/api/connections/${id}/functions`, { params: { schema } });
-        return response.data;
+        return await invoke('schema_list_functions', { connectionId: id, schema });
     },
 
     getStorageBloatInfo: async (id: string, schema: string, table: string): Promise<any> => {
-        const response = await api.get(`/api/connections/${id}/storage-info`, { params: { schema, table } });
-        return response.data;
+        return await invoke('get_storage_bloat_info', { 
+            connectionId: id, 
+            params: { schema, table } 
+        });
     },
 
     getFkOrphans: async (id: string, schema: string, table: string): Promise<Array<{ constraint_name: string; foreign_key_columns: string[]; referenced_table: string; orphan_count: number }>> => {
-        const response = await api.get(`/api/connections/${id}/health/orphans`, { params: { schema, table } });
-        return response.data;
+        return await invoke('get_fk_orphans', { 
+            connectionId: id, 
+            params: { schema, table } 
+        });
     },
 };

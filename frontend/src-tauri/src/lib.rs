@@ -109,6 +109,51 @@ pub fn run() {
             // Result editing
             commands::update_result_row,
             commands::delete_result_row,
+            // Session commands
+            commands::list_sessions,
+            commands::kill_session,
+            // Table info commands
+            commands::get_table_constraints,
+            commands::get_table_statistics,
+            commands::get_table_indexes,
+            commands::get_table_triggers,
+            commands::get_table_comment,
+            commands::set_table_comment,
+            commands::get_table_permissions,
+            commands::get_table_dependencies,
+            commands::get_storage_bloat_info,
+            commands::get_partitions,
+            commands::get_fk_orphans,
+            commands::list_roles,
+            commands::get_schema_permissions,
+            commands::get_function_permissions,
+            // Data tools
+            commands::execute_script,
+            commands::backup_postgres_sql,
+            // Export DDL
+            commands::export_postgres_ddl,
+            // Schema diff
+            commands::compare_schemas,
+            commands::generate_migration,
+            // Extensions
+            commands::list_extensions,
+            commands::install_extension,
+            // Search
+            commands::search_objects,
+            // SQLite tools
+            commands::list_sqlite_attachments,
+            commands::attach_sqlite_database,
+            commands::detach_sqlite_database,
+            // Mock data
+            commands::preview_mock_data,
+            commands::generate_mock_data_sql,
+            // Extra Schema commands
+            commands::schema_list_functions,
+            commands::schema_list_views,
+            commands::schema_get_view_definition,
+            commands::schema_get_function_definition,
+            commands::schema_get_schema_foreign_keys,
+            commands::schema_list_schema_metadata,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
