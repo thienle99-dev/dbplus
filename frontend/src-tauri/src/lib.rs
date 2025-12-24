@@ -53,6 +53,51 @@ pub fn run() {
             // Autocomplete commands
             commands::autocomplete_suggest,
             commands::schema_refresh,
+            // Query commands
+            commands::execute_query,
+            commands::cancel_query,
+            commands::explain_query,
+            // Database commands
+            commands::list_databases,
+            commands::create_database,
+            commands::drop_database,
+            // History commands
+            commands::get_history,
+            commands::add_history,
+            commands::delete_history_entry,
+            commands::clear_history,
+            commands::delete_history_entries,
+            // Settings commands
+            commands::get_all_settings,
+            commands::get_setting,
+            commands::update_setting,
+            commands::delete_setting,
+            commands::reset_settings,
+            // Snippet commands
+            commands::list_snippets,
+            commands::create_snippet,
+            commands::update_snippet,
+            commands::delete_snippet,
+            // Saved query commands
+            commands::list_saved_queries,
+            commands::create_saved_query,
+            commands::update_saved_query,
+            commands::delete_saved_query,
+            commands::list_folders,
+            commands::create_folder,
+            commands::update_folder,
+            commands::delete_folder,
+            commands::list_saved_filters,
+            commands::create_saved_filter,
+            commands::delete_saved_filter,
+            // Dashboard commands
+            commands::list_dashboards,
+            commands::get_dashboard,
+            commands::create_dashboard,
+            commands::delete_dashboard,
+            commands::list_charts,
+            commands::add_chart,
+            commands::delete_chart,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
