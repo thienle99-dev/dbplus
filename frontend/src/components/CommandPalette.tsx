@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Table, Eye, Code, FileCode, ArrowRight, Database, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalSearch, useDatabases } from '../hooks/useDatabase';
@@ -136,8 +137,8 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative w-full max-w-xl bg-bg-1/60 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100 ring-1 ring-white/5">
@@ -218,6 +219,7 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
           }}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

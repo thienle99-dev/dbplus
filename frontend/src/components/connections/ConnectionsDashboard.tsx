@@ -53,6 +53,7 @@ export const ConnectionsDashboard: React.FC = () => {
   return (
     <div className="h-screen flex text-text-primary font-sans bg-[var(--color-bg-default)] overflow-hidden" data-tauri-drag-region>
       <Sidebar
+        activeTab="connections"
         onBackup={() => setDataToolsMode('backup')}
         onRestore={() => setDataToolsMode('restore')}
         onCreate={() => setIsDbSelectorOpen(true)}

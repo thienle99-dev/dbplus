@@ -110,7 +110,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-white/5 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-20 backdrop-blur-xl"
+      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-white/5 flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-30 backdrop-blur-xl"
       style={{ width: `${sidebarWidth}px` }}
       data-tauri-drag-region
     >

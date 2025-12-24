@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Home, Link2, Terminal, User, LogOut, Layers } from 'lucide-react';
+import { Settings, Home, Link2, Terminal, Layers } from 'lucide-react';
 
 interface SidebarProps {
     onBackup?: () => void;
@@ -11,7 +11,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashboard' }) => {
     return (
-        <div className="w-[280px] h-[calc(100vh-40px)] m-5 flex flex-col items-start py-10 px-8 rounded-[32px] glass z-50 overflow-hidden">
+        <div className="w-[280px] h-[calc(100vh-40px)] m-5 flex flex-col items-start py-10 px-8 rounded-[32px] glass z-30 overflow-hidden">
             {/* Logo */}
             <div className="flex items-center gap-3 mb-12 px-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary-default)] to-[var(--color-primary-active)] rounded-xl flex items-center justify-center shadow-lg transform rotate-6 hover:rotate-0 transition-transform duration-500">
@@ -45,24 +45,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
                     isActive={activeTab === 'settings'}
                     onClick={onSettings}
                 />
-                <NavItem
-                    icon={<User size={20} />}
-                    label="Profile"
-                    isActive={activeTab === 'profile'}
-                />
             </nav>
 
             {/* Bottom Section */}
+            {/* Bottom Section */}
             <div className="mt-auto w-full pt-6 border-t border-white/5 px-2">
-                <button
-                    onClick={() => { }}
-                    className="flex items-center gap-3 text-text-secondary hover:text-white transition-all group"
-                >
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                        <LogOut size={16} />
-                    </div>
-                    <span className="text-sm font-medium">Profile</span>
-                </button>
+
             </div>
         </div>
     );
