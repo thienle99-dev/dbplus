@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use dbplus_backend::AppState;
+use std::sync::Arc;
+use dbplus_backend::services::connection_service::ConnectionService;
+use dbplus_backend::services::postgres_driver::PostgresDriver;
+use dbplus_backend::services::db_driver::DatabaseDriver;
+use dbplus_backend::services::autocomplete::{AutocompleteEngine, AutocompleteRequest};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Suggestion {
@@ -11,12 +16,13 @@ pub struct Suggestion {
     pub score: i32,
 }
 
-#[derive(Serialize)]
-struct AutocompleteRequest {
+#[derive(Serialize, Deserialize)]
+struct AutocompleteRequestPayload {
     connection_id: String,
     sql: String,
     cursor_pos: usize,
     active_schema: Option<String>,
+    database_name: Option<String>,
 }
 
 #[tauri::command]
@@ -27,10 +33,39 @@ pub async fn autocomplete_suggest(
     cursor_pos: usize,
     active_schema: Option<String>,
 ) -> Result<Vec<Suggestion>, String> {
-    // Call the backend handler directly
     let uuid = uuid::Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
-    let request = dbplus_backend::handlers::autocomplete::AutocompleteRequest {
+    // 1. Get Connection Service
+    let conn_service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    // 2. Get Connection & Password
+    let (connection, password) = conn_service
+        .get_connection_with_password(uuid)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 3. Create Driver
+    // Note: Currently primarily supporting Postgres for autocomplete as per backend handler
+    let mut connection_to_use = connection.clone();
+    
+    // If we supported switching DB in request (like in backend handler), we would handle it here.
+    // For now, using connection's database.
+
+    let driver: Arc<dyn DatabaseDriver> = match connection_to_use.db_type.as_str() {
+        "postgres" | "cockroachdb" | "cockroach" => Arc::new(
+            PostgresDriver::new(&connection_to_use, &password)
+                .await
+                .map_err(|e| e.to_string())?,
+        ),
+        _ => return Err("Unsupported database type for autocomplete".to_string()),
+    };
+
+    // 4. Create Engine
+    let schema_cache = state.schema_cache.clone();
+    let engine = AutocompleteEngine::new(schema_cache);
+
+    let request = AutocompleteRequest {
         connection_id: uuid,
         sql,
         cursor_pos,
@@ -38,15 +73,12 @@ pub async fn autocomplete_suggest(
         database_name: None,
     };
 
-    let result = dbplus_backend::handlers::autocomplete::get_suggestions_impl(
-        &state.inner().clone(),
-        request,
-    )
-    .await
-    .map_err(|e| e.to_string())?;
+    // 5. Get Suggestions
+    let backend_suggestions = engine.suggest(request, driver).await.map_err(|e| e.to_string())?;
 
-    // Convert backend suggestions to our format
-    let suggestions = result
+    // 6. Access private fields or map?
+    // The backend Suggestion struct has public fields, so we can access them.
+    let suggestions = backend_suggestions
         .into_iter()
         .map(|s| Suggestion {
             label: s.label,
@@ -75,30 +107,40 @@ pub async fn schema_refresh(
 ) -> Result<(), String> {
     let uuid = uuid::Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
-    // Convert enum to the format expected by backend
-    let (scope_str, schema_name, table_name) = match scope {
-        Some(RefreshScope::All) | None => ("all".to_string(), None, None),
-        Some(RefreshScope::Schema(s)) => ("schema".to_string(), Some(s), None),
-        Some(RefreshScope::Table { schema_name, table_name }) => (
-            "table".to_string(),
-            Some(schema_name),
-            Some(table_name),
+    // Map to backend RefreshScope
+    let backend_scope = match scope {
+        Some(RefreshScope::All) | None => dbplus_backend::services::autocomplete::RefreshScope::All,
+        Some(RefreshScope::Schema(s)) => dbplus_backend::services::autocomplete::RefreshScope::Schema(s),
+        Some(RefreshScope::Table { schema_name, table_name }) => dbplus_backend::services::autocomplete::RefreshScope::Table {
+            schema_name,
+            table_name,
+        },
+    };
+
+    let conn_service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    let (connection, password) = conn_service
+        .get_connection_with_password(uuid)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let driver: Arc<dyn DatabaseDriver> = match connection.db_type.as_str() {
+        "postgres" | "cockroachdb" | "cockroach" => Arc::new(
+            PostgresDriver::new(&connection, &password)
+                .await
+                .map_err(|e| e.to_string())?,
         ),
+        _ => return Err("Unsupported database type for schema refresh".to_string()),
     };
 
-    let request = dbplus_backend::handlers::schema_refresh::RefreshRequest {
-        scope: scope_str,
-        schema_name,
-        table_name,
-    };
+    let database_name = connection.database.clone();
 
-    dbplus_backend::handlers::schema_refresh::refresh_schema_impl(
-        &state.inner().clone(),
-        uuid,
-        request,
-    )
-    .await
-    .map_err(|e| e.to_string())?;
+    state
+        .schema_cache
+        .refresh(uuid, &database_name, backend_scope, driver)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

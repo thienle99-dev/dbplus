@@ -44,58 +44,8 @@ pub async fn execute_query(
     connection_id: String,
     request: ExecuteQueryRequest,
 ) -> Result<QueryResult, String> {
-    use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
-    
-    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
-    let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (mut connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // Override database if specified in request
-    if let Some(db) = request.database {
-        connection.database = db;
-    }
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let start = std::time::Instant::now();
-    let result = driver.query(&request.sql)
-        .await
-        .map_err(|e| e.to_string())?;
-    let execution_time_ms = start.elapsed().as_millis() as u64;
-
-    Ok(QueryResult {
-        columns: result.columns,
-        rows: result.rows,
-        affected_rows: result.affected_rows,
-        column_metadata: result.column_metadata.map(|metadata| {
-            metadata.into_iter().map(|m| ColumnMetadata {
-                name: m.name,
-                data_type: m.data_type,
-                is_nullable: m.is_nullable,
-            }).collect()
-        }),
-        total_count: result.total_count,
-        limit: result.limit,
-        offset: result.offset,
-        has_more: result.has_more,
-        row_metadata: result.row_metadata.map(|metadata| {
-            metadata.into_iter().map(|m| RowMetadata {
-                primary_key: m.primary_key,
-            }).collect()
-        }),
-        execution_time_ms: Some(execution_time_ms),
-        json: result.json,
-        display_mode: result.display_mode,
-    })
+    // TODO: Implement execute_query via ConnectionService
+    Err("Query execution not yet fully implemented via IPC".to_string())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -127,52 +77,6 @@ pub async fn explain_query(
     connection_id: String,
     request: ExplainQueryRequest,
 ) -> Result<QueryResult, String> {
-    use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
-    
-    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
-    let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // Add EXPLAIN to the query
-    let explain_sql = format!("EXPLAIN {}", request.sql);
-    
-    let result = driver.query(&explain_sql)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(QueryResult {
-        columns: result.columns,
-        rows: result.rows,
-        affected_rows: result.affected_rows,
-        column_metadata: result.column_metadata.map(|metadata| {
-            metadata.into_iter().map(|m| ColumnMetadata {
-                name: m.name,
-                data_type: m.data_type,
-                is_nullable: m.is_nullable,
-            }).collect()
-        }),
-        total_count: result.total_count,
-        limit: result.limit,
-        offset: result.offset,
-        has_more: result.has_more,
-        row_metadata: result.row_metadata.map(|metadata| {
-            metadata.into_iter().map(|m| RowMetadata {
-                primary_key: m.primary_key,
-            }).collect()
-        }),
-        execution_time_ms: result.execution_time_ms,
-        json: result.json,
-        display_mode: result.display_mode,
-    })
+    // TODO: Implement explain_query via ConnectionService
+    Err("Query explanation not yet fully implemented via IPC".to_string())
 }

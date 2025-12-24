@@ -2,24 +2,27 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use dbplus_backend::AppState;
 use uuid::Uuid;
+use sea_orm::QuerySelect;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HistoryEntry {
-    pub id: i32,
+    pub id: String,
     pub connection_id: String,
-    pub query: String,
+    pub sql: String,
     pub executed_at: String,
-    pub execution_time_ms: Option<i64>,
-    pub status: String,
+    pub execution_time: Option<i32>,
+    pub success: bool,
     pub error_message: Option<String>,
+    pub row_count: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddHistoryRequest {
-    pub query: String,
-    pub execution_time_ms: Option<i64>,
-    pub status: String,
+    pub sql: String,
+    pub execution_time: Option<i32>,
+    pub success: bool,
     pub error_message: Option<String>,
+    pub row_count: Option<i32>,
 }
 
 #[tauri::command]
@@ -46,13 +49,14 @@ pub async fn get_history(
         .map_err(|e| e.to_string())?;
 
     Ok(history.into_iter().map(|h| HistoryEntry {
-        id: h.id,
+        id: h.id.to_string(),
         connection_id: h.connection_id.to_string(),
-        query: h.query,
+        sql: h.sql,
         executed_at: h.executed_at.to_string(),
-        execution_time_ms: h.execution_time_ms,
-        status: h.status,
+        execution_time: h.execution_time,
+        success: h.success,
         error_message: h.error_message,
+        row_count: h.row_count,
     }).collect())
 }
 
@@ -71,11 +75,12 @@ pub async fn add_history(
     let new_entry = query_history::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
         connection_id: Set(uuid),
-        query: Set(request.query),
-        executed_at: Set(Utc::now().into()),
-        execution_time_ms: Set(request.execution_time_ms),
-        status: Set(request.status),
+        sql: Set(request.sql),
+        row_count: Set(request.row_count),
+        execution_time: Set(request.execution_time),
+        success: Set(request.success),
         error_message: Set(request.error_message),
+        executed_at: Set(Utc::now().into()),
     };
 
     let result = new_entry.insert(&state.db)
@@ -83,13 +88,14 @@ pub async fn add_history(
         .map_err(|e| e.to_string())?;
 
     Ok(HistoryEntry {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
-        query: result.query,
+        sql: result.sql,
         executed_at: result.executed_at.to_string(),
-        execution_time_ms: result.execution_time_ms,
-        status: result.status,
+        execution_time: result.execution_time,
+        success: result.success,
         error_message: result.error_message,
+        row_count: result.row_count,
     })
 }
 
@@ -97,14 +103,15 @@ pub async fn add_history(
 pub async fn delete_history_entry(
     state: State<'_, AppState>,
     connection_id: String,
-    entry_id: i32,
+    entry_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::query_history;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
-    let entry = query_history::Entity::find_by_id(entry_id)
+    let entry_uuid = Uuid::parse_str(&entry_id).map_err(|e| e.to_string())?;
+    let entry = query_history::Entity::find_by_id(entry_uuid)
         .filter(query_history::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -138,7 +145,7 @@ pub async fn clear_history(
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeleteHistoryEntriesRequest {
-    pub entry_ids: Vec<i32>,
+    pub entry_ids: Vec<String>,
 }
 
 #[tauri::command]
@@ -152,9 +159,14 @@ pub async fn delete_history_entries(
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
+    let entry_uuids: Result<Vec<Uuid>, _> = request.entry_ids.iter()
+        .map(|id| Uuid::parse_str(id))
+        .collect();
+    let entry_uuids = entry_uuids.map_err(|e| e.to_string())?;
+    
     query_history::Entity::delete_many()
         .filter(query_history::Column::ConnectionId.eq(uuid))
-        .filter(query_history::Column::Id.is_in(request.entry_ids))
+        .filter(query_history::Column::Id.is_in(entry_uuids))
         .exec(&state.db)
         .await
         .map_err(|e| e.to_string())?;

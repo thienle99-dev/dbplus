@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dashboard {
-    pub id: i32,
+    pub id: String,
     pub connection_id: String,
     pub name: String,
     pub description: Option<String>,
@@ -15,12 +15,13 @@ pub struct Dashboard {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Chart {
-    pub id: i32,
-    pub dashboard_id: i32,
-    pub title: String,
+    pub id: String,
+    pub dashboard_id: String,
+    pub saved_query_id: String,
+    pub name: String,
     pub chart_type: String,
-    pub query: String,
-    pub config_json: Option<String>,
+    pub config: serde_json::Value,
+    pub layout: serde_json::Value,
     pub created_at: String,
 }
 
@@ -32,10 +33,11 @@ pub struct CreateDashboardRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddChartRequest {
-    pub title: String,
+    pub saved_query_id: String,
+    pub name: String,
     pub chart_type: String,
-    pub query: String,
-    pub config_json: Option<String>,
+    pub config: serde_json::Value,
+    pub layout: serde_json::Value,
 }
 
 #[tauri::command]
@@ -56,7 +58,7 @@ pub async fn list_dashboards(
         .map_err(|e| e.to_string())?;
 
     Ok(dashboards.into_iter().map(|d| Dashboard {
-        id: d.id,
+        id: d.id.to_string(),
         connection_id: d.connection_id.to_string(),
         name: d.name,
         description: d.description,
@@ -69,21 +71,22 @@ pub async fn list_dashboards(
 pub async fn get_dashboard(
     state: State<'_, AppState>,
     connection_id: String,
-    dashboard_id: i32,
+    dashboard_id: String,
 ) -> Result<Option<Dashboard>, String> {
     use dbplus_backend::models::entities::dashboard;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
-    let dashboard = dashboard::Entity::find_by_id(dashboard_id)
+    let dashboard_uuid = Uuid::parse_str(&dashboard_id).map_err(|e| e.to_string())?;
+    let dashboard = dashboard::Entity::find_by_id(dashboard_uuid)
         .filter(dashboard::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(dashboard.map(|d| Dashboard {
-        id: d.id,
+        id: d.id.to_string(),
         connection_id: d.connection_id.to_string(),
         name: d.name,
         description: d.description,
@@ -118,7 +121,7 @@ pub async fn create_dashboard(
         .map_err(|e| e.to_string())?;
 
     Ok(Dashboard {
-        id: result.id,
+        id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
         description: result.description,
@@ -131,14 +134,15 @@ pub async fn create_dashboard(
 pub async fn delete_dashboard(
     state: State<'_, AppState>,
     connection_id: String,
-    dashboard_id: i32,
+    dashboard_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::dashboard;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
-    let dashboard = dashboard::Entity::find_by_id(dashboard_id)
+    let dashboard_uuid = Uuid::parse_str(&dashboard_id).map_err(|e| e.to_string())?;
+    let dashboard = dashboard::Entity::find_by_id(dashboard_uuid)
         .filter(dashboard::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -155,7 +159,7 @@ pub async fn delete_dashboard(
 pub async fn list_charts(
     state: State<'_, AppState>,
     connection_id: String,
-    dashboard_id: i32,
+    dashboard_id: String,
 ) -> Result<Vec<Chart>, String> {
     use dbplus_backend::models::entities::{dashboard, dashboard_chart};
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
@@ -163,7 +167,8 @@ pub async fn list_charts(
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
     // Verify dashboard belongs to connection
-    let _dashboard = dashboard::Entity::find_by_id(dashboard_id)
+    let dashboard_uuid = Uuid::parse_str(&dashboard_id).map_err(|e| e.to_string())?;
+    let _dashboard = dashboard::Entity::find_by_id(dashboard_uuid)
         .filter(dashboard::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -171,18 +176,19 @@ pub async fn list_charts(
         .ok_or_else(|| "Dashboard not found".to_string())?;
     
     let charts = dashboard_chart::Entity::find()
-        .filter(dashboard_chart::Column::DashboardId.eq(dashboard_id))
+        .filter(dashboard_chart::Column::DashboardId.eq(dashboard_uuid))
         .all(&state.db)
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(charts.into_iter().map(|c| Chart {
-        id: c.id,
-        dashboard_id: c.dashboard_id,
-        title: c.title,
-        chart_type: c.chart_type,
-        query: c.query,
-        config_json: c.config_json,
+        id: c.id.to_string(),
+        dashboard_id: c.dashboard_id.to_string(),
+        saved_query_id: c.saved_query_id.to_string(),
+        name: c.name,
+        chart_type: c.r#type,
+        config: c.config,
+        layout: c.layout,
         created_at: c.created_at.to_string(),
     }).collect())
 }
@@ -191,7 +197,7 @@ pub async fn list_charts(
 pub async fn add_chart(
     state: State<'_, AppState>,
     connection_id: String,
-    dashboard_id: i32,
+    dashboard_id: String,
     request: AddChartRequest,
 ) -> Result<Chart, String> {
     use dbplus_backend::models::entities::{dashboard, dashboard_chart};
@@ -201,7 +207,9 @@ pub async fn add_chart(
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
     // Verify dashboard belongs to connection
-    let _dashboard = dashboard::Entity::find_by_id(dashboard_id)
+    let dashboard_uuid = Uuid::parse_str(&dashboard_id).map_err(|e| e.to_string())?;
+    let saved_query_uuid = Uuid::parse_str(&request.saved_query_id).map_err(|e| e.to_string())?;
+    let _dashboard = dashboard::Entity::find_by_id(dashboard_uuid)
         .filter(dashboard::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
@@ -210,12 +218,14 @@ pub async fn add_chart(
     
     let new_chart = dashboard_chart::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
-        dashboard_id: Set(dashboard_id),
-        title: Set(request.title),
-        chart_type: Set(request.chart_type),
-        query: Set(request.query),
-        config_json: Set(request.config_json),
+        dashboard_id: Set(dashboard_uuid),
+        saved_query_id: Set(saved_query_uuid),
+        name: Set(request.name),
+        r#type: Set(request.chart_type),
+        config: Set(request.config),
+        layout: Set(request.layout),
         created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
     };
 
     let result = new_chart.insert(&state.db)
@@ -223,12 +233,13 @@ pub async fn add_chart(
         .map_err(|e| e.to_string())?;
 
     Ok(Chart {
-        id: result.id,
-        dashboard_id: result.dashboard_id,
-        title: result.title,
-        chart_type: result.chart_type,
-        query: result.query,
-        config_json: result.config_json,
+        id: result.id.to_string(),
+        dashboard_id: result.dashboard_id.to_string(),
+        saved_query_id: result.saved_query_id.to_string(),
+        name: result.name,
+        chart_type: result.r#type,
+        config: result.config,
+        layout: result.layout,
         created_at: result.created_at.to_string(),
     })
 }
@@ -237,8 +248,8 @@ pub async fn add_chart(
 pub async fn delete_chart(
     state: State<'_, AppState>,
     connection_id: String,
-    dashboard_id: i32,
-    chart_id: i32,
+    dashboard_id: String,
+    chart_id: String,
 ) -> Result<(), String> {
     use dbplus_backend::models::entities::{dashboard, dashboard_chart};
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
@@ -246,15 +257,17 @@ pub async fn delete_chart(
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     
     // Verify dashboard belongs to connection
-    let _dashboard = dashboard::Entity::find_by_id(dashboard_id)
+    let dashboard_uuid = Uuid::parse_str(&dashboard_id).map_err(|e| e.to_string())?;
+    let chart_uuid = Uuid::parse_str(&chart_id).map_err(|e| e.to_string())?;
+    let _dashboard = dashboard::Entity::find_by_id(dashboard_uuid)
         .filter(dashboard::Column::ConnectionId.eq(uuid))
         .one(&state.db)
         .await
         .map_err(|e| e.to_string())?
         .ok_or_else(|| "Dashboard not found".to_string())?;
     
-    let chart = dashboard_chart::Entity::find_by_id(chart_id)
-        .filter(dashboard_chart::Column::DashboardId.eq(dashboard_id))
+    let chart = dashboard_chart::Entity::find_by_id(chart_uuid)
+        .filter(dashboard_chart::Column::DashboardId.eq(dashboard_uuid))
         .one(&state.db)
         .await
         .map_err(|e| e.to_string())?;

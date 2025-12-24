@@ -114,7 +114,7 @@ pub async fn add_column(
         default_value: request.default_value,
     };
 
-    conn_service.add_column(uuid, &request.schema, &request.table, column_def)
+    conn_service.add_column(uuid, &request.schema, &request.table, &column_def)
         .await
         .map_err(|e| e.to_string())
 }
@@ -197,7 +197,7 @@ pub async fn get_table_data(
     let limit = request.limit.unwrap_or(100);
     let offset = request.offset.unwrap_or(0);
 
-    let result = conn_service.get_table_data(uuid, &request.schema, &request.table, limit, offset)
+    let result = conn_service.get_table_data(uuid, &request.schema, &request.table, limit, offset, None, None, None)
         .await
         .map_err(|e| e.to_string())?;
 

@@ -1,26 +1,25 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use dbplus_backend::AppState;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Setting {
     pub key: String,
-    pub value: String,
+    pub value: serde_json::Value,
     pub created_at: String,
     pub updated_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateSettingRequest {
-    pub value: String,
+    pub value: serde_json::Value,
 }
 
 #[tauri::command]
 pub async fn get_all_settings(
     state: State<'_, AppState>,
 ) -> Result<Vec<Setting>, String> {
-    use dbplus_backend::models::entities::setting;
+    use dbplus_backend::models::entities::user_settings as setting;
     use sea_orm::EntityTrait;
     
     let settings = setting::Entity::find()
@@ -41,7 +40,7 @@ pub async fn get_setting(
     state: State<'_, AppState>,
     key: String,
 ) -> Result<Option<Setting>, String> {
-    use dbplus_backend::models::entities::setting;
+    use dbplus_backend::models::entities::user_settings as setting;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
     
     let setting = setting::Entity::find()
@@ -64,7 +63,7 @@ pub async fn update_setting(
     key: String,
     request: UpdateSettingRequest,
 ) -> Result<Setting, String> {
-    use dbplus_backend::models::entities::setting;
+    use dbplus_backend::models::entities::user_settings as setting;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ActiveModelTrait, Set};
     use chrono::Utc;
     
@@ -79,15 +78,16 @@ pub async fn update_setting(
         // Update existing
         let mut active: setting::ActiveModel = existing.into();
         active.value = Set(request.value);
-        active.updated_at = Set(Utc::now().into());
+        active.updated_at = Set(Utc::now().naive_utc());
         active.update(&state.db).await.map_err(|e| e.to_string())?
     } else {
         // Create new
         let new_setting = setting::ActiveModel {
+            id: sea_orm::ActiveValue::NotSet,
             key: Set(key),
             value: Set(request.value),
-            created_at: Set(Utc::now().into()),
-            updated_at: Set(Utc::now().into()),
+            created_at: Set(Utc::now().naive_utc()),
+            updated_at: Set(Utc::now().naive_utc()),
         };
         new_setting.insert(&state.db).await.map_err(|e| e.to_string())?
     };
@@ -105,7 +105,7 @@ pub async fn delete_setting(
     state: State<'_, AppState>,
     key: String,
 ) -> Result<(), String> {
-    use dbplus_backend::models::entities::setting;
+    use dbplus_backend::models::entities::user_settings as setting;
     use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, ModelTrait};
     
     let setting = setting::Entity::find()
@@ -125,8 +125,8 @@ pub async fn delete_setting(
 pub async fn reset_settings(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    use dbplus_backend::models::entities::setting;
-    use sea_orm::{EntityTrait, DeleteMany};
+    use dbplus_backend::models::entities::user_settings as setting;
+    use sea_orm::EntityTrait;
     
     setting::Entity::delete_many()
         .exec(&state.db)

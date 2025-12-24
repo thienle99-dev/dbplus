@@ -21,7 +21,7 @@ pub async fn export_postgres_ddl(
     // The original handler used a dedicated DDL export service for Postgres
     // Let's check if we can access it via the driver or directly
     
-    match connection.r#type.as_str() {
+    match connection.db_type.as_str() {
         "postgres" => {
             // Placeholder: This would call the specific Postgres DDL export logic
             Ok("-- Postgres DDL export via IPC placeholder".to_string())

@@ -43,7 +43,7 @@ pub async fn schema_list_tables(
     schema: String,
 ) -> Result<Vec<TableRef>, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
@@ -74,7 +74,7 @@ pub async fn schema_get_columns(
     table: String,
 ) -> Result<Vec<ColumnRef>, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
@@ -107,7 +107,7 @@ pub async fn schema_list_functions(
     schema: String,
 ) -> Result<serde_json::Value, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
@@ -127,7 +127,7 @@ pub async fn schema_list_views(
     schema: String,
 ) -> Result<serde_json::Value, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
@@ -148,15 +148,17 @@ pub async fn schema_get_view_definition(
     view: String,
 ) -> Result<String, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    conn_service.get_view_definition(uuid, &schema, &view)
+    let result = conn_service.get_view_definition(uuid, &schema, &view)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    
+    Ok(result.definition)
 }
 
 #[tauri::command]
@@ -167,15 +169,17 @@ pub async fn schema_get_function_definition(
     function: String,
 ) -> Result<String, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    conn_service.get_function_definition(uuid, &schema, &function)
+    let result = conn_service.get_function_definition(uuid, &schema, &function)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    
+    Ok(result.definition)
 }
 
 #[tauri::command]
@@ -185,7 +189,7 @@ pub async fn schema_get_schema_foreign_keys(
     schema: String,
 ) -> Result<serde_json::Value, String> {
     use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::db_driver::SchemaDriver;
+
     
     let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
     let conn_service = ConnectionService::new(state.db.clone())

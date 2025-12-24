@@ -8,7 +8,7 @@ pub struct SavedQuery {
     pub id: String,
     pub connection_id: String,
     pub name: String,
-    pub query: String,
+    pub sql: String,
     pub description: Option<String>,
     pub folder_id: Option<String>,
     pub created_at: String,
@@ -18,7 +18,7 @@ pub struct SavedQuery {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSavedQueryRequest {
     pub name: String,
-    pub query: String,
+    pub sql: String,
     pub description: Option<String>,
     pub folder_id: Option<String>,
 }
@@ -26,7 +26,7 @@ pub struct CreateSavedQueryRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateSavedQueryRequest {
     pub name: String,
-    pub query: String,
+    pub sql: String,
     pub description: Option<String>,
     pub folder_id: Option<String>,
 }
@@ -52,7 +52,7 @@ pub async fn list_saved_queries(
         id: q.id.to_string(),
         connection_id: q.connection_id.to_string(),
         name: q.name,
-        query: q.query,
+        sql: q.sql,
         description: q.description,
         folder_id: q.folder_id.map(|id| id.to_string()),
         created_at: q.created_at.to_string(),
@@ -80,9 +80,11 @@ pub async fn create_saved_query(
         id: sea_orm::ActiveValue::NotSet,
         connection_id: Set(uuid),
         name: Set(request.name),
-        query: Set(request.query),
+        sql: Set(request.sql),
         description: Set(request.description),
         folder_id: Set(folder_uuid),
+        tags: Set(None),
+        metadata: Set(None),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
     };
@@ -95,7 +97,7 @@ pub async fn create_saved_query(
         id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
-        query: result.query,
+        sql: result.sql,
         description: result.description,
         folder_id: result.folder_id.map(|id| id.to_string()),
         created_at: result.created_at.to_string(),
@@ -130,7 +132,7 @@ pub async fn update_saved_query(
     
     let mut active: saved_query::ActiveModel = query.into();
     active.name = Set(request.name);
-    active.query = Set(request.query);
+    active.sql = Set(request.sql);
     active.description = Set(request.description);
     active.folder_id = Set(folder_uuid);
     active.updated_at = Set(Utc::now().into());
@@ -143,7 +145,7 @@ pub async fn update_saved_query(
         id: result.id.to_string(),
         connection_id: result.connection_id.to_string(),
         name: result.name,
-        query: result.query,
+        sql: result.sql,
         description: result.description,
         folder_id: result.folder_id.map(|id| id.to_string()),
         created_at: result.created_at.to_string(),

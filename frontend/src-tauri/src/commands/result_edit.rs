@@ -24,46 +24,8 @@ pub async fn update_result_row(
     connection_id: String,
     request: UpdateRowRequest,
 ) -> Result<(), String> {
-    use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
-    
-    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
-    let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // Build SET clause
-    let set_clause: Vec<String> = request.updates.iter()
-        .map(|(k, v)| format!("{} = {}", k, format_value(v)))
-        .collect();
-
-    // Build WHERE clause
-    let where_clause: Vec<String> = request.primary_key.iter()
-        .map(|(k, v)| format!("{} = {}", k, format_value(v)))
-        .collect();
-
-    let sql = format!(
-        "UPDATE {}.{} SET {} WHERE {}",
-        request.schema,
-        request.table,
-        set_clause.join(", "),
-        where_clause.join(" AND ")
-    );
-
-    driver.query(&sql)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
+    // TODO: Implement update_result_row via ConnectionService
+    Err("Result row updates not yet implemented via IPC".to_string())
 }
 
 #[tauri::command]
@@ -72,40 +34,8 @@ pub async fn delete_result_row(
     connection_id: String,
     request: DeleteRowRequest,
 ) -> Result<(), String> {
-    use dbplus_backend::services::connection_service::ConnectionService;
-    use dbplus_backend::services::driver::QueryDriver;
-    
-    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
-    let conn_service = ConnectionService::new(state.db.clone())
-        .map_err(|e| e.to_string())?;
-
-    let (connection, password) = conn_service
-        .get_connection_with_password(uuid)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let driver = conn_service
-        .create_driver(&connection, &password)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // Build WHERE clause
-    let where_clause: Vec<String> = request.primary_key.iter()
-        .map(|(k, v)| format!("{} = {}", k, format_value(v)))
-        .collect();
-
-    let sql = format!(
-        "DELETE FROM {}.{} WHERE {}",
-        request.schema,
-        request.table,
-        where_clause.join(" AND ")
-    );
-
-    driver.query(&sql)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
+    // TODO: Implement delete_result_row via ConnectionService
+    Err("Result row deletion not yet implemented via IPC".to_string())
 }
 
 fn format_value(value: &serde_json::Value) -> String {

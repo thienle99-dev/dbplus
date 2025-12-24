@@ -107,7 +107,7 @@ pub async fn set_table_comment(
     let conn_service = ConnectionService::new(state.db.clone())
         .map_err(|e| e.to_string())?;
 
-    conn_service.set_table_comment(uuid, &schema, &table, comment.as_deref())
+    conn_service.set_table_comment(uuid, &schema, &table, comment)
         .await
         .map_err(|e| e.to_string())?;
 
