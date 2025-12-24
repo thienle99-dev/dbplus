@@ -52,4 +52,21 @@ impl DatabaseManagementDriver for CouchbaseDriver {
             .map_err(|e| anyhow::anyhow!("Failed to drop scope '{}': {}", name, e))?;
         Ok(())
     }
+
+    async fn install_extension(
+        &self,
+        _name: &str,
+        _schema: Option<&str>,
+        _version: Option<&str>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Couchbase does not support extensions via this API"
+        ))
+    }
+
+    async fn drop_extension(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Couchbase does not support extensions via this API"
+        ))
+    }
 }

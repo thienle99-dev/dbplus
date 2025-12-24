@@ -374,6 +374,7 @@ impl FunctionOperations for MongoDriver {
 }
 
 #[async_trait]
+
 impl crate::services::driver::extension::DatabaseManagementDriver for MongoDriver {
     async fn create_database(&self, name: &str) -> Result<()> {
         let db = self.client.database(name);
@@ -393,5 +394,22 @@ impl crate::services::driver::extension::DatabaseManagementDriver for MongoDrive
 
     async fn drop_schema(&self, name: &str) -> Result<()> {
         self.drop_database(name).await
+    }
+
+    async fn install_extension(
+        &self,
+        _name: &str,
+        _schema: Option<&str>,
+        _version: Option<&str>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "MongoDB does not support extensions via this API"
+        ))
+    }
+
+    async fn drop_extension(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "MongoDB does not support extensions via this API"
+        ))
     }
 }

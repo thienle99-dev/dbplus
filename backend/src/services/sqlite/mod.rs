@@ -330,6 +330,23 @@ impl DatabaseManagementDriver for SQLiteDriver {
             "SQLite does not support schemas via this API"
         ))
     }
+
+    async fn install_extension(
+        &self,
+        _name: &str,
+        _schema: Option<&str>,
+        _version: Option<&str>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "SQLite extensions are not managed via this API yet"
+        ))
+    }
+
+    async fn drop_extension(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "SQLite extensions are not managed via this API yet"
+        ))
+    }
 }
 
 #[async_trait]

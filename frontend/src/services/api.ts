@@ -62,9 +62,71 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
             if (method === 'POST') return { command: 'create_table', args: { connectionId, request: data } };
             if (method === 'DELETE') return { command: 'drop_table', args: { connectionId, request: { schema: data?.params?.schema, table_name: data?.params?.table } } };
         }
+        
+        // This was missing: explicit route for table data query
+        const queryMatch = url.match(/\/query\?/);
+        if (queryMatch && method === 'GET') {
+             // Extract query params manually since they might be in the URL string or passed as 'data' (if GET with params object)
+             // But here url likely contains them. The api.get helper passes config which might have params, 
+             // but our `routeToCommand` receives `data` which is `config` for GET requests.
+             // However, strictly speaking, get_table_data expects args: schema, table, limit, offset.
+             // Let's rely on the caller passing these in `data` (which is the params object for GETs in axios-style, but here `api.get` passes `config` as `data`).
+             // Wait, looking at TableDataView.tsx: api.get(url, { headers... })
+             // The URL already contains the query parameters!
+             // We need to parse valid params from the URL or specific args.
+             
+             // Simple URL param parsing:
+             const urlObj = new URL('http://dummy' + url); 
+             // We prepend dummy host because URL ctor needs absolute URL or we use URLSearchParams on split.
+             const params = urlObj.searchParams;
+             
+             return { 
+                 command: 'get_table_data', 
+                 args: { 
+                     connectionId, 
+                     request: {
+                         schema: params.get('schema'),
+                         table: params.get('table'),
+                         limit: params.get('limit') ? parseInt(params.get('limit')!) : null,
+                         offset: params.get('offset') ? parseInt(params.get('offset')!) : null
+                         // ignoring 'filter' etc for now as the Rust command might not accept them yet 
+                         // or we need to align Request struct. 
+                         // Looking at Rust `GetTableDataRequest` struct in `table_ops.rs`:
+                         // pub struct GetTableDataRequest { pub schema: String, pub table: String, pub limit: Option<i64>, pub offset: Option<i64> }
+                         // So we only pass these.
+                     }
+                 } 
+             };
+        }
+
         if (url.endsWith('/columns')) return { command: 'schema_get_columns', args: { connectionId, schema: data?.params?.schema, table: data?.params?.table } };
+        
+        // Table Info & Metadata
         if (url.endsWith('/constraints')) return { command: 'get_table_constraints', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/indexes')) return { command: 'get_table_indexes', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/table-stats')) return { command: 'get_table_statistics', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/triggers')) return { command: 'get_table_triggers', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/partitions')) return { command: 'get_partitions', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/dependencies')) return { command: 'get_table_dependencies', args: { connectionId, params: data?.params } };
+        if (url.endsWith('/storage-info')) return { command: 'get_storage_bloat_info', args: { connectionId, params: data?.params } };
+        
+        if (url.endsWith('/table-comment')) {
+            if (method === 'GET') return { command: 'get_table_comment', args: { connectionId, params: data?.params } };
+            if (method === 'PUT') return { command: 'set_table_comment', args: { connectionId, schema: data?.schema, table: data?.table, comment: data?.comment } };
+        }
+
+        // Functions & Views
         if (url.endsWith('/functions')) return { command: 'schema_list_functions', args: { connectionId, schema: data?.params?.schema } };
+        if (url.endsWith('/views')) return { command: 'schema_list_views', args: { connectionId, schema: data?.params?.schema } };
+        if (url.endsWith('/view-definition')) return { command: 'schema_get_view_definition', args: { connectionId, schema: data?.params?.schema, view: data?.params?.view } };
+        if (url.endsWith('/function-definition')) return { command: 'schema_get_function_definition', args: { connectionId, schema: data?.params?.schema, function: data?.params?.function } };
+
+        // Search
+        if (url.endsWith('/search')) return { command: 'search_objects', args: { connectionId, request: { query: data?.params?.q ?? data?.q } } };
+
+        // Foreign Keys
+        if (url.endsWith('/foreign-keys')) return { command: 'schema_get_schema_foreign_keys', args: { connectionId, schema: data?.params?.schema } };
+        if (url.endsWith('/fk-orphans')) return { command: 'get_fk_orphans', args: { connectionId, params: data?.params } };
 
         // Query execution
         if (url.endsWith('/execute')) return { command: 'execute_query', args: { connectionId, sql: data?.sql, options: data?.options } };
@@ -102,15 +164,22 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
         const attachMatch = url.match(/\/sqlite\/attachments\/([^/]+)$/);
         if (attachMatch && method === 'DELETE') return { command: 'detach_sqlite_database', args: { connectionId, name: attachMatch[1] } };
 
-        // Permissions & Specialized Info
+        // Permissions & Roles
+        if (url.endsWith('/permissions')) {
+             if (method === 'GET') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
+        }
+        if (url.endsWith('/roles')) return { command: 'list_roles', args: { connectionId } };
+
         if (url.includes('/permissions/')) {
             const part = url.split('/').pop();
+            // These sub-routes are likely not used if main permissions route is used, but keeping for compatibility if any components use specific
             if (part === 'table') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
             if (part === 'schema') return { command: 'get_schema_permissions', args: { connectionId, params: data?.params } };
             if (part === 'function') return { command: 'get_function_permissions', args: { connectionId, params: data?.params } };
         }
-        if (url.endsWith('/storage/bloat')) return { command: 'get_storage_bloat_info', args: { connectionId, params: data?.params } };
-        if (url.endsWith('/fk-orphans')) return { command: 'get_fk_orphans', args: { connectionId, params: data?.params } };
+
+        // Legacy / mismatch handling
+        if (url.endsWith('/storage/bloat')) return { command: 'get_storage_bloat_info', args: { connectionId, params: data?.params } }; // Keeping for compatibility
     }
 
     // Global routes

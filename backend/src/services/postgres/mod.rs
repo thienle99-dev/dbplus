@@ -523,6 +523,35 @@ impl DatabaseManagementDriver for PostgresDriver {
         })?;
         Ok(())
     }
+    async fn install_extension(
+        &self,
+        name: &str,
+        schema: Option<&str>,
+        version: Option<&str>,
+    ) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let mut sql = format!("CREATE EXTENSION {}", ident);
+        if let Some(schema) = schema {
+            sql.push_str(&format!(" SCHEMA {}", quote_postgres_ident(schema)?));
+        }
+        if let Some(version) = version {
+            sql.push_str(&format!(
+                " VERSION {}",
+                quote_postgres_string_literal(version)?
+            ));
+        }
+        client.execute(&sql, &[]).await?;
+        Ok(())
+    }
+
+    async fn drop_extension(&self, name: &str) -> Result<()> {
+        let client = self.connection.pool().get().await?;
+        let ident = quote_postgres_ident(name)?;
+        let sql = format!("DROP EXTENSION {}", ident);
+        client.execute(&sql, &[]).await?;
+        Ok(())
+    }
 }
 
 use crate::models::export_ddl::ExportDdlOptions;

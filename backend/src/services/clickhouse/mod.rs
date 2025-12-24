@@ -990,6 +990,23 @@ impl DatabaseManagementDriver for ClickHouseDriver {
     async fn drop_schema(&self, name: &str) -> Result<()> {
         self.drop_database(name).await
     }
+
+    async fn install_extension(
+        &self,
+        _name: &str,
+        _schema: Option<&str>,
+        _version: Option<&str>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "ClickHouse does not support extensions via this API"
+        ))
+    }
+
+    async fn drop_extension(&self, _name: &str) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "ClickHouse does not support extensions via this API"
+        ))
+    }
 }
 
 #[async_trait]

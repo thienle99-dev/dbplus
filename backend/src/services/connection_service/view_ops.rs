@@ -8,13 +8,7 @@ impl ConnectionService {
         connection_id: Uuid,
         schema: &str,
     ) -> Result<Vec<crate::services::db_driver::ViewInfo>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -49,13 +43,7 @@ impl ConnectionService {
         schema: &str,
         view_name: &str,
     ) -> Result<crate::services::db_driver::ViewInfo> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;

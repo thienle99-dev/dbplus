@@ -431,3 +431,43 @@
 - [x] File picker cho đường dẫn DB + recent DB list
 - [x] Attached databases support (ATTACH) + schema list ngoài `main`
 - [x] PRAGMA editor + integrity check + VACUUM/ANALYZE UI
+
+## Phase 13: Technical Debt & Driver Gaps (Pending Implementation)
+
+### Driver Feature Support Matrix
+
+While the core IPC commands are implemented, some features are currently limited to specific drivers (mostly PostgreSQL). The following needs to be implemented for full parity:
+
+- [ ] **Schema Diff & Migration Generator**
+
+  - [ ] MySQL Schema Extractor
+  - [ ] SQLite Schema Extractor
+  - [ ] ClickHouse Schema Extractor
+  - [ ] MSSQL / Couchbase implementation
+
+- [ ] **Extensions Management**
+
+  - [ ] MySQL Plugin management
+  - [ ] ClickHouse System Parts/Dictionaries
+  - [ ] SQLite Extensions (load_extension)
+
+- [ ] **Data Tools**
+
+  - [ ] `backup_database` generic implementation (currently only `backup_postgres_sql`)
+  - [ ] `restore_database` generic implementation
+  - [ ] `execute_script` optimizations for streaming large files (currently loads into memory)
+
+- [ ] **Advanced Object Viewers**
+  - [ ] View Definition parser/editor for non-Postgres drivers
+  - [ ] Function/Procedure editor for non-Postgres drivers
+
+### Backend Todo (from IPC stubs)
+
+- [x] `execute_script`: Running a large SQL script (Implemented via `QueryDriver`)
+- [x] `backup_postgres_sql`: Generating a backup for Postgres databases (Implemented)
+- [x] `list_sqlite_attachments`: Listing attached SQLite databases (Implemented)
+- [x] `attach_sqlite_database`: Attaching an external SQLite database file (Implemented)
+- [x] `detach_sqlite_database`: Detaching a previously attached database (Implemented)
+- [x] `compare_schemas`: Comparing two schemas (Implemented for Postgres)
+- [x] `generate_migration`: Generating SQL migration scripts (Implemented for Postgres)
+- [x] Fix missing `GET /query` IPC routing in `api.ts` (Mapped to `get_table_data`)

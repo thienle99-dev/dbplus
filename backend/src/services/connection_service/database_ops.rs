@@ -4,12 +4,7 @@ use uuid::Uuid;
 
 impl ConnectionService {
     pub async fn get_databases(&self, connection_id: Uuid) -> Result<Vec<String>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -55,12 +50,7 @@ impl ConnectionService {
         name: &str,
         options: Option<crate::handlers::database::CreateDatabaseOptions>,
     ) -> Result<()> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::postgres_driver::PostgresDriver;
 
@@ -104,12 +94,7 @@ impl ConnectionService {
     }
 
     pub async fn drop_database(&self, connection_id: Uuid, name: &str) -> Result<()> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::extension::DatabaseManagementDriver;
         use crate::services::postgres_driver::PostgresDriver;

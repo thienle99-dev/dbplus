@@ -36,4 +36,11 @@ pub trait DatabaseManagementDriver: Send + Sync {
     async fn drop_database(&self, name: &str) -> Result<()>;
     async fn create_schema(&self, name: &str) -> Result<()>;
     async fn drop_schema(&self, name: &str) -> Result<()>;
+    async fn install_extension(
+        &self,
+        name: &str,
+        schema: Option<&str>,
+        version: Option<&str>,
+    ) -> Result<()>;
+    async fn drop_extension(&self, name: &str) -> Result<()>;
 }

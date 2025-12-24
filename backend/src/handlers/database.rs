@@ -6,7 +6,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // List all databases
@@ -28,7 +28,7 @@ pub struct CreateDatabaseRequest {
     pub options: Option<CreateDatabaseOptions>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CreateDatabaseOptions {
     pub owner: Option<String>,
     pub template: Option<String>,

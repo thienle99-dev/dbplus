@@ -16,8 +16,17 @@ pub async fn list_sqlite_attachments(
     state: State<'_, AppState>,
     connection_id: String,
 ) -> Result<serde_json::Value, String> {
-    // TODO: Implement SQLite attachment listing via ConnectionService
-    Err("SQLite attachment operations not yet implemented".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    let attachments = service.list_sqlite_attachments(uuid)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::to_value(attachments).map_err(|e| e.to_string())?)
 }
 
 #[tauri::command]
@@ -26,8 +35,15 @@ pub async fn attach_sqlite_database(
     connection_id: String,
     request: SqliteAttachmentRequest,
 ) -> Result<(), String> {
-    // TODO: Implement SQLite database attachment via ConnectionService
-    Err("SQLite attachment operations not yet implemented".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    service.attach_sqlite_database(uuid, request.name, request.file_path, request.read_only)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -36,6 +52,13 @@ pub async fn detach_sqlite_database(
     connection_id: String,
     name: String,
 ) -> Result<(), String> {
-    // TODO: Implement SQLite database detachment via ConnectionService
-    Err("SQLite attachment operations not yet implemented".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    service.detach_sqlite_database(uuid, name)
+        .await
+        .map_err(|e| e.to_string())
 }

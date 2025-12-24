@@ -215,4 +215,82 @@ impl ConnectionService {
             _ => Ok(vec![]),
         }
     }
+    pub async fn list_extensions(
+        &self,
+        connection_id: Uuid,
+    ) -> Result<Vec<crate::services::db_driver::ExtensionInfo>> {
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
+
+        use crate::services::driver::SchemaIntrospection;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.get_extensions().await
+            }
+            _ => Ok(vec![]),
+        }
+    }
+
+    pub async fn install_extension(
+        &self,
+        connection_id: Uuid,
+        name: &str,
+        schema: Option<&str>,
+        version: Option<&str>,
+    ) -> Result<()> {
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.install_extension(name, schema, version).await
+            }
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for install_extension"
+            )),
+        }
+    }
+
+    pub async fn drop_extension(&self, connection_id: Uuid, name: &str) -> Result<()> {
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
+
+        use crate::services::driver::extension::DatabaseManagementDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.drop_extension(name).await
+            }
+            _ => Err(anyhow::anyhow!(
+                "Unsupported database type for drop_extension"
+            )),
+        }
+    }
+    pub async fn export_ddl(
+        &self,
+        connection_id: Uuid,
+        options: crate::models::export_ddl::ExportDdlOptions,
+    ) -> Result<String> {
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
+
+        use crate::services::driver::ddl_export::DdlExportDriver;
+        use crate::services::postgres_driver::PostgresDriver;
+
+        match connection.db_type.as_str() {
+            "postgres" | "cockroachdb" | "cockroach" => {
+                let driver = PostgresDriver::new(&connection, &password).await?;
+                driver.export_ddl(&options).await
+            }
+            // Add other drivers if they implement DdlExportDriver
+            _ => Err(anyhow::anyhow!(
+                "DDL export not supported for this database type"
+            )),
+        }
+    }
 }

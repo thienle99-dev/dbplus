@@ -17,13 +17,7 @@ impl ConnectionService {
     }
 
     pub async fn execute_script(&self, connection_id: Uuid, script: &str) -> Result<u64> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::QueryDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -136,8 +130,7 @@ impl ConnectionService {
             }
         }
 
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::db_driver::DatabaseDriver;
         use crate::services::postgres_driver::PostgresDriver;
@@ -201,13 +194,7 @@ impl ConnectionService {
     }
 
     pub async fn execute(&self, connection_id: Uuid, query: &str) -> Result<u64> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::postgres_driver::PostgresDriver;
 
@@ -252,13 +239,7 @@ impl ConnectionService {
         query: &str,
         analyze: bool,
     ) -> Result<serde_json::Value> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::postgres_driver::PostgresDriver;
 
@@ -302,13 +283,7 @@ impl ConnectionService {
         connection_id: Uuid,
         query: &str,
     ) -> Result<Vec<crate::services::db_driver::SearchResult>> {
-        let connection = self
-            .get_connection_by_id(connection_id)
-            .await?
-            .ok_or(anyhow::anyhow!("Connection not found"))?;
-
-        let password = self.encryption.decrypt(&connection.password)?;
-        let connection = self.apply_database_override(connection);
+        let (connection, password) = self.get_connection_with_password(connection_id).await?;
 
         use crate::services::driver::SchemaIntrospection;
         use crate::services::postgres_driver::PostgresDriver;

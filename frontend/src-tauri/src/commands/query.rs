@@ -44,8 +44,30 @@ pub async fn execute_query(
     connection_id: String,
     request: ExecuteQueryRequest,
 ) -> Result<QueryResult, String> {
-    // TODO: Implement execute_query via ConnectionService
-    Err("Query execution not yet fully implemented via IPC".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    let backend_result = service.execute_query(uuid, &request.sql)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    Ok(QueryResult {
+        columns: backend_result.columns,
+        rows: backend_result.rows,
+        affected_rows: backend_result.affected_rows,
+        column_metadata: None, 
+        total_count: backend_result.total_count,
+        limit: backend_result.limit,
+        offset: backend_result.offset,
+        has_more: backend_result.has_more,
+        row_metadata: None,
+        execution_time_ms: backend_result.execution_time_ms,
+        json: backend_result.json,
+        display_mode: backend_result.display_mode,
+    })
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,6 +99,28 @@ pub async fn explain_query(
     connection_id: String,
     request: ExplainQueryRequest,
 ) -> Result<QueryResult, String> {
-    // TODO: Implement explain_query via ConnectionService
-    Err("Query explanation not yet fully implemented via IPC".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    let json_result = service.explain_query(uuid, &request.sql, false) // Default analyze to false for basic explain
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(QueryResult {
+        columns: vec!["EXPLAIN".to_string()],
+        rows: vec![],
+        affected_rows: 0,
+        column_metadata: None,
+        total_count: None,
+        limit: None,
+        offset: None,
+        has_more: None,
+        row_metadata: None,
+        execution_time_ms: None,
+        json: Some(json_result),
+        display_mode: Some("json".to_string()),
+    })
 }

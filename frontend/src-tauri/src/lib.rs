@@ -139,6 +139,7 @@ pub fn run() {
             // Extensions
             commands::list_extensions,
             commands::install_extension,
+            commands::drop_extension,
             // Search
             commands::search_objects,
             // SQLite tools

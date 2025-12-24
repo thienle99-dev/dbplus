@@ -24,8 +24,23 @@ pub async fn update_result_row(
     connection_id: String,
     request: UpdateRowRequest,
 ) -> Result<(), String> {
-    // TODO: Implement update_result_row via ConnectionService
-    Err("Result row updates not yet implemented via IPC".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    service.update_row(
+        uuid,
+        &request.schema,
+        &request.table,
+        request.primary_key,
+        request.updates,
+        None
+    )
+    .await
+    .map(|_| ())
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -34,8 +49,22 @@ pub async fn delete_result_row(
     connection_id: String,
     request: DeleteRowRequest,
 ) -> Result<(), String> {
-    // TODO: Implement delete_result_row via ConnectionService
-    Err("Result row deletion not yet implemented via IPC".to_string())
+    use dbplus_backend::services::connection_service::ConnectionService;
+
+    let uuid = Uuid::parse_str(&connection_id).map_err(|e| e.to_string())?;
+    let service = ConnectionService::new(state.db.clone())
+        .map_err(|e| e.to_string())?;
+
+    service.delete_row(
+        uuid,
+        &request.schema,
+        &request.table,
+        request.primary_key,
+        None
+    )
+    .await
+    .map(|_| ())
+    .map_err(|e| e.to_string())
 }
 
 fn format_value(value: &serde_json::Value) -> String {

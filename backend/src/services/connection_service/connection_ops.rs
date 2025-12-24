@@ -334,4 +334,66 @@ impl ConnectionService {
             _ => Err(anyhow::anyhow!("Unsupported database type")),
         }
     }
+    pub async fn list_sqlite_attachments(
+        &self,
+        connection_id: Uuid,
+    ) -> Result<Vec<crate::models::entities::sqlite_attached_db::Model>> {
+        use crate::models::entities::sqlite_attached_db;
+        sqlite_attached_db::Entity::find()
+            .filter(sqlite_attached_db::Column::ConnectionId.eq(connection_id))
+            .all(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))
+    }
+
+    pub async fn attach_sqlite_database(
+        &self,
+        connection_id: Uuid,
+        name: String,
+        file_path: String,
+        read_only: bool,
+    ) -> Result<()> {
+        use crate::models::entities::sqlite_attached_db;
+        // Check if exists
+        let exists = sqlite_attached_db::Entity::find()
+            .filter(sqlite_attached_db::Column::ConnectionId.eq(connection_id))
+            .filter(sqlite_attached_db::Column::Name.eq(&name))
+            .one(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        if exists.is_some() {
+            return Err(anyhow::anyhow!(
+                "Attachment with name '{}' already exists",
+                name
+            ));
+        }
+
+        let id = Uuid::new_v4();
+        let active_model = sqlite_attached_db::ActiveModel {
+            id: Set(id),
+            connection_id: Set(connection_id),
+            name: Set(name),
+            file_path: Set(file_path),
+            read_only: Set(read_only),
+            created_at: Set(Utc::now().into()),
+            updated_at: Set(Utc::now().into()),
+        };
+        active_model
+            .insert(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+        Ok(())
+    }
+
+    pub async fn detach_sqlite_database(&self, connection_id: Uuid, name: String) -> Result<()> {
+        use crate::models::entities::sqlite_attached_db;
+        sqlite_attached_db::Entity::delete_many()
+            .filter(sqlite_attached_db::Column::ConnectionId.eq(connection_id))
+            .filter(sqlite_attached_db::Column::Name.eq(name))
+            .exec(&self.db)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+        Ok(())
+    }
 }
