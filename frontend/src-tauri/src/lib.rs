@@ -98,6 +98,17 @@ pub fn run() {
             commands::list_charts,
             commands::add_chart,
             commands::delete_chart,
+            // Table operations
+            commands::create_table,
+            commands::drop_table,
+            commands::add_column,
+            commands::drop_column,
+            commands::create_schema,
+            commands::drop_schema,
+            commands::get_table_data,
+            // Result editing
+            commands::update_result_row,
+            commands::delete_result_row,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
