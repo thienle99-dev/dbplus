@@ -1,7 +1,7 @@
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
 use deadpool_postgres::{
-    Config, ManagerConfig, Pool, PoolConfig, QueueMode, RecyclingMethod, Runtime, Timeouts,
+    Config, ManagerConfig, Pool, PoolConfig, RecyclingMethod, Runtime, Timeouts,
 };
 use std::time::Duration;
 use tokio_postgres::NoTls;
@@ -42,7 +42,7 @@ impl PostgresConnection {
                 create: Some(Duration::from_secs(5)),  // Max time to create connection
                 recycle: Some(Duration::from_secs(1)), // Max time to recycle
             },
-            queue_mode: QueueMode::default(),
+            ..PoolConfig::default()
         });
 
         // Handle Read-Only

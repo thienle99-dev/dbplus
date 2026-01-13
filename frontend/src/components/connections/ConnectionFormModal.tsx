@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Connection, ConnectionFormModalProps } from '../../types';
 import { useConnectionStore } from '../../store/connectionStore';
-import { ChevronDown } from 'lucide-react';
+import {
+    Globe, Lock, Cpu, Database, Save, Activity, Check,
+    AlertCircle, Terminal, HardDrive
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -9,14 +12,18 @@ import Button from '../ui/Button';
 import Select from '../ui/Select';
 
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
+import {
+    PostgresIcon, MysqlIcon, ClickHouseIcon, SqliteIcon, MongoIcon, RedisIcon,
+    MariaDBIcon
+} from '../icons/DatabaseIcons';
 
 const STATUS_COLORS = [
-    { name: 'Gray', class: 'bg-gray-500' },
-    { name: 'Dark', class: 'bg-gray-700' },
-    { name: 'Blue', class: 'bg-blue-500' },
-    { name: 'Gold', class: 'bg-yellow-500' },
-    { name: 'Green', class: 'bg-green-500' },
-    { name: 'Red', class: 'bg-red-500' },
+    { name: 'Default', class: 'bg-slate-500' },
+    { name: 'System', class: 'bg-blue-500' },
+    { name: 'Secure', class: 'bg-emerald-500' },
+    { name: 'Danger', class: 'bg-rose-500' },
+    { name: 'Warning', class: 'bg-amber-500' },
+    { name: 'Premium', class: 'bg-indigo-500' },
 ];
 
 const DEFAULT_FORM_DATA = {
@@ -31,15 +38,9 @@ const DEFAULT_FORM_DATA = {
     tags: '',
     ssl: false,
     environment: 'development',
-    safe_mode_level: '1', // using string for select
+    safe_mode_level: '1',
     id: undefined as string | undefined,
 };
-
-const SAFE_MODE_OPTIONS = [
-    { value: '0', label: 'Off' },
-    { value: '1', label: 'Warning' },
-    { value: '2', label: 'Strict' },
-];
 
 const ENVIRONMENT_OPTIONS = [
     { value: 'development', label: 'Development' },
@@ -47,12 +48,16 @@ const ENVIRONMENT_OPTIONS = [
     { value: 'production', label: 'Production' },
 ];
 
+const SAFE_MODE_OPTIONS = [
+    { value: '0', label: 'Disabled' },
+    { value: '1', label: 'Standard' },
+    { value: '2', label: 'Strict' },
+];
+
 const SSL_MODE_OPTIONS = [
-    { value: 'disable', label: 'Disable' },
-    { value: 'require', label: 'Require' },
-    { value: 'verify-ca', label: 'Verify CA' },
-    { value: 'verify-full', label: 'Verify Full' },
-    { value: 'prefer', label: 'Prefer' },
+    { value: 'disable', label: 'None' },
+    { value: 'require', label: 'Required' },
+    { value: 'verify-full', label: 'Verify CA/Full' },
 ];
 
 const RECENT_SQLITE_DB_KEY = 'dbplus.recentSqliteDbs';
@@ -93,7 +98,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 setFormData(prev => ({
                     ...prev,
                     ...others,
-                    password: '', // Clear password field for editing
+                    password: '',
                     status_color: initialValues.status_color || 'bg-blue-500',
                     tags: initialValues.tags || '',
                     port: String(initialValues.port || '5432'),
@@ -103,79 +108,68 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     id: (initialValues as any).id,
                 }));
             } else {
-                const nextType = initialType || DEFAULT_FORM_DATA.type;
+                const nextType = initialType || 'postgres';
                 const dbColor = DATABASE_TYPES.find(t => t.id === nextType)?.color;
                 setFormData({
                     ...DEFAULT_FORM_DATA,
                     type: nextType,
-                    status_color: dbColor || DEFAULT_FORM_DATA.status_color,
-                    host: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.host,
-                    port: nextType === 'sqlite' ? '0' : (nextType === 'clickhouse' ? '8123' : (nextType === 'tidb' ? '4000' : (nextType === 'mysql' || nextType === 'mariadb' ? '3306' : (nextType === 'couchbase' ? '8091' : (nextType === 'cockroach' ? '26257' : DEFAULT_FORM_DATA.port))))),
-                    user: nextType === 'sqlite' ? '' : (nextType === 'clickhouse' ? 'default' : (nextType === 'mysql' || nextType === 'mariadb' || nextType === 'tidb' ? 'root' : (nextType === 'couchbase' ? 'Administrator' : (nextType === 'cockroach' ? 'root' : DEFAULT_FORM_DATA.user)))),
-                    password: nextType === 'sqlite' ? '' : DEFAULT_FORM_DATA.password,
-                    environment: DEFAULT_FORM_DATA.environment,
-                    safe_mode_level: DEFAULT_FORM_DATA.safe_mode_level,
+                    status_color: dbColor || 'bg-blue-500',
+                    host: nextType === 'sqlite' ? '' : 'localhost',
                 });
             }
             setRecentSqliteDbs(loadRecentSqliteDbs());
+            setTestStatus('idle');
+            setTestMessage(null);
         }
     }, [isOpen, initialValues, initialType]);
 
     const getConnectionData = () => ({
-        name: formData.name,
-        type: formData.type,
-        host: formData.type === 'sqlite' ? '' : formData.host,
-        port: formData.type === 'sqlite' ? 0 : (parseInt(formData.port) || (formData.type === 'clickhouse' ? 8123 : (formData.type === 'tidb' ? 4000 : (formData.type === 'mysql' || formData.type === 'mariadb' ? 3306 : (formData.type === 'couchbase' ? 8091 : (formData.type === 'cockroach' ? 26257 : 5432)))))),
-        database: formData.database,
-        username: formData.type === 'sqlite' ? '' : formData.user,
-        password: formData.type === 'sqlite' ? '' : formData.password,
-        ssl: formData.ssl ?? false,
-        status_color: formData.status_color,
-        tags: formData.tags,
-        environment: formData.environment,
+        ...formData,
+        port: parseInt(formData.port) || 0,
+        username: formData.user,
         safe_mode_level: parseInt(formData.safe_mode_level) || 1,
-        id: formData.id,
     });
 
-    const handleChange = (field: keyof typeof formData, value: string) => {
+    const handleChange = (field: keyof typeof formData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        // Reset test status when inputs change
+        if (testStatus !== 'idle') {
+            setTestStatus('idle');
+            setTestMessage(null);
+        }
     };
 
     const handleTest = async () => {
         setTestStatus('testing');
         setTestMessage(null);
         setError(null);
-
         try {
             const result = await testConnectionDetails(getConnectionData());
             if (result.success) {
                 setTestStatus('success');
-                setTestMessage('Connection successful!');
+                setTestMessage('Handshake verified. Connection established.');
             } else {
                 setTestStatus('error');
-                setTestMessage(result.message || 'Connection failed');
+                setTestMessage(result.message || 'Verification failed.');
             }
         } catch (err) {
             setTestStatus('error');
-            setTestMessage('Failed to test connection');
+            setTestMessage('Network error occurred during test.');
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleFormSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setError(null);
         setIsSubmitting(true);
-
         try {
             if (formData.type === 'sqlite' && formData.database.trim()) {
                 pushRecentSqliteDb(formData.database);
-                setRecentSqliteDbs(loadRecentSqliteDbs());
             }
             await onSubmit(getConnectionData());
-            setFormData(DEFAULT_FORM_DATA);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create connection');
+            setError(err instanceof Error ? err.message : 'Storage internal error');
         } finally {
             setIsSubmitting(false);
         }
@@ -184,64 +178,51 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
     const handleBrowseSqlite = async () => {
         try {
             const selected = await invoke<string | null>('pick_sqlite_db_file');
-            if (!selected) return;
-            handleChange('database', selected);
-            pushRecentSqliteDb(selected);
-            setRecentSqliteDbs(loadRecentSqliteDbs());
-        } catch {
-            // ignore
-        }
+            if (selected) handleChange('database', selected);
+        } catch (err) { console.error(err); }
     };
 
-    const dbLabel = DATABASE_TYPES.find(t => t.id === formData.type)?.name || 'PostgreSQL';
+    const dbInfo = DATABASE_TYPES.find(t => t.id === formData.type);
 
-    const handleExport = () => {
-        const data = getConnectionData();
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${data.name.replace(/\s+/g, '_').toLowerCase()}_config.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    const renderIcon = (id: string) => {
+        const className = "w-6 h-6 object-contain";
+        switch (id) {
+            case 'postgres': return <PostgresIcon className={className} />;
+            case 'mysql': return <MysqlIcon className={className} />;
+            case 'mariadb': return <MariaDBIcon className={className} />;
+            case 'sqlite': return <SqliteIcon className={className} />;
+            case 'mongo': return <MongoIcon className={className} />;
+            case 'redis': return <RedisIcon className={className} />;
+            case 'clickhouse': return <ClickHouseIcon className={className} />;
+            default: return <Database size={24} className="text-accent" />;
+        }
     };
 
     const footer = (
         <div className="flex w-full items-center justify-between">
-            <Button variant="ghost" className="flex items-center gap-2" rightIcon={<ChevronDown size={12} />}>
-                Over SSH
-            </Button>
-            <div className="flex gap-2">
-                <Button
-                    variant="secondary"
-                    onClick={handleExport}
-                    title="Export connection config to JSON"
-                >
-                    Save
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="sm" className="opacity-50 hover:opacity-100 italic font-medium">
+                    Add to Vault
                 </Button>
-                <Button variant="secondary" onClick={onClose}>
-                    Cancel
-                </Button>
+            </div>
+            <div className="flex gap-2.5">
+                <Button variant="outline" onClick={onClose}>Cancel</Button>
                 <Button
                     variant="secondary"
                     onClick={handleTest}
                     isLoading={testStatus === 'testing'}
-                    disabled={testStatus === 'testing' || isSubmitting}
+                    leftIcon={<Activity size={14} />}
                 >
                     Test
                 </Button>
                 <Button
                     variant="primary"
-                    onClick={() => {
-                        handleSubmit({ preventDefault: () => { } } as any);
-                    }}
+                    onClick={() => handleFormSubmit()}
                     isLoading={isSubmitting}
-                    disabled={isSubmitting || testStatus === 'testing'}
+                    leftIcon={<Save size={14} />}
+                    className="min-w-[120px]"
                 >
-                    Connect
+                    {initialValues ? 'Save' : 'Connect'}
                 </Button>
             </div>
         </div>
@@ -251,192 +232,211 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={`${dbLabel} Connection`}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                        {renderIcon(formData.type)}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-black tracking-tight text-white">{initialValues ? 'Update' : 'New'} {dbInfo?.name || 'Engine'}</span>
+                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{formData.type} instance configuration</span>
+                    </div>
+                </div>
+            }
             size="lg"
             footer={footer}
+            className="glass"
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form className="space-y-8 py-2">
+                {/* Result Message Overlay */}
                 {(error || testMessage) && (
-                    <div className={`px-4 py-3 border rounded-xl text-xs font-black uppercase tracking-widest flex items-start gap-3 glass ${testStatus === 'success'
-                        ? 'bg-success/10 border-success/20 text-success'
-                        : 'bg-error/10 border-error/20 text-error'
+                    <div className={`animate-fadeIn flex items-center gap-4 px-5 py-4 rounded-2xl border backdrop-blur-md transition-all ${testStatus === 'success' ? 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_rgba(var(--color-success),0.1)]' : 'bg-error/10 border-error/30 text-error shadow-[0_0_15px_rgba(var(--color-error),0.1)]'
                         }`}>
-                        <span>{error || testMessage}</span>
+                        {testStatus === 'success' ? <Check size={20} strokeWidth={3} /> : <AlertCircle size={20} strokeWidth={3} />}
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-black uppercase tracking-widest">{testStatus === 'success' ? 'Connection Verified' : 'Handshake Error'}</span>
+                            <span className="text-sm font-medium">{error || testMessage}</span>
+                        </div>
                     </div>
                 )}
 
-                {/* Name */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">Name</label>
-                    <Input
-                        value={formData.name}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        placeholder="My Connection"
-                        required
-                    />
-                </div>
+                {/* Section: General */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <Database size={14} className="text-accent" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">General Identity</h3>
+                    </div>
 
-                {/* Status Color & Tag */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">Status color</label>
-                    <div className="flex items-center gap-3">
-                        <div className="flex gap-2">
-                            {STATUS_COLORS.map((color) => (
-                                <button
-                                    key={color.name}
-                                    type="button"
-                                    onClick={() => handleChange('status_color', color.class)}
-                                    className={`w-6 h-6 rounded-full ${color.class} ${formData.status_color === color.class ? 'ring-2 ring-bg-1 ring-offset-2 ring-offset-accent' : 'opacity-60 hover:opacity-100'} transition-all`}
-                                    title={color.name}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-text-secondary uppercase px-1">Connection Alias</label>
+                            <Input
+                                value={formData.name}
+                                onChange={(e) => handleChange('name', e.target.value)}
+                                placeholder="E.g. Main Analytics DB"
+                                className="bg-white/5 border-white/10 focus:bg-white/[0.08]"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-text-secondary uppercase px-1">Traffic Label</label>
+                            <div className="flex items-center gap-2 h-10 px-0.5">
+                                {STATUS_COLORS.map((color) => (
+                                    <button
+                                        key={color.name}
+                                        type="button"
+                                        onClick={() => handleChange('status_color', color.class)}
+                                        className={`w-6 h-6 rounded-full ${color.class} transition-all duration-300 relative ${formData.status_color === color.class ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg-1 scale-110 shadow-lg' : 'opacity-40 hover:opacity-100 hover:scale-110'
+                                            }`}
+                                        title={color.name}
+                                    />
+                                ))}
+                                <div className="flex-1" />
+                                <div className="w-px h-6 bg-white/10 mx-1" />
+                                <Input
+                                    placeholder="TAGS..."
+                                    value={formData.tags}
+                                    onChange={(e) => handleChange('tags', e.target.value)}
+                                    className="flex-1 border-none bg-transparent font-black uppercase tracking-widest text-[9px] h-8 text-right px-0"
                                 />
-                            ))}
+                            </div>
                         </div>
-                        <div className="flex-1" />
-                        <Input
-                            placeholder="TAGS (OPTIONAL)"
-                            value={formData.tags}
-                            onChange={(e) => handleChange('tags', e.target.value)}
-                            className="flex-1 font-black uppercase tracking-widest text-[10px]"
-                        />
                     </div>
                 </div>
 
-                {/* Environment & Safe Mode */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">Environment</label>
-                    <div className="flex gap-3">
-                        <Select
-                            value={formData.environment}
-                            onChange={(value) => handleChange('environment', value)}
-                            options={ENVIRONMENT_OPTIONS}
-                            className="flex-1"
-                        />
-
-                        <label className="text-sm text-text-secondary self-center whitespace-nowrap">Safe Mode</label>
-                        <Select
-                            value={formData.safe_mode_level}
-                            onChange={(value) => handleChange('safe_mode_level', value)}
-                            options={SAFE_MODE_OPTIONS}
-                            className="w-32"
-                        />
+                {/* Section: Infrastructure */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <Globe size={14} className="text-sky-400" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Network & Infrastructure</h3>
                     </div>
-                </div>
 
-                {/* Host & Port */}
-                {formData.type !== 'sqlite' && (
-                    <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                        <label className="text-sm text-text-secondary">Host/Socket</label>
-                        <div className="flex gap-3">
-                            <Input
-                                value={formData.host}
-                                onChange={(e) => handleChange('host', e.target.value)}
-                                placeholder="localhost"
-                                autoCapitalize="off"
-                                autoCorrect="off"
-                                spellCheck={false}
-                                required
-                                className="flex-1"
-                            />
-                            <label className="text-sm text-text-secondary self-center">Port</label>
-                            <Input
-                                value={formData.port}
-                                onChange={(e) => handleChange('port', e.target.value)}
-                                placeholder="5432"
-                                className="w-24"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* User */}
-                {formData.type !== 'sqlite' && (
-                    <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                        <label className="text-sm text-text-secondary">User</label>
-                        <div className="flex gap-3">
-                            <Input
-                                value={formData.user}
-                                onChange={(e) => handleChange('user', e.target.value)}
-                                placeholder="postgres"
-                                autoCapitalize="off"
-                                autoCorrect="off"
-                                spellCheck={false}
-                                className="flex-1"
-                            />
-                            <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
-                                Other options
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Password */}
-                {formData.type !== 'sqlite' && (
-                    <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                        <label className="text-sm text-text-secondary">Password</label>
-                        <div className="flex gap-3">
-                            <Input
-                                type="password"
-                                value={formData.password}
-                                onChange={(e) => handleChange('password', e.target.value)}
-                                placeholder="••••••••"
-                                className="flex-1"
-                            />
-                            <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
-                                Keychain
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Database */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">{formData.type === 'sqlite' ? 'Database file' : (formData.type === 'couchbase' ? 'Bucket' : 'Database')}</label>
-                    <div className="flex gap-3">
-                        <Input
-                            value={formData.database}
-                            onChange={(e) => handleChange('database', e.target.value)}
-                            placeholder={formData.type === 'sqlite' ? '/path/to/db.sqlite (empty = :memory:)' : (formData.type === 'couchbase' ? 'my_bucket (optional)' : 'my_database')}
-                            autoCapitalize="off"
-                            autoCorrect="off"
-                            spellCheck={false}
-                            required={!['sqlite', 'tidb', 'mysql', 'mariadb', 'couchbase'].includes(formData.type)}
-                            className="flex-1"
-                        />
-                        {formData.type === 'sqlite' ? (
-                            <Button variant="secondary" size="sm" onClick={handleBrowseSqlite}>
-                                Browse...
-                            </Button>
+                    <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 space-y-6">
+                        {formData.type !== 'sqlite' ? (
+                            <div className="grid grid-cols-12 gap-4">
+                                <div className="col-span-9 space-y-2">
+                                    <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Host/Endpoint</label>
+                                    <Input
+                                        value={formData.host}
+                                        onChange={(e) => handleChange('host', e.target.value)}
+                                        placeholder="db.example.com"
+                                        leftIcon={<Terminal size={14} className="opacity-50" />}
+                                    />
+                                </div>
+                                <div className="col-span-3 space-y-2">
+                                    <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Port</label>
+                                    <Input
+                                        value={formData.port}
+                                        onChange={(e) => handleChange('port', e.target.value)}
+                                        placeholder="5432"
+                                    />
+                                </div>
+                            </div>
                         ) : (
-                            <Button variant="secondary" size="sm" rightIcon={<ChevronDown size={12} />}>
-                                Bootstrap...
-                            </Button>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Database File Path</label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={formData.database}
+                                        onChange={(e) => handleChange('database', e.target.value)}
+                                        placeholder="/users/db/storage.sqlite"
+                                        className="flex-1"
+                                        leftIcon={<HardDrive size={14} className="opacity-50" />}
+                                    />
+                                    <Button variant="secondary" onClick={handleBrowseSqlite} className="h-10 px-4">Browse</Button>
+                                </div>
+                                {recentSqliteDbs.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-1 px-1">
+                                        {recentSqliteDbs.slice(0, 4).map(p => (
+                                            <button
+                                                key={p} type="button"
+                                                onClick={() => handleChange('database', p)}
+                                                className="text-[9px] font-bold text-text-muted hover:text-white bg-white/5 px-2 py-0.5 rounded-full border border-white/5 truncate max-w-[200px]"
+                                            >
+                                                {p.split('/').pop()}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {formData.type !== 'sqlite' && (
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Database Name</label>
+                                <Input
+                                    value={formData.database}
+                                    onChange={(e) => handleChange('database', e.target.value)}
+                                    placeholder="production_main"
+                                    required
+                                />
+                            </div>
                         )}
                     </div>
-                    {formData.type === 'sqlite' && recentSqliteDbs.length > 0 && (
-                        <div className="col-start-2 flex flex-wrap gap-2">
-                            {recentSqliteDbs.slice(0, 6).map((p) => (
-                                <button
-                                    key={p}
-                                    type="button"
-                                    onClick={() => handleChange('database', p)}
-                                    className="max-w-full px-2 py-1 rounded-full border border-border bg-bg-2 text-xs text-text-secondary hover:bg-bg-3 truncate"
-                                    title={p}
-                                >
-                                    {p}
-                                </button>
-                            ))}
-                        </div>
-                    )}
                 </div>
 
-                {/* SSL Mode */}
-                <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
-                    <label className="text-sm text-text-secondary">SSL mode</label>
-                    <Select
-                        value={formData.ssl ? 'require' : 'disable'} // Simplification for now
-                        onChange={(value) => handleChange('ssl', (value !== 'disable') as any)}
-                        options={SSL_MODE_OPTIONS}
-                    />
+                {/* Section: Authentication */}
+                {formData.type !== 'sqlite' && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 px-1">
+                            <Lock size={14} className="text-amber-400" />
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Security & Authentication</h3>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Credentials User</label>
+                                <Input
+                                    value={formData.user}
+                                    onChange={(e) => handleChange('user', e.target.value)}
+                                    placeholder="root"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Access Password</label>
+                                <Input
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => handleChange('password', e.target.value)}
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Section: Environment Details */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-1">
+                        <Cpu size={14} className="text-fuchsia-400" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Engine Context</h3>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Environment</label>
+                            <Select
+                                value={formData.environment}
+                                onChange={(val) => handleChange('environment', val)}
+                                options={ENVIRONMENT_OPTIONS}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Safe Mode</label>
+                            <Select
+                                value={formData.safe_mode_level}
+                                onChange={(val) => handleChange('safe_mode_level', val)}
+                                options={SAFE_MODE_OPTIONS}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Encryption (SSL)</label>
+                            <Select
+                                value={formData.ssl ? 'require' : 'disable'}
+                                onChange={(val) => handleChange('ssl', val !== 'disable')}
+                                options={SSL_MODE_OPTIONS}
+                            />
+                        </div>
+                    </div>
                 </div>
             </form>
         </Modal>

@@ -135,8 +135,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         }
 
         return (
-            <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-[var(--color-primary-transparent)] flex items-center justify-center p-2 shadow-sm ring-1 ring-border-light group-hover:bg-[var(--color-primary-transparent)] transition-all duration-300">
-                <IconComponent className="w-full h-full text-[var(--color-primary-default)]" />
+            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-accent/5 flex items-center justify-center p-2 ring-1 ring-accent/10 group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                <IconComponent className="w-full h-full text-accent group-hover:text-white transition-colors" />
             </div>
         );
     };
@@ -144,7 +144,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="group relative flex items-center gap-3 p-2.5 rounded-xl glass hover:bg-bg-hover cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md ring-1 ring-border-light overflow-hidden bg-bg-panel"
+                className="premium-card group relative flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-bg-hover transition-all duration-300 overflow-hidden"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
@@ -153,7 +153,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
 
                 {/* Info Section */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h3 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-[var(--color-primary-default)] transition-colors">
+                    <h3 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-accent transition-colors">
                         {connection.name}
                     </h3>
 
@@ -162,10 +162,10 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
                             {connection.host}
                         </span>
                         {isLocal && (
-                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-widest ring-1 ring-emerald-500/30">Local</span>
+                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-success font-bold uppercase tracking-widest ring-1 ring-success/20">Local</span>
                         )}
                         {connection.environment === 'production' && (
-                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold uppercase tracking-widest ring-1 ring-red-500/30">Prod</span>
+                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-error/10 text-error font-bold uppercase tracking-widest ring-1 ring-error/20">Prod</span>
                         )}
                     </div>
                 </div>

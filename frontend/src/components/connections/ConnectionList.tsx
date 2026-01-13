@@ -3,6 +3,7 @@ import { Connection } from '../../types';
 import { SearchBar } from './SearchBar';
 import { ConnectionItem } from './ConnectionItem';
 import { useConnectionStore } from '../../store/connectionStore';
+import { Database, Plus } from 'lucide-react';
 
 interface ConnectionListProps {
     connections: Connection[];
@@ -49,18 +50,24 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 {filteredConnections.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-text-muted px-8">
-                        <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                        </svg>
-                        <p className="text-sm text-center">
+                        <div className="w-20 h-20 rounded-full bg-bg-2 flex items-center justify-center mb-6">
+                            <Database size={32} className="text-text-secondary opacity-50" />
+                        </div>
+                        <p className="text-lg font-bold text-text-primary mb-2">
                             {searchQuery ? 'No connections found' : 'No connections yet'}
+                        </p>
+                        <p className="text-sm text-text-secondary max-w-xs text-center leading-relaxed">
+                            {searchQuery
+                                ? "Try different keywords or filters to find what you're looking for."
+                                : "Get started by creating your first database connection."}
                         </p>
                         {!searchQuery && (
                             <button
                                 onClick={onAdd}
-                                className="mt-4 text-[var(--color-primary-default)] hover:text-[var(--color-primary-active)] text-sm font-black uppercase tracking-widest transition-all"
+                                className="mt-8 px-6 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-105 transition-all duration-300 flex items-center gap-2"
                             >
-                                Create your first connection
+                                <Plus size={14} strokeWidth={3} />
+                                New Connection
                             </button>
                         )}
                     </div>

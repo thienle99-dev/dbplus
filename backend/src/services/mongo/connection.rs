@@ -3,7 +3,7 @@ use crate::services::driver::ConnectionDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 use mongodb::options::{ClientOptions, Compressor, ServerApi, ServerApiVersion};
-use mongodb::{bson::doc, Client};
+use mongodb::Client;
 use std::time::Duration;
 
 pub struct MongoDriver {
@@ -50,14 +50,12 @@ impl MongoDriver {
         // client_options.socket_timeout = Some(Duration::from_secs(30)); // Field is private
 
         // 🔥 OPTIMIZED: Compression
-        #[cfg(any(feature = "zlib", feature = "snappy", feature = "zstd"))]
-        {
-            client_options.compressors = Some(vec![
-                Compressor::Snappy,
-                Compressor::Zlib { level: Some(6) },
-                Compressor::Zstd { level: Some(3) },
-            ]);
-        }
+        // 🔥 OPTIMIZED: Compression
+        client_options.compressors = Some(vec![
+            Compressor::Snappy,
+            Compressor::Zlib { level: Some(6) },
+            Compressor::Zstd { level: Some(3) },
+        ]);
 
         // Server API version for stable API
         let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
