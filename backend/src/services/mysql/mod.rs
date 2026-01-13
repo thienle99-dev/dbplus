@@ -13,7 +13,8 @@ use crate::services::driver::extension::DatabaseManagementDriver;
 use anyhow::Result;
 use async_trait::async_trait;
 use mysql_async::prelude::Queryable;
-use mysql_async::{OptsBuilder, Pool};
+use mysql_async::{OptsBuilder, Pool, PoolConstraints, PoolOpts};
+use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MySqlFamilyFlavor {
@@ -56,13 +57,17 @@ impl MySqlDriver {
             opts = opts.db_name(Some(&conn.database));
         }
 
-        // SSL/TLS options support (Generic handling, mostly relies on driver defaults or DSN parsing usually)
+        // 🔥 OPTIMIZED: Pool constraints
+        let pool_opts = PoolOpts::default()
+            .with_constraints(PoolConstraints::new(5, 25).unwrap()) // min 5, max 25
+            .with_reset_connection(true)
+            .with_inactive_connection_ttl(Duration::from_secs(300)); // 5 minutes
+
+        opts = opts.pool_opts(pool_opts);
+
+        // SSL/TLS options support
         if conn.ssl {
-            // Basic SSL enablement (PREFERRED is default usually)
-            // mysql_async usually handles ssl mode via opts.ssl_opts(...)
-            // We can expand this later if strict TLS logic is needed,
-            // but basic opts usually suffice for standard connections.
-            // For TiDB Cloud (required TLS), mysql_async default SSL modes often work if certs are system root.
+            // Basic SSL enablement
         }
 
         let pool = Pool::new(opts);
@@ -72,6 +77,11 @@ impl MySqlDriver {
             "tidb" => MySqlFamilyFlavor::TiDb,
             _ => MySqlFamilyFlavor::Mysql,
         };
+
+        tracing::info!(
+            "[MySqlDriver] Pool created: min=5, max=25, ttl=300s flavor={:?}",
+            flavor
+        );
 
         Ok(Self::new(pool, flavor))
     }

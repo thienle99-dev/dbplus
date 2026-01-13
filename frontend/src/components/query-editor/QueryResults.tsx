@@ -22,6 +22,7 @@ import { useDialog } from '../../context/DialogContext';
 import { ArrowRight, ChevronLeft, ChevronRight, Check, Minus, Copy, Trash2, BarChart3, Maximize2, Search } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
+import { workerManager } from '../../services/workerManager';
 
 
 import type { ApiErrorDetails } from '../../utils/apiError';
@@ -95,7 +96,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         if (initialChartConfig) {
             setMetricChartConfig(initialChartConfig);
             if (initialChartConfig.xAxis && initialChartConfig.yAxis.length > 0) {
-                 setViewMode('chart');
+                setViewMode('chart');
             }
         }
     }, [initialChartConfig]);
@@ -113,6 +114,44 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             else if (result.display_mode === 'table') setViewMode('table');
         }
     }, [result?.display_mode]);
+
+    const [processedRows, setProcessedRows] = useState<any[][]>([]);
+    const [isWorkerProcessing, setIsWorkerProcessing] = useState(false);
+
+    useEffect(() => {
+        const processResults = async () => {
+            if (!result?.rows) {
+                setProcessedRows([]);
+                return;
+            }
+
+            // For large datasets (>5000 rows), use Web Worker for formatting/processing
+            if (result.rows.length > 5000) {
+                setIsWorkerProcessing(true);
+                try {
+                    const response = await workerManager.processData<{ formattedRows: any[][], processTime: number }>({
+                        type: 'format',
+                        data: {
+                            rows: result.rows,
+                            columns: result.columns,
+                            types: result.column_metadata?.map(c => c.data_type) || [],
+                        },
+                    });
+                    setProcessedRows(response.formattedRows);
+                    console.log(`[Worker] Processed ${result.rows.length} rows in ${response.processTime.toFixed(2)}ms`);
+                } catch (error) {
+                    console.error('[Worker] Processing failed:', error);
+                    setProcessedRows(result.rows);
+                } finally {
+                    setIsWorkerProcessing(false);
+                }
+            } else {
+                setProcessedRows(result.rows);
+            }
+        };
+
+        processResults();
+    }, [result]);
 
     // Custom Hooks
     const updateQueryResult = useUpdateQueryResult(connectionId);
@@ -354,8 +393,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
     const MAX_RENDER_ROWS = 5000;
     const displayRows = useMemo(() => {
-        if (!result?.rows) return [];
-        let rows = result.rows;
+        if (!processedRows) return [];
+        let rows = processedRows;
 
         if (resultsSearchTerm) {
             const term = resultsSearchTerm.toLowerCase();
@@ -366,7 +405,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
         if (renderAllRows) return rows;
         return rows.slice(0, MAX_RENDER_ROWS);
-    }, [result, renderAllRows, resultsSearchTerm]);
+    }, [processedRows, renderAllRows, resultsSearchTerm]);
 
     const hasTruncatedRows = !!result?.rows && !renderAllRows && result.rows.length > MAX_RENDER_ROWS;
     const canPaginate =
@@ -791,6 +830,14 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
     return (
         <div className="flex-1 overflow-auto bg-bg-default flex flex-col">
+            {isWorkerProcessing && (
+                <div className="absolute inset-0 bg-bg-default/50 backdrop-blur-[1px] z-50 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-bg-1 border border-border-light shadow-xl glass">
+                        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-medium text-text-secondary">Processing {result?.rows?.length} rows...</span>
+                    </div>
+                </div>
+            )}
             {loading && <div className="p-4 text-text-secondary animate-pulse">Executing query...</div>}
             {error && (
                 <div className="p-4 border-b border-border-light bg-bg-1 glass">
@@ -907,7 +954,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     Time: <span className="text-accent font-medium">{result.execution_time_ms}ms</span>
                                 </span>
                             )}
-                            
+
                             {/* Results Search Bar */}
                             {result.rows.length > 0 && viewMode === 'table' && (
                                 <div className="relative ml-4">
@@ -956,7 +1003,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                             )}
 
                             {/* Inline Edit Toggle */}
-                            <div 
+                            <div
                                 className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none ml-2"
                                 onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
                                 title={inlineEditingEnabled ? "Disable Inline Editing" : "Enable Inline Editing"}
@@ -965,14 +1012,12 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                     Inline Edit
                                 </span>
                                 <div
-                                    className={`w-8 h-4 rounded-full relative transition-all duration-300 ${
-                                        inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
-                                    }`}
-                                >
-                                    <div 
-                                        className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
-                                            inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+                                    className={`w-8 h-4 rounded-full relative transition-all duration-300 ${inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
                                         }`}
+                                >
+                                    <div
+                                        className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
+                                            }`}
                                     />
                                 </div>
                             </div>

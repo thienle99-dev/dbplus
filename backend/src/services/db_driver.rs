@@ -31,6 +31,7 @@ pub struct TableMetadata {
 pub struct ColumnMetadata {
     pub table_name: Option<String>,
     pub column_name: String,
+    pub data_type: Option<String>,
     pub is_primary_key: bool,
     pub is_editable: bool,
     pub schema_name: Option<String>,

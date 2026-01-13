@@ -16,19 +16,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
     };
 
     return (
-        <div className="w-[280px] h-[calc(100vh-40px)] m-5 flex flex-col items-start py-10 px-8 rounded-[32px] glass z-30 overflow-hidden bg-bg-1 border border-border-light shadow-xl">
+        <div className="w-[260px] h-[calc(100vh-32px)] m-4 flex flex-col items-start py-6 px-6 rounded-[24px] glass z-30 overflow-hidden bg-bg-1/80 border border-border-light shadow-lg backdrop-blur-xl">
             {/* Logo */}
-            <div className="flex items-center gap-3 mb-12 px-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary-default)] to-[var(--color-primary-active)] rounded-xl flex items-center justify-center shadow-lg transform rotate-6 hover:rotate-0 transition-transform duration-500">
-                    <Layers size={22} className="text-white" />
+            <div className="flex items-center gap-3 mb-6 px-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-primary-default)] to-[var(--color-primary-active)] rounded-lg flex items-center justify-center shadow-lg transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                    <Layers size={18} className="text-white" />
                 </div>
-                <h1 className="text-xl font-black tracking-tight text-text-primary uppercase italic">
+                <h1 className="text-lg font-black tracking-tight text-text-primary uppercase italic">
                     Bentley <span className="text-[var(--color-primary-default)] not-italic">DB</span>
                 </h1>
             </div>
 
             {/* Navigation */}
-            <nav className="w-full space-y-6">
+            <nav className="w-full space-y-2">
                 <NavItem
                     icon={<Home size={20} />}
                     label="Dashboard"
@@ -75,7 +75,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group ${isActive
                 ? 'bg-bg-0 text-text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ring-1 ring-border-light shadow-sm'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                 }`}

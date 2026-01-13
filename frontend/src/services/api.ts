@@ -1,5 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useLogStore } from '../store/logStore';
+import { queryCache } from './queryCache';
+import { requestDeduplicator } from './requestDeduplicator';
 
 // Determine if we are running in Tauri
 const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
@@ -77,24 +79,24 @@ const handleConnectionRoutes = (method: string, url: string, data: any, connecti
         if (method === 'GET') return { command: 'get_table_comment', args: { connectionId, params: data?.params } };
         if (method === 'PUT') return { command: 'set_table_comment', args: { connectionId, schema: data?.schema, table: data?.table, comment: data?.comment } };
     }
-    
+
     // Table Data Query
     if (url.match(/\/query\?/)) {
         if (method === 'GET') {
-             const params = extractTableParams(url, data);
-             const urlObj = new URL('http://d' + url);
-             return { 
-                 command: 'get_table_data', 
-                 args: { 
-                     connectionId, 
-                     request: {
-                         schema: params.schema,
-                         table: params.table,
-                         limit: urlObj.searchParams.get('limit') ? parseInt(urlObj.searchParams.get('limit')!) : null,
-                         offset: urlObj.searchParams.get('offset') ? parseInt(urlObj.searchParams.get('offset')!) : null
-                     }
-                 } 
-             };
+            const params = extractTableParams(url, data);
+            const urlObj = new URL('http://d' + url);
+            return {
+                command: 'get_table_data',
+                args: {
+                    connectionId,
+                    request: {
+                        schema: params.schema,
+                        table: params.table,
+                        limit: urlObj.searchParams.get('limit') ? parseInt(urlObj.searchParams.get('limit')!) : null,
+                        offset: urlObj.searchParams.get('offset') ? parseInt(urlObj.searchParams.get('offset')!) : null
+                    }
+                }
+            };
         }
     }
 
@@ -128,7 +130,7 @@ const handleConnectionRoutes = (method: string, url: string, data: any, connecti
         if (method === 'POST') return { command: 'create_snippet', args: { connectionId, snippet: data } };
     }
     if (url.endsWith('/settings') && method === 'GET') return { command: 'get_all_settings', args: { connectionId } };
-    
+
     // SQLite
     if (url.endsWith('/sqlite/attachments')) {
         if (method === 'GET') return { command: 'list_sqlite_attachments', args: { connectionId } };
@@ -139,17 +141,17 @@ const handleConnectionRoutes = (method: string, url: string, data: any, connecti
 
     // Permissions (Sub-routes)
     if (url.endsWith('/permissions')) {
-         if (method === 'GET') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
+        if (method === 'GET') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
     }
     if (url.endsWith('/roles')) return { command: 'list_roles', args: { connectionId } };
-    
+
     if (url.includes('/permissions/')) {
         const part = url.split('/').pop();
         if (part === 'table') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
         if (part === 'schema') return { command: 'get_schema_permissions', args: { connectionId, params: data?.params } };
         if (part === 'function') return { command: 'get_function_permissions', args: { connectionId, params: data?.params } };
     }
-    
+
     // Legacy / mismatch handling
     if (url.endsWith('/storage/bloat')) return { command: 'get_storage_bloat_info', args: { connectionId, params: extractTableParams(url, data) } }; // Keeping for compatibility
 
@@ -164,17 +166,17 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
         if (method === 'POST') return { command: 'create_connection', args: { request: data } };
     }
     if (url === '/api/autocomplete' && method === 'POST') return { command: 'autocomplete_suggest', args: { request: data } };
-    
+
     // Settings API
     if (url === '/api/settings') {
         if (method === 'GET') return { command: 'get_all_settings', args: {} };
     }
     const globalSettingMatch = url.match(/\/api\/settings\/([^/]+)$/);
     if (globalSettingMatch) {
-         const key = globalSettingMatch[1];
-         if (method === 'GET') return { command: 'get_setting', args: { key } };
-         if (method === 'PUT') return { command: 'update_setting', args: { key, request: data } };
-         if (method === 'DELETE') return { command: 'delete_setting', args: { key } };
+        const key = globalSettingMatch[1];
+        if (method === 'GET') return { command: 'get_setting', args: { key } };
+        if (method === 'PUT') return { command: 'update_setting', args: { key, request: data } };
+        if (method === 'DELETE') return { command: 'delete_setting', args: { key } };
     }
     if (url === '/api/settings/reset' && method === 'POST') return { command: 'reset_settings', args: {} };
 
@@ -202,7 +204,7 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
 const api = {
     get: async <T = any>(url: string, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `GET ${url}`, config);
-        
+
         if (!isTauri) {
             const err = 'Not running in Tauri environment';
             log('error', `Error ${url}: ${err}`);
@@ -227,7 +229,7 @@ const api = {
     },
     post: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `POST ${url}`, { data, config });
-        
+
         if (!isTauri) {
             const err = 'Not running in Tauri environment';
             log('error', `Error ${url}: ${err}`);
@@ -236,8 +238,33 @@ const api = {
 
         const route = routeToCommand('POST', url, data);
         if (route) {
+            // 🔥 OPTIMIZED: Query Caching for SELECT queries
+            const isExecuteQuery = route.command === 'execute_query';
+            const sql = data?.query || data?.sql;
+            const isSelect = isExecuteQuery && sql?.trim()?.toLowerCase()?.startsWith('select');
+
+            const connMatch = url.match(/\/api\/connections\/([^/]+)/);
+            const connectionId = connMatch ? connMatch[1] : null;
+
+            if (isSelect && connectionId) {
+                const cached = queryCache.get(connectionId, sql);
+                if (cached) {
+                    log('response', `200 OK ${url} (CACHE HIT)`, cached);
+                    return { data: cached as unknown as T, status: 200, statusText: 'OK (Cached)' };
+                }
+            }
+
             try {
-                const res = await invoke(route.command, route.args);
+                const res = await requestDeduplicator.execute(`query:${connectionId}:${sql}`, async () => {
+                    const result = await invoke(route.command, route.args);
+
+                    // Cache the result if it was a SELECT query
+                    if (isSelect && connectionId && result) {
+                        queryCache.set(connectionId, sql, result as any);
+                    }
+                    return result;
+                });
+
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
@@ -252,7 +279,7 @@ const api = {
     },
     put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `PUT ${url}`, { data, config });
-        
+
         if (!isTauri) {
             const err = 'Not running in Tauri environment';
             log('error', `Error ${url}: ${err}`);
@@ -277,7 +304,7 @@ const api = {
     },
     delete: async <T = any>(url: string, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `DELETE ${url}`, config);
-        
+
         if (!isTauri) {
             const err = 'Not running in Tauri environment';
             log('error', `Error ${url}: ${err}`);
@@ -302,7 +329,7 @@ const api = {
     },
     patch: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `PATCH ${url}`, { data, config });
-        
+
         if (!isTauri) {
             const err = 'Not running in Tauri environment';
             log('error', `Error ${url}: ${err}`);
@@ -327,8 +354,8 @@ const api = {
     },
     defaults: { baseURL: '' },
     interceptors: {
-        request: { use: () => {} },
-        response: { use: () => {} }
+        request: { use: () => { } },
+        response: { use: () => { } }
     }
 };
 

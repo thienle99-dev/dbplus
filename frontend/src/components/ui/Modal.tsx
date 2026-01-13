@@ -10,6 +10,7 @@ export interface ModalProps {
     footer?: React.ReactNode;
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
     showCloseButton?: boolean;
+    className?: string; // Add className prop
 }
 
 export default function Modal({
@@ -20,6 +21,7 @@ export default function Modal({
     footer,
     size = 'md',
     showCloseButton = true,
+    className = '', // Default to empty string
 }: ModalProps) {
     // Close on Escape key
     useEffect(() => {
@@ -69,12 +71,13 @@ export default function Modal({
           relative
           w-full
           ${sizeClasses[size]}
-          bg-bg-1 border border-border-light
+          bg-bg-1 backdrop-blur-xl border border-border-light
           rounded-2xl
           shadow-[0_18px_40px_rgba(0,0,0,0.25)]
           flex flex-col
           max-h-[90vh]
           animate-in fade-in slide-in-from-top-2 duration-200
+          ${className}
         `}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
@@ -82,9 +85,9 @@ export default function Modal({
             >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
                         {title && (
-                            <h2 className="text-lg font-bold text-white tracking-tight">
+                            <h2 className="text-lg font-bold text-text-primary tracking-tight">
                                 {title}
                             </h2>
                         )}
@@ -95,8 +98,8 @@ export default function Modal({
                                   p-1.5
                                   rounded-lg
                                   text-text-secondary
-                                  hover:text-white
-                                  hover:bg-white/10
+                                  hover:text-text-primary
+                                  hover:bg-bg-2
                                   transition-all
                                   duration-200
                                 "

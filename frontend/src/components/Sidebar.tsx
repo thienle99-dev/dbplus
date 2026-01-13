@@ -110,7 +110,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className="bg-bg-1/40 border-r pb-[20px] pt-8 border-border-light flex h-full flex-shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.05)] z-30 backdrop-blur-xl"
+      className="bg-bg-1 border-r pb-[20px] pt-8 border-border-light flex h-full flex-shrink-0 relative shadow-xl z-30 backdrop-blur-xl"
       style={{ width: `${sidebarWidth}px` }}
       data-tauri-drag-region
     >
@@ -228,7 +228,7 @@ export default function Sidebar() {
       />
 
       {/* Main Sidebar Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-bg-1">
+      <div className="flex-1 flex flex-col min-w-0 bg-transparent">
         {/* Search Header */}
         <div className="p-4 border-b border-border-light space-y-3">
           {/* Connection & Actions Row */}
@@ -334,7 +334,7 @@ export default function Sidebar() {
                         queryClient.invalidateQueries({ queryKey: ['columns', connectionId] }),
                       ]);
                     }}
-                    className="p-1.5 hover:bg-bg-2 rounded-lg text-text-secondary hover:text-text-primary transition-colors"
+                    className="p-1.5 hover:bg-white/5 rounded-lg text-text-secondary hover:text-text-primary transition-colors"
                     title="Refresh Schema"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -347,8 +347,8 @@ export default function Sidebar() {
                       setShowPinnedOnly(newValue);
                       localStorage.setItem('show-pinned-only', JSON.stringify(newValue));
                     }}
-                    className={`p-1.5 hover:bg-bg-2 rounded-lg transition-colors ${showPinnedOnly
-                      ? 'text-accent bg-primary-transparent'
+                    className={`p-1.5 hover:bg-white/5 rounded-lg transition-colors ${showPinnedOnly
+                      ? 'text-accent bg-white/10'
                       : 'text-text-secondary hover:text-text-primary'
                       }`}
                     title={showPinnedOnly ? "Show All Tables" : "Show Pinned Tables Only"}

@@ -1,13 +1,13 @@
 use super::ConnectionService;
 use crate::services::schema_diff::{
     differ::SchemaDiffResult,
-    generator::{DatabaseType, MigrationOptions, MigrationScript},
+    generator::{DatabaseType, MigrationOptions},
     postgres_extractor::PostgresSchemaExtractor,
     MigrationGenerator, SchemaDiffer,
 };
 use anyhow::Result;
 use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
-use std::str::FromStr;
+use std::time::Duration;
 use tokio_postgres::{Config, NoTls};
 use uuid::Uuid;
 
@@ -40,7 +40,12 @@ impl ConnectionService {
             recycling_method: RecyclingMethod::Fast,
         };
         let mgr = Manager::from_config(config, NoTls, mgr_config);
-        let pool = Pool::builder(mgr).max_size(4).build()?;
+
+        // 🔥 OPTIMIZED: Increased from 4 to 8 for schema operations
+        let pool = Pool::builder(mgr)
+            .max_size(8)
+            .wait_timeout(Some(Duration::from_secs(5)))
+            .build()?;
 
         Ok(pool)
     }

@@ -2,7 +2,9 @@ use crate::models::entities::connection as ConnectionModel;
 use crate::services::driver::ConnectionDriver;
 use anyhow::Result;
 use async_trait::async_trait;
-use mongodb::{options::ClientOptions, Client};
+use mongodb::options::{ClientOptions, Compressor, ServerApi, ServerApiVersion};
+use mongodb::{bson::doc, Client};
+use std::time::Duration;
 
 pub struct MongoDriver {
     pub client: Client,
@@ -35,8 +37,35 @@ impl MongoDriver {
             }
         }
 
-        let client_options = ClientOptions::parse(&uri).await?;
+        let mut client_options = ClientOptions::parse(&uri).await?;
+
+        // 🔥 OPTIMIZED: Connection pool configuration
+        client_options.min_pool_size = Some(3); // Keep 3 connections warm
+        client_options.max_pool_size = Some(20); // Max 20 concurrent connections
+        client_options.max_idle_time = Some(Duration::from_secs(300)); // Close idle after 5min
+
+        // 🔥 OPTIMIZED: Timeouts
+        client_options.connect_timeout = Some(Duration::from_secs(5));
+        client_options.server_selection_timeout = Some(Duration::from_secs(5));
+        // client_options.socket_timeout = Some(Duration::from_secs(30)); // Field is private
+
+        // 🔥 OPTIMIZED: Compression
+        #[cfg(any(feature = "zlib", feature = "snappy", feature = "zstd"))]
+        {
+            client_options.compressors = Some(vec![
+                Compressor::Snappy,
+                Compressor::Zlib { level: Some(6) },
+                Compressor::Zstd { level: Some(3) },
+            ]);
+        }
+
+        // Server API version for stable API
+        let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
+        client_options.server_api = Some(server_api);
+
         let client = Client::with_options(client_options)?;
+
+        tracing::info!("[MongoConnection] Optimized pool: min=3, max=20, compression enabled");
 
         Ok(Self {
             client,

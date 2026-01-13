@@ -1,6 +1,9 @@
 use crate::models::entities::connection as ConnectionModel;
 use anyhow::Result;
-use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
+use deadpool_postgres::{
+    Config, ManagerConfig, Pool, PoolConfig, QueueMode, RecyclingMethod, Runtime, Timeouts,
+};
+use std::time::Duration;
 use tokio_postgres::NoTls;
 
 pub struct PostgresConnection {
@@ -14,7 +17,7 @@ impl PostgresConnection {
 
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
         tracing::info!(
-            "[PostgresConnection] Creating new connection pool to {}:{}/{}",
+            "[PostgresConnection] Creating optimized connection pool to {}:{}/{}",
             connection.host,
             connection.port,
             connection.database
@@ -26,8 +29,20 @@ impl PostgresConnection {
         cfg.dbname = Some(connection.database.clone());
         cfg.user = Some(connection.username.clone());
         cfg.password = Some(password.to_string());
+
+        // 🔥 OPTIMIZED: Pool configuration
         cfg.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
+        });
+
+        cfg.pool = Some(PoolConfig {
+            max_size: 20, // Increased from default (16)
+            timeouts: Timeouts {
+                wait: Some(Duration::from_secs(5)),    // Max wait for connection
+                create: Some(Duration::from_secs(5)),  // Max time to create connection
+                recycle: Some(Duration::from_secs(1)), // Max time to recycle
+            },
+            queue_mode: QueueMode::default(),
         });
 
         // Handle Read-Only
@@ -46,7 +61,9 @@ impl PostgresConnection {
 
         match cfg.create_pool(Some(Runtime::Tokio1), NoTls) {
             Ok(pool) => {
-                tracing::info!("[PostgresConnection] Connection pool created successfully");
+                tracing::info!(
+                    "[PostgresConnection] Connection pool created successfully: max_size=20"
+                );
                 Ok(Self { pool })
             }
             Err(e) => {

@@ -75,39 +75,37 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     }, []);
 
     return (
-        <div className="h-11 px-3 md:px-4 border-b border-white/5 bg-bg-1/20 backdrop-blur-xl flex items-center justify-between sticky top-0 z-20 gap-2 shadow-sm">
+        <div className="h-11 px-3 md:px-4 border-b border-border-light bg-bg-1/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-20 gap-2 shadow-sm">
             <div className="flex items-center gap-2">
                 <Button
                     onClick={onExecute}
                     disabled={loading || !queryTrimmed}
                     variant="primary"
                     size="sm"
-                    className="shadow-lg flex-shrink-0"
+                    className="shadow-lg flex-shrink-0 h-8 rounded-xl"
                     icon={<Play size={14} className={loading ? 'animate-pulse' : ''} fill="currentColor" />}
                     title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
                 >
                     <span className="whitespace-nowrap">{loading ? 'Running...' : hasSelection ? 'Run Selection' : 'Run'}</span>
                 </Button>
 
-                <div className="relative flex items-center gap-1 flex-shrink-0" ref={explainMenuRef}>
-                    <div className="flex bg-bg-2 rounded-full border border-border-strong p-0.5">
-                        <button
-                            onClick={onExplain}
-                            disabled={loading || !queryTrimmed}
-                            className="flex items-center gap-1 px-2 py-1 rounded-l-full hover:bg-bg-0 text-text-primary text-xs font-medium disabled:opacity-50 transition-colors"
-                            title={`Explain query execution plan (Cmd/Ctrl+E)${analyzeEnabled ? ' - ANALYZE Enabled' : ''}`}
-                        >
-                            <span className={`text-[10px] font-mono border rounded px-0.5 ${analyzeEnabled ? 'border-accent text-accent' : 'border-text-tertiary text-text-secondary'}`}>EX</span>
-                        </button>
-                        <div className="w-px bg-border-subtle my-1" />
-                        <button
-                            disabled={loading || !queryTrimmed}
-                            className="flex items-center px-1.5 py-1 rounded-r-full hover:bg-bg-0 text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors"
-                            onClick={() => setIsExplainMenuOpen(!isExplainMenuOpen)}
-                        >
-                            <ChevronDown size={12} />
-                        </button>
-                    </div>
+                <div className="relative flex items-center gap-0.5 flex-shrink-0" ref={explainMenuRef}>
+                    <button
+                        onClick={onExplain}
+                        disabled={loading || !queryTrimmed}
+                        className="h-8 flex items-center gap-1.5 px-3 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-l-xl text-text-primary text-xs font-medium disabled:opacity-50 transition-colors border-r-0"
+                        title={`Explain query execution plan (Cmd/Ctrl+E)${analyzeEnabled ? ' - ANALYZE Enabled' : ''}`}
+                    >
+                        <span className={`text-[10px] font-mono border rounded px-0.5 ${analyzeEnabled ? 'border-accent text-accent' : 'border-text-tertiary text-text-secondary'}`}>EX</span>
+                        <span className="text-text-secondary hover:text-text-primary">Explain</span>
+                    </button>
+                    <button
+                        disabled={loading || !queryTrimmed}
+                        className="h-8 flex items-center px-1.5 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-r-xl text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors"
+                        onClick={() => setIsExplainMenuOpen(!isExplainMenuOpen)}
+                    >
+                        <ChevronDown size={12} />
+                    </button>
 
                     {isExplainMenuOpen && (
                         <div className="absolute top-full left-0 mt-2 w-48 bg-bg-1 border border-border-light rounded-xl shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
@@ -135,16 +133,14 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 </div>
 
                 {onToggleAnalyze && (
-                    <div className={`flex rounded-full border p-0.5 transition-colors ${analyzeEnabled ? 'bg-primary-transparent border-accent' : 'bg-bg-2 border-border-strong'}`}>
-                        <button
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors flex-shrink-0 ${analyzeEnabled ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-bg-0'}`}
-                            onClick={onToggleAnalyze}
-                            title="Toggle ANALYZE option"
-                        >
-                            <Activity size={13} strokeWidth={2} />
-                            <span className="hidden lg:inline">Analyze</span>
-                        </button>
-                    </div>
+                    <button
+                        className={`h-8 flex items-center gap-1.5 px-3 rounded-xl text-xs font-medium transition-colors flex-shrink-0 border ${analyzeEnabled ? 'bg-primary-transparent border-accent text-accent' : 'bg-bg-2 border-border-strong text-text-secondary hover:text-text-primary hover:bg-bg-0'}`}
+                        onClick={onToggleAnalyze}
+                        title="Toggle ANALYZE option"
+                    >
+                        <Activity size={13} strokeWidth={2} />
+                        <span className="hidden lg:inline">Analyze</span>
+                    </button>
                 )}
 
                 {databases && databases.length > 0 && onDatabaseChange && (
@@ -156,6 +152,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                             size="sm"
                             placeholder="Database"
                             searchable
+                            className="h-8"
                         />
                     </div>
                 )}
@@ -170,7 +167,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     disabled={!queryTrimmed}
                     icon={<Save size={14} />}
                     title={savedQueryId ? `Save changes to "${queryName}"(Cmd / Ctrl + S)` : "Save as new query (Cmd/Ctrl+S)"}
-                    className="flex-shrink-0"
+                    className="flex-shrink-0 h-8 rounded-xl"
                 >
                     <span className="hidden lg:inline">{savedQueryId ? 'Save' : 'Save As'}</span>
                 </Button>
@@ -183,7 +180,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                         onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                         icon={<MoreHorizontal size={16} />}
                         title="More actions"
-                        className={isMoreMenuOpen ? 'bg-bg-2 text-text-primary' : ''}
+                        className={`h-8 rounded-xl ${isMoreMenuOpen ? 'bg-bg-2 text-text-primary' : ''}`}
                     />
 
                     {isMoreMenuOpen && (

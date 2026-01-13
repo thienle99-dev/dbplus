@@ -1688,6 +1688,7 @@ impl PostgresQuery {
                     metadata.push(ColumnMetadata {
                         table_name: Some(table.clone()),
                         column_name: col_name,
+                        data_type: Some(col.type_().name().to_string()),
                         is_primary_key,
                         is_editable: true, // Generally valid if we have table info, refinement possible later
                         schema_name: Some(schema.clone()),
@@ -1700,6 +1701,7 @@ impl PostgresQuery {
             metadata.push(ColumnMetadata {
                 table_name: None,
                 column_name: col.name().to_string(),
+                data_type: Some(col.type_().name().to_string()),
                 is_primary_key: false,
                 is_editable: false,
                 schema_name: None,

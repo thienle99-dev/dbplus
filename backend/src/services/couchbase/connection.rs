@@ -19,7 +19,14 @@ impl CouchbaseDriver {
         let username = &connection.username;
 
         let authenticator = PasswordAuthenticator::new(username, password);
-        let options = ClusterOptions::new(authenticator.into());
+        let mut options = ClusterOptions::new(authenticator.into());
+
+        // 🔥 OPTIMIZED: Configure timeouts
+        options = options
+            .kv_timeout(std::time::Duration::from_secs(5))
+            .query_timeout(std::time::Duration::from_secs(10))
+            .analytics_timeout(std::time::Duration::from_secs(30))
+            .search_timeout(std::time::Duration::from_secs(10));
 
         // Timeout configuration could be added here from connection options if available
 

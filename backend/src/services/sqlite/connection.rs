@@ -36,11 +36,26 @@ impl SQLiteConnection {
         let options = SqliteConnectOptions::from_str(db_path)?.create_if_missing(true);
 
         let attachments = attachments.to_vec();
+        // 🔥 OPTIMIZED: Increased pool size and added timeouts
         let pool = SqlitePoolOptions::new()
-            .max_connections(10)
+            .max_connections(25) // Increased from 10
+            .min_connections(3) // Keep 3 connections warm
+            .acquire_timeout(std::time::Duration::from_secs(5))
+            .idle_timeout(Some(std::time::Duration::from_secs(300))) // Close idle after 5min
+            .max_lifetime(Some(std::time::Duration::from_secs(1800))) // Recycle after 30min
             .after_connect(move |conn, _meta| {
                 let attachments = attachments.clone();
                 Box::pin(async move {
+                    // 🔥 OPTIMIZED: Enable WAL mode for better concurrency
+                    sqlx::query("PRAGMA journal_mode = WAL;")
+                        .execute(&mut *conn)
+                        .await?;
+
+                    // 🔥 OPTIMIZED: Increase cache size (default is 2MB, set to 10MB)
+                    sqlx::query("PRAGMA cache_size = -10000;")
+                        .execute(&mut *conn)
+                        .await?;
+
                     for a in attachments {
                         let alias = quote_ident(&a.name);
                         let attach_sql = format!("ATTACH DATABASE ? AS {}", alias);
@@ -65,7 +80,9 @@ impl SQLiteConnection {
             .await
             .context("Failed to create SQLite connection pool")?;
 
-        tracing::info!("[SQLiteConnection] Connection pool created successfully");
+        tracing::info!(
+            "[SQLiteConnection] Optimized pool created: max=25, min=3, WAL mode enabled"
+        );
         Ok(Self { pool })
     }
 }

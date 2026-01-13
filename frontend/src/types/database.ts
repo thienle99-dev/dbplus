@@ -1,6 +1,7 @@
 export interface ColumnMetadata {
   table_name: string | null;
   column_name: string;
+  data_type?: string;
   is_primary_key: boolean;
   is_editable: boolean;
   schema_name: string | null;

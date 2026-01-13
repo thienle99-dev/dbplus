@@ -258,8 +258,8 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             <form onSubmit={handleSubmit} className="space-y-4">
                 {(error || testMessage) && (
                     <div className={`px-4 py-3 border rounded-xl text-xs font-black uppercase tracking-widest flex items-start gap-3 glass ${testStatus === 'success'
-                        ? 'bg-[var(--color-success-bg)] border-[var(--color-success-border)] text-[var(--color-success-text)]'
-                        : 'bg-[var(--color-error-bg)] border-[var(--color-error-border)] text-[var(--color-error-text)]'
+                        ? 'bg-success/10 border-success/20 text-success'
+                        : 'bg-error/10 border-error/20 text-error'
                         }`}>
                         <span>{error || testMessage}</span>
                     </div>

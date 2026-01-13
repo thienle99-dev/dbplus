@@ -4,7 +4,6 @@ import { DatabaseSelectorModalProps } from '../../types';
 import { DATABASE_TYPES } from '../../constants/databaseTypes';
 import { PostgresIcon, MysqlIcon, ClickHouseIcon, SqliteIcon, MongoIcon, RedisIcon, AmazonRedshiftIcon, MariaDBIcon, SQLServerIcon, CassandraIcon, BigQueryIcon, LibSQLIcon, DuckDBIcon, OracleIcon, CockroachDBIcon, SnowflakeIcon, CouchbaseIcon, TiDBIcon } from '../icons/DatabaseIcons';
 import Modal from '../ui/Modal';
-import Button from '../ui/Button';
 
 export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ isOpen, onClose, onSelect }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +53,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
             title=""
             size="xl"
             footer={footer}
-            className="bg-white" // Force white background for this specific modal style
+            className="glass" // Use glass effect instead of white bg
         >
             <div className="space-y-8 pt-2">
                 {/* Search Pill */}
@@ -66,7 +65,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search for connection... (⌘F)"
                         autoFocus
-                        className="w-full bg-black/5 hover:bg-black/[0.07] focus:bg-white border-2 border-transparent focus:border-[var(--color-primary-default)] rounded-full py-3.5 pl-14 pr-6 text-[15px] font-medium text-text-primary placeholder:text-text-disabled outline-none transition-all"
+                        className="w-full bg-bg-2 hover:bg-bg-3 focus:bg-bg-0 border-2 border-transparent focus:border-[var(--color-primary-default)] rounded-full py-3.5 pl-14 pr-6 text-[15px] font-medium text-text-primary placeholder:text-text-disabled outline-none transition-all"
                     />
                 </div>
 
@@ -113,8 +112,8 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 className={`
                                     group flex flex-col items-center gap-4 p-6 rounded-[20px] transition-all relative outline-none
                                     ${isSelected && db.isAvailable
-                                        ? 'bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] scale-105 z-10 ring-2 ring-[var(--color-primary-default)]'
-                                        : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:-translate-y-1'
+                                        ? 'bg-bg-2 shadow-lg scale-105 z-10 ring-2 ring-[var(--color-primary-default)]'
+                                        : 'bg-bg-1 border border-border-light shadow-sm hover:shadow-md hover:-translate-y-1 hover:bg-bg-2'
                                     }
                                     ${isDisabled ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}
                                 `}
@@ -130,7 +129,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                 </span>
 
                                 {isDisabled && (
-                                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-slate-200" />
+                                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-text-disabled/20" />
                                 )}
                             </button>
                         );

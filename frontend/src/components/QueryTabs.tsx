@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense, useTransition } from 'react';
-import { Plus, X, FileCode, BookMarked, History, Database, Pin } from 'lucide-react';
+import { Plus, X, FileCode, Database, Pin } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 const QueryEditor = lazy(() => import('./QueryEditor'));
-import SavedQueriesList from './SavedQueriesList';
-import QueryHistory from './QueryHistory';
 const TableDataView = lazy(() => import('./TableDataView'));
 import { useDraftPersistence } from '../hooks/useDraftPersistence';
 import { TabProvider } from '../context/TabContext';
@@ -37,7 +35,6 @@ export default function QueryTabs() {
   const [activeTabId, setActiveTabId] = useState('');
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [sidebarView, setSidebarView] = useState<'saved' | 'history' | null>(null);
 
   // Sleep Tab Logic
   const prevActiveTabIdRef = useRef<string | null>(null);
@@ -414,10 +411,7 @@ export default function QueryTabs() {
     }
   }, [location.state, location.key, activeTabId, tabs, navigate, location.pathname, addTab, activeWorkspaceTabId, updateTabDatabase]);
 
-  const handleLoadQuery = useCallback((sql: string, metadata?: Record<string, any>) => {
-    // Update current tab's SQL and metadata using functional setState
-    setTabs(prevTabs => prevTabs.map(t => t.id === activeTabId ? { ...t, sql, metadata } : t));
-  }, [activeTabId]);
+
 
   // Handle query changes from editor (for auto-save)
   const handleQueryChange = useCallback((tabId: string, sql: string, metadata?: Record<string, any>) => {
@@ -540,48 +534,11 @@ export default function QueryTabs() {
   return (
     <TabProvider openTableInTab={openTableInTab}>
       <div className="flex h-full bg-bg-0">
-        {/* Left Sidebar for Saved Queries / History */}
-        <div className={clsx(
-          "border-r border-white/5 bg-white/5 glass transition-all duration-300 z-10 m-2 rounded-2xl overflow-hidden",
-          sidebarView ? "w-64" : "w-14"
-        )}>
-          <div className="flex flex-col h-full py-4">
-            <button
-              onClick={() => setSidebarView(sidebarView === 'saved' ? null : 'saved')}
-              className={clsx(
-                "p-4 hover:bg-white/10 transition-all text-text-secondary rounded-xl mx-2",
-                sidebarView === 'saved' && "bg-[var(--color-primary-transparent)] text-[var(--color-primary-default)]"
-              )}
-              title="Saved Queries"
-            >
-              <BookMarked size={20} />
-            </button>
-            <button
-              onClick={() => setSidebarView(sidebarView === 'history' ? null : 'history')}
-              className={clsx(
-                "p-4 hover:bg-white/10 transition-all text-text-secondary rounded-xl mx-2 mt-2",
-                sidebarView === 'history' && "bg-[var(--color-primary-transparent)] text-[var(--color-primary-default)]"
-              )}
-              title="Query History"
-            >
-              <History size={20} />
-            </button>
 
-            {/* Sidebar Content */}
-            <div className="flex-1 overflow-auto mt-4 px-2">
-              {sidebarView === 'saved' && (
-                <SavedQueriesList onSelectQuery={handleLoadQuery} />
-              )}
-              {sidebarView === 'history' && (
-                <QueryHistory onSelectQuery={handleLoadQuery} />
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0 relative bg-transparent py-2 pr-2">
-          <div className="flex items-center bg-white/5 glass border-b border-white/5 overflow-x-auto no-scrollbar scroll-smooth px-3 h-12 rounded-t-2xl">
+          <div className="flex items-center bg-bg-1 border-b border-border-light overflow-x-auto no-scrollbar scroll-smooth px-3 h-12 rounded-t-2xl">
             {tabs.map(tab => (
               <div
                 key={tab.id}
@@ -591,7 +548,7 @@ export default function QueryTabs() {
                   "group flex items-center gap-2.5 px-4 py-2 text-[13px] font-bold transition-all duration-300 cursor-pointer min-w-[120px] max-w-[200px] select-none rounded-[14px] mx-1 relative",
                   activeTabId === tab.id
                     ? "bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]"
-                    : "text-text-secondary hover:bg-white/5 hover:text-white"
+                    : "text-text-secondary hover:bg-bg-2 hover:text-text-primary"
                 )}
               >
                 {tab.type === 'table' ? (

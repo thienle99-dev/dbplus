@@ -11,7 +11,7 @@ export const DATABASE_TYPES: DatabaseType[] = [
   // { id: 'bigquery', name: 'BigQuery', abbreviation: 'Bq', color: 'bg-blue-500', isAvailable: false },
   { id: 'libsql', name: 'LibSQL', abbreviation: 'Ls', color: 'bg-purple-600', isAvailable: false },
   // { id: 'd1', name: 'Cloudflare D1', abbreviation: 'D1', color: 'bg-orange-600', isAvailable: false },
-  { id: 'mongo', name: 'MongoDB', abbreviation: 'Mg', color: 'bg-green-600', isAvailable: false },
+  { id: 'mongo', name: 'MongoDB', abbreviation: 'Mg', color: 'bg-green-600', isAvailable: true },
   // { id: 'snowflake', name: 'Snowflake', abbreviation: 'Sf', color: 'bg-cyan-500', isAvailable: false },
   { id: 'redis', name: 'Redis', abbreviation: 'Re', color: 'bg-red-500', isAvailable: false },
   { id: 'tidb', name: 'TiDB', abbreviation: 'Td', color: 'bg-blue-500', isAvailable: true },

@@ -85,15 +85,15 @@ export default function Select({
                 disabled={disabled}
                 className={`
           w-full flex items-center justify-between gap-2
-          rounded-xl bg-black/20 border border-white/10
+          rounded-xl bg-transparent border border-border-strong
           text-text-primary shadow-sm
           transition-all duration-200
           ${sizeClasses[size]}
           ${disabled
-                        ? 'opacity-50 cursor-not-allowed bg-black/10'
-                        : 'hover:bg-black/30 hover:border-white/20 focus:outline-none focus:bg-black/40 focus:border-accent/50 focus:ring-4 focus:ring-accent/10'
+                        ? 'opacity-50 cursor-not-allowed bg-bg-1/50'
+                        : 'hover:bg-bg-2/50 hover:border-border-default focus:outline-none focus:bg-bg-2 focus:border-accent/50 focus:ring-4 focus:ring-accent/10'
                     }
-          ${isOpen ? 'bg-black/40 ring-4 ring-accent/10 border-accent/50' : ''}
+          ${isOpen ? 'bg-bg-2 ring-4 ring-accent/10 border-accent/50' : ''}
         `}
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
