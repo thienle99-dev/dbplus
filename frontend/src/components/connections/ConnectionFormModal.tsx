@@ -234,11 +234,11 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             onClose={onClose}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                    <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-border-default flex items-center justify-center shadow-inner">
                         {renderIcon(formData.type)}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg font-black tracking-tight text-white">{initialValues ? 'Update' : 'New'} {dbInfo?.name || 'Engine'}</span>
+                        <span className="text-lg font-black tracking-tight text-text-primary">{initialValues ? 'Update' : 'New'} {dbInfo?.name || 'Engine'}</span>
                         <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{formData.type} instance configuration</span>
                     </div>
                 </div>
@@ -274,7 +274,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                 value={formData.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 placeholder="E.g. Main Analytics DB"
-                                className="bg-white/5 border-white/10 focus:bg-white/[0.08]"
+                                className="bg-bg-elevated border-border-default focus:bg-bg-hover"
                             />
                         </div>
                         <div className="space-y-2">
@@ -291,7 +291,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     />
                                 ))}
                                 <div className="flex-1" />
-                                <div className="w-px h-6 bg-white/10 mx-1" />
+                                <div className="w-px h-6 bg-border-strong mx-1" />
                                 <Input
                                     placeholder="TAGS..."
                                     value={formData.tags}
@@ -306,11 +306,11 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 {/* Section: Infrastructure */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
-                        <Globe size={14} className="text-sky-400" />
+                        <Globe size={14} className="text-info" />
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Network & Infrastructure</h3>
                     </div>
 
-                    <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 space-y-6">
+                    <div className="p-5 rounded-3xl bg-bg-sunken border border-border-subtle space-y-6">
                         {formData.type !== 'sqlite' ? (
                             <div className="grid grid-cols-12 gap-4">
                                 <div className="col-span-9 space-y-2">
@@ -350,7 +350,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                             <button
                                                 key={p} type="button"
                                                 onClick={() => handleChange('database', p)}
-                                                className="text-[9px] font-bold text-text-muted hover:text-white bg-white/5 px-2 py-0.5 rounded-full border border-white/5 truncate max-w-[200px]"
+                                                className="text-[9px] font-bold text-text-muted hover:text-text-primary bg-bg-elevated hover:bg-bg-hover px-2 py-0.5 rounded-full border border-border-default hover:border-border-strong truncate max-w-[200px] transition-colors"
                                             >
                                                 {p.split('/').pop()}
                                             </button>
@@ -378,7 +378,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 {formData.type !== 'sqlite' && (
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 px-1">
-                            <Lock size={14} className="text-amber-400" />
+                            <Lock size={14} className="text-warning" />
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Security & Authentication</h3>
                         </div>
 
@@ -407,7 +407,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 {/* Section: Environment Details */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
-                        <Cpu size={14} className="text-fuchsia-400" />
+                        <Cpu size={14} className="text-accent" />
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Engine Context</h3>
                     </div>
 

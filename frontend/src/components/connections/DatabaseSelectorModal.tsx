@@ -105,7 +105,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Filter engines (e.g. 'Postgres')..."
                         autoFocus
-                        className="w-full relative z-10 bg-bg-2/50 hover:bg-bg-2 focus:bg-bg-1 border border-white/5 focus:border-accent/40 rounded-2xl py-4 pl-14 pr-12 text-[15px] font-medium text-text-primary placeholder:text-text-muted outline-none transition-all shadow-inner"
+                        className="w-full relative z-10 bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-subtle focus:border-accent/40 rounded-2xl py-4 pl-14 pr-12 text-[15px] font-medium text-text-primary placeholder:text-text-muted outline-none transition-all shadow-inner"
                     />
                     {searchQuery && (
                         <button
@@ -118,7 +118,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                 </div>
 
                 {/* Categories */}
-                <div className="space-y-10 custom-scrollbar max-h-[500px] pr-2 overflow-y-auto">
+                <div className="space-y-10 px-4 custom-scrollbar max-h-[500px] pr-2 overflow-y-auto">
                     {categories.map((cat) => {
                         const items = filteredDatabases.filter(db => cat.types.includes(db.id));
                         if (items.length === 0) return null;
@@ -130,7 +130,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                         {cat.icon}
                                     </div>
                                     <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-text-muted italic">{cat.name}</h3>
-                                    <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                                    <div className="h-px flex-1 bg-gradient-to-r from-border-default to-transparent" />
                                 </div>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -143,10 +143,10 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                                 key={db.id}
                                                 onClick={() => !isDisabled && setSelectedDb(db.id)}
                                                 className={`
-                                                    group relative p-5 rounded-2xl transition-all duration-500 overflow-hidden border
+                                                    group relative p-5 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col items-center justify-center
                                                     ${isSelected
-                                                        ? 'bg-accent/10 border-accent/40 shadow-[0_0_20px_rgba(var(--color-primary-default),0.1)]'
-                                                        : 'bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/[0.08] hover:scale-[1.02] shadow-sm'
+                                                        ? 'border-2 border-accent bg-accent/10 shadow-glow scale-[1.02] z-10'
+                                                        : 'border border-border-strong bg-bg-sunken shadow-sm hover:border-accent/40 hover:bg-bg-hover hover:shadow-lg hover:-translate-y-1'
                                                     }
                                                     ${isDisabled ? 'opacity-30 grayscale cursor-not-allowed saturate-0' : 'cursor-pointer'}
                                                 `}
@@ -164,7 +164,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                                         {isSelected && <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full animate-pulse" />}
                                                     </div>
                                                     <div className="flex flex-col items-center gap-0.5">
-                                                        <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-white' : 'text-text-secondary group-hover:text-white'}`}>
+                                                        <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>
                                                             {db.name}
                                                         </span>
                                                         {isDisabled && (
@@ -174,7 +174,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                                 </div>
 
                                                 {/* Background Glow Overlay */}
-                                                <div className={`absolute -right-8 -bottom-8 w-16 h-16 rounded-full blur-2xl transition-all duration-700 ${isSelected ? 'bg-accent/20' : 'bg-transparent group-hover:bg-white/5'}`} />
+                                                <div className={`absolute -right-8 -bottom-8 w-16 h-16 rounded-full blur-2xl transition-all duration-700 ${isSelected ? 'bg-accent/20' : 'bg-transparent group-hover:bg-bg-hover'}`} />
                                             </button>
                                         );
                                     })}

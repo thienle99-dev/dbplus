@@ -69,8 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
             </nav>
 
             {/* Bottom Section - System Health */}
-            <div className="w-full mt-auto pt-6 border-t border-white/5">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+            <div className="w-full mt-auto pt-6 border-t border-border-subtle">
+                <div className="p-4 rounded-2xl bg-bg-sunken border border-border-subtle space-y-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Shield size={14} className="text-success" />
@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
                         </div>
                         <span className="text-[10px] font-bold text-success uppercase">Active</span>
                     </div>
-                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-bg-elevated rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-success to-success/50 w-[85%] rounded-full shadow-[0_0_8px_var(--color-success-bg)]" />
                     </div>
                     <p className="text-[10px] text-text-secondary leading-tight">

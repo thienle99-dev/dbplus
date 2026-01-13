@@ -45,30 +45,56 @@ export const HomeDashboard: React.FC = () => {
     const totalConnections = connections.length;
     const recentConnections = useMemo(() => connections.slice(0, 4), [connections]);
 
-    const StatCard = ({ icon: Icon, label, value, trend, colorKey }: any) => (
-        <div className="premium-card rounded-2xl p-6 group cursor-default">
-            <div className="flex justify-between items-start mb-4">
-                <div className={`w-12 h-12 rounded-xl bg-${colorKey}/10 flex items-center justify-center text-${colorKey} ring-1 ring-${colorKey}/20 group-hover:scale-110 transition-all duration-500`}>
-                    <Icon size={24} />
+    const StatCard = ({ icon: Icon, label, value, trend, colorKey }: any) => {
+        // Map color keys to CSS variables
+        const getColorVar = (key: string) => {
+            const map: Record<string, string> = {
+                info: 'var(--color-info)',
+                success: 'var(--color-success)',
+                primary: 'var(--color-primary-default)',
+                warning: 'var(--color-warning)',
+                error: 'var(--color-error)'
+            };
+            return map[key] || 'var(--color-text-primary)';
+        };
+
+        const colorVar = getColorVar(colorKey);
+
+        return (
+            <div className="premium-card rounded-2xl p-6 group cursor-default">
+                <div className="flex justify-between items-start mb-4">
+                    <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center ring-1 ring-inset transition-all duration-500 group-hover:scale-110"
+                        style={{
+                            backgroundColor: `color-mix(in srgb, ${colorVar}, transparent 90%)`,
+                            color: colorVar,
+                            borderColor: `color-mix(in srgb, ${colorVar}, transparent 80%)`
+                        }}
+                    >
+                        <Icon size={24} />
+                    </div>
+                    {trend && (
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-success/10 text-success border border-success/20">
+                            {trend}
+                        </span>
+                    )}
                 </div>
-                {trend && (
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-success/10 text-success border border-success/20">
-                        {trend}
-                    </span>
-                )}
+                <div>
+                    <p className="text-text-secondary text-xs uppercase tracking-widest font-bold mb-1">{label}</p>
+                    <p className="text-3xl font-black text-text-primary glow-text">{value}</p>
+                </div>
+                <div
+                    className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-3xl transition-all duration-700 opacity-20 group-hover:opacity-30"
+                    style={{ backgroundColor: colorVar }}
+                />
             </div>
-            <div>
-                <p className="text-text-secondary text-xs uppercase tracking-widest font-bold mb-1">{label}</p>
-                <p className="text-3xl font-black text-white glow-text">{value}</p>
-            </div>
-            <div className={`absolute -right-6 -bottom-6 w-24 h-24 bg-${colorKey}/5 rounded-full blur-3xl group-hover:bg-${colorKey}/10 transition-all duration-700`} />
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="flex flex-col h-full overflow-y-auto space-y-10 pb-10">
             {/* Hero Section */}
-            <section className="relative py-10 rounded-3xl overflow-hidden px-8 border border-white/5 bg-gradient-to-br from-bg-1 to-transparent">
+            <section className="relative py-10 rounded-3xl overflow-hidden px-8 border border-border-default bg-gradient-to-br from-bg-panel to-transparent">
                 <div className="relative z-10 max-w-2xl">
                     <div className="flex items-center gap-2 mb-4">
                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
@@ -90,7 +116,7 @@ export const HomeDashboard: React.FC = () => {
                             Create Instance
                             <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <button className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all border border-white/10 hover:border-white/20">
+                        <button className="px-8 py-3.5 bg-bg-elevated hover:bg-bg-hover text-text-primary rounded-xl font-bold transition-all border border-border-default hover:border-border-strong">
                             Documentation
                         </button>
                     </div>
@@ -122,7 +148,7 @@ export const HomeDashboard: React.FC = () => {
                                 Real-time Analytics
                             </h3>
                         </div>
-                        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-2 bg-bg-elevated p-1 rounded-lg border border-border-subtle">
                             <button className="px-3 py-1 text-xs font-bold bg-accent text-white rounded-md shadow-sm">24h</button>
                             <button className="px-3 py-1 text-xs font-bold text-text-secondary hover:text-text-primary transition-colors">7d</button>
                             <button className="px-3 py-1 text-xs font-bold text-text-secondary hover:text-text-primary transition-colors">30d</button>
@@ -236,7 +262,7 @@ export const HomeDashboard: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <button className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 text-text-primary text-xs font-bold rounded-xl border border-white/10 transition-all">
+                        <button className="w-full mt-6 py-3 bg-bg-elevated hover:bg-bg-hover text-text-primary text-xs font-bold rounded-xl border border-border-default transition-all">
                             Full Diagnostics Report
                         </button>
                     </div>
