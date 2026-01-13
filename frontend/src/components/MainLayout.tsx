@@ -45,7 +45,12 @@ export const MainLayout: React.FC = () => {
     };
 
     return (
-        <div className="h-screen flex text-text-primary font-sans bg-[var(--color-bg-default)] overflow-hidden" data-tauri-drag-region>
+        <div className="h-screen flex text-text-primary font-sans bg-bg-0 overflow-hidden relative" data-tauri-drag-region>
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
             <Sidebar
                 activeTab={getActiveTab()}
                 onBackup={() => setDataToolsMode('backup')}
@@ -60,14 +65,16 @@ export const MainLayout: React.FC = () => {
             />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden py-6 px-6">
-                <Outlet context={{
-                    openNewConnection: () => setIsDbSelectorOpen(true),
-                    editConnection: (conn: Connection) => {
-                        setEditingConnection(conn);
-                        setIsFormModalOpen(true);
-                    }
-                }} />
+            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative z-10 py-6 pr-6">
+                <main className="flex-1 overflow-auto custom-scrollbar">
+                    <Outlet context={{
+                        openNewConnection: () => setIsDbSelectorOpen(true),
+                        editConnection: (conn: Connection) => {
+                            setEditingConnection(conn);
+                            setIsFormModalOpen(true);
+                        }
+                    }} />
+                </main>
             </div>
 
             <ConnectionFormModal
