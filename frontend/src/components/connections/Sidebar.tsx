@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
                     <Layers size={18} className="text-white" />
                 </div>
                 <h1 className="text-lg font-black tracking-tight text-text-primary uppercase italic">
-                    Bentley <span className="text-[var(--color-primary-default)] not-italic">DB</span>
+                    DB<span className="text-[var(--color-primary-default)] not-italic">Plus</span>
                 </h1>
             </div>
 

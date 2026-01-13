@@ -105,10 +105,10 @@ textarea:not([rows]) {
 /* === END RESETS === */
 
 :root {
-  /* === UNIVERSAL BENTLEY STYLE BASE === */
+  /* === UNIVERSAL DBPLUS STYLE BASE === */
   /* This style is applied to ALL themes. Themes only override the colors. */
 
-  /* Background - Base Dark (Bentley Default) */
+  /* Background - Base Dark (DBPlus Default) */
   --color-bg-default: #08090a;
   --color-bg-panel: rgba(18, 19, 21, 0.75);
   --color-bg-hover: rgba(30, 32, 35, 0.85);
@@ -121,7 +121,7 @@ textarea:not([rows]) {
   --color-surface-sunken: #08090a;
   --color-surface-overlay: rgba(10, 11, 13, 0.85);
 
-  /* Glassmorphism - Standard Bentley Look */
+  /* Glassmorphism - Standard DBPlus Look */
   --glass-bg: rgba(10, 11, 13, 0.65);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: blur(24px);
@@ -141,7 +141,7 @@ textarea:not([rows]) {
   --color-border-subtle: rgba(255, 255, 255, 0.05);
   --color-border-focus: #b0d0ff;
 
-  /* Primary / Accents (Bentley Default) */
+  /* Primary / Accents (DBPlus Default) */
   --color-primary-default: #b0d0ff;
   --color-primary-hover: #98c1ff;
   --color-primary-active: #80b2ff;
@@ -158,7 +158,7 @@ textarea:not([rows]) {
   --color-error-bg: rgba(255, 69, 58, 0.15);
   --color-info: #0a84ff;
 
-  /* Geometry - Bentley Premium Rounding */
+  /* Geometry - DBPlus Premium Rounding */
   --radius-sm: 0.5rem;
   /* 8px */
   --radius-md: 0.875rem;
@@ -185,7 +185,7 @@ textarea:not([rows]) {
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, var(--color-primary-default) 0%, var(--color-primary-active) 100%);
-  --gradient-bentley: radial-gradient(circle at 20% 20%, var(--color-primary-transparent) 0%, transparent 40%),
+  --gradient-dbplus: radial-gradient(circle at 20% 20%, var(--color-primary-transparent) 0%, transparent 40%),
     radial-gradient(circle at 80% 80%, var(--color-success-bg) 0%, transparent 40%);
 
   /* Code Syntax - Optimized for high clarity */
@@ -783,8 +783,8 @@ textarea:not([rows]) {
   --color-selection-text: #000000;
 }
 
-/* Bentley Style - Luxury & Glassmorphism */
-.theme-bentley {
+/* DBPlus Style - Luxury & Glassmorphism */
+.theme-dbplus {
   /* Background - Deep Dark / Black Finish */
   --bg-0: #08090a;
   --bg-1: rgba(18, 19, 21, 0.7);
@@ -805,7 +805,7 @@ textarea:not([rows]) {
   /* Silver Ice Blue */
   --accent-muted: rgba(176, 208, 255, 0.15);
 
-  /* Semantic - Bentley Emerald / British Racing Green */
+  /* Semantic - DBPlus Emerald / British Racing Green */
   --success: #50c878;
   --error: #ff453a;
   --warning: #ffd60a;
@@ -862,12 +862,12 @@ textarea:not([rows]) {
   --color-selection-text: #ffffff;
 }
 
-.theme-bentley body {
-  background-image: var(--gradient-bentley);
+.theme-dbplus body {
+  background-image: var(--gradient-dbplus);
   background-attachment: fixed;
 }
 
-.theme-bentley .glass {
+.theme-dbplus .glass {
   background: rgba(12, 13, 15, 0.4);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -877,7 +877,7 @@ textarea:not([rows]) {
 
 body {
   background-color: var(--bg-0);
-  background-image: var(--gradient-bentley);
+  background-image: var(--gradient-dbplus);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
