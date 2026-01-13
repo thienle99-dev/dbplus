@@ -72,7 +72,7 @@ export const HomeDashboard: React.FC = () => {
                 <div className="relative z-10 max-w-2xl">
                     <div className="flex items-center gap-2 mb-4">
                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                        <span className="text-xs font-bold text-accent tracking-[0.2em] uppercase">Enterprise Workspace</span>
+                        <span className="text-xs font-semibold text-accent tracking-wide uppercase leading-relaxed">Enterprise Workspace</span>
                     </div>
                     <h1 className="text-5xl font-black tracking-tighter text-gradient mb-4">
                         Modern Database <br />

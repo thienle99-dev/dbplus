@@ -26,17 +26,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-bg-1" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-black tracking-tighter text-text-primary leading-none">
+                    <h1 className="text-xl font-black tracking-tighter text-text-primary leading-tight">
                         DB<span className="text-accent">PLUS</span>
                     </h1>
-                    <p className="text-[10px] font-bold text-text-secondary tracking-[0.3em] uppercase mt-1">Enterprise</p>
+                    <p className="text-[10px] font-semibold text-text-secondary tracking-wide uppercase mt-1.5 leading-normal">Enterprise</p>
                 </div>
             </div>
 
             {/* Navigation */}
             <nav className="w-full space-y-2 flex-1">
                 <div className="px-3 mb-4">
-                    <p className="text-[10px] font-black text-text-muted tracking-widest uppercase">Main Menu</p>
+                    <p className="text-[10px] font-bold text-text-muted tracking-wide uppercase leading-relaxed">Main Menu</p>
                 </div>
                 <NavItem
                     icon={<Home size={20} />}
@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
                 />
 
                 <div className="px-3 mb-4 mt-8">
-                    <p className="text-[10px] font-black text-text-muted tracking-widest uppercase">Configuration</p>
+                    <p className="text-[10px] font-bold text-text-muted tracking-wide uppercase leading-relaxed">Configuration</p>
                 </div>
                 <NavItem
                     icon={<Settings size={20} />}
