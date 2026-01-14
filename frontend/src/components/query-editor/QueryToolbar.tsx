@@ -75,7 +75,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     }, []);
 
     return (
-        <div className="h-11 px-3 md:px-4 border-b border-border-light bg-bg-1/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-20 gap-2 shadow-sm">
+        <div className="h-11 px-3 md:px-4 border-b border-border-light bg-bg-1/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-20 gap-2 shadow-sm">
             <div className="flex items-center gap-2">
                 <Button
                     onClick={onExecute}
@@ -108,7 +108,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     </button>
 
                     {isExplainMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-48 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
                             <button
                                 className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
                                 onClick={() => {
@@ -184,7 +184,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     />
 
                     {isMoreMenuOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-44 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
+                        <div className="absolute top-full right-0 mt-2 w-44 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
                             <button
                                 onClick={() => { onFormat(); setIsMoreMenuOpen(false); }}
                                 disabled={!queryTrimmed}

@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use couchbase::authenticator::PasswordAuthenticator;
 use couchbase::cluster::Cluster;
 use couchbase::options::cluster_options::ClusterOptions;
+use tokio::time::{timeout, Duration};
 
 pub struct CouchbaseDriver {
     pub cluster: Cluster,
@@ -20,7 +21,7 @@ impl CouchbaseDriver {
         let username = &connection.username;
 
         let authenticator = PasswordAuthenticator::new(username, password);
-        let mut options = ClusterOptions::new(authenticator.into());
+        let options = ClusterOptions::new(authenticator.into());
 
         // Configure timeouts - TODO: Fix API mismatch with current crate version
         // options = options
@@ -31,9 +32,14 @@ impl CouchbaseDriver {
 
         // Timeout configuration could be added here from connection options if available
 
-        let cluster = Cluster::connect(&connection_string, options)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to connect to Couchbase: {}", e))?;
+        // Wrap connection in timeout to prevent hanging
+        let cluster = timeout(
+            Duration::from_secs(5),
+            Cluster::connect(&connection_string, options),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("Connection timed out after 5s"))?
+        .map_err(|e| anyhow::anyhow!("Failed to connect to Couchbase: {}", e))?;
 
         Ok(Self {
             cluster,
@@ -49,9 +55,9 @@ impl CouchbaseDriver {
 #[async_trait]
 impl ConnectionDriver for CouchbaseDriver {
     async fn test_connection(&self) -> Result<()> {
-        self.cluster
-            .ping(None)
+        timeout(Duration::from_secs(5), self.cluster.ping(None))
             .await
+            .map_err(|_| anyhow::anyhow!("Ping timed out after 5s"))?
             .map_err(|e| anyhow::anyhow!("Ping failed: {}", e))?;
         Ok(())
     }

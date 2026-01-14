@@ -5,6 +5,7 @@ use crate::services::db_driver::{
 use crate::services::driver::SchemaIntrospection;
 use anyhow::Result;
 use async_trait::async_trait;
+use tokio::time::{timeout, Duration};
 
 #[async_trait]
 impl SchemaIntrospection for CouchbaseDriver {
@@ -18,28 +19,47 @@ impl SchemaIntrospection for CouchbaseDriver {
     async fn get_databases(&self) -> Result<Vec<String>> {
         // Requires management permission
         let mgr = self.cluster.buckets();
-        let buckets = mgr.get_all_buckets(None).await?;
+        let buckets = timeout(Duration::from_secs(10), mgr.get_all_buckets(None))
+            .await
+            .map_err(|_| anyhow::anyhow!("Timeout listing databases (buckets)"))?
+            .map_err(|e| anyhow::anyhow!("Failed to list databases: {}", e))?;
         Ok(buckets.iter().map(|b| b.name.clone()).collect())
     }
 
     async fn get_schemas(&self) -> Result<Vec<String>> {
+        tracing::info!("Couchbase: Listing schemas (scopes/buckets)...");
         if let Some(bucket_name) = &self.bucket_name {
+            tracing::info!("Couchbase: Listing scopes for bucket: {}", bucket_name);
             let bucket = self.cluster.bucket(bucket_name);
             let mgr = bucket.collections();
-            let scopes = mgr
-                .get_all_scopes(None)
+            let scopes = timeout(Duration::from_secs(10), mgr.get_all_scopes(None))
                 .await
+                .map_err(|_| anyhow::anyhow!("Timeout listing scopes"))?
                 .map_err(|e| anyhow::anyhow!("Failed to list scopes: {}", e))?;
-            Ok(scopes.iter().map(|s| s.name().to_string()).collect())
+
+            let names: Vec<String> = scopes.iter().map(|s| s.name().to_string()).collect();
+            tracing::info!("Couchbase: Found {} scopes", names.len());
+            Ok(names)
         } else {
             // If no bucket selected, list buckets as "schemas"
+            tracing::info!("Couchbase: No bucket selected, listing all buckets as schemas");
             let mgr = self.cluster.buckets();
-            let buckets = mgr.get_all_buckets(None).await?;
-            Ok(buckets.iter().map(|b| b.name.clone()).collect())
+            let buckets = timeout(Duration::from_secs(10), mgr.get_all_buckets(None))
+                .await
+                .map_err(|_| anyhow::anyhow!("Timeout listing buckets"))?
+                .map_err(|e| anyhow::anyhow!("Failed to list buckets: {}", e))?;
+
+            let names: Vec<String> = buckets.iter().map(|b| b.name.clone()).collect();
+            tracing::info!("Couchbase: Found {} buckets", names.len());
+            Ok(names)
         }
     }
 
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>> {
+        tracing::info!(
+            "Couchbase: Listing tables (collections) for schema: {}",
+            schema
+        );
         let (bucket_name, scope_name) = if let Some(bn) = &self.bucket_name {
             (bn.as_str(), schema)
         } else {
@@ -52,10 +72,12 @@ impl SchemaIntrospection for CouchbaseDriver {
         let mgr = bucket.collections();
 
         // We need to check if the bucket exists and get its scopes
-        // If getting scopes fails, it might mean the bucket doesn't exist or is unreachable
-        let scopes = mgr.get_all_scopes(None).await.map_err(|e| {
-            anyhow::anyhow!("Failed to list scopes for bucket {}: {}", bucket_name, e)
-        })?;
+        let scopes = timeout(Duration::from_secs(10), mgr.get_all_scopes(None))
+            .await
+            .map_err(|_| anyhow::anyhow!("Timeout listing collections"))?
+            .map_err(|e| {
+                anyhow::anyhow!("Failed to list scopes for bucket {}: {}", bucket_name, e)
+            })?;
 
         let mut tables = Vec::new();
         if let Some(scope) = scopes.iter().find(|s| s.name() == scope_name) {
@@ -67,6 +89,12 @@ impl SchemaIntrospection for CouchbaseDriver {
                 });
             }
         }
+        tracing::info!(
+            "Couchbase: Found {} collections in {}/{}",
+            tables.len(),
+            bucket_name,
+            scope_name
+        );
         Ok(tables)
     }
 

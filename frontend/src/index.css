@@ -110,35 +110,35 @@ textarea:not([rows]) {
 
   /* Background - Base Dark (DBPlus Default) */
   --color-bg-default: #08090a;
-  --color-bg-panel: rgba(18, 19, 21, 0.75);
-  --color-bg-hover: rgba(30, 32, 35, 0.85);
-  --color-bg-active: rgba(40, 42, 46, 0.9);
-  --color-bg-elevated: rgba(35, 36, 38, 0.9);
+  --color-bg-panel: #121315;
+  --color-bg-hover: #1e2023;
+  --color-bg-active: #282a2e;
+  --color-bg-elevated: #232426;
   --color-bg-sunken: #050607;
 
   /* Surface */
-  --color-surface-raised: rgba(30, 32, 35, 0.85);
+  --color-surface-raised: #1e2023;
   --color-surface-sunken: #08090a;
-  --color-surface-overlay: rgba(10, 11, 13, 0.85);
+  --color-surface-overlay: rgba(10, 11, 13, 0.98);
 
-  /* Glassmorphism - Standard DBPlus Look */
-  --glass-bg: rgba(10, 11, 13, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: blur(24px);
+  /* Glassmorphism - Clear & Professional */
+  --glass-bg: rgba(10, 11, 13, 0.98);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(8px);
 
   /* Text - Dark Mode Defaults */
   --color-text-primary: #f0f1f2;
-  --color-text-secondary: rgba(240, 241, 242, 0.65);
-  --color-text-muted: rgba(240, 241, 242, 0.4);
-  --color-text-disabled: rgba(240, 241, 242, 0.2);
+  --color-text-secondary: rgba(240, 241, 242, 0.8);
+  --color-text-muted: rgba(240, 241, 242, 0.6);
+  --color-text-disabled: rgba(240, 241, 242, 0.4);
   --color-text-accent: #b0d0ff;
   --color-text-inverse: #08090a;
 
   /* Border - Global Style */
-  --color-border-default: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.04);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
-  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-default: rgba(255, 255, 255, 0.12);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-focus: #b0d0ff;
 
   /* Primary / Accents (DBPlus Default) */
@@ -331,11 +331,11 @@ textarea:not([rows]) {
 
   --color-surface-raised: #ffffff;
   --color-surface-sunken: #f9f9fb;
-  --color-surface-overlay: rgba(255, 255, 255, 0.9);
+  --color-surface-overlay: #ffffff;
 
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.04);
-  --glass-blur: blur(12px);
+  --glass-bg: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(6px);
 
   --color-text-primary: #111827;
   /* Gray 900 - Sharp black */
@@ -435,8 +435,8 @@ textarea:not([rows]) {
 
 .theme-midnight {
   --color-bg-default: #0a1122;
-  --color-bg-panel: rgba(20, 30, 50, 0.75);
-  --color-bg-hover: rgba(40, 60, 90, 0.85);
+  --color-bg-panel: #141e32;
+  --color-bg-hover: #1e2c40;
 
   --color-text-primary: #f8fafc;
   --color-text-secondary: rgba(248, 250, 252, 0.7);
@@ -457,8 +457,8 @@ textarea:not([rows]) {
 /* Soft Pink Premium - Default Design System Theme */
 .theme-soft-pink {
   --color-bg-default: #120a12;
-  --color-bg-panel: rgba(30, 15, 30, 0.75);
-  --color-bg-hover: rgba(50, 30, 50, 0.85);
+  --color-bg-panel: #1e0f1e;
+  --color-bg-hover: #321e32;
 
   --color-text-primary: #ffd6f0;
   --color-text-secondary: rgba(255, 214, 240, 0.7);
@@ -494,6 +494,9 @@ textarea:not([rows]) {
   --error: #ff6b9d;
   --success: #98fb98;
   --warning: #ffd700;
+
+  --glass-bg: #2d1b3d;
+  --glass-blur: blur(0px);
 }
 
 /* Wibu Sakura - Cherry Blossom Spring */
@@ -514,6 +517,9 @@ textarea:not([rows]) {
   --error: #ff6b8a;
   --success: #b4e7ce;
   --warning: #ffc8a2;
+
+  --glass-bg: #3d2a30;
+  --glass-blur: blur(0px);
 }
 
 /* Wibu Ocean - Deep Sea/Blue Anime */
@@ -534,6 +540,9 @@ textarea:not([rows]) {
   --error: #ff6b9d;
   --success: #69f0ae;
   --warning: #ffb74d;
+
+  --glass-bg: #152238;
+  --glass-blur: blur(0px);
 }
 
 /* Wibu Sunset - Warm Orange/Pink Gradient */
@@ -554,6 +563,9 @@ textarea:not([rows]) {
   --error: #ff6b6b;
   --success: #95e1d3;
   --warning: #ffd93d;
+
+  --glass-bg: #2f1f29;
+  --glass-blur: blur(0px);
 }
 
 /* Wibu Neon - Cyberpunk/Vaporwave */
@@ -574,6 +586,9 @@ textarea:not([rows]) {
   --error: #ff0080;
   --success: #00ff9f;
   --warning: #ffea00;
+
+  --glass-bg: #1a0b2e;
+  --glass-blur: blur(0px);
 }
 
 /* Gruvbox Dark - Warm Retro Terminal Theme */
@@ -653,17 +668,16 @@ textarea:not([rows]) {
 
 /* macOS Dark - Xcode Dark Theme Inspired */
 .theme-macos-dark {
-  /* Background - Xcode's dark gray tones with Glassmorphism */
+  /* Background - Xcode's dark gray tones */
   --bg-0: #1c1c1e;
-  --bg-1: rgba(44, 44, 46, 0.85);
-  /* Translucent surface */
-  --bg-2: rgba(58, 58, 60, 0.9);
-  --bg-3: rgba(72, 72, 74, 0.95);
-  --border: rgba(255, 255, 255, 0.05);
+  --bg-1: #2c2c2e;
+  --bg-2: #3a3a3c;
+  --bg-3: #48484a;
+  --border: rgba(255, 255, 255, 0.1);
 
-  /* Glassmorphism Classes */
-  --glass-bg: rgba(28, 28, 30, 0.7);
-  --glass-blur: blur(10px);
+  /* Glassmorphism Classes - Opaque for clarity */
+  --glass-bg: #1c1c1e;
+  --glass-blur: blur(0px);
   will-change: backdrop-filter;
 
   /* Text - Xcode's text colors */
@@ -744,17 +758,16 @@ textarea:not([rows]) {
 
 /* macOS Light - Xcode Light Theme Inspired */
 .theme-macos-light {
-  /* Background - Xcode's light gray tones with Glassmorphism */
+  /* Background - Xcode's light gray tones */
   --bg-0: #ffffff;
-  --bg-1: rgba(245, 245, 247, 0.8);
-  /* Translucent surface */
-  --bg-2: rgba(235, 235, 237, 0.85);
-  --bg-3: rgba(209, 209, 214, 0.9);
-  --border: rgba(0, 0, 0, 0.05);
+  --bg-1: #f5f5f7;
+  --bg-2: #ebebed;
+  --bg-3: #d1d1d6;
+  --border: rgba(0, 0, 0, 0.1);
 
-  /* Glassmorphism Classes */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-blur: blur(10px);
+  /* Panel styles - Opaque for clarity */
+  --glass-bg: #ffffff;
+  --glass-blur: blur(0px);
   will-change: backdrop-filter;
 
   /* Text - Xcode's light mode text colors */
@@ -840,20 +853,19 @@ textarea:not([rows]) {
 .theme-dbplus {
   /* Background - Deep Dark / Black Finish */
   --bg-0: #08090a;
-  --bg-1: rgba(18, 19, 21, 0.7);
-  /* Deep Glass Surface */
-  --bg-2: rgba(28, 29, 32, 0.8);
-  --bg-3: rgba(40, 42, 46, 0.9);
-  --border: rgba(255, 255, 255, 0.08);
+  --bg-1: #121315;
+  --bg-2: #1c1d20;
+  --bg-3: #282a2e;
+  --border: rgba(255, 255, 255, 0.12);
 
-  /* Glassmorphism */
-  --glass-bg: rgba(10, 11, 13, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-blur: blur(16px);
+  /* Substrate - reduced transparency for clarity */
+  --glass-bg: rgba(10, 11, 13, 0.98);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(8px);
 
   /* Text - High Clarity */
   --text-primary: #f0f1f2;
-  --text-secondary: rgba(240, 241, 242, 0.65);
+  --text-secondary: rgba(240, 241, 242, 0.75);
   --accent: #b0d0ff;
   /* Silver Ice Blue */
   --accent-muted: rgba(176, 208, 255, 0.15);
@@ -865,27 +877,27 @@ textarea:not([rows]) {
 
   /* === NEW DESIGN SYSTEM MAPPING === */
   --color-bg-default: #08090a;
-  --color-bg-panel: rgba(18, 19, 21, 0.75);
-  --color-bg-hover: rgba(30, 32, 35, 0.85);
-  --color-bg-active: rgba(40, 42, 46, 0.9);
-  --color-bg-elevated: rgba(35, 36, 38, 0.9);
+  --color-bg-panel: #121315;
+  --color-bg-hover: #1e2023;
+  --color-bg-active: #282a2e;
+  --color-bg-elevated: #232426;
   --color-bg-sunken: #050607;
 
-  --color-surface-raised: rgba(30, 32, 35, 0.85);
+  --color-surface-raised: #1e2023;
   --color-surface-sunken: #08090a;
-  --color-surface-overlay: rgba(10, 11, 13, 0.85);
+  --color-surface-overlay: rgba(10, 11, 13, 0.98);
 
   --color-text-primary: #f0f1f2;
-  --color-text-secondary: rgba(240, 241, 242, 0.65);
-  --color-text-muted: rgba(240, 241, 242, 0.4);
-  --color-text-disabled: rgba(240, 241, 242, 0.2);
+  --color-text-secondary: rgba(240, 241, 242, 0.75);
+  --color-text-muted: rgba(240, 241, 242, 0.5);
+  --color-text-disabled: rgba(240, 241, 242, 0.3);
   --color-text-accent: #b0d0ff;
   --color-text-inverse: #08090a;
 
-  --color-border-default: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.04);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
-  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-default: rgba(255, 255, 255, 0.12);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-focus: #b0d0ff;
 
   --color-primary-default: #b0d0ff;
@@ -922,11 +934,11 @@ textarea:not([rows]) {
 }
 
 .theme-dbplus .glass {
-  background: rgba(12, 13, 15, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  background: rgba(12, 13, 15, 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.5);
 }
 
 body {

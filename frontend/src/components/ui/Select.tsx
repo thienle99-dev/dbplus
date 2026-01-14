@@ -118,7 +118,7 @@ export default function Select({
                 <div
                     className="
             absolute z-50 w-full min-w-[180px] mt-2
-            bg-bg-elevated/95 backdrop-blur-xl border border-border-default rounded-lg
+            bg-bg-elevated/95 backdrop-blur-md border border-border-default rounded-lg
             shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] ring-1 ring-black/10
             max-h-[320px] overflow-hidden
             animate-in fade-in slide-in-from-top-1 duration-200 ease-out origin-top

@@ -86,7 +86,7 @@ export default function ERDiagramModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-bg-1/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/5"
+                className="bg-bg-1/80 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/5"
                 style={{
                     width: size.width,
                     height: size.height,

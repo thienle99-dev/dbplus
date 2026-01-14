@@ -297,7 +297,7 @@ export default function TableDataTab({
   return (
     <>
       {/* Generic Toolbar for SQL and NoSQL */}
-      <div className="px-3 py-2 border-b border-white/5 flex flex-wrap items-center gap-4 bg-bg-1/20 backdrop-blur-xl shadow-sm z-10 relative">
+      <div className="px-3 py-2 border-b border-white/5 flex flex-wrap items-center gap-4 bg-bg-1/20 backdrop-blur-md shadow-sm z-10 relative">
         {isCouchbase && (
           <>
             {/* Bucket Selector */}

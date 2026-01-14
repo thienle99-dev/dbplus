@@ -71,7 +71,7 @@ export default function Modal({
           relative
           w-full
           ${sizeClasses[size]}
-          bg-bg-1 backdrop-blur-xl border border-border-light
+          bg-bg-1 border border-border-light
           rounded-md
           shadow-[0_18px_40px_rgba(0,0,0,0.25)]
           flex flex-col
