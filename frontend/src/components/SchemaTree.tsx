@@ -52,13 +52,15 @@ function ObjectFolder({ title, icon, children, count, defaultOpen, className }: 
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Collapsible.Trigger className={`flex items-center gap-2.5 w-full pl-6 pr-4 py-2 hover:bg-white/5 text-xs text-text-secondary select-none transition-all group ${className} hover:text-white`}>
-        <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}>
-          <ChevronRight size={10} className="text-white/20 group-hover:text-[var(--color-primary-default)]" />
+      <Collapsible.Trigger className={`flex items-center gap-2 w-full pl-6 pr-3 py-1.5 hover:bg-bg-hover/50 text-xs text-text-secondary select-none transition-all group ${className}`}>
+        <div className={`transition-transform duration-200 text-text-muted/50 group-hover:text-text-secondary ${isOpen ? 'rotate-90' : ''}`}>
+          <ChevronRight size={10} strokeWidth={3} />
         </div>
-        {icon}
-        <span className="flex-1 text-left font-bold uppercase tracking-widest text-[10px]">{title}</span>
-        {count !== undefined && <span className="text-[9px] font-black text-[var(--color-primary-default)] bg-[var(--color-primary-transparent)] px-2 py-0.5 rounded-full ring-1 ring-[var(--color-primary-subtle)]">{count}</span>}
+        <div className="text-text-muted group-hover:text-accent transition-colors">
+          {icon}
+        </div>
+        <span className="flex-1 text-left font-bold text-[11px] tracking-tight group-hover:text-text-primary transition-colors">{title}</span>
+        {count !== undefined && <span className="text-[9px] font-bold text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded-md min-w-[1.5em] text-center">{count}</span>}
       </Collapsible.Trigger>
       <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
         {children}
@@ -265,15 +267,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <Collapsible.Trigger
-        className="flex items-center gap-1.5 w-full px-3 py-1.5 hover:bg-bg-2 text-sm text-text-primary group select-none transition-colors"
+        className="flex items-center gap-2.5 w-full px-4 py-2 hover:bg-bg-hover text-sm font-semibold text-text-primary group select-none transition-all border-l-[3px] border-transparent hover:border-accent"
         onContextMenu={handleSchemaContextMenu}
       >
-        <ChevronRight size={12} className={`text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
-        <Database size={14} className="text-accent" />
-        <span className="truncate font-medium flex-1 text-left">{schemaName}</span>
+        <div className={`text-text-muted group-hover:text-accent transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
+          <ChevronRight size={11} strokeWidth={3} />
+        </div>
+        <Database size={14} className="text-accent/80 group-hover:text-accent transition-colors" />
+        <span className="truncate flex-1 text-left">{schemaName}</span>
         <button
           onClick={handleRefreshSchema}
-          className="p-1 rounded hover:bg-bg-active text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
+          className="p-1 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
           title={`Refresh ${schemaTerm}`}
         >
           <RefreshCw size={12} className={loadingTables || loadingViews || loadingFunctions ? 'animate-spin' : ''} />
@@ -303,17 +307,17 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
                     <div key={table.name}
                       onClick={() => handleTableClick(table)}
                       onContextMenu={(e) => handleContextMenu(e, table.name)}
-                      className="flex items-center gap-2 pl-9 pr-2 py-1 hover:bg-bg-2 rounded-r-md text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors group"
+                      className="group relative flex items-center gap-2.5 pl-8 pr-3 py-1.5 cursor-pointer transition-all border-l border-transparent hover:border-accent/40 bg-transparent hover:bg-bg-hover"
                     >
-                      <Table size={13} className="flex-shrink-0 opacity-70" />
-                      <span className="truncate flex-1">{table.name}</span>
-                      {tablePinned && <Pin size={12} className="flex-shrink-0 text-accent opacity-60" />}
+                      <Table size={13} className="flex-shrink-0 text-text-muted group-hover:text-accent transition-colors" />
+                      <span className="truncate flex-1 text-[13px] font-medium text-text-secondary group-hover:text-text-primary transition-colors">{table.name}</span>
+                      {tablePinned && <Pin size={11} className="flex-shrink-0 text-accent opacity-80" />}
                       <button
                         onClick={(e) => handleRefreshTable(e, table.name)}
-                        className="p-1 rounded hover:bg-bg-active text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
+                        className="p-1 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
                         title={`Refresh ${tableTerm}`}
                       >
-                        <RefreshCw size={11} />
+                        <RefreshCw size={10} />
                       </button>
                     </div>
                   )
@@ -639,138 +643,137 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
   };
 
   return (
-    <div className="flex flex-col pb-4">
-      <div className="px-3 py-2 flex items-center justify-between">
-        <div className="text-xs font-medium text-text-secondary uppercase tracking-wide">
-          {connectionType === 'couchbase' ? 'Scopes' : 'Schemas'}
+    <div className="flex flex-col pb-4 h-full bg-bg-sunken/30">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-border-subtle mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          <span className="text-xs font-black text-text-primary uppercase tracking-wider">
+            {connectionType === 'couchbase' ? 'Scopes' : 'Explorer'}
+          </span>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleRefreshAll}
-            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
-            title="Refresh all"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
 
-          <button
-            onClick={() => navigate(`/workspace/${connectionId}/query`, { state: { newQuery: true } })}
-            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
-            title="New SQL Query (Ctrl+T)"
-          >
-            <FileCode size={14} />
-          </button>
+        <div className="flex items-center -mr-1">
+          <div className="flex items-center bg-bg-elevated rounded-lg p-0.5 border border-border-subtle shadow-sm">
+            <button
+              onClick={handleRefreshAll}
+              className="p-1.5 rounded-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary group relative"
+              title="Refresh All"
+            >
+              <RefreshCw size={12} className={`group-hover:rotate-180 transition-transform duration-500 ${loading ? 'animate-spin text-accent' : ''}`} />
+            </button>
 
-          {/* Schema Filter Button */}
-          <button
-            onClick={() => setShowSchemaFilter(true)}
-            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
-            title="Filter schemas"
-          >
-            <Eye size={14} />
-          </button>
+            <div className="w-px h-3 bg-border-subtle mx-0.5" />
 
-          {/* Schema Diff Button */}
-          <button
-            onClick={() => setSchemaDiffOpen(true)}
-            className="p-1 rounded hover:bg-bg-2 transition-colors text-text-secondary hover:text-text-primary"
-            title="Schema Diff & Migration"
-          >
-            <GitCompare size={14} />
-          </button>
+            <button
+              onClick={() => navigate(`/workspace/${connectionId}/query`, { state: { newQuery: true } })}
+              className="p-1.5 rounded-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+              title="New Query"
+            >
+              <FileCode size={12} />
+            </button>
 
-          {connectionType !== 'sqlite' ? (
-            <>
-              {connectionType !== 'couchbase' && (
-                <>
-                  <button
-                    onClick={handleOpenCreateDatabase}
-                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                    title="Create database"
-                  >
-                    <Database size={14} />
-                  </button>
-                  <button
-                    onClick={() => setCreateSchemaOpen(true)}
-                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                    title="Create schema"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </>
-              )}
-              {connectionType === 'couchbase' && (
-                <>
-                  <button
-                    onClick={() => navigate(`/workspace/${connectionId}/buckets`)}
-                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                    title="Manage Buckets"
-                  >
-                    <Database size={14} />
-                  </button>
+            <button
+              onClick={() => setShowSchemaFilter(true)}
+              className="p-1.5 rounded-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+              title="Filter"
+            >
+              <Eye size={12} />
+            </button>
+
+            <button
+              onClick={() => setSchemaDiffOpen(true)}
+              className="p-1.5 rounded-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+              title="Schema Diff"
+            >
+              <GitCompare size={12} />
+            </button>
+          </div>
+
+          <div className="ml-2 flex items-center">
+            {connectionType !== 'sqlite' ? (
+              <>
+                {connectionType !== 'couchbase' && (
+                  <>
+                    <button
+                      onClick={handleOpenCreateDatabase}
+                      className="p-1.5 rounded-lg hover:bg-bg-hover transition-all text-text-secondary hover:text-text-primary hover:shadow-sm border border-transparent hover:border-border-subtle mr-1"
+                      title="Create Database"
+                    >
+                      <Database size={14} strokeWidth={2} />
+                    </button>
+                    <button
+                      onClick={() => setCreateSchemaOpen(true)}
+                      className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent border border-transparent hover:border-accent/50 hover:shadow-glow-sm"
+                      title="Create Schema"
+                    >
+                      <Plus size={14} strokeWidth={3} />
+                    </button>
+                  </>
+                )}
+                {/* Couchbase buttons preserved but styled */}
+                {connectionType === 'couchbase' && (
                   <button
                     onClick={() => navigate(`/workspace/${connectionId}/scopes`)}
-                    className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent"
                     title="Manage Scopes"
                   >
-                    <Plus size={14} />
+                    <Plus size={14} strokeWidth={3} />
                   </button>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <button
-                onClick={async () => {
-                  if (!connectionId) return;
-                  try {
-                    const selected = await invoke<string | null>('pick_sqlite_db_file');
-                    if (!selected) return;
-                    const base = selected.split(/[\\/]/).pop() || 'attached';
-                    const noExt = base.replace(/\.[^.]+$/, '');
-                    const suggested = (noExt || 'attached')
-                      .replace(/[^a-zA-Z0-9_]/g, '_')
-                      .replace(/^(\d)/, '_$1');
-                    const name = (await dialog.prompt({
-                      title: 'Attach Database',
-                      message: 'Enter a name for the attached schema:',
-                      initialValue: suggested,
-                      placeholder: 'e.g. secondary_db',
-                      confirmLabel: 'Attach'
-                    }) || '').trim();
-                    if (!name) return;
-                    await connectionApi.createSqliteAttachment(connectionId, {
-                      name,
-                      file_path: selected,
-                      read_only: false,
-                    });
-                    await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
-                    await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
-                    showToast(`Attached '${name}'`, 'success');
-                  } catch (err: any) {
-                    console.error('Failed to attach database', err);
-                    showToast(
-                      err?.response?.data?.message || err?.response?.data || 'Failed to attach database',
-                      'error',
-                    );
-                  }
-                }}
-                className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                title="Attach database"
-              >
-                <Plus size={14} />
-              </button>
-              {connectionId && (
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={async () => {
+                    if (!connectionId) return;
+                    try {
+                      const selected = await invoke<string | null>('pick_sqlite_db_file');
+                      if (!selected) return;
+                      const base = selected.split(/[\\/]/).pop() || 'attached';
+                      const noExt = base.replace(/\.[^.]+$/, '');
+                      const suggested = (noExt || 'attached')
+                        .replace(/[^a-zA-Z0-9_]/g, '_')
+                        .replace(/^(\d)/, '_$1');
+                      const name = (await dialog.prompt({
+                        title: 'Attach Database',
+                        message: 'Enter a name for the attached schema:',
+                        initialValue: suggested,
+                        placeholder: 'e.g. secondary_db',
+                        confirmLabel: 'Attach'
+                      }) || '').trim();
+                      if (!name) return;
+                      await connectionApi.createSqliteAttachment(connectionId, {
+                        name,
+                        file_path: selected,
+                        read_only: false,
+                      });
+                      await queryClient.invalidateQueries({ queryKey: ['schemas', connectionId] });
+                      await queryClient.invalidateQueries({ queryKey: ['tables', connectionId] });
+                      showToast(`Attached '${name}'`, 'success');
+                    } catch (err: any) {
+                      console.error('Failed to attach database', err);
+                      showToast(
+                        err?.response?.data?.message || err?.response?.data || 'Failed to attach database',
+                        'error',
+                      );
+                    }
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent border border-transparent hover:border-accent/50 hover:shadow-glow-sm"
+                  title="Attach SQLite Database"
+                >
+                  <Plus size={14} strokeWidth={3} />
+                </button>
+
                 <button
                   onClick={() => setSqliteToolsOpen(true)}
-                  className="p-1 rounded hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
-                  title="SQLite tools"
+                  className="p-1.5 rounded-lg hover:bg-bg-hover transition-colors text-text-secondary hover:text-text-primary"
+                  title="SQLite Tools"
                 >
                   <Wrench size={14} />
                 </button>
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
