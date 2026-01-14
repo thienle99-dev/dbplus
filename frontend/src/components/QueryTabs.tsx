@@ -537,93 +537,104 @@ export default function QueryTabs() {
 
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 relative bg-transparent py-2 pr-2">
-          <div className="flex items-center bg-bg-1 border-b border-border-light overflow-x-auto no-scrollbar scroll-smooth px-3 h-12 rounded-t-2xl">
-            {tabs.map(tab => (
-              <div
-                key={tab.id}
-                onClick={() => startTransition(() => setActiveTabId(tab.id))}
-                onContextMenu={(e) => handleContextMenu(e, tab.id)}
-                className={clsx(
-                  "group flex items-center gap-2.5 px-4 py-2 text-[13px] font-bold transition-all duration-300 cursor-pointer min-w-[120px] max-w-[200px] select-none rounded-[14px] mx-1 relative",
-                  activeTabId === tab.id
-                    ? "bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]"
-                    : "text-text-secondary hover:bg-bg-2 hover:text-text-primary"
-                )}
-              >
-                {tab.type === 'table' ? (
-                  <Database size={15} className={activeTabId === tab.id ? "text-[var(--color-primary-default)]" : ""} />
-                ) : (
-                  <FileCode size={15} className={activeTabId === tab.id ? "text-[var(--color-primary-default)]" : ""} />
-                )}
+        <div className="flex-1 flex flex-col min-w-0 relative bg-bg-0">
+          <div className="flex items-end bg-bg-sunken border-b border-border-default overflow-x-auto no-scrollbar pt-1.5 px-2 gap-1 h-10">
+            {tabs.map((tab, index) => {
+              const isActive = activeTabId === tab.id;
+              const nextTab = tabs[index + 1];
+              const isNextActive = nextTab?.id === activeTabId;
 
-                {editingTabId === tab.id ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onBlur={() => handleRenameTab(tab.id, editTitle)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleRenameTab(tab.id, editTitle);
-                      if (e.key === 'Escape') setEditingTabId(null);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 bg-white/10 text-white px-2 py-1 rounded-lg outline-none min-w-[50px] h-6 text-xs"
-                  />
-                ) : (
-                  <span
-                    className="truncate flex-1"
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      setEditingTabId(tab.id);
-                      setEditTitle(tab.title);
-                    }}
-                    title="Double click to rename (Right-click for options)"
-                  >
-                    {tab.title}
-                  </span>
-                )}
-
-                {tab.pinned && (
-                  <div title="Pinned">
-                    <Pin size={12} className="text-[var(--color-primary-default)]" />
-                  </div>
-                )}
-
-
-                {(tab.isDraft || tab.isDirty) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]" title="Unsaved changes" />
-                )}
-                {tab.isSleeping && (
-                  <span className="text-[9px] uppercase font-black tracking-widest text-white/30 border border-white/10 px-1.5 rounded-md ml-1 select-none">Paused</span>
-                )}
-                <button
-                  onClick={(e) => closeTab(tab.id, e)}
+              return (
+                <div
+                  key={tab.id}
+                  onClick={() => startTransition(() => setActiveTabId(tab.id))}
+                  onContextMenu={(e) => handleContextMenu(e, tab.id)}
                   className={clsx(
-                    "p-1 rounded-lg hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all",
-                    tabs.length === 1 && "hidden"
+                    "group relative flex items-center gap-2 px-3 py-1.5 min-w-[120px] max-w-[200px] cursor-pointer select-none transition-all duration-200 rounded-t-md border-t border-x",
+                    isActive
+                      ? "bg-bg-0 border-border-default border-b-transparent text-text-primary z-10 mb-[-1px] shadow-sm"
+                      : "bg-transparent border-transparent text-text-secondary hover:bg-bg-elevated/50"
                   )}
                 >
-                  <X size={14} />
-                </button>
+                  {/* Divider for inactive tabs */}
+                  {!isActive && !isNextActive && index !== tabs.length - 1 && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-4 bg-border-default group-hover:hidden" />
+                  )}
 
-                {activeTabId === tab.id && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-[var(--color-primary-default)] rounded-full shadow-[0_0_10px_var(--color-primary-transparent)]" />
-                )}
-              </div>
-            ))}
+                  {tab.type === 'table' ? (
+                    <Database size={13} className={isActive ? "text-accent" : "opacity-70"} />
+                  ) : (
+                    <FileCode size={13} className={isActive ? "text-accent" : "opacity-70"} />
+                  )}
+
+                  {editingTabId === tab.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onBlur={() => handleRenameTab(tab.id, editTitle)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleRenameTab(tab.id, editTitle);
+                        if (e.key === 'Escape') setEditingTabId(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 bg-bg-sunken text-text-primary px-1.5 py-0.5 rounded outline-none w-full min-w-0 text-xs"
+                    />
+                  ) : (
+                    <span
+                      className="truncate flex-1 text-xs font-medium"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTabId(tab.id);
+                        setEditTitle(tab.title);
+                      }}
+                      title="Double click to rename (Right-click for options)"
+                    >
+                      {tab.title}
+                    </span>
+                  )}
+
+                  {tab.pinned && (
+                    <Pin size={10} className="text-secondary opacity-80" />
+                  )}
+
+                  {(tab.isDraft || tab.isDirty) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" title="Unsaved changes" />
+                  )}
+
+                  {tab.isSleeping && (
+                    <span className="text-[8px] uppercase font-black text-text-muted opacity-50 px-1 select-none">Zzz</span>
+                  )}
+
+                  <button
+                    onClick={(e) => closeTab(tab.id, e)}
+                    className={clsx(
+                      "p-0.5 rounded-md hover:bg-bg-sunken text-text-muted hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity",
+                      isActive && "opacity-100", // Always show close on active
+                      tabs.length === 1 && "hidden"
+                    )}
+                  >
+                    <X size={12} />
+                  </button>
+
+                  {/* Active Indicator Line on top (Chrome style highlight) */}
+                  {isActive && (
+                    <div className="absolute top-[-1px] left-0 right-0 h-[2px] bg-accent rounded-t-md" />
+                  )}
+                </div>
+              );
+            })}
             <button
               onClick={() => addTab()}
-              className="p-2 ml-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-              title="New Query Tab"
-              aria-label="New Query Tab (Ctrl+T)"
+              className="p-1.5 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-full transition-colors"
+              title="New Tab"
             >
-              <Plus size={18} strokeWidth={2.5} />
+              <Plus size={16} strokeWidth={2.5} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-hidden relative bg-white/[0.02] rounded-b-2xl border-x border-b border-white/5 glass">
+          <div className="flex-1 overflow-hidden relative bg-bg-0 z-0">
             {tabs.map(tab => {
               const isActive = activeTabId === tab.id;
 
