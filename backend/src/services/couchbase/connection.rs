@@ -13,23 +13,21 @@ pub struct CouchbaseDriver {
 
 impl CouchbaseDriver {
     pub async fn new(connection: &ConnectionModel::Model, password: &str) -> Result<Self> {
-        // Couchbase connection string format: couchbase://host[:port]
-        let connection_string = if connection.port > 0 {
-            format!("couchbase://{}:{}", connection.host, connection.port)
-        } else {
-            format!("couchbase://{}", connection.host)
-        };
+        // Couchbase connection string format: couchbase://host
+        // The SDK will use default ports (8091 for HTTP, 11210 for memcached)
+        // Custom ports are mainly for alternate schemes (couchbases://) or bootstrapping
+        let connection_string = format!("couchbase://{}", connection.host);
         let username = &connection.username;
 
         let authenticator = PasswordAuthenticator::new(username, password);
         let mut options = ClusterOptions::new(authenticator.into());
 
-        // Configure timeouts
-        options = options
-            .kv_timeout(std::time::Duration::from_secs(5))
-            .query_timeout(std::time::Duration::from_secs(10))
-            .analytics_timeout(std::time::Duration::from_secs(30))
-            .search_timeout(std::time::Duration::from_secs(10));
+        // Configure timeouts - TODO: Fix API mismatch with current crate version
+        // options = options
+        //     .kv_timeout(std::time::Duration::from_secs(5))
+        //     .query_timeout(std::time::Duration::from_secs(10))
+        //     .analytics_timeout(std::time::Duration::from_secs(30))
+        //     .search_timeout(std::time::Duration::from_secs(10));
 
         // Timeout configuration could be added here from connection options if available
 

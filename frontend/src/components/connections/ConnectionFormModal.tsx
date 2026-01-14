@@ -161,7 +161,10 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
         setTestMessage(null);
         setError(null);
         try {
+            console.log('Testing connection with data:', getConnectionData());
             const result = await testConnectionDetails(getConnectionData());
+            console.log('Test result:', result);
+
             if (result.success) {
                 setTestStatus('success');
                 setTestMessage('Handshake verified. Connection established.');
@@ -169,9 +172,12 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 setTestStatus('error');
                 setTestMessage(result.message || 'Verification failed.');
             }
-        } catch (err) {
+        } catch (err: any) {
+            console.error('Test connection error:', err);
             setTestStatus('error');
-            setTestMessage('Network error occurred during test.');
+            // Extract meaningful message from potentially complex error object
+            const msg = err.message || (typeof err === 'string' ? err : 'Network error occurred during test.');
+            setTestMessage(msg);
         }
     };
 
@@ -256,7 +262,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg font-black tracking-tight text-text-primary">{initialValues ? 'Update' : 'New'} {dbInfo?.name || 'Engine'}</span>
-                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{formData.type} instance configuration</span>
+                        <span className="text-[10px] font-bold text-text-muted tracking-widest">{formData.type} instance configuration</span>
                     </div>
                 </div>
             }
@@ -281,12 +287,12 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <Database size={14} className="text-accent" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">General Identity</h3>
+                        <h3 className="text-[10px] font-black tracking-[0.2em] text-text-muted">General Identity</h3>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-text-secondary uppercase px-1">Connection Alias</label>
+                            <label className="text-[11px] font-bold text-text-secondary px-1">Connection Alias</label>
                             <Input
                                 value={formData.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
@@ -295,7 +301,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-text-secondary uppercase px-1">Traffic Label</label>
+                            <label className="text-[11px] font-bold text-text-secondary px-1">Traffic Label</label>
                             <div className="flex items-center gap-2 h-10 px-0.5">
                                 {STATUS_COLORS.map((color) => (
                                     <button
@@ -324,14 +330,14 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <Globe size={14} className="text-info" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Network & Infrastructure</h3>
+                        <h3 className="text-[10px] font-black tracking-[0.2em] text-text-muted">Network & Infrastructure</h3>
                     </div>
 
                     <div className="p-5 rounded-lg bg-bg-sunken border border-border-subtle space-y-6">
                         {formData.type !== 'sqlite' ? (
                             <div className="grid grid-cols-12 gap-4">
                                 <div className="col-span-9 space-y-2">
-                                    <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Host/Endpoint</label>
+                                    <label className="text-[11px] font-bold text-text-secondary ml-1">Host/Endpoint</label>
                                     <Input
                                         value={formData.host}
                                         onChange={(e) => handleChange('host', e.target.value)}
@@ -340,7 +346,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                     />
                                 </div>
                                 <div className="col-span-3 space-y-2">
-                                    <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Port</label>
+                                    <label className="text-[11px] font-bold text-text-secondary ml-1">Port</label>
                                     <Input
                                         value={formData.port}
                                         onChange={(e) => handleChange('port', e.target.value)}
@@ -350,7 +356,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Database File Path</label>
+                                <label className="text-[11px] font-bold text-text-secondary ml-1">Database File Path</label>
                                 <div className="flex gap-2">
                                     <Input
                                         value={formData.database}
@@ -379,7 +385,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
 
                         {formData.type !== 'sqlite' && (
                             <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Database Name</label>
+                                <label className="text-[11px] font-bold text-text-secondary ml-1">Database Name</label>
                                 <Input
                                     value={formData.database}
                                     onChange={(e) => handleChange('database', e.target.value)}
@@ -396,12 +402,12 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 px-1">
                             <Lock size={14} className="text-warning" />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Security & Authentication</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-text-muted">Security & Authentication</h3>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Credentials User</label>
+                                <label className="text-[11px] font-bold text-text-secondary ml-1">Credentials User</label>
                                 <Input
                                     value={formData.user}
                                     onChange={(e) => handleChange('user', e.target.value)}
@@ -409,7 +415,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Access Password</label>
+                                <label className="text-[11px] font-bold text-text-secondary ml-1">Access Password</label>
                                 <Input
                                     type="password"
                                     value={formData.password}
@@ -425,12 +431,12 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <Cpu size={14} className="text-accent" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Engine Context</h3>
+                        <h3 className="text-[10px] font-black tracking-[0.2em] text-text-muted">Engine Context</h3>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Environment</label>
+                            <label className="text-[11px] font-bold text-text-secondary ml-1">Environment</label>
                             <Select
                                 value={formData.environment}
                                 onChange={(val) => handleChange('environment', val)}
@@ -438,7 +444,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Safe Mode</label>
+                            <label className="text-[11px] font-bold text-text-secondary ml-1">Safe Mode</label>
                             <Select
                                 value={formData.safe_mode_level}
                                 onChange={(val) => handleChange('safe_mode_level', val)}
@@ -446,7 +452,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-text-secondary uppercase ml-1">Encryption (SSL)</label>
+                            <label className="text-[11px] font-bold text-text-secondary ml-1">Encryption (SSL)</label>
                             <Select
                                 value={formData.ssl ? 'require' : 'disable'}
                                 onChange={(val) => handleChange('ssl', val !== 'disable')}
