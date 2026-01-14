@@ -18,20 +18,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         const isButtonLoading = isLoading || loading;
         const startIcon = leftIcon || icon;
 
-        const baseStyles = 'inline-flex items-center justify-center gap-1.5 font-medium transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px';
+        const baseStyles = 'inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.98]';
 
         const variants = {
-            primary: 'rounded-full bg-accent text-bg-0 shadow-sm hover:bg-accent/90 hover:shadow-md transition-all',
-            secondary: 'rounded-full border border-border-subtle bg-bg-2 backdrop-blur-sm text-text-secondary hover:bg-bg-3 hover:text-text-primary',
-            ghost: 'rounded-full text-text-secondary hover:bg-bg-2 hover:text-text-primary',
-            danger: 'rounded-full bg-error text-bg-0 hover:bg-error/90',
-            outline: 'rounded-full border border-border-subtle text-text-primary hover:bg-bg-2 backdrop-blur-sm'
+            primary: 'rounded-md bg-accent text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset,0_1px_2px_rgba(0,0,0,0.4)] hover:shadow-[0_1px_0_rgba(255,255,255,0.3)_inset,0_4px_8px_rgba(0,0,0,0.3)] hover:brightness-110 border border-transparent',
+            secondary: 'rounded-md border border-border-default bg-bg-elevated text-text-primary shadow-sm hover:bg-bg-hover hover:border-border-strong',
+            ghost: 'rounded-md text-text-secondary hover:bg-bg-elevated hover:text-text-primary',
+            danger: 'rounded-md bg-error text-white shadow-sm hover:bg-error/90 border border-transparent',
+            outline: 'rounded-md border border-border-subtle bg-transparent text-text-primary hover:bg-bg-sunken hover:border-border-strong'
         };
 
         const sizes = {
-            sm: 'px-3 py-1 text-xs',
-            md: 'px-4 py-1.5 text-sm',
-            lg: 'px-5 py-2 text-base'
+            sm: 'px-2.5 py-1 text-xs',
+            md: 'px-3.5 py-1.5 text-sm leading-5',
+            lg: 'px-5 py-2.5 text-base'
         };
 
         // Ghost buttons usually have less padding in the new system (e.g. h-7 px-2)

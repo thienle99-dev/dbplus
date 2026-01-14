@@ -716,21 +716,21 @@ export default function QueryEditor({
         {/* Results Section */}
         <div className="flex-1 flex flex-col min-h-0 bg-transparent py-2 pr-2">
           <div className="flex items-center justify-between border-b border-white/5 bg-white/5 p-3 glass rounded-t-2xl">
-            <div className="flex p-1 bg-white/5 rounded-[14px] border border-white/5 glass">
+            <div className="flex p-1 bg-bg-sunken rounded-lg border border-border-default">
               <button
                 onClick={() => setBottomTab('results')}
-                className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'results'
-                  ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-                  : 'text-text-secondary hover:text-white hover:bg-white/5'
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-md ${bottomTab === 'results'
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated/50'
                   }`}
               >
                 Results
               </button>
               <button
                 onClick={() => setBottomTab('plan')}
-                className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'plan'
-                  ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-                  : 'text-text-secondary hover:text-white hover:bg-white/5'
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-md ${bottomTab === 'plan'
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated/50'
                   }`}
               >
                 Execution Plan
@@ -738,9 +738,9 @@ export default function QueryEditor({
               {snapshot && (
                 <button
                   onClick={() => setBottomTab('comparison')}
-                  className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${bottomTab === 'comparison'
-                    ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-                    : 'text-text-secondary hover:text-white hover:bg-white/5'
+                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-md ${bottomTab === 'comparison'
+                    ? 'bg-accent text-white shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated/50'
                     }`}
                 >
                   Diff Comparison
