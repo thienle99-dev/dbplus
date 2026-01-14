@@ -96,25 +96,31 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
         >
             <div className="space-y-8 py-2">
                 {/* Search Bar */}
-                <div className="relative group">
-                    <div className="absolute inset-0 bg-accent/5 blur-xl group-focus-within:bg-accent/10 transition-all rounded-full" />
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors" size={18} />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Filter engines (e.g. 'Postgres')..."
-                        autoFocus
-                        className="w-full relative z-10 bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-subtle focus:border-accent/40 rounded-2xl py-4 pl-14 pr-12 text-[15px] font-medium text-text-primary placeholder:text-text-muted outline-none transition-all shadow-inner"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-1.5 hover:bg-white/10 rounded-full text-text-muted transition-colors"
-                        >
-                            <X size={14} />
-                        </button>
-                    )}
+                {/* Search Bar */}
+                <div className="px-4">
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                            <Search className="text-text-muted group-focus-within:text-accent transition-colors duration-300" size={18} />
+                        </div>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search data sources..."
+                            autoFocus
+                            className="w-full bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-default focus:border-accent rounded-xl py-3 pl-11 pr-10 text-sm font-medium text-text-primary placeholder:text-text-muted/70 outline-none transition-all shadow-sm focus:shadow-md focus:ring-1 focus:ring-accent/20"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-3 flex items-center z-10"
+                            >
+                                <div className="p-1 rounded-full hover:bg-border-default text-text-muted hover:text-text-primary transition-all">
+                                    <X size={14} />
+                                </div>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Categories */}

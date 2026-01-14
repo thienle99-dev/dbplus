@@ -135,8 +135,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
         }
 
         return (
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-accent/5 flex items-center justify-center p-2 ring-1 ring-accent/10 group-hover:bg-accent group-hover:text-white transition-all duration-300">
-                <IconComponent className="w-full h-full text-accent group-hover:text-white transition-colors" />
+            <div className="w-full h-full rounded-xl bg-bg-elevated flex items-center justify-center p-2.5 shadow-inner border border-border-light group-hover:border-accent/20 transition-all duration-300">
+                <IconComponent className="w-full h-full text-text-secondary group-hover:text-accent transition-colors duration-300 group-hover:scale-110 transform" />
             </div>
         );
     };
@@ -144,34 +144,68 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="premium-card group relative flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-bg-hover transition-all duration-300 overflow-hidden"
+                className="premium-card group relative flex items-center gap-5 p-5 rounded-2xl cursor-pointer hover:bg-bg-hover transition-all duration-300 overflow-hidden border border-border-default hover:border-accent/30"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
                 {/* Icon Section */}
-                {renderIcon()}
+                <div className="w-14 h-14 flex-shrink-0">
+                    {renderIcon()}
+                </div>
 
-                {/* Info Section */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h3 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-accent transition-colors">
-                        {connection.name}
-                    </h3>
-
-                    <div className="flex items-center gap-2 mt-1 overflow-hidden">
-                        <span className="text-[11px] text-text-secondary truncate font-medium">
-                            {connection.host}
-                        </span>
+                {/* Main Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-base font-black text-text-primary tracking-tight truncate group-hover:text-accent transition-colors">
+                            {connection.name}
+                        </h3>
+                        {/* Status Tags */}
                         {isLocal && (
-                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-success font-bold uppercase tracking-widest ring-1 ring-success/20">Local</span>
+                            <span className="shrink-0 text-[9px] px-2 py-0.5 rounded-full bg-success/10 text-success font-black uppercase tracking-widest ring-1 ring-success/20">Local</span>
                         )}
                         {connection.environment === 'production' && (
-                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-error/10 text-error font-bold uppercase tracking-widest ring-1 ring-error/20">Prod</span>
+                            <span className="shrink-0 text-[9px] px-2 py-0.5 rounded-full bg-error/10 text-error font-black uppercase tracking-widest ring-1 ring-error/20">Prod</span>
+                        )}
+                    </div>
+
+                    {/* Metadata Grid */}
+                    <div className="flex items-center gap-4 text-xs text-text-secondary mt-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Host</span>
+                            <span className="font-mono text-text-primary truncate opacity-80 group-hover:opacity-100 transition-opacity">
+                                {connection.host}
+                            </span>
+                        </div>
+                        <div className="w-px h-3 bg-border-strong/50" />
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Port</span>
+                            <span className="font-mono text-text-primary opacity-80 group-hover:opacity-100 transition-opacity">
+                                {connection.port || (connection.type === 'postgres' ? 5432 : 3306)}
+                            </span>
+                        </div>
+                        {connection.username && (
+                            <>
+                                <div className="w-px h-3 bg-border-strong/50" />
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">User</span>
+                                    <span className="font-medium text-text-primary truncate opacity-80 group-hover:opacity-100 transition-opacity">
+                                        {connection.username}
+                                    </span>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
 
+                {/* Database Type Label */}
+                <div className="hidden sm:flex flex-col items-end gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">Engine</span>
+                    <span className="text-xs font-bold text-text-secondary uppercase">{connection.type}</span>
+                </div>
+
                 {/* Animated Accent Line */}
-                <div className="absolute bottom-[1px] left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-primary-default)] to-transparent group-hover:w-2/3 transition-all duration-500 opacity-60 rounded-full" />
+                <div className="absolute bottom-0 left-0 w-1 h-0 bg-accent group-hover:h-full transition-all duration-300 ease-out opacity-0 group-hover:opacity-100" />
+                <div className="absolute bottom-[1px] left-1/2 -translate-x-1/2 w-0 h-[1px] bg-gradient-to-r from-transparent via-accent to-transparent group-hover:w-full transition-all duration-700 opacity-0 group-hover:opacity-100" />
             </div>
 
             {menuPosition && (
