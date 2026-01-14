@@ -82,7 +82,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     disabled={loading || !queryTrimmed}
                     variant="primary"
                     size="sm"
-                    className="shadow-lg flex-shrink-0 h-8 rounded-xl"
+                    className="shadow-lg flex-shrink-0 h-8 rounded-md"
                     icon={<Play size={14} className={loading ? 'animate-pulse' : ''} fill="currentColor" />}
                     title={hasSelection ? "Run selected query (Cmd/Ctrl+Enter)" : "Run entire query (Cmd/Ctrl+Enter)"}
                 >
@@ -93,7 +93,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     <button
                         onClick={onExplain}
                         disabled={loading || !queryTrimmed}
-                        className="h-8 flex items-center gap-1.5 px-3 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-l-xl text-text-primary text-xs font-medium disabled:opacity-50 transition-colors border-r-0"
+                        className="h-8 flex items-center gap-1.5 px-3 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-l-md text-text-primary text-xs font-medium disabled:opacity-50 transition-colors border-r-0"
                         title={`Explain query execution plan (Cmd/Ctrl+E)${analyzeEnabled ? ' - ANALYZE Enabled' : ''}`}
                     >
                         <span className={`text-[10px] font-mono border rounded px-0.5 ${analyzeEnabled ? 'border-accent text-accent' : 'border-text-tertiary text-text-secondary'}`}>EX</span>
@@ -101,14 +101,14 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     </button>
                     <button
                         disabled={loading || !queryTrimmed}
-                        className="h-8 flex items-center px-1.5 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-r-xl text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors"
+                        className="h-8 flex items-center px-1.5 bg-bg-2 hover:bg-bg-0 border border-border-strong rounded-r-md text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors"
                         onClick={() => setIsExplainMenuOpen(!isExplainMenuOpen)}
                     >
                         <ChevronDown size={12} />
                     </button>
 
                     {isExplainMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-48 bg-bg-1 border border-border-light rounded-xl shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
                             <button
                                 className="w-full text-left px-4 py-2 text-xs flex items-center gap-2 hover:bg-bg-2 text-text-secondary hover:text-text-primary transition-colors"
                                 onClick={() => {
@@ -134,7 +134,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
 
                 {onToggleAnalyze && (
                     <button
-                        className={`h-8 flex items-center gap-1.5 px-3 rounded-xl text-xs font-medium transition-colors flex-shrink-0 border ${analyzeEnabled ? 'bg-primary-transparent border-accent text-accent' : 'bg-bg-2 border-border-strong text-text-secondary hover:text-text-primary hover:bg-bg-0'}`}
+                        className={`h-8 flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-colors flex-shrink-0 border ${analyzeEnabled ? 'bg-primary-transparent border-accent text-accent' : 'bg-bg-2 border-border-strong text-text-secondary hover:text-text-primary hover:bg-bg-0'}`}
                         onClick={onToggleAnalyze}
                         title="Toggle ANALYZE option"
                     >
@@ -144,7 +144,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                 )}
 
                 {databases && databases.length > 0 && onDatabaseChange && (
-                    <div className="w-32 flex-shrink-0">
+                    <div className="w-32 h-full flex-shrink-0">
                         <Select
                             value={selectedDatabase || ''}
                             onChange={onDatabaseChange}
@@ -152,7 +152,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                             size="sm"
                             placeholder="Database"
                             searchable
-                            className="h-8"
+                            className="h-full"
                         />
                     </div>
                 )}
@@ -167,7 +167,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                     disabled={!queryTrimmed}
                     icon={<Save size={14} />}
                     title={savedQueryId ? `Save changes to "${queryName}"(Cmd / Ctrl + S)` : "Save as new query (Cmd/Ctrl+S)"}
-                    className="flex-shrink-0 h-8 rounded-xl"
+                    className="flex-shrink-0 h-8 rounded-md"
                 >
                     <span className="hidden lg:inline">{savedQueryId ? 'Save' : 'Save As'}</span>
                 </Button>
@@ -180,11 +180,11 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
                         onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                         icon={<MoreHorizontal size={16} />}
                         title="More actions"
-                        className={`h-8 rounded-xl ${isMoreMenuOpen ? 'bg-bg-2 text-text-primary' : ''}`}
+                        className={`h-8 rounded-md ${isMoreMenuOpen ? 'bg-bg-2 text-text-primary' : ''}`}
                     />
 
                     {isMoreMenuOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-44 bg-bg-1 border border-border-light rounded-xl shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
+                        <div className="absolute top-full right-0 mt-2 w-44 bg-bg-1 border border-border-light rounded-lg shadow-xl z-40 py-1 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-subtle">
                             <button
                                 onClick={() => { onFormat(); setIsMoreMenuOpen(false); }}
                                 disabled={!queryTrimmed}

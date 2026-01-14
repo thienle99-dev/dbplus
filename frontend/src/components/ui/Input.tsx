@@ -18,7 +18,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     {leftIcon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">{leftIcon}</div>}
                     <input
                         ref={ref}
-                        className={`w-full rounded-xl bg-bg-2 border border-border-strong px-3 py-2 text-sm text-text-primary placeholder:text-text-muted shadow-inner focus:outline-none focus:bg-bg-0 focus:border-accent/50 focus:ring-4 focus:ring-accent/10 hover:bg-bg-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${leftIcon ? 'pl-10' : ''} ${rightIcon ? 'pr-10' : ''} ${error ? 'bg-error/10 border-error/50 focus:border-error focus:ring-error/20' : ''} ${className}`}
+                        className={`w-full rounded-md bg-bg-sunken border border-border-default px-3 py-2 text-sm text-text-primary placeholder:text-text-muted shadow-sm focus:outline-none focus:bg-bg-0 focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-border-strong disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${leftIcon ? 'pl-9' : ''} ${rightIcon ? 'pr-9' : ''} ${error ? 'bg-error-50 border-error focus:border-error focus:ring-error/20' : ''} ${className}`}
                         {...props}
                     />
                     {rightIcon && <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary">{rightIcon}</div>}

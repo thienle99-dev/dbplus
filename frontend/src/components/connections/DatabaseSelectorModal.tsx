@@ -108,7 +108,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search data sources..."
                             autoFocus
-                            className="w-full bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-default focus:border-accent rounded-xl py-3 pl-11 pr-10 text-sm font-medium text-text-primary placeholder:text-text-muted/70 outline-none transition-all shadow-sm focus:shadow-md focus:ring-1 focus:ring-accent/20"
+                            className="w-full bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-default focus:border-accent rounded-md py-3 pl-11 pr-10 text-sm font-medium text-text-primary placeholder:text-text-muted/70 outline-none transition-all shadow-sm focus:shadow-md focus:ring-1 focus:ring-accent/20"
                         />
                         {searchQuery && (
                             <button
@@ -132,7 +132,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                         return (
                             <div key={cat.id} className="space-y-5">
                                 <div className="flex items-center gap-3 px-1">
-                                    <div className="w-6 h-6 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                                    <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center text-accent">
                                         {cat.icon}
                                     </div>
                                     <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-text-muted italic">{cat.name}</h3>
@@ -149,7 +149,7 @@ export const DatabaseSelectorModal: React.FC<DatabaseSelectorModalProps> = ({ is
                                                 key={db.id}
                                                 onClick={() => !isDisabled && setSelectedDb(db.id)}
                                                 className={`
-                                                    group relative p-5 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col items-center justify-center
+                                                    group relative p-5 rounded-lg transition-all duration-300 overflow-hidden flex flex-col items-center justify-center
                                                     ${isSelected
                                                         ? 'border-2 border-accent bg-accent/10 shadow-glow scale-[1.02] z-10'
                                                         : 'border border-border-strong bg-bg-sunken shadow-sm hover:border-accent/40 hover:bg-bg-hover hover:shadow-lg hover:-translate-y-1'

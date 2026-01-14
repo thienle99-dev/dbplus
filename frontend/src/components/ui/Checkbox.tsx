@@ -35,13 +35,13 @@ export default function Checkbox({
                 disabled={disabled}
                 onClick={handleClick}
                 className={`
-          flex items-center justify-center w-5 h-5 rounded-md border-2 transition-all flex-shrink-0 mt-0.5
+          flex items-center justify-center w-4 h-4 rounded border transition-all flex-shrink-0 mt-0.5
           ${checked
-                        ? 'bg-accent border-accent shadow-sm'
-                        : 'bg-bg-2 border-border hover:border-accent/50'
+                        ? 'bg-accent border-accent text-white shadow-sm'
+                        : 'bg-bg-sunken border-border-default hover:border-text-secondary hover:bg-bg-0'
                     }
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg-0
+          focus:outline-none focus:ring-2 focus:ring-accent/40 focus:ring-offset-1 focus:ring-offset-bg-0
         `}
             >
                 {checked && (
