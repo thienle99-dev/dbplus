@@ -270,7 +270,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             footer={footer}
             className="glass"
         >
-            <form className="space-y-8 py-2">
+            <form className="space-y-8 py-2 pb-40">
                 {/* Result Message Overlay */}
                 {(error || testMessage) && (
                     <div className={`animate-fadeIn flex items-center gap-4 px-5 py-4 rounded-md border backdrop-blur-md transition-all ${testStatus === 'success' ? 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_rgba(var(--color-success),0.1)]' : 'bg-error/10 border-error/30 text-error shadow-[0_0_15px_rgba(var(--color-error),0.1)]'

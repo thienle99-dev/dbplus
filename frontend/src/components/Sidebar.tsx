@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid, Shield, Monitor } from 'lucide-react';
+import { Search, Database, FileText, Clock, Settings, LogOut, Pin, LayoutGrid, Shield, Activity, ChevronsUpDown } from 'lucide-react';
 import SchemaTree from './SchemaTree';
 import ActivityMonitor from './tools/ActivityMonitor';
 import SavedQueriesList from './SavedQueriesList';
@@ -245,7 +245,7 @@ export default function Sidebar() {
                 className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg transition-colors"
                 title="Switch Database (Cmd+K)"
               >
-                <Database size={15} />
+                <ChevronsUpDown size={15} />
               </button>
               <button
                 onClick={() => navigate(`/workspace/${connectionId}/permissions`)}
@@ -265,7 +265,7 @@ export default function Sidebar() {
                   }`}
                 title="Activity Monitor"
               >
-                <Monitor size={15} />
+                <Activity size={15} />
               </button>
             </div>
           </div>

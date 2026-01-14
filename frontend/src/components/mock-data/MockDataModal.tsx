@@ -4,6 +4,9 @@ import { X, Sparkles, FileCode, Play, Loader2, Settings2 } from 'lucide-react';
 import { TableColumn } from '../../types';
 import api from '../../services/api';
 import { useColumns } from '../../hooks/useDatabase';
+import Input from '../ui/Input';
+import Checkbox from '../ui/Checkbox';
+import Select from '../ui/Select';
 
 interface MockDataModalProps {
     isOpen: boolean;
@@ -176,13 +179,13 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                             <div className="p-4 border-b border-border space-y-4">
                                 <div>
                                     <label className="text-xs font-medium text-text-secondary uppercase mb-1 block">Row Count</label>
-                                    <input
+                                    <Input
                                         type="number"
-                                        value={rowCount}
+                                        value={rowCount.toString()}
                                         onChange={(e) => setRowCount(parseInt(e.target.value) || 0)}
-                                        className="w-full px-3 py-2 bg-input-background border border-border rounded-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                         min="1"
                                         max="10000"
+                                        fullWidth
                                     />
                                 </div>
                             </div>
@@ -195,10 +198,10 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
                                             {rule.is_nullable && (
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs text-text-secondary">Null %</span>
-                                                    <input
+                                                    <Input
                                                         type="number"
-                                                        className="w-12 px-1 py-0.5 text-xs bg-input-background border border-border rounded"
-                                                        value={rule.null_percent}
+                                                        className="w-12 text-xs"
+                                                        value={rule.null_percent.toString()}
                                                         onChange={(e) => {
                                                             const newRules = [...rules];
                                                             newRules[idx].null_percent = parseFloat(e.target.value);
@@ -211,88 +214,89 @@ export const MockDataModal: React.FC<MockDataModalProps> = ({
 
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="col-span-2">
-                                                <select
-                                                    className="w-full px-2 py-1.5 text-sm bg-input-background border border-border rounded focus:border-primary outline-none"
+                                                <Select
                                                     value={rule.type}
-                                                    onChange={(e) => {
+                                                    onChange={(val) => {
                                                         const newRules = [...rules];
-                                                        newRules[idx].type = e.target.value;
+                                                        newRules[idx].type = val;
                                                         setRules(newRules);
                                                     }}
-                                                >
-                                                    <option value="Auto">Auto Detect</option>
-                                                    <option value="Email">Email</option>
-                                                    <option value="Name">Full Name</option>
-                                                    <option value="FirstName">First Name</option>
-                                                    <option value="LastName">Last Name</option>
-                                                    <option value="Address">Address</option>
-                                                    <option value="City">City</option>
-                                                    <option value="Country">Country</option>
-                                                    <option value="Phone">Phone Number</option>
-                                                    <option value="Company">Company</option>
-                                                    <option value="Date">Date</option>
-                                                    <option value="Boolean">Boolean</option>
-                                                    <option value="Integer">Number Range</option>
-                                                    <option value="UUID">UUID</option>
-                                                    <option value="Text">Sentence</option>
-                                                    <option value="Enum">Enum / List</option>
-                                                    <option value="Custom">Custom List (Deprecated)</option>
-                                                </select>
+                                                    options={[
+                                                        { value: "Auto", label: "Auto Detect" },
+                                                        { value: "Email", label: "Email" },
+                                                        { value: "Name", label: "Full Name" },
+                                                        { value: "FirstName", label: "First Name" },
+                                                        { value: "LastName", label: "Last Name" },
+                                                        { value: "Address", label: "Address" },
+                                                        { value: "City", label: "City" },
+                                                        { value: "Country", label: "Country" },
+                                                        { value: "Phone", label: "Phone Number" },
+                                                        { value: "Company", label: "Company" },
+                                                        { value: "Date", label: "Date" },
+                                                        { value: "Boolean", label: "Boolean" },
+                                                        { value: "Integer", label: "Number Range" },
+                                                        { value: "UUID", label: "UUID" },
+                                                        { value: "Text", label: "Sentence" },
+                                                        { value: "Enum", label: "Enum / List" },
+                                                        { value: "Custom", label: "Custom List (Deprecated)" }
+                                                    ]}
+                                                    size="sm"
+                                                />
                                             </div>
 
                                             {rule.type === 'Integer' && (
                                                 <>
-                                                    <input
-                                                        type="number" placeholder="Min"
-                                                        value={rule.min}
-                                                        className="px-2 py-1 text-sm bg-input-background border border-border rounded"
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Min"
+                                                        value={rule.min?.toString() || ''}
                                                         onChange={(e) => {
                                                             const newRules = [...rules];
                                                             newRules[idx].min = parseInt(e.target.value);
                                                             setRules(newRules);
                                                         }}
+                                                        className="text-sm"
                                                     />
-                                                    <input
-                                                        type="number" placeholder="Max"
-                                                        value={rule.max}
-                                                        className="px-2 py-1 text-sm bg-input-background border border-border rounded"
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Max"
+                                                        value={rule.max?.toString() || ''}
                                                         onChange={(e) => {
                                                             const newRules = [...rules];
                                                             newRules[idx].max = parseInt(e.target.value);
                                                             setRules(newRules);
                                                         }}
+                                                        className="text-sm"
                                                     />
                                                 </>
                                             )}
 
                                             {(rule.type === 'Custom' || rule.type === 'Enum') && (
-                                                <input
-                                                    type="text" placeholder="val1, val2..."
-                                                    value={rule.custom_values}
-                                                    className="col-span-2 px-2 py-1 text-sm bg-input-background border border-border rounded"
+                                                <Input
+                                                    type="text"
+                                                    placeholder="val1, val2..."
+                                                    value={rule.custom_values || ''}
                                                     onChange={(e) => {
                                                         const newRules = [...rules];
                                                         newRules[idx].custom_values = e.target.value;
                                                         setRules(newRules);
                                                     }}
+                                                    className="col-span-2 text-sm"
                                                 />
                                             )}
                                         </div>
 
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                id={`unique-${idx}`}
-                                                checked={rule.is_unique}
-                                                onChange={(e) => {
-                                                    const newRules = [...rules];
-                                                    newRules[idx].is_unique = e.target.checked;
-                                                    setRules(newRules);
-                                                }}
-                                                className="rounded border-border bg-input-background text-primary focus:ring-primary"
-                                            />
-                                            <label htmlFor={`unique-${idx}`} className="text-xs text-text-secondary select-none cursor-pointer">Ensure Unique</label>
-                                        </div>
+                                        <Checkbox
+                                            id={`unique-${idx}`}
+                                            checked={rule.is_unique}
+                                            onChange={(checked) => {
+                                                const newRules = [...rules];
+                                                newRules[idx].is_unique = checked;
+                                                setRules(newRules);
+                                            }}
+                                            label="Ensure Unique"
+                                            className="text-xs"
+                                        />
                                     </div>
                                 ))}
                             </div>

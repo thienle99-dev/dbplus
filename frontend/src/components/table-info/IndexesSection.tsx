@@ -5,6 +5,8 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { TableColumn, IndexInfo } from '../../types';
 import Select from '../ui/Select';
+import Checkbox from '../ui/Checkbox';
+import Input from '../ui/Input';
 
 interface IndexesSectionProps {
   schema: string;
@@ -206,12 +208,13 @@ export default function IndexesSection({
                 Index Name <span className="text-accent">*</span>
                 <span className="text-text-secondary/50 ml-1">(auto-generated)</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={newIndexName}
                 onChange={(e) => setNewIndexName(e.target.value)}
                 placeholder="idx_column_name"
-                className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary font-mono focus:border-accent focus:outline-none"
+                className="w-full text-[10px] md:text-xs font-mono"
+                fullWidth
               />
             </div>
 
@@ -277,12 +280,13 @@ export default function IndexesSection({
               <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
                 Condition <span className="text-text-secondary/50">(optional, for partial index)</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={newIndexCondition}
                 onChange={(e) => setNewIndexCondition(e.target.value)}
                 placeholder="e.g., status = 'active'"
-                className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary font-mono focus:border-accent focus:outline-none"
+                className="w-full text-[10px] md:text-xs font-mono"
+                fullWidth
               />
             </div>
 
@@ -290,27 +294,23 @@ export default function IndexesSection({
               <label className="text-[10px] md:text-xs text-text-secondary block mb-1">
                 Comment <span className="text-text-secondary/50">(optional)</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={newIndexComment}
                 onChange={(e) => setNewIndexComment(e.target.value)}
                 placeholder="Index description..."
-                className="w-full bg-bg-0 border border-border rounded px-2 py-1 text-[10px] md:text-xs text-text-primary focus:border-accent focus:outline-none"
+                className="w-full text-[10px] md:text-xs"
+                fullWidth
               />
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="unique-index"
-                checked={newIndexUnique}
-                onChange={(e) => setNewIndexUnique(e.target.checked)}
-                className="w-3 h-3"
-              />
-              <label htmlFor="unique-index" className="text-[10px] md:text-xs text-text-secondary">
-                Unique Index
-              </label>
-            </div>
+            <Checkbox
+              id="unique-index"
+              checked={newIndexUnique}
+              onChange={setNewIndexUnique}
+              label="Unique Index"
+              className="text-[10px] md:text-xs"
+            />
 
             <div className="flex gap-2 pt-1">
               <button

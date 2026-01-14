@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { SnippetVariable } from '../../types/snippet';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
 
 interface SnippetParameterModalProps {
     isOpen: boolean;
@@ -60,51 +62,47 @@ export const SnippetParameterModal: React.FC<SnippetParameterModalProps> = ({
         switch (variable.type) {
             case 'number':
                 return (
-                    <input
+                    <Input
                         type="number"
                         value={value}
                         onChange={(e) => handleChange(variable.name, e.target.value ? Number(e.target.value) : '')}
-                        className={`w-full px-3 py-2 bg-bg-0 border rounded text-text-primary ${
-                            error ? 'border-error' : 'border-border'
-                        } focus:outline-none focus:border-primary-default`}
                         placeholder={variable.description || `Enter ${variable.name}`}
+                        error={error}
+                        fullWidth
                     />
                 );
             case 'boolean':
                 return (
-                    <select
+                    <Select
                         value={String(value)}
-                        onChange={(e) => handleChange(variable.name, e.target.value === 'true')}
-                        className={`w-full px-3 py-2 bg-bg-0 border rounded text-text-primary ${
-                            error ? 'border-error' : 'border-border'
-                        } focus:outline-none focus:border-primary-default`}
-                    >
-                        <option value="">Select...</option>
-                        <option value="true">True</option>
-                        <option value="false">False</option>
-                    </select>
+                        onChange={(val) => handleChange(variable.name, val === 'true')}
+                        options={[
+                            { value: '', label: 'Select...' },
+                            { value: 'true', label: 'True' },
+                            { value: 'false', label: 'False' }
+                        ]}
+                        className={error ? 'border-error' : ''}
+                    />
                 );
             case 'date':
                 return (
-                    <input
+                    <Input
                         type="date"
                         value={value}
                         onChange={(e) => handleChange(variable.name, e.target.value)}
-                        className={`w-full px-3 py-2 bg-bg-0 border rounded text-text-primary ${
-                            error ? 'border-error' : 'border-border'
-                        } focus:outline-none focus:border-primary-default`}
+                        error={error}
+                        fullWidth
                     />
                 );
             default: // string
                 return (
-                    <input
+                    <Input
                         type="text"
                         value={value}
                         onChange={(e) => handleChange(variable.name, e.target.value)}
-                        className={`w-full px-3 py-2 bg-bg-0 border rounded text-text-primary ${
-                            error ? 'border-error' : 'border-border'
-                        } focus:outline-none focus:border-primary-default`}
                         placeholder={variable.description || `Enter ${variable.name}`}
+                        error={error}
+                        fullWidth
                     />
                 );
         }

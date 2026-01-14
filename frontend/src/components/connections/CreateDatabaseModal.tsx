@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
-import * as Dialog from '@radix-ui/react-dialog';
 import { connectionApi } from '../../services/connectionApi';
 import { CreateDatabaseOptions, CreateDatabaseRequest } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import Modal from '../ui/Modal';
 import Checkbox from '../ui/Checkbox';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -47,8 +46,8 @@ export default function CreateDatabaseModal({
     reset();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
 
@@ -71,109 +70,122 @@ export default function CreateDatabaseModal({
     }
   };
 
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm data-[state=open]:animate-overlayShow" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] z-[101] max-h-[85vh] w-[90vw] max-w-[560px] translate-x-[-50%] translate-y-[-50%] rounded-[10px] bg-bg-1 p-5 shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none data-[state=open]:animate-contentShow border border-border">
-          <div className="flex justify-between items-center mb-4">
-            <Dialog.Title className="text-lg font-semibold text-text-primary">
-              Create Database
-            </Dialog.Title>
-            <Dialog.Close asChild>
-              <button className="text-text-secondary hover:text-text-primary" aria-label="Close" onClick={handleClose}>
-                <X size={18} />
-              </button>
-            </Dialog.Close>
-          </div>
+  const footer = (
+    <div className="flex items-center justify-end gap-2 pt-2">
+      <Button
+        variant="secondary"
+        onClick={handleClose}
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        disabled={!canSubmit}
+        isLoading={submitting}
+        onClick={() => handleSubmit()}
+      >
+        Create
+      </Button>
+    </div>
+  );
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+  return (
+    <Modal
+      isOpen={open}
+      onClose={handleClose}
+      title="Create Database"
+      footer={footer}
+      size="md"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-32">
+        <Input
+          label="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="my_new_db"
+          required
+          fullWidth
+        />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="self-start text-xs h-6"
+        >
+          {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
+        </Button>
+
+        {showAdvanced && (
+          <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
             <Input
-              label="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="my_new_db"
-              required
+              label="Owner"
+              value={options.owner || ''}
+              onChange={(e) => setOptions((o) => ({ ...o, owner: e.target.value }))}
+              placeholder="postgres"
               fullWidth
             />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="self-start text-xs h-6"
-            >
-              {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
-            </Button>
+            <Input
+              label="Template"
+              value={options.template || ''}
+              onChange={(e) => setOptions((o) => ({ ...o, template: e.target.value }))}
+              placeholder="template0"
+              fullWidth
+            />
 
-            {showAdvanced && (
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Owner"
-                  value={options.owner || ''}
-                  onChange={(e) => setOptions((o) => ({ ...o, owner: e.target.value }))}
-                  placeholder="postgres"
-                  fullWidth
-                />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-secondary ml-1">Encoding</label>
+              <Select
+                value={options.encoding || ''}
+                onChange={(value) => setOptions((o) => ({ ...o, encoding: value || undefined }))}
+                options={[
+                  { value: '', label: 'Default' },
+                  ...ENCODINGS.map(enc => ({ value: enc, label: enc }))
+                ]}
+              />
+            </div>
 
-                <Input
-                  label="Template"
-                  value={options.template || ''}
-                  onChange={(e) => setOptions((o) => ({ ...o, template: e.target.value }))}
-                  placeholder="template0"
-                  fullWidth
-                />
+            <Input
+              label="Tablespace"
+              value={options.tablespace || ''}
+              onChange={(e) => setOptions((o) => ({ ...o, tablespace: e.target.value }))}
+              placeholder="pg_default"
+              fullWidth
+            />
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-text-secondary">Encoding</label>
-                  <Select
-                    value={options.encoding || ''}
-                    onChange={(value) => setOptions((o) => ({ ...o, encoding: value || undefined }))}
-                    options={[
-                      { value: '', label: 'Default' },
-                      ...ENCODINGS.map(enc => ({ value: enc, label: enc }))
-                    ]}
-                  />
-                </div>
+            <Input
+              label="LC_COLLATE"
+              value={options.lcCollate || ''}
+              onChange={(e) => setOptions((o) => ({ ...o, lcCollate: e.target.value }))}
+              placeholder="en_US.UTF-8"
+              fullWidth
+            />
 
-                <Input
-                  label="Tablespace"
-                  value={options.tablespace || ''}
-                  onChange={(e) => setOptions((o) => ({ ...o, tablespace: e.target.value }))}
-                  placeholder="pg_default"
-                  fullWidth
-                />
+            <Input
+              label="LC_CTYPE"
+              value={options.lcCtype || ''}
+              onChange={(e) => setOptions((o) => ({ ...o, lcCtype: e.target.value }))}
+              placeholder="en_US.UTF-8"
+              fullWidth
+            />
 
-                <Input
-                  label="LC_COLLATE"
-                  value={options.lcCollate || ''}
-                  onChange={(e) => setOptions((o) => ({ ...o, lcCollate: e.target.value }))}
-                  placeholder="en_US.UTF-8"
-                  fullWidth
-                />
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <Input
+                label="Connection limit"
+                type="number"
+                value={options.connectionLimit ?? -1}
+                onChange={(e) => setOptions((o) => ({ ...o, connectionLimit: Number(e.target.value) }))}
+                helperText="Use -1 for no limit"
+                fullWidth
+              />
 
-                <Input
-                  label="LC_CTYPE"
-                  value={options.lcCtype || ''}
-                  onChange={(e) => setOptions((o) => ({ ...o, lcCtype: e.target.value }))}
-                  placeholder="en_US.UTF-8"
-                  fullWidth
-                />
-
-                <Input
-                  label="Connection limit"
-                  type="number"
-                  value={options.connectionLimit ?? -1}
-                  onChange={(e) => setOptions((o) => ({ ...o, connectionLimit: Number(e.target.value) }))}
-                  helperText="Use -1 for no limit"
-                  fullWidth
-                />
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-text-secondary">Flags</label>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-text-secondary ml-1">Flags</label>
+                <div className="flex flex-col gap-2 mt-1">
                   <Checkbox
                     checked={options.allowConnections ?? true}
                     onChange={(checked) => setOptions((o) => ({ ...o, allowConnections: checked }))}
@@ -186,26 +198,10 @@ export default function CreateDatabaseModal({
                   />
                 </div>
               </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-              <Button
-                variant="secondary"
-                onClick={handleClose}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={!canSubmit}
-                isLoading={submitting}
-              >
-                Create
-              </Button>
             </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </div>
+        )}
+      </form>
+    </Modal>
   );
 }

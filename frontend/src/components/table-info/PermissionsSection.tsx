@@ -4,6 +4,7 @@ import { RoleInfo, TableGrant } from '../../types';
 import { useRoles, useSetPermissions } from '../../hooks/useDatabase';
 import Modal from '../ui/Modal';
 import Select from '../ui/Select';
+import Checkbox from '../ui/Checkbox';
 import { useToast } from '../../context/ToastContext';
 
 interface PermissionsSectionProps {
@@ -277,13 +278,12 @@ export default function PermissionsSection({
                       checked ? 'border-accent bg-accent/10 text-text-primary' : 'border-border bg-bg-2 text-text-secondary'
                     }`}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={checked}
-                      onChange={(e) => {
+                      onChange={(checked) => {
                         setSelectedPrivileges((prev) => {
                           const next = new Set(prev);
-                          if (e.target.checked) next.add(p);
+                          if (checked) next.add(p);
                           else next.delete(p);
                           return next;
                         });

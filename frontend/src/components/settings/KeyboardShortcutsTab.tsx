@@ -3,6 +3,8 @@ import { Search, Keyboard, Edit2, Check, X } from 'lucide-react';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { KeyboardShortcut } from '../../types/settings';
 import { useDialog } from '../../context/DialogContext';
+import Input from '../ui/Input';
+import Checkbox from '../ui/Checkbox';
 
 export default function KeyboardShortcutsTab() {
     const { shortcuts, updateShortcut, resetShortcuts } = useKeyboardShortcuts();
@@ -95,12 +97,13 @@ export default function KeyboardShortcutsTab() {
                         size={16}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
                     />
-                    <input
+                    <Input
                         type="text"
                         placeholder="Search shortcuts..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-bg-2 border border-border rounded text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                        leftIcon={<Search size={16} />}
+                        className="w-full"
                     />
                 </div>
 

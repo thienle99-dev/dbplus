@@ -74,13 +74,13 @@ export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode
                         <label className="block text-xs font-medium text-text-secondary mb-1">
                             Column Name <span className="text-accent">*</span>
                         </label>
-                        <input
+                        <Input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-bg-0 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
                             placeholder="e.g., user_age"
                             required
+                            fullWidth
                         />
                     </div>
 
@@ -107,29 +107,23 @@ export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="isNullable"
-                            checked={isNullable}
-                            onChange={(e) => setIsNullable(e.target.checked)}
-                            className="w-4 h-4"
-                        />
-                        <label htmlFor="isNullable" className="text-sm text-text-primary">
-                            Is Nullable
-                        </label>
-                    </div>
+                    <Checkbox
+                        id="isNullable"
+                        checked={isNullable}
+                        onChange={setIsNullable}
+                        label="Is Nullable"
+                    />
 
                     <div>
                         <label className="block text-xs font-medium text-text-secondary mb-1">
                             Default Value
                         </label>
-                        <input
+                        <Input
                             type="text"
                             value={defaultValue}
                             onChange={(e) => setDefaultValue(e.target.value)}
-                            className="w-full bg-bg-0 border border-border rounded px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
                             placeholder="e.g., 0, now(), 'active'"
+                            fullWidth
                         />
                     </div>
 

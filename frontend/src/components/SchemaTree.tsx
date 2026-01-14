@@ -696,36 +696,22 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
 
           <div className="ml-2 flex items-center">
             {connectionType !== 'sqlite' ? (
-              <>
-                {connectionType !== 'couchbase' && (
-                  <>
-                    <button
-                      onClick={handleOpenCreateDatabase}
-                      className="p-1.5 rounded-lg hover:bg-bg-hover transition-all text-text-secondary hover:text-text-primary hover:shadow-sm border border-transparent hover:border-border-subtle mr-1"
-                      title="Create Database"
-                    >
-                      <Database size={14} strokeWidth={2} />
-                    </button>
-                    <button
-                      onClick={() => setCreateSchemaOpen(true)}
-                      className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent border border-transparent hover:border-accent/50 hover:shadow-glow-sm"
-                      title="Create Schema"
-                    >
-                      <Plus size={14} strokeWidth={3} />
-                    </button>
-                  </>
-                )}
-                {/* Couchbase buttons preserved but styled */}
-                {connectionType === 'couchbase' && (
-                  <button
-                    onClick={() => navigate(`/workspace/${connectionId}/scopes`)}
-                    className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent"
-                    title="Manage Scopes"
-                  >
-                    <Plus size={14} strokeWidth={3} />
-                  </button>
-                )}
-              </>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={connectionType === 'couchbase' ? () => setCreateCouchbaseBucketOpen(true) : handleOpenCreateDatabase}
+                  className="p-1.5 rounded-lg hover:bg-bg-hover transition-all text-text-secondary hover:text-text-primary hover:shadow-sm border border-transparent hover:border-border-subtle"
+                  title={connectionType === 'couchbase' ? "Create Bucket" : "Create Database"}
+                >
+                  <Database size={14} strokeWidth={2} />
+                </button>
+                <button
+                  onClick={() => setCreateSchemaOpen(true)}
+                  className="p-1.5 rounded-lg hover:bg-accent hover:text-white transition-all text-accent border border-transparent hover:border-accent/50 hover:shadow-glow-sm"
+                  title={connectionType === 'couchbase' ? "Create Scope" : "Create Schema"}
+                >
+                  <Plus size={14} strokeWidth={3} />
+                </button>
+              </div>
             ) : (
               <div className="flex items-center gap-1">
                 <button

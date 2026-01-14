@@ -11,6 +11,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatCellValue } from '../utils/cellFormatters';
 import { tryGetDateFromTimestamp } from '../utils/dateUtils';
 import { useDialog } from '../context/DialogContext';
+import Input from './ui/Input';
+import Select from './ui/Select';
+import Textarea from './ui/Textarea';
 
 type EditState = Record<number, Record<string, unknown>>;
 
@@ -464,36 +467,40 @@ export default function RightSidebar() {
                                 NULL
                               </div>
                             ) : dataType === 'boolean' || dataType === 'bool' ? (
-                              <select
+                              <Select
                                 value={String(currentValue)}
-                                onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value === 'true')}
-                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
-                              >
-                                <option value="true">TRUE</option>
-                                <option value="false">FALSE</option>
-                              </select>
+                                onChange={(val) => handleValueChange(selectedRow.rowIndex, colName, val === 'true')}
+                                options={[
+                                  { value: 'true', label: 'TRUE' },
+                                  { value: 'false', label: 'FALSE' }
+                                ]}
+                                size="sm"
+                                className="text-xs"
+                              />
                             ) : ['integer', 'numeric', 'real', 'double', 'float', 'decimal', 'int', 'bigint', 'smallint'].includes(dataType) ? (
-                              <input
+                              <Input
                                 type="number"
                                 value={String(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none font-mono"
                                 placeholder="Enter number..."
+                                className="text-xs font-mono py-1.5"
+                                fullWidth
                               />
                             ) : (dataType.includes('text') || dataType.includes('char') || dataType.includes('json')) ? (
-                              <textarea
+                              <Textarea
                                 rows={String(currentValue).length > 50 || String(currentValue).includes('\n') ? 5 : 1}
                                 value={formatCellValue(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border-light rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none resize-vertical font-mono leading-relaxed"
                                 placeholder="Enter text..."
+                                className="text-xs font-mono leading-relaxed resize-vertical py-1.5"
                               />
                             ) : (
-                              <input
+                              <Input
                                 type="text"
                                 value={formatCellValue(currentValue)}
                                 onChange={(e) => handleValueChange(selectedRow.rowIndex, colName, e.target.value)}
-                                className="w-full bg-bg-0 border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                                className="text-xs py-1.5"
+                                fullWidth
                               />
                             )
                           ) : (

@@ -14,6 +14,7 @@ import { TableColumn, QueryResult, EditState, SchemaForeignKey } from '../../typ
 import Button from '../ui/Button';
 import SavedFilters from './SavedFilters';
 import JsonEditorModal from '../ui/JsonEditorModal';
+import Checkbox from '../ui/Checkbox';
 import { formatCellValue, isComplexType } from '../../utils/cellFormatters';
 import { useConnectionStore } from '../../store/connectionStore';
 
@@ -515,14 +516,11 @@ export default function TableDataTab({
                 </div>
                 <div className="overflow-y-auto p-1 custom-scrollbar">
                   {_columnsInfo.map(col => (
-                    <label key={col.name} className="flex items-center gap-2 p-1.5 hover:bg-bg-2 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="rounded border-border-subtle bg-bg-0 text-accent focus:ring-accent"
+                    <div key={col.name} className="flex items-center gap-2 p-1.5 hover:bg-bg-2 rounded cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
                         checked={fields.length === 0 || fields.includes(col.name)}
-                        onChange={(e) => {
+                        onChange={(checked) => {
                           if (!setFields) return;
-                          e.stopPropagation(); // Stop propagation to avoid closing
                           if (fields.length === 0) {
                             // If currently "all" (empty), switch to all except one if unchecking?
                             // Or switch to just this one if checking?
@@ -531,7 +529,7 @@ export default function TableDataTab({
                             // Actually, if it's empty, we should interpret "checked" as "unchecking this one means selecting all others".
                             // Simpler: If empty, treat as if all are checked.
                             const allMap = _columnsInfo.map(c => c.name);
-                            if (e.target.checked) {
+                            if (checked) {
                               // Already "checked" implicitly. Do nothing?
                               // If they click an unchecked one?
                             } else {
@@ -539,25 +537,16 @@ export default function TableDataTab({
                               setFields(allMap.filter(n => n !== col.name));
                             }
                           } else {
-                            if (e.target.checked) {
+                            if (checked) {
                               setFields([...fields, col.name]);
                             } else {
                               setFields(fields.filter(f => f !== col.name));
                             }
                           }
                         }}
-                      // If fields is empty, ALL are checked.
-                      // We need to handle the case where user wants to select just a few.
-                      // Usually, "Show All" is default.
-                      // If I click one, does it mean "Show Only This" or "Toggle This"?
-                      // Standard behavior:
-                      // Default empty = All.
-                      // If user interacts, we probably want to toggle.
-                      // But if empty, all boxes should appear checked.
-                      // If I uncheck one, it becomes specific list.
                       />
-                      <span className="text-xs text-text-primary truncate">{col.name}</span>
-                    </label>
+                      <span className="text-xs text-text-secondary">{col.name}</span>
+                    </div>
                   ))}
                 </div>
               </div>
