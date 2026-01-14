@@ -16,11 +16,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
     };
 
     return (
-        <div className="w-[280px] h-[calc(100vh-32px)] m-4 flex flex-col items-start py-8 px-6 rounded-[32px] glass z-30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/5">
+        <div className="w-[280px] h-[calc(100vh-32px)] m-4 flex flex-col items-start py-8 px-6 rounded-lg glass z-30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/5">
             {/* Logo Section */}
             <div className="flex items-center gap-4 mb-10 px-2 group cursor-pointer" onClick={() => handleNav('dashboard')}>
                 <div className="relative">
-                    <div className="w-10 h-10 bg-gradient-to-br from-accent to-primary-active rounded-xl flex items-center justify-center shadow-lg shadow-accent/20 group-hover:rotate-[360deg] transition-all duration-1000 ease-in-out">
+                    <div className="w-10 h-10 bg-gradient-to-br from-accent to-primary-active rounded-md flex items-center justify-center shadow-lg shadow-accent/20 group-hover:rotate-[360deg] transition-all duration-1000 ease-in-out">
                         <Layers size={22} className="text-white" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-bg-1" />
@@ -70,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSettings, activeTab = 'dashb
 
             {/* Bottom Section - System Health */}
             <div className="w-full mt-auto pt-6 border-t border-border-subtle">
-                <div className="p-4 rounded-2xl bg-bg-sunken border border-border-subtle space-y-3">
+                <div className="p-4 rounded-md bg-bg-sunken border border-border-subtle space-y-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Shield size={14} className="text-success" />
@@ -101,7 +101,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative border ${isActive
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-300 group relative border ${isActive
                 ? 'bg-accent/20 border-accent/30 text-text-primary shadow-sm'
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover border-transparent'
                 }`}

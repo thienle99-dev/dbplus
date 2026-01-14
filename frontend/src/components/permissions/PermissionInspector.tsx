@@ -321,7 +321,7 @@ export default function PermissionInspector() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-text-tertiary p-8">
-                        <div className="w-16 h-16 bg-bg-2 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-border-light">
+                        <div className="w-16 h-16 bg-bg-2 rounded-md flex items-center justify-center mb-6 shadow-sm border border-border-light">
                             <Shield size={32} className="text-accent opacity-80" />
                         </div>
                         <h3 className="text-xl font-semibold text-text-primary mb-2">Permission Inspector</h3>

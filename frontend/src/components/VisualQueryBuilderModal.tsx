@@ -69,7 +69,7 @@ export default function VisualQueryBuilderModal({
                 />
 
                 {/* Modal */}
-                <div className="relative w-full max-w-7xl h-[92vh] mx-4 bg-bg-0 rounded-2xl shadow-2xl border border-border-light flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="relative w-full max-w-7xl h-[92vh] mx-4 bg-bg-0 rounded-md shadow-2xl border border-border-light flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                     {/* Header with gradient */}
                     <div className="relative flex items-center justify-between px-6 py-5 border-b border-border-light bg-gradient-to-r from-bg-2 via-bg-1 to-bg-2">
                         <div className="flex items-center gap-3">

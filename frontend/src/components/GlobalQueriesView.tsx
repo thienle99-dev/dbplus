@@ -94,7 +94,7 @@ export const GlobalQueriesView: React.FC = () => {
                         <p className="text-xs uppercase tracking-wider font-bold">Loading Queries...</p>
                     </div>
                 ) : filteredGroups.length === 0 ? (
-                    <div className="text-center py-20 border border-border-dashed rounded-2xl bg-bg-1">
+                    <div className="text-center py-20 border border-border-dashed rounded-md bg-bg-1">
                         <p className="text-text-secondary font-medium">No saved queries found.</p>
                         {searchTerm && <p className="text-xs text-text-disabled mt-1">Try a different search term.</p>}
                     </div>
@@ -103,7 +103,7 @@ export const GlobalQueriesView: React.FC = () => {
                         {filteredGroups.map(group => {
                             const isExpanded = expandedConnIds.has(group.connectionId);
                             return (
-                                <div key={group.connectionId} className="bg-bg-1 border border-border-light rounded-2xl overflow-hidden shadow-sm">
+                                <div key={group.connectionId} className="bg-bg-1 border border-border-light rounded-md overflow-hidden shadow-sm">
                                     <div
                                         className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-bg-2 transition-colors border-b border-border-light/50"
                                         onClick={() => toggleGroup(group.connectionId)}

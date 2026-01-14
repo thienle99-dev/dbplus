@@ -166,7 +166,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-md data-[state=open]:animate-overlayShow z-50" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-[32px] bg-white/5 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-white/5 flex flex-col overflow-hidden glass z-50">
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-[650px] translate-x-[-50%] translate-y-[-50%] rounded-lg bg-white/5 p-0 shadow-2xl focus:outline-none data-[state=open]:animate-contentShow border border-white/5 flex flex-col overflow-hidden glass z-50">
           <div className="flex justify-between items-center px-8 py-6 border-b border-white/5 bg-white/5">
             <Dialog.Title className="text-2xl font-black text-white tracking-tight flex items-center gap-3 uppercase italic">
               <div className="w-10 h-10 bg-[var(--color-primary-transparent)] rounded-xl flex items-center justify-center ring-1 ring-[var(--color-primary-subtle)]">
@@ -183,7 +183,7 @@ export default function ConnectionForm({ open, onOpenChange, onSuccess }: Connec
 
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="px-8 pt-6 bg-transparent">
-              <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 glass">
+              <div className="flex gap-2 p-1 bg-white/5 rounded-md border border-white/5 glass">
                 <button
                   type="button"
                   onClick={() => setActiveTab('general')}

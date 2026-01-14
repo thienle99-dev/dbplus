@@ -61,7 +61,7 @@ export const HomeDashboard: React.FC = () => {
         const colorVar = getColorVar(colorKey);
 
         return (
-            <div className="premium-card rounded-2xl p-6 group cursor-default">
+            <div className="premium-card rounded-md p-6 group cursor-default">
                 <div className="flex justify-between items-start mb-4">
                     <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center ring-1 ring-inset transition-all duration-500 group-hover:scale-110"
@@ -94,7 +94,7 @@ export const HomeDashboard: React.FC = () => {
     return (
         <div className="flex flex-col h-full overflow-y-auto space-y-10 pb-10">
             {/* Hero Section */}
-            <section className="relative py-10 rounded-3xl overflow-hidden px-8 border border-border-default bg-gradient-to-br from-bg-panel to-transparent">
+            <section className="relative py-10 rounded-lg overflow-hidden px-8 border border-border-default bg-gradient-to-br from-bg-panel to-transparent">
                 <div className="relative z-10 max-w-2xl">
                     <div className="flex items-center gap-2 mb-4">
                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
@@ -140,7 +140,7 @@ export const HomeDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Performance Chart */}
-                <div className="xl:col-span-2 premium-card rounded-3xl p-8">
+                <div className="xl:col-span-2 premium-card rounded-lg p-8">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-xl font-black text-text-primary flex items-center gap-3">
@@ -220,7 +220,7 @@ export const HomeDashboard: React.FC = () => {
                                 <div
                                     key={conn.id}
                                     onClick={() => navigate(`/workspace/${conn.id}`)}
-                                    className="premium-card p-4 rounded-2xl flex items-center gap-4 cursor-pointer group hover:bg-bg-2"
+                                    className="premium-card p-4 rounded-md flex items-center gap-4 cursor-pointer group hover:bg-bg-2"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-text-secondary group-hover:bg-accent group-hover:text-white transition-all duration-300">
                                         <Database size={18} />
@@ -237,7 +237,7 @@ export const HomeDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="premium-card p-6 rounded-3xl bg-gradient-to-br from-bg-1 to-bg-0 border-accent/20">
+                    <div className="premium-card p-6 rounded-lg bg-gradient-to-br from-bg-1 to-bg-0 border-accent/20">
                         <h4 className="text-sm font-black text-text-primary mb-4 flex items-center gap-2">
                             <Cpu size={16} className="text-accent" />
                             Cluster Health

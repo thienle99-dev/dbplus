@@ -91,6 +91,20 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const getDatabaseDefaults = (type: string) => {
+        switch (type) {
+            case 'postgres': return { port: '5432', user: 'postgres', database: 'postgres' };
+            case 'mysql': return { port: '3306', user: 'root', database: 'mysql' };
+            case 'mariadb': return { port: '3306', user: 'root', database: 'mysql' };
+            case 'clickhouse': return { port: '8123', user: 'default', database: 'default' };
+            case 'redis': return { port: '6379', user: '', database: '0' };
+            case 'mongo': return { port: '27017', user: '', database: 'test' };
+            case 'couchbase': return { port: '8091', user: 'Administrator', database: '' }; // 8091 is for HTTP/REST, 11210 for KV/Memcached
+            case 'sqlite': return { port: '', user: '', database: '' };
+            default: return { port: '', user: '', database: '' };
+        }
+    };
+
     useEffect(() => {
         if (isOpen) {
             if (initialValues) {
@@ -101,7 +115,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                     password: '',
                     status_color: initialValues.status_color || 'bg-blue-500',
                     tags: initialValues.tags || '',
-                    port: String(initialValues.port || '5432'),
+                    port: String(initialValues.port || ''),
                     user: initialValues.username || '',
                     environment: initialValues.environment || 'development',
                     safe_mode_level: String(initialValues.safe_mode_level ?? 1),
@@ -110,11 +124,14 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             } else {
                 const nextType = initialType || 'postgres';
                 const dbColor = DATABASE_TYPES.find(t => t.id === nextType)?.color;
+                const defaults = getDatabaseDefaults(nextType);
+
                 setFormData({
                     ...DEFAULT_FORM_DATA,
                     type: nextType,
                     status_color: dbColor || 'bg-blue-500',
                     host: nextType === 'sqlite' ? '' : 'localhost',
+                    ...defaults,
                 });
             }
             setRecentSqliteDbs(loadRecentSqliteDbs());
@@ -250,7 +267,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
             <form className="space-y-8 py-2">
                 {/* Result Message Overlay */}
                 {(error || testMessage) && (
-                    <div className={`animate-fadeIn flex items-center gap-4 px-5 py-4 rounded-2xl border backdrop-blur-md transition-all ${testStatus === 'success' ? 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_rgba(var(--color-success),0.1)]' : 'bg-error/10 border-error/30 text-error shadow-[0_0_15px_rgba(var(--color-error),0.1)]'
+                    <div className={`animate-fadeIn flex items-center gap-4 px-5 py-4 rounded-md border backdrop-blur-md transition-all ${testStatus === 'success' ? 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_rgba(var(--color-success),0.1)]' : 'bg-error/10 border-error/30 text-error shadow-[0_0_15px_rgba(var(--color-error),0.1)]'
                         }`}>
                         {testStatus === 'success' ? <Check size={20} strokeWidth={3} /> : <AlertCircle size={20} strokeWidth={3} />}
                         <div className="flex flex-col gap-0.5">
@@ -310,7 +327,7 @@ export const ConnectionFormModal: React.FC<ConnectionFormModalProps> = ({ isOpen
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Network & Infrastructure</h3>
                     </div>
 
-                    <div className="p-5 rounded-3xl bg-bg-sunken border border-border-subtle space-y-6">
+                    <div className="p-5 rounded-lg bg-bg-sunken border border-border-subtle space-y-6">
                         {formData.type !== 'sqlite' ? (
                             <div className="grid grid-cols-12 gap-4">
                                 <div className="col-span-9 space-y-2">

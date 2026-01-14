@@ -928,99 +928,92 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             {result && (
                 <div className="flex flex-col h-full">
                     <div className="relative z-30 p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <span className="font-bold text-[12px] text-text-primary px-2 py-1 bg-bg-2 rounded-lg border border-border-light shadow-sm">
-                                {result.affected_rows > 0
-                                    ? `${result.affected_rows} rows affected`
-                                    : `${result.rows.length} rows returned`}
-                            </span>
-                            {hasEditableColumns && (
-                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
-                                    Double-click cells to edit
+                        <div className="flex items-center gap-3">
+                            {/* Consolidated Status Pill */}
+                            <div className="flex items-center gap-3 pl-3 pr-4 py-1.5 bg-bg-sunken/50 rounded-full border border-border-default/50 shadow-sm text-[11px] font-medium text-text-secondary select-none">
+                                <span className="font-bold text-text-primary">
+                                    {result.affected_rows > 0 ? result.affected_rows : result.rows.length}
                                 </span>
-                            )}
-                            {hasTruncatedRows && (
-                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
-                                    Showing first {MAX_RENDER_ROWS.toLocaleString()} of {result.rows.length.toLocaleString()} rows
-                                </span>
-                            )}
-                            {totalCount !== undefined && limit !== undefined && offset !== undefined && (
-                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
-                                    Total {totalCount.toLocaleString()} • Page {currentPage}/{totalPages}
-                                </span>
-                            )}
-                            {result.execution_time_ms !== undefined && (
-                                <span className="text-text-secondary text-xs bg-bg-2 px-2 py-0.5 rounded border border-border-light">
-                                    Time: <span className="text-accent font-medium">{result.execution_time_ms}ms</span>
-                                </span>
-                            )}
+                                <span className="text-text-tertiary">records</span>
+                                <span className="w-px h-3 bg-border-default" />
 
-                            {/* Results Search Bar */}
+                                {totalCount !== undefined && (
+                                    <>
+                                        <span>Page {currentPage}/{totalPages}</span>
+                                        <span className="w-px h-3 bg-border-default" />
+                                    </>
+                                )}
+
+                                {result.execution_time_ms !== undefined && (
+                                    <span className="font-mono text-text-tertiary">{result.execution_time_ms}ms</span>
+                                )}
+
+                                {/* Inline Edit Toggle - Moved inside status bar for efficiency */}
+                                {hasEditableColumns && (
+                                    <>
+                                        <span className="w-px h-3 bg-border-default" />
+                                        <button
+                                            className={`flex items-center gap-1.5 hover:text-accent transition-colors ${inlineEditingEnabled ? 'text-accent' : 'text-text-tertiary'}`}
+                                            onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
+                                        >
+                                            <span className="uppercase tracking-wider text-[9px] font-bold">Inline Edit</span>
+                                            <div className={`w-6 h-3 rounded-full relative transition-colors ${inlineEditingEnabled ? 'bg-accent' : 'bg-bg-3'}`}>
+                                                <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white shadow-sm transition-transform ${inlineEditingEnabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                                            </div>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Results Filter Bar */}
                             {result.rows.length > 0 && viewMode === 'table' && (
-                                <div className="relative ml-4">
-                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary" size={12} />
+                                <div className="flex-1 max-w-lg mx-4 relative group">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent transition-colors" size={14} />
                                     <input
                                         type="text"
-                                        placeholder="Filter results..."
+                                        placeholder="Filtered by values..."
                                         value={resultsSearchTerm}
                                         onChange={(e) => setResultsSearchTerm(e.target.value)}
-                                        className="pl-6 pr-2 py-0.5 bg-bg-2 border border-border-light rounded-md text-[11px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/50 w-32 transition-all hover:w-48 focus:w-64"
+                                        className="w-full pl-9 pr-3 py-1.5 bg-bg-sunken/50 hover:bg-bg-sunken focus:bg-bg-0 border border-border-default/50 focus:border-accent rounded-full text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/10 transition-all shadow-inner"
                                     />
                                 </div>
                             )}
 
-                            <div className="flex items-center gap-1 bg-bg-2 p-0.5 rounded-lg border border-border-light ml-4">
-                                <button
-                                    onClick={() => setViewMode('table')}
-                                    className={`px-2 py-0.5 text-xs rounded-md transition-all ${viewMode === 'table' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
-                                >
-                                    Table
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('json')}
-                                    className={`px-2 py-0.5 text-xs rounded-md transition-all ${viewMode === 'json' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
-                                >
-                                    JSON
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('chart')}
-                                    className={`px-2 py-0.5 text-xs rounded-md transition-all flex items-center gap-1.5 ${viewMode === 'chart' ? 'bg-bg-1 text-text-primary shadow-sm font-medium' : 'text-text-secondary hover:text-text-primary'}`}
-                                >
-                                    <BarChart3 size={12} />
-                                    Chart
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mr-1 hidden lg:inline">View:</span>
+                                <div className="flex items-center bg-bg-sunken p-1 rounded-lg border border-border-default/50">
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${viewMode === 'table' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-0/50'}`}
+                                    >
+                                        DATA
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('json')}
+                                        className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${viewMode === 'json' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-0/50'}`}
+                                    >
+                                        JSON
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('chart')}
+                                        className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${viewMode === 'chart' ? 'bg-bg-0 text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-0/50'}`}
+                                    >
+                                        <BarChart3 size={12} />
+                                        CHART
+                                    </button>
+                                </div>
                             </div>
 
                             {viewMode === 'chart' && (
                                 <button
                                     onClick={() => setIsChartModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg border border-transparent hover:border-border-light ml-2 transition-all"
+                                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-sunken rounded-md transition-all"
                                     title="Maximize Chart"
                                 >
                                     <Maximize2 size={14} />
                                     Maximize
                                 </button>
                             )}
-
-                            {/* Inline Edit Toggle */}
-                            <div
-                                className="flex items-center gap-2.5 bg-bg-2/50 hover:bg-bg-3/80 px-3 py-1 rounded-full border border-border-light/50 transition-all cursor-pointer group/edit-toggle select-none ml-2"
-                                onClick={() => setInlineEditingEnabled(!inlineEditingEnabled)}
-                                title={inlineEditingEnabled ? "Disable Inline Editing" : "Enable Inline Editing"}
-                            >
-                                <span className={`font-bold text-[9px] uppercase tracking-widest transition-colors ${inlineEditingEnabled ? 'text-accent' : 'text-text-tertiary opacity-60'}`}>
-                                    Inline Edit
-                                </span>
-                                <div
-                                    className={`w-8 h-4 rounded-full relative transition-all duration-300 ${inlineEditingEnabled ? 'bg-accent/20 ring-1 ring-accent/30' : 'bg-bg-active ring-1 ring-border-light/30'
-                                        }`}
-                                >
-                                    <div
-                                        className={`absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${inlineEditingEnabled ? 'right-0.5 bg-accent' : 'left-0.5 bg-text-tertiary'
-                                            }`}
-                                    />
-                                </div>
-                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -1375,7 +1368,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                     {headerGroup.headers.map((header) => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase tracking-tight border-r border-border-subtle last:border-r-0 hover:bg-bg-2 transition-colors cursor-pointer select-none group relative"
+                                                            className="px-3 py-2.5 text-[11px] font-bold text-text-secondary uppercase tracking-wider border-b border-border-default bg-bg-sunken/50 hover:bg-bg-sunken transition-colors cursor-pointer select-none group relative text-left"
                                                             style={{
                                                                 width: header.getSize(),
                                                                 minWidth: header.column.columnDef.minSize,
@@ -1437,7 +1430,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                                                     {row.getVisibleCells().map((cell) => (
                                                                         <td
                                                                             key={cell.id}
-                                                                            className="px-3 py-1.5 border-r border-border-subtle last:border-r-0 text-xs text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
+                                                                            className="px-3 py-2 border-b border-border-default/40 first:border-l-0 text-sm text-text-primary overflow-hidden text-ellipsis whitespace-nowrap"
                                                                             style={{
                                                                                 width: cell.column.getSize(),
                                                                                 maxWidth: cell.column.getSize(),

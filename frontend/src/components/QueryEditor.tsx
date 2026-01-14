@@ -666,7 +666,7 @@ export default function QueryEditor({
             height: splitMode === 'vertical' ? '100%' : `${editorHeight}px`,
             width: splitMode === 'vertical' ? '50%' : '100%'
           }}
-          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-white/5 flex flex-col shrink-0 overflow-hidden rounded-2xl m-2 glass shadow-lg`}
+          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-white/5 flex flex-col shrink-0 overflow-hidden rounded-md m-2 glass shadow-lg`}
         >
           <div className="flex-1 overflow-hidden flex relative bg-white/[0.02]">
             <CodeMirror

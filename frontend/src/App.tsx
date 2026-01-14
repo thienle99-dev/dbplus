@@ -86,7 +86,7 @@ const WorkspacePage = () => {
   if (connectionError) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-0 p-4">
-        <div className="max-w-md w-full text-center p-8 bg-bg-1 rounded-2xl border border-border-light shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        <div className="max-w-md w-full text-center p-8 bg-bg-1 rounded-md border border-border-light shadow-2xl animate-in fade-in zoom-in-95 duration-300">
           <div className="w-20 h-20 bg-error-50 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-error-50">
             <WifiOff className="w-10 h-10 text-error" />
           </div>

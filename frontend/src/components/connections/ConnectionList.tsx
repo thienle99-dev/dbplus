@@ -64,7 +64,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ connections, onA
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search connections... (⌘F)"
-                        className="w-full bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-default focus:border-accent rounded-2xl py-4 pl-12 pr-4 text-[15px] font-medium text-text-primary placeholder:text-text-muted/70 outline-none transition-all shadow-sm focus:shadow-md focus:ring-1 focus:ring-accent/20"
+                        className="w-full bg-bg-sunken hover:bg-bg-elevated focus:bg-bg-elevated border border-border-default focus:border-accent rounded-md py-4 pl-12 pr-4 text-[15px] font-medium text-text-primary placeholder:text-text-muted/70 outline-none transition-all shadow-sm focus:shadow-md focus:ring-1 focus:ring-accent/20"
                     />
                 </div>
             </div>

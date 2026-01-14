@@ -31,7 +31,7 @@ export const ConnectionsView: React.FC = () => {
 
             <div className="flex-1 overflow-hidden">
                 {error && (
-                    <div className="mx-10 mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[var(--color-error)] text-sm font-black uppercase tracking-wide glass">
+                    <div className="mx-10 mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-md text-[var(--color-error)] text-sm font-black uppercase tracking-wide glass">
                         {error}
                     </div>
                 )}

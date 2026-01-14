@@ -37,7 +37,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
-            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[700px] bg-white/5 border border-white/5 rounded-[32px] shadow-2xl flex flex-col glass overflow-hidden">
+            <div className="w-[95vw] max-w-4xl h-[85vh] max-h-[700px] bg-white/5 border border-white/5 rounded-lg shadow-2xl flex flex-col glass overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 py-6 border-b border-white/5">
                     <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3 uppercase italic">
@@ -62,7 +62,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                                    w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold uppercase tracking-widest transition-all
+                                    w-full flex items-center gap-3 px-4 py-3 rounded-md text-[13px] font-bold uppercase tracking-widest transition-all
                                     ${activeTab === tab.id
                                         ? 'bg-[var(--color-primary-transparent)] text-white shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
                                         : 'text-text-secondary hover:bg-white/5 hover:text-white'
@@ -228,7 +228,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                             key={theme.value}
                                                             onClick={() => settings.setTheme(theme.value)}
                                                             className={`
-                                                                relative group flex flex-col p-2 space-y-2 rounded-2xl border text-left transition-all overflow-hidden
+                                                                relative group flex flex-col p-2 space-y-2 rounded-md border text-left transition-all overflow-hidden
                                                                 ${settings.theme === theme.value
                                                                     ? 'bg-[var(--color-primary-transparent)] border-[var(--color-primary-default)] ring-1 ring-[var(--color-primary-default)]'
                                                                     : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'

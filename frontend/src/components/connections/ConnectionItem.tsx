@@ -144,7 +144,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onOp
     return (
         <>
             <div
-                className="premium-card group relative flex items-center gap-5 p-5 rounded-2xl cursor-pointer hover:bg-bg-hover transition-all duration-300 overflow-hidden border border-border-default hover:border-accent/30"
+                className="premium-card group relative flex items-center gap-5 p-5 rounded-md cursor-pointer hover:bg-bg-hover transition-all duration-300 overflow-hidden border border-border-default hover:border-accent/30"
                 onClick={() => onOpen(connection.id)}
                 onContextMenu={handleContextMenu}
             >
