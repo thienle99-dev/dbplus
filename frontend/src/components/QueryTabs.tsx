@@ -610,12 +610,12 @@ export default function QueryTabs() {
                   <button
                     onClick={(e) => closeTab(tab.id, e)}
                     className={clsx(
-                      "p-0.5 rounded-md hover:bg-bg-sunken text-text-muted hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity",
-                      isActive && "opacity-100", // Always show close on active
+                      "p-0.5 rounded-full hover:bg-bg-elevated hover:text-red-500 text-text-muted opacity-0 group-hover:opacity-100 transition-all ml-1",
+                      isActive && "opacity-100 text-text-secondary",
                       tabs.length === 1 && "hidden"
                     )}
                   >
-                    <X size={12} />
+                    <X size={12} strokeWidth={2.5} />
                   </button>
 
                   {/* Active Indicator Line on top (Chrome style highlight) */}
@@ -627,10 +627,10 @@ export default function QueryTabs() {
             })}
             <button
               onClick={() => addTab()}
-              className="p-1.5 ml-1 text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-full transition-colors"
-              title="New Tab"
+              className="flex items-center justify-center w-6 h-6 ml-1.5 mb-1.5 text-text-muted hover:text-text-primary hover:bg-bg-elevated rounded-full transition-all border border-transparent hover:border-border-default hover:shadow-sm group"
+              title="New Query Tab (Ctrl+T)"
             >
-              <Plus size={16} strokeWidth={2.5} />
+              <Plus size={14} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
             </button>
           </div>
 

@@ -52,7 +52,8 @@ function ObjectFolder({ title, icon, children, count, defaultOpen, className }: 
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Collapsible.Trigger className={`flex items-center gap-2 w-full pl-6 pr-3 py-1.5 hover:bg-bg-hover/50 text-xs text-text-secondary select-none transition-all group ${className}`}>
+      <Collapsible.Trigger className={`flex items-center gap-2 w-full pl-6 pr-3 py-1.5 hover:bg-bg-hover/50 text-xs text-text-secondary select-none transition-all group ${className} relative`}>
+        {/* Guide line for the trigger level - optional or context dependent, but kept clean for now */}
         <div className={`transition-transform duration-200 text-text-muted/50 group-hover:text-text-secondary ${isOpen ? 'rotate-90' : ''}`}>
           <ChevronRight size={10} strokeWidth={3} />
         </div>
@@ -62,7 +63,9 @@ function ObjectFolder({ title, icon, children, count, defaultOpen, className }: 
         <span className="flex-1 text-left font-bold text-[11px] tracking-tight group-hover:text-text-primary transition-colors">{title}</span>
         {count !== undefined && <span className="text-[9px] font-bold text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded-md min-w-[1.5em] text-center">{count}</span>}
       </Collapsible.Trigger>
-      <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
+
+      {/* Content with guide line */}
+      <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown ml-[1.85rem] border-l border-border-default/40">
         {children}
       </Collapsible.Content>
     </Collapsible.Root>
@@ -301,27 +304,29 @@ function SchemaNode({ schemaName, connectionId, searchTerm, defaultOpen, connect
             {/* Tables Folder */}
             {filteredTables.length > 0 && (
               <ObjectFolder title={`${tableTerm}s`} icon={<Table size={12} className="text-accent" />} count={filteredTables.length} defaultOpen={true}>
-                {filteredTables.map(table => {
-                  const tablePinned = isPinned(schemaName, table.name);
-                  return (
-                    <div key={table.name}
-                      onClick={() => handleTableClick(table)}
-                      onContextMenu={(e) => handleContextMenu(e, table.name)}
-                      className="group relative flex items-center gap-2.5 pl-8 pr-3 py-1.5 cursor-pointer transition-all border-l border-transparent hover:border-accent/40 bg-transparent hover:bg-bg-hover"
-                    >
-                      <Table size={13} className="flex-shrink-0 text-text-muted group-hover:text-accent transition-colors" />
-                      <span className="truncate flex-1 text-[13px] font-medium text-text-secondary group-hover:text-text-primary transition-colors">{table.name}</span>
-                      {tablePinned && <Pin size={11} className="flex-shrink-0 text-accent opacity-80" />}
-                      <button
-                        onClick={(e) => handleRefreshTable(e, table.name)}
-                        className="p-1 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
-                        title={`Refresh ${tableTerm}`}
+                <div className="flex flex-col">
+                  {filteredTables.map(table => {
+                    const tablePinned = isPinned(schemaName, table.name);
+                    return (
+                      <div key={table.name}
+                        onClick={() => handleTableClick(table)}
+                        onContextMenu={(e) => handleContextMenu(e, table.name)}
+                        className="group relative flex items-center gap-2.5 pl-3 pr-2 py-1.5 cursor-pointer border-l-2 border-transparent hover:border-accent hover:bg-bg-hover/50 transition-all"
                       >
-                        <RefreshCw size={10} />
-                      </button>
-                    </div>
-                  )
-                })}
+                        <Table size={13} className="flex-shrink-0 text-text-muted group-hover:text-accent transition-colors" strokeWidth={1.5} />
+                        <span className="truncate flex-1 text-[13px] font-medium text-text-secondary group-hover:text-text-primary transition-colors">{table.name}</span>
+                        {tablePinned && <Pin size={11} className="flex-shrink-0 text-accent opacity-80" />}
+                        <button
+                          onClick={(e) => handleRefreshTable(e, table.name)}
+                          className="p-1 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-opacity opacity-0 group-hover:opacity-100"
+                          title={`Refresh ${tableTerm}`}
+                        >
+                          <RefreshCw size={10} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
               </ObjectFolder>
             )}
 
