@@ -4,7 +4,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { KeyboardShortcut } from '../../types/settings';
 import { useDialog } from '../../context/DialogContext';
 import Input from '../ui/Input';
-import Checkbox from '../ui/Checkbox';
+
 
 export default function KeyboardShortcutsTab() {
     const { shortcuts, updateShortcut, resetShortcuts } = useKeyboardShortcuts();

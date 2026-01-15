@@ -230,42 +230,42 @@ export default function Sidebar() {
       {/* Main Sidebar Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent">
         {/* Search Header */}
-        <div className="p-4 border-b border-border-light space-y-3">
+        <div className="p-5 border-b border-border-light space-y-4 bg-bg-1/50 backdrop-blur-sm">
           {/* Connection & Actions Row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-2 h-2 rounded-full bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] flex-shrink-0" />
-              <span className="text-sm font-semibold text-text-primary truncate">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="status-pulse status-online shadow-[0_0_12px_rgba(34,197,94,0.4)]" />
+              <span className="text-sm font-bold text-text-primary truncate tracking-tight">
                 {currentConnection?.name || 'Select Connection'}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsCommandPaletteOpen(true)}
-                className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-2 rounded-lg transition-colors"
+                className="p-1.5 text-text-secondary hover:text-accent hover:bg-accent/5 rounded-lg transition-all duration-300"
                 title="Switch Database (Cmd+K)"
               >
-                <ChevronsUpDown size={15} />
+                <ChevronsUpDown size={14} strokeWidth={2.5} />
               </button>
               <button
                 onClick={() => navigate(`/workspace/${connectionId}/permissions`)}
-                className={`p-1.5 rounded-lg transition-colors ${location.pathname.includes('/permissions')
-                  ? 'bg-accent text-white shadow-sm'
+                className={`p-1.5 rounded-lg transition-all duration-300 ${location.pathname.includes('/permissions')
+                  ? 'bg-accent text-white shadow-glow-sm'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                   }`}
                 title="Permissions"
               >
-                <Shield size={15} />
+                <Shield size={14} strokeWidth={2.5} />
               </button>
               <button
                 onClick={() => setShowActivityMonitor(true)}
-                className={`p-1.5 rounded-lg transition-colors ${showActivityMonitor
-                  ? 'bg-accent text-white shadow-sm'
+                className={`p-1.5 rounded-lg transition-all duration-300 ${showActivityMonitor
+                  ? 'bg-accent text-white shadow-glow-sm'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
                   }`}
                 title="Activity Monitor"
               >
-                <Activity size={15} />
+                <Activity size={14} strokeWidth={2.5} />
               </button>
             </div>
           </div>
@@ -274,50 +274,42 @@ export default function Sidebar() {
           <div className="w-full">
             <Input
               leftIcon={<Search size={14} className="text-text-tertiary" />}
-              placeholder="Search tables, views or queries..."
+              placeholder="Search objects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-bg-2 border-transparent focus:bg-bg-0 focus:ring-1 focus:ring-border-subtle"
+              className="w-full bg-bg-sunken border-transparent focus:bg-bg-0 focus:ring-1 focus:ring-accent/30 premium-input"
             />
           </div>
 
-          {/* Tab Navigation (Segmented Control style) */}
-          <div className="flex bg-bg-2 p-1 rounded-xl border border-border-light">
+          {/* Tab Navigation (Premium Segmented Control style) */}
+          <div className="premium-tabs-container">
             <button
               onClick={() => setActiveTab('items')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'items'
-                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
+              className={`premium-tab ${activeTab === 'items' ? 'active' : ''}`}
               title="Explorer"
             >
-              <Database size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              <Database size={13} strokeWidth={activeTab === 'items' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
               {sidebarWidth > 280 && <span>Explorer</span>}
             </button>
             <button
               onClick={() => setActiveTab('queries')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'queries'
-                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
+              className={`premium-tab ${activeTab === 'queries' ? 'active' : ''}`}
               title="Saved Queries"
             >
-              <FileText size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              <FileText size={13} strokeWidth={activeTab === 'queries' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
               {sidebarWidth > 280 && <span>Saved</span>}
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'history'
-                ? 'bg-bg-0 text-accent shadow-sm ring-1 ring-border-subtle'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-2'
-                }`}
+              className={`premium-tab ${activeTab === 'history' ? 'active' : ''}`}
               title="History"
             >
-              <Clock size={14} className={sidebarWidth > 280 ? "mr-1.5" : ""} />
+              <Clock size={13} strokeWidth={activeTab === 'history' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
               {sidebarWidth > 280 && <span>History</span>}
             </button>
           </div>
         </div>
+
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">

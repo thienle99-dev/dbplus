@@ -1150,3 +1150,134 @@ body {
   background-size: 24px 24px;
   mask-image: radial-gradient(circle at center, black, transparent 80%);
 }
+
+/* === NEW PREMIUM UI UTILITIES === */
+
+.glass-pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.glass-pill:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.status-pulse {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  animation: status-pulse-anim 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  opacity: 0.6;
+}
+
+@keyframes status-pulse-anim {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  70% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.status-online {
+  background-color: var(--color-success);
+}
+
+.status-offline {
+  background-color: var(--color-error);
+}
+
+.status-busy {
+  background-color: var(--color-warning);
+}
+
+/* Premium Tab System */
+.premium-tabs-container {
+  display: flex;
+  padding: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-tab {
+  padding: 0.375rem 1.25rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-lg);
+  position: relative;
+  z-index: 10;
+  color: var(--color-text-secondary);
+}
+
+.premium-tab:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.premium-tab.active {
+  color: #ffffff;
+  box-shadow: var(--shadow-md);
+  background-color: var(--color-primary-transparent);
+}
+
+.premium-tab.active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--color-primary-subtle);
+  pointer-events: none;
+}
+
+/* Premium Input Refinement */
+.premium-input {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-sm);
+}
+
+.premium-input:focus {
+  border-color: var(--color-primary-default);
+  box-shadow: 0 0 0 3px var(--color-primary-transparent);
+  outline: none;
+}

@@ -367,40 +367,32 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
   return (
     <div className="flex flex-col pb-[20px] h-full bg-transparent overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/5 bg-bg-1/30 backdrop-blur-md p-3 rounded-t-2xl shadow-sm z-10">
-        <div className="flex p-1 bg-black/20 rounded-[14px] border border-white/5 shadow-inner">
+      <div className="flex items-center justify-between border-b border-white/5 bg-bg-1/40 backdrop-blur-xl p-4 rounded-t-2xl shadow-sm z-10">
+        <div className="premium-tabs-container">
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'data'
-              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-              : 'text-text-secondary hover:text-white hover:bg-white/5'
-              }`}
+            className={`premium-tab ${activeTab === 'data' ? 'active' : ''}`}
           >
-            <Table size={13} strokeWidth={2.5} className={activeTab === 'data' ? "text-[var(--color-primary-default)]" : ""} />
+            <Table size={13} strokeWidth={activeTab === 'data' ? 3 : 2} className={activeTab === 'data' ? "text-accent" : ""} />
             Data
           </button>
           <button
             onClick={() => setActiveTab('structure')}
-            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'structure'
-              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-              : 'text-text-secondary hover:text-white hover:bg-white/5'
-              }`}
+            className={`premium-tab ${activeTab === 'structure' ? 'active' : ''}`}
           >
-            <Database size={13} strokeWidth={2.5} className={activeTab === 'structure' ? "text-[var(--color-primary-default)]" : ""} />
+            <Database size={13} strokeWidth={activeTab === 'structure' ? 3 : 2} className={activeTab === 'structure' ? "text-accent" : ""} />
             Structure
           </button>
           <button
             onClick={() => setActiveTab('info')}
-            className={`px-5 py-1.5 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all rounded-lg ${activeTab === 'info'
-              ? 'text-white bg-[var(--color-primary-transparent)] shadow-lg ring-1 ring-[var(--color-primary-subtle)]'
-              : 'text-text-secondary hover:text-white hover:bg-white/5'
-              }`}
+            className={`premium-tab ${activeTab === 'info' ? 'active' : ''}`}
           >
-            <Info size={13} strokeWidth={2.5} className={activeTab === 'info' ? "text-[var(--color-primary-default)]" : ""} />
+            <Info size={13} strokeWidth={activeTab === 'info' ? 3 : 2} className={activeTab === 'info' ? "text-accent" : ""} />
             Info
           </button>
         </div>
       </div>
+
       <div className={`flex-1 relative flex flex-col ${activeTab === 'data' ? 'overflow-hidden' : 'overflow-auto custom-scrollbar'}`}>
         {loading && !data ? (
           <div className="flex h-full items-center justify-center text-text-secondary">Loading data...</div>

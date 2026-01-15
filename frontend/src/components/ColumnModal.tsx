@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { ColumnModalProps } from '../types';
 import Select from './ui/Select';
+import Input from './ui/Input';
+import Checkbox from './ui/Checkbox';
 
 export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode }: ColumnModalProps) {
     const [name, setName] = useState('');
@@ -77,7 +79,7 @@ export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode
                         <Input
                             type="text"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                             placeholder="e.g., user_age"
                             required
                             fullWidth
@@ -121,7 +123,7 @@ export default function ColumnModal({ isOpen, onClose, onSave, initialData, mode
                         <Input
                             type="text"
                             value={defaultValue}
-                            onChange={(e) => setDefaultValue(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDefaultValue(e.target.value)}
                             placeholder="e.g., 0, now(), 'active'"
                             fullWidth
                         />

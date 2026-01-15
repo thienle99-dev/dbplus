@@ -42,24 +42,25 @@ export default function Breadcrumbs() {
     };
 
     return (
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border bg-bg-1 text-sm text-text-secondary select-none">
-            <Link to="/" className="hover:text-text-primary transition-colors flex items-center gap-1">
+        <div className="flex items-center gap-2 px-6 py-3 border-b border-border-light bg-bg-0/50 backdrop-blur-md text-sm text-text-secondary select-none z-20">
+            <Link to="/" className="w-8 h-8 rounded-full bg-bg-1 border border-border-light flex items-center justify-center hover:text-accent hover:border-accent transition-all duration-300 shadow-sm active:scale-95">
                 <Home size={14} />
             </Link>
 
-            <ChevronRight size={14} className="text-border" />
+            <ChevronRight size={12} className="text-text-muted opacity-40 mx-1" />
 
-            <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-bg-2 text-text-primary transition-colors cursor-default">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-1 rounded">
+            <div className="flex items-center gap-2 glass-pill">
+                <span className="text-[9px] font-black uppercase tracking-widest text-accent bg-accent/10 px-1.5 py-0.5 rounded leading-none">
                     {connection.type}
                 </span>
-                <span className="font-medium">{connection.name}</span>
-                <span className="text-border">|</span>
-                <span className="text-xs">{displayedDatabase}</span>
+                <span className="font-bold text-text-primary text-xs">{connection.name}</span>
+                <div className="w-1 h-3 bg-white/10 mx-1 rounded-full" />
+                <Database size={12} className="text-text-muted" />
+                <span className="text-xs font-medium">{displayedDatabase}</span>
                 {version && (
                     <>
-                        <span className="text-border">|</span>
-                        <span className="text-[10px] text-text-tertiary font-mono" title={version}>
+                        <div className="w-1 h-3 bg-white/10 mx-1 rounded-full" />
+                        <span className="text-[10px] text-text-tertiary font-mono bg-black/20 px-1.5 py-0.5 rounded" title={version}>
                             {formatVersion(version)}
                         </span>
                     </>
@@ -68,34 +69,43 @@ export default function Breadcrumbs() {
 
             {isQueryPage && (
                 <>
-                    <ChevronRight size={14} className="text-border" />
-                    <span className="text-text-primary font-medium">Query Editor</span>
+                    <ChevronRight size={12} className="text-text-muted opacity-40 mx-1" />
+                    <div className="glass-pill bg-accent/5 border-accent/20">
+                        <span className="text-text-primary font-bold text-xs">Query Editor</span>
+                    </div>
                 </>
             )}
 
             {isDashboardPage && (
                 <>
-                    <ChevronRight size={14} className="text-border" />
-                    <span className="text-text-primary font-medium">Dashboards</span>
+                    <ChevronRight size={12} className="text-text-muted opacity-40 mx-1" />
+                    <div className="glass-pill bg-accent/5 border-accent/20">
+                        <span className="text-text-primary font-bold text-xs">Dashboards</span>
+                    </div>
                 </>
             )}
 
             {schema && (
                 <>
-                    <ChevronRight size={14} className="text-border" />
-                    <div className="flex items-center gap-1">
-                        <Database size={12} />
-                        <span>{schema}</span>
+                    <ChevronRight size={12} className="text-text-muted opacity-40 mx-1" />
+                    <div className="glass-pill">
+                        <div className="flex items-center gap-1.5">
+                            <Database size={12} className="text-accent" />
+                            <span className="text-xs font-bold text-text-primary">{schema}</span>
+                        </div>
                     </div>
                 </>
             )}
 
             {table && (
                 <>
-                    <ChevronRight size={14} className="text-border" />
-                    <span className="text-text-primary font-medium">{table}</span>
+                    <ChevronRight size={12} className="text-text-muted opacity-40 mx-1" />
+                    <div className="glass-pill bg-accent/10 border-accent/30 shadow-glow-sm">
+                        <span className="text-accent font-black text-xs">{table}</span>
+                    </div>
                 </>
             )}
         </div>
     );
 }
+
