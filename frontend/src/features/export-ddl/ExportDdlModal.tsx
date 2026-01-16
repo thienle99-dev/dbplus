@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/ui/Modal';
 import api from '../../services/api';
+import { extractApiErrorDetails } from '../../utils/apiError';
 import { useSchemas } from '../../hooks/useDatabase';
 import {
     DdlScope,
@@ -228,9 +229,9 @@ export default function ExportDdlModal({
             setResult(res.ddl);
             showToast(`DDL Generated via ${res.method}`, 'success');
         } catch (err: any) {
-            console.error(err);
-            const msg = err.response?.data?.message || err.message || 'Unknown error';
-            setError(msg);
+            console.error('Export DDL error:', err);
+            const details = extractApiErrorDetails(err);
+            setError(details.message);
         } finally {
             setLoading(false);
         }

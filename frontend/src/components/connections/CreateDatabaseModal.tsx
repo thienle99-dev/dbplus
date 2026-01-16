@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { connectionApi } from '../../services/connectionApi';
 import { CreateDatabaseOptions, CreateDatabaseRequest } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import { extractApiErrorDetails } from '../../utils/apiError';
 import Modal from '../ui/Modal';
 import Checkbox from '../ui/Checkbox';
 import Button from '../ui/Button';
@@ -64,7 +65,8 @@ export default function CreateDatabaseModal({
       handleClose();
     } catch (err: any) {
       console.error('Failed to create database', err);
-      showToast(err?.response?.data?.message || err?.response?.data || 'Failed to create database', 'error');
+      const { message } = extractApiErrorDetails(err);
+      showToast(message || 'Failed to create database', 'error');
     } finally {
       setSubmitting(false);
     }

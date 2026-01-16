@@ -15,17 +15,41 @@ export function extractApiErrorDetails(err: any): ApiErrorDetails {
   const code: string | undefined = err?.code;
   const url: string | undefined = err?.config?.url;
   const method: string | undefined = err?.config?.method?.toUpperCase();
-  const responseData: unknown = err?.response?.data;
+  let responseData: unknown = err?.response?.data;
 
-  let message = 'Failed to execute query';
-  if (typeof responseData === 'string' && responseData.trim()) {
+  // If responseData is a string, try to parse it as JSON in case the backend sent a structured error as a string
+  if (typeof responseData === 'string' && responseData.startsWith('{')) {
+    try {
+      responseData = JSON.parse(responseData);
+    } catch (e) {
+      // Not valid JSON, keep as string
+    }
+  }
+
+  let message = '';
+
+  if (responseData && typeof responseData === 'object') {
+    const rd = responseData as any;
+    // Check various common error field names
+    message = rd.message || rd.error || rd.detail || rd.msg || '';
+
+    // If we still don't have a message but we have a db object (common in our backend)
+    if (!message && rd.db && typeof rd.db === 'object') {
+      message = rd.db.message || rd.db.detail || '';
+    }
+
+    // If still no message, stringify the whole object
+    if (!message) message = JSON.stringify(responseData);
+  } else if (typeof responseData === 'string' && responseData.trim()) {
     message = responseData;
-  } else if (responseData && typeof responseData === 'object') {
-    const maybeMessage = (responseData as any).message;
-    if (typeof maybeMessage === 'string' && maybeMessage.trim()) message = maybeMessage;
-    else message = JSON.stringify(responseData);
   } else if (typeof err?.message === 'string' && err.message.trim()) {
     message = err.message;
+  } else if (err && typeof err === 'string' && err.trim()) {
+    message = err;
+  }
+
+  if (!message) {
+    message = status === 500 ? 'Internal Server Error' : 'An unknown error occurred';
   }
 
   // Clean up Couchbase JSON error dumps from the message

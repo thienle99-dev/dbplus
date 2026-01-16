@@ -52,7 +52,7 @@ const handleConnectionRoutes = (method: string, url: string, data: any, connecti
     if (path.endsWith('/test') && method === 'POST') return { command: 'test_connection_by_id', args: { id: connectionId } };
     if (path.endsWith('/switch-database') && method === 'POST') return { command: 'switch_database', args: { id: connectionId, request: data } };
     if (path.endsWith('/execute')) return { command: 'execute_query', args: { connection_id: connectionId, request: { sql: data?.query || data?.sql, database: data?.database } } };
-    if (path.endsWith('/export-ddl')) return { command: 'export_postgres_ddl', args: { connection_id: connectionId } };
+    if (path.endsWith('/export-ddl')) return { command: 'export_postgres_ddl', args: { connection_id: connectionId, request: data } };
     if (path.endsWith('/search')) return { command: 'search_objects', args: { connection_id: connectionId, request: { query: data?.params?.q ?? data?.q } } };
 
     // --- Database & Schema Management ---
@@ -217,6 +217,30 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
     return null;
 };
 
+const handleIpcError = (url: string, err: any) => {
+    log('error', `Error ${url} (IPC): ${err}`, err);
+
+    let errorData = err;
+    // If the error is a string that looks like JSON, parse it for better structure
+    if (typeof err === 'string' && err.startsWith('{')) {
+        try {
+            errorData = JSON.parse(err);
+        } catch (e) {
+            // Keep as string if parsing fails
+        }
+    }
+
+    throw {
+        response: {
+            data: errorData,
+            status: 500,
+            statusText: 'Internal Server Error'
+        },
+        message: typeof err === 'string' ? err : (err.message || 'Unknown IPC Error'),
+        config: { url }
+    };
+};
+
 const api = {
     get: async <T = any>(url: string, config?: any): Promise<{ data: T; status: number; statusText: string }> => {
         log('request', `GET ${url}`, config);
@@ -234,8 +258,7 @@ const api = {
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
-                log('error', `Error ${url} (IPC): ${err}`, err);
-                throw { response: { data: err, status: 500 }, message: err };
+                return handleIpcError(url, err);
             }
         }
 
@@ -254,7 +277,6 @@ const api = {
 
         const route = routeToCommand('POST', url, data);
         if (route) {
-            // 🔥 OPTIMIZED: Query Caching for SELECT queries
             const isExecuteQuery = route.command === 'execute_query';
             const sql = data?.query || data?.sql;
             const isSelect = isExecuteQuery && sql?.trim()?.toLowerCase()?.startsWith('select');
@@ -274,8 +296,6 @@ const api = {
             try {
                 const res = await requestDeduplicator.execute(`query:${connectionId}:${sql}`, async () => {
                     const result = await invoke(route.command, route.args);
-
-                    // Cache the result if it was a SELECT query
                     if (isSelect && connectionId && result) {
                         queryCache.set(connectionId, sql, result as any);
                     }
@@ -285,8 +305,7 @@ const api = {
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
-                log('error', `Error ${url} (IPC): ${err}`, err);
-                throw { response: { data: err, status: 500 }, message: err };
+                return handleIpcError(url, err);
             }
         }
 
@@ -310,8 +329,7 @@ const api = {
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
-                log('error', `Error ${url} (IPC): ${err}`, err);
-                throw { response: { data: err, status: 500 }, message: err };
+                return handleIpcError(url, err);
             }
         }
 
@@ -335,8 +353,7 @@ const api = {
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
-                log('error', `Error ${url} (IPC): ${err}`, err);
-                throw { response: { data: err, status: 500 }, message: err };
+                return handleIpcError(url, err);
             }
         }
 
@@ -360,8 +377,7 @@ const api = {
                 log('response', `200 OK ${url} (IPC)`, res);
                 return { data: res as T, status: 200, statusText: 'OK' };
             } catch (err: any) {
-                log('error', `Error ${url} (IPC): ${err}`, err);
-                throw { response: { data: err, status: 500 }, message: err };
+                return handleIpcError(url, err);
             }
         }
 

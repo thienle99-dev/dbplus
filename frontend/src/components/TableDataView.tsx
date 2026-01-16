@@ -12,6 +12,7 @@ import { useConstraints } from '../hooks/useDatabase';
 import { useTabStateStore } from '../store/tabStateStore';
 import { useConnectionStore } from '../store/connectionStore';
 import { useDialog } from '../context/DialogContext';
+import { extractApiErrorDetails } from '../utils/apiError';
 
 interface Props extends TableDataViewProps {
   tabId?: string;
@@ -144,9 +145,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       setEdits({}); // Clear edits on page change/refresh
     } catch (err: unknown) {
       if (activeQueryIdRef.current === queryId) {
-        // Only show error if THIS query failed (and wasn't cancelled locally)
-        const errorMessage = (err as any).response?.data || (err as Error).message || 'Failed to fetch data';
-        setError(errorMessage);
+        const { message } = extractApiErrorDetails(err);
+        setError(message);
       }
     } finally {
       if (activeQueryIdRef.current === queryId) {
@@ -240,7 +240,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       await fetchData();
       showToast('Changes saved successfully', 'success');
     } catch (err: unknown) {
-      showToast(`Failed to save changes: ${(err as Error).message}`, 'error');
+      const { message } = extractApiErrorDetails(err);
+      showToast(`Failed to save changes: ${message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -283,7 +284,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       setIsAddingRow(false);
       setNewRowData({});
     } catch (err: unknown) {
-      showToast(`Failed to add row: ${(err as Error).message}`, 'error');
+      const { message } = extractApiErrorDetails(err);
+      showToast(`Failed to add row: ${message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -328,7 +330,8 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
       showToast('Record deleted successfully', 'success');
       await fetchData();
     } catch (err: any) {
-      showToast(`Failed to delete: ${err.message}`, 'error');
+      const { message } = extractApiErrorDetails(err);
+      showToast(`Failed to delete: ${message}`, 'error');
     } finally {
       setSaving(false);
     }
