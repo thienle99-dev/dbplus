@@ -28,7 +28,7 @@ export const historyApi = {
         const { data: history } = await api.get<QueryHistoryEntry[]>(`/api/connections/${connectionId}/history`, {
             params: { limit }
         });
-        
+
         return { history };
     },
 
@@ -37,9 +37,10 @@ export const historyApi = {
         entry: AddHistoryRequest
     ): Promise<QueryHistoryEntry> {
         const { data } = await api.post<QueryHistoryEntry>(`/api/connections/${connectionId}/history`, {
-            query: entry.sql,
-            execution_time_ms: entry.execution_time,
-            status: entry.success ? 'success' : 'error',
+            sql: entry.sql,
+            execution_time: entry.execution_time,
+            success: entry.success,
+            row_count: entry.row_count,
             error_message: entry.error_message
         });
         return data;

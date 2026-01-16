@@ -666,9 +666,9 @@ export default function QueryEditor({
             height: splitMode === 'vertical' ? '100%' : `${editorHeight}px`,
             width: splitMode === 'vertical' ? '50%' : '100%'
           }}
-          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-white/5 flex flex-col shrink-0 overflow-hidden rounded-md m-2 glass shadow-lg`}
+          className={`border-${splitMode === 'vertical' ? 'r' : 'b'} border-border-subtle flex flex-col shrink-0 overflow-hidden rounded-md m-2 glass shadow-lg`}
         >
-          <div className="flex-1 overflow-hidden flex relative bg-white/[0.02]">
+          <div className="flex-1 overflow-hidden flex relative bg-background-panel/20">
             <CodeMirror
               value={query}
               height="100%"
@@ -715,7 +715,7 @@ export default function QueryEditor({
 
         {/* Results Section */}
         <div className="flex-1 flex flex-col min-h-0 bg-transparent py-2 pr-2">
-          <div className="flex items-center justify-between border-b border-white/5 bg-white/5 p-3 glass rounded-t-2xl">
+          <div className="flex items-center justify-between border-b border-border-subtle bg-background-panel/40 p-3 glass rounded-t-2xl">
             <div className="flex p-1 bg-bg-sunken rounded-lg border border-border-default">
               <button
                 onClick={() => setBottomTab('results')}
@@ -749,7 +749,7 @@ export default function QueryEditor({
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden relative bg-white/[0.02] rounded-b-2xl border-x border-b border-white/5 glass">
+          <div className="flex-1 overflow-hidden relative bg-background-panel/20 rounded-b-2xl border-x border-b border-border-subtle glass">
             <div className={`absolute inset-0 flex flex-col ${bottomTab === 'results' ? 'z-10' : 'z-0 invisible'}`}>
               <QueryResults
                 result={result}

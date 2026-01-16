@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/ui/Modal';
+import api from '../../services/api';
 import { useSchemas } from '../../hooks/useDatabase';
 import {
     DdlScope,
@@ -129,10 +130,11 @@ export default function ExportDdlModal({
                     params.database = initialDatabase;
                 }
 
+                const queryStr = new URLSearchParams(params).toString();
                 const [tablesRes, viewsRes, functionsRes] = await Promise.all([
-                    fetch(`/api/connections/${connectionId}/tables?${new URLSearchParams(params)}`).then(r => r.json()),
-                    fetch(`/api/connections/${connectionId}/views?${new URLSearchParams(params)}`).then(r => r.json()),
-                    fetch(`/api/connections/${connectionId}/functions?${new URLSearchParams(params)}`).then(r => r.json()),
+                    api.get(`/api/connections/${connectionId}/tables?${queryStr}`).then(r => r.data),
+                    api.get(`/api/connections/${connectionId}/views?${queryStr}`).then(r => r.data),
+                    api.get(`/api/connections/${connectionId}/functions?${queryStr}`).then(r => r.data),
                 ]);
 
                 setTables(tablesRes || []);

@@ -37,8 +37,8 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
 
     const isSelectLike = (sql: string) => {
         const trimmed = sql.trimStart();
-        const upper = trimmed.toUpperCase();
-        return upper.startsWith('SELECT') || upper.startsWith('WITH');
+        const upper = trimmed.toUpperCase().replace(/^(\/\*[\s\S]*?\*\/|--.*?\n|\s)*/, '');
+        return upper.startsWith('SELECT') || upper.startsWith('WITH') || upper.startsWith('EXPLAIN') || upper.startsWith('SHOW') || upper.startsWith('DESCRIBE');
     };
 
     const execute = useCallback(async (queryOverride?: string, confirmedUnsafe: boolean = false) => {
@@ -66,7 +66,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                 confirmed_unsafe: confirmedUnsafe,
                 query_id: queryId,
             });
-            
+
             // Only proceed if this is still the active query
             if (activeQueryIdRef.current !== queryId) return;
             activeQueryIdRef.current = null;
@@ -94,6 +94,8 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
 
             if (data.affected_rows > 0) {
                 showToast(`Query executed successfully. ${data.affected_rows} rows affected.`, 'success');
+            } else if (!isSelectLike(sqlToExecute)) {
+                showToast('Query executed successfully', 'success');
             }
         } catch (err: any) {
             if (activeQueryIdRef.current !== queryId) return;
@@ -133,7 +135,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
             const startTime = Date.now();
             setError(null);
             setErrorDetails(null);
-            
+
             const queryId = crypto.randomUUID();
             activeQueryIdRef.current = queryId;
 
@@ -145,7 +147,7 @@ export function useQueryExecution(query: string, setQuery: (q: string) => void) 
                     include_total_count: true,
                     query_id: queryId,
                 });
-                
+
                 if (activeQueryIdRef.current !== queryId) return;
                 activeQueryIdRef.current = null;
 

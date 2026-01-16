@@ -832,7 +832,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
         <div className="flex-1 overflow-auto bg-bg-default flex flex-col">
             {isWorkerProcessing && (
                 <div className="absolute inset-0 bg-bg-default/50 backdrop-blur-[1px] z-50 flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-bg-1 border border-border-light shadow-xl glass">
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-bg-1 border border-border-light shadow-xl">
                         <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                         <span className="text-sm font-medium text-text-secondary">Processing {result?.rows?.length} rows...</span>
                     </div>
@@ -840,7 +840,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
             )}
             {loading && <div className="p-4 text-text-secondary animate-pulse">Executing query...</div>}
             {error && (
-                <div className="p-4 border-b border-border-light bg-bg-1 glass">
+                <div className="p-4 border-b border-border-light bg-bg-1">
                     {(() => {
                         const data = errorDetails?.responseData;
                         const db = data && typeof data === 'object' ? (data as any).db : undefined;
@@ -927,7 +927,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 
             {result && (
                 <div className="flex flex-col h-full">
-                    <div className="relative z-30 p-2 bg-bg-1 glass text-sm border-b border-border-subtle flex items-center justify-between">
+                    <div className="relative z-30 p-2 bg-bg-1 text-sm border-b border-border-subtle flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             {/* Consolidated Status Pill */}
                             <div className="flex items-center gap-3 pl-3 pr-4 py-1.5 bg-bg-sunken/50 rounded-full border border-border-default/50 shadow-sm text-[11px] font-medium text-text-secondary select-none">
@@ -1347,7 +1347,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                     {viewMode === 'table' ? (
                         result.columns.length > 0 && (
                             <div
-                                className="flex-1 overflow-auto rounded-lg border border-border-subtle shadow-sm bg-bg-1 backdrop-blur-sm mx-2 mb-2 custom-scrollbar"
+                                className="flex-1 overflow-auto rounded-lg border border-border-subtle shadow-sm bg-bg-1 mx-2 mb-2 custom-scrollbar"
                                 ref={tableScrollRef}
                                 style={{ scrollbarGutter: 'stable' }}
                             >
@@ -1362,7 +1362,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
                                         className="w-full border-collapse text-left"
                                         style={{ minWidth: '100%', tableLayout: 'fixed' }}
                                     >
-                                        <thead className="sticky top-0 z-20 bg-bg-1 glass shadow-sm border-b border-border-subtle">
+                                        <thead className="sticky top-0 z-20 bg-bg-1 shadow-sm border-b border-border-subtle">
                                             {tableInstance.getHeaderGroups().map((headerGroup) => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map((header) => (

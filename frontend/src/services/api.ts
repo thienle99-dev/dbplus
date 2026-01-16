@@ -37,58 +37,60 @@ const extractTableParams = (url: string, data: any) => {
 };
 
 const handleConnectionRoutes = (method: string, url: string, data: any, connectionId: string): { command: string, args: any } | null => {
-    // Basic CRUD for connection resource
+    const [path] = url.split('?');
     const matchString = `/api/connections/${connectionId}`;
-    if (url === matchString || url.startsWith(`${matchString}?`)) {
+
+    // Basic CRUD for connection resource - uses 'id' instead of 'connection_id'
+    if (path === matchString) {
         if (method === 'GET') return { command: 'get_connection', args: { id: connectionId } };
         if (method === 'PUT') return { command: 'update_connection', args: { id: connectionId, request: data } };
         if (method === 'DELETE') return { command: 'delete_connection', args: { id: connectionId } };
     }
 
     // --- Core Operations ---
-    if (url.endsWith('/version')) return { command: 'get_connection', args: { id: connectionId } };
-    if (url.endsWith('/test') && method === 'POST') return { command: 'test_connection_by_id', args: { id: connectionId } };
-    if (url.endsWith('/switch-database') && method === 'POST') return { command: 'switch_database', args: { id: connectionId, request: data } };
-    if (url.endsWith('/execute')) return { command: 'execute_query', args: { connectionId, request: { sql: data?.query || data?.sql, database: data?.database } } };
-    if (url.endsWith('/export-ddl')) return { command: 'export_ddl', args: { connectionId, request: data } };
-    if (url.endsWith('/search')) return { command: 'search_objects', args: { connectionId, request: { query: data?.params?.q ?? data?.q } } };
+    if (path.endsWith('/version')) return { command: 'get_connection', args: { id: connectionId } };
+    if (path.endsWith('/test') && method === 'POST') return { command: 'test_connection_by_id', args: { id: connectionId } };
+    if (path.endsWith('/switch-database') && method === 'POST') return { command: 'switch_database', args: { id: connectionId, request: data } };
+    if (path.endsWith('/execute')) return { command: 'execute_query', args: { connection_id: connectionId, request: { sql: data?.query || data?.sql, database: data?.database } } };
+    if (path.endsWith('/export-ddl')) return { command: 'export_postgres_ddl', args: { connection_id: connectionId } };
+    if (path.endsWith('/search')) return { command: 'search_objects', args: { connection_id: connectionId, request: { query: data?.params?.q ?? data?.q } } };
 
     // --- Database & Schema Management ---
-    if (url.endsWith('/databases')) {
-        if (method === 'GET') return { command: 'list_databases', args: { connectionId } };
-        if (method === 'POST') return { command: 'create_database', args: { connectionId, request: data } };
+    if (path.endsWith('/databases')) {
+        if (method === 'GET') return { command: 'list_databases', args: { connection_id: connectionId } };
+        if (method === 'POST') return { command: 'create_database', args: { connection_id: connectionId, request: data } };
     }
-    const dbMatch = url.match(/\/databases\/([^/]+)$/);
-    if (dbMatch && method === 'DELETE') return { command: 'drop_database', args: { connectionId, name: dbMatch[1] } };
+    const dbMatch = path.match(/\/databases\/([^/]+)$/);
+    if (dbMatch && method === 'DELETE') return { command: 'drop_database', args: { connection_id: connectionId, name: dbMatch[1] } };
 
-    if (url.endsWith('/schemas')) {
-        if (method === 'GET') return { command: 'schema_list_schemas', args: { connectionId } };
-        if (method === 'POST') return { command: 'create_schema', args: { connectionId, schemaName: data?.name } };
+    if (path.endsWith('/schemas')) {
+        if (method === 'GET') return { command: 'schema_list_schemas', args: { connection_id: connectionId } };
+        if (method === 'POST') return { command: 'create_schema', args: { connection_id: connectionId, schema_name: data?.name } };
     }
-    const schemaMatch = url.match(/\/schemas\/([^/]+)$/);
-    if (schemaMatch && method === 'DELETE') return { command: 'drop_schema', args: { connectionId, schemaName: schemaMatch[1] } };
+    const schemaMatch = path.match(/\/schemas\/([^/]+)$/);
+    if (schemaMatch && method === 'DELETE') return { command: 'drop_schema', args: { connection_id: connectionId, schema_name: schemaMatch[1] } };
 
     // --- Table Operations ---
-    if (url.endsWith('/tables')) {
-        if (method === 'GET') return { command: 'schema_list_tables', args: { connectionId, schema: data?.params?.schema || data?.schema } };
-        if (method === 'POST') return { command: 'create_table', args: { connectionId, request: data } };
-        if (method === 'DELETE') return { command: 'drop_table', args: { connectionId, request: { schema: data?.params?.schema, table_name: data?.params?.table } } };
+    if (path.endsWith('/tables')) {
+        if (method === 'GET') return { command: 'schema_list_tables', args: { connection_id: connectionId, schema: data?.params?.schema || data?.schema } };
+        if (method === 'POST') return { command: 'create_table', args: { connection_id: connectionId, request: data } };
+        if (method === 'DELETE') return { command: 'drop_table', args: { connection_id: connectionId, request: { schema: data?.params?.schema, table_name: data?.params?.table } } };
     }
-    if (url.includes('/columns')) return { command: 'schema_get_columns', args: { connectionId, ...extractTableParams(url, data) } };
-    if (url.endsWith('/table-comment')) {
-        if (method === 'GET') return { command: 'get_table_comment', args: { connectionId, params: data?.params } };
-        if (method === 'PUT') return { command: 'set_table_comment', args: { connectionId, schema: data?.schema, table: data?.table, comment: data?.comment } };
+    if (path.includes('/columns')) return { command: 'schema_get_columns', args: { connection_id: connectionId, ...extractTableParams(url, data) } };
+    if (path.endsWith('/table-comment')) {
+        if (method === 'GET') return { command: 'get_table_comment', args: { connection_id: connectionId, params: data?.params } };
+        if (method === 'PUT') return { command: 'set_table_comment', args: { connection_id: connectionId, schema: data?.schema, table: data?.table, comment: data?.comment } };
     }
 
     // Table Data Query
-    if (url.match(/\/query\?/)) {
+    if (path.match(/\/query$/) || path.includes('/query?')) {
         if (method === 'GET') {
             const params = extractTableParams(url, data);
             const urlObj = new URL('http://d' + url);
             return {
                 command: 'get_table_data',
                 args: {
-                    connectionId,
+                    connection_id: connectionId,
                     request: {
                         schema: params.schema,
                         table: params.table,
@@ -102,90 +104,104 @@ const handleConnectionRoutes = (method: string, url: string, data: any, connecti
 
     // --- Automated Table Info Mappings ---
     for (const [key, command] of Object.entries(TABLE_INFO_COMMANDS)) {
-        if (url.includes(`/${key}`)) {
-            return { command, args: { connectionId, params: extractTableParams(url, data) } };
+        if (path.includes(`/${key}`)) {
+            return { command, args: { connection_id: connectionId, params: extractTableParams(url, data) } };
         }
     }
 
     // --- Schema Objects (Views, Functions) ---
     for (const [key, command] of Object.entries(SCHEMAS_COMMANDS)) {
-        if (url.endsWith(`/${key}`)) {
-            return { command, args: { connectionId, schema: data?.params?.schema } };
+        if (path.endsWith(`/${key}`)) {
+            return { command, args: { connection_id: connectionId, schema: data?.params?.schema || new URL('http://d' + url).searchParams.get('schema') } };
         }
     }
-    if (url.endsWith('/view-definition')) return { command: 'schema_get_view_definition', args: { connectionId, schema: data?.params?.schema, view: data?.params?.view } };
-    if (url.endsWith('/function-definition')) return { command: 'schema_get_function_definition', args: { connectionId, schema: data?.params?.schema, function: data?.params?.function } };
+    if (path.endsWith('/view-definition')) return { command: 'schema_get_view_definition', args: { connection_id: connectionId, schema: data?.params?.schema, view: data?.params?.view } };
+    if (path.endsWith('/function-definition')) return { command: 'schema_get_function_definition', args: { connection_id: connectionId, schema: data?.params?.schema, function: data?.params?.function } };
 
     // --- Sub-resources (Sessions, History, Snippets, Settings) ---
-    if (url.endsWith('/sessions')) return { command: 'list_sessions', args: { connectionId } };
-    const sessionMatch = url.match(/\/sessions\/([^/]+)$/);
-    if (sessionMatch && method === 'DELETE') return { command: 'kill_session', args: { connectionId, pid: parseInt(sessionMatch[1]) } };
+    if (path.endsWith('/sessions')) return { command: 'list_sessions', args: { connection_id: connectionId } };
+    const sessionMatch = path.match(/\/sessions\/([^/]+)$/);
+    if (sessionMatch && method === 'DELETE') return { command: 'kill_session', args: { connection_id: connectionId, pid: parseInt(sessionMatch[1]) } };
 
-    if (url.endsWith('/history')) {
-        if (method === 'GET') return { command: 'get_history', args: { id: connectionId } };
-        if (method === 'POST') return { command: 'add_history', args: { id: connectionId, entry: data } };
+    if (path.endsWith('/history')) {
+        if (method === 'GET') {
+            const urlObj = new URL('http://d' + url);
+            return {
+                command: 'get_history',
+                args: {
+                    connection_id: connectionId,
+                    limit: urlObj.searchParams.get('limit') ? parseInt(urlObj.searchParams.get('limit')!) : null
+                }
+            };
+        }
+        if (method === 'POST') return { command: 'add_history', args: { connection_id: connectionId, request: data } };
+        if (method === 'DELETE') return { command: 'clear_history', args: { connection_id: connectionId } };
     }
-    if (url.endsWith('/snippets')) {
-        if (method === 'GET') return { command: 'list_snippets', args: { connectionId } };
-        if (method === 'POST') return { command: 'create_snippet', args: { connectionId, snippet: data } };
+    const historyEntryMatch = path.match(/\/history\/([^/]+)$/);
+    if (historyEntryMatch && method === 'DELETE') {
+        return { command: 'delete_history_entry', args: { connection_id: connectionId, entry_id: historyEntryMatch[1] } };
     }
-    if (url.endsWith('/settings') && method === 'GET') return { command: 'get_all_settings', args: { connectionId } };
+
+    if (path.endsWith('/snippets')) {
+        if (method === 'GET') return { command: 'list_snippets', args: { connection_id: connectionId } };
+        if (method === 'POST') return { command: 'create_snippet', args: { connection_id: connectionId, snippet: data } };
+    }
+    if (path.endsWith('/settings') && method === 'GET') return { command: 'get_all_settings', args: { connection_id: connectionId } };
 
     // SQLite
-    if (url.endsWith('/sqlite/attachments')) {
-        if (method === 'GET') return { command: 'list_sqlite_attachments', args: { connectionId } };
-        if (method === 'POST') return { command: 'attach_sqlite_database', args: { connectionId, request: data } };
+    if (path.endsWith('/sqlite/attachments')) {
+        if (method === 'GET') return { command: 'list_sqlite_attachments', args: { connection_id: connectionId } };
+        if (method === 'POST') return { command: 'attach_sqlite_database', args: { connection_id: connectionId, request: data } };
     }
-    const attachMatch = url.match(/\/sqlite\/attachments\/([^/]+)$/);
-    if (attachMatch && method === 'DELETE') return { command: 'detach_sqlite_database', args: { connectionId, name: attachMatch[1] } };
+    const attachMatch = path.match(/\/sqlite\/attachments\/([^/]+)$/);
+    if (attachMatch && method === 'DELETE') return { command: 'detach_sqlite_database', args: { connection_id: connectionId, name: attachMatch[1] } };
 
     // Permissions (Sub-routes)
-    if (url.endsWith('/permissions')) {
-        if (method === 'GET') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
+    if (path.endsWith('/permissions')) {
+        if (method === 'GET') return { command: 'get_table_permissions', args: { connection_id: connectionId, params: data?.params } };
     }
-    if (url.endsWith('/roles')) return { command: 'list_roles', args: { connectionId } };
+    if (path.endsWith('/roles')) return { command: 'list_roles', args: { connection_id: connectionId } };
 
-    if (url.includes('/permissions/')) {
-        const part = url.split('/').pop();
-        if (part === 'table') return { command: 'get_table_permissions', args: { connectionId, params: data?.params } };
-        if (part === 'schema') return { command: 'get_schema_permissions', args: { connectionId, params: data?.params } };
-        if (part === 'function') return { command: 'get_function_permissions', args: { connectionId, params: data?.params } };
+    if (path.includes('/permissions/')) {
+        const part = path.split('/').pop();
+        if (part === 'table') return { command: 'get_table_permissions', args: { connection_id: connectionId, params: data?.params } };
+        if (part === 'schema') return { command: 'get_schema_permissions', args: { connection_id: connectionId, params: data?.params } };
+        if (part === 'function') return { command: 'get_function_permissions', args: { connection_id: connectionId, params: data?.params } };
     }
-
-    // Legacy / mismatch handling
-    if (url.endsWith('/storage/bloat')) return { command: 'get_storage_bloat_info', args: { connectionId, params: extractTableParams(url, data) } }; // Keeping for compatibility
 
     return null;
 };
 
 const routeToCommand = (method: string, url: string, data?: any): { command: string, args: any } | null => {
+    const [path] = url.split('?');
+
     // 1. Global (Non-connection) Routes
-    if (url === '/api/connections/test' && method === 'POST') return { command: 'test_connection', args: { request: data } };
-    if (url.includes('/api/connections') && !url.match(/\/api\/connections\/([^/]+)/)) {
+    if (path === '/api/connections/test' && method === 'POST') return { command: 'test_connection', args: { request: data } };
+    if (path.includes('/api/connections') && !path.match(/\/api\/connections\/([^/]+)/)) {
         if (method === 'GET') return { command: 'list_connections', args: {} };
         if (method === 'POST') return { command: 'create_connection', args: { request: data } };
     }
-    if (url === '/api/autocomplete' && method === 'POST') return { command: 'autocomplete_suggest', args: { request: data } };
+    if (path === '/api/autocomplete' && method === 'POST') return { command: 'autocomplete_suggest', args: { request: data } };
 
     // Settings API
-    if (url === '/api/settings') {
+    if (path === '/api/settings') {
         if (method === 'GET') return { command: 'get_all_settings', args: {} };
     }
-    const globalSettingMatch = url.match(/\/api\/settings\/([^/]+)$/);
+    const globalSettingMatch = path.match(/\/api\/settings\/([^/]+)$/);
     if (globalSettingMatch) {
         const key = globalSettingMatch[1];
         if (method === 'GET') return { command: 'get_setting', args: { key } };
         if (method === 'PUT') return { command: 'update_setting', args: { key, request: data } };
         if (method === 'DELETE') return { command: 'delete_setting', args: { key } };
     }
-    if (url === '/api/settings/reset' && method === 'POST') return { command: 'reset_settings', args: {} };
+    if (path === '/api/settings/reset' && method === 'POST') return { command: 'reset_settings', args: {} };
 
     // Snippets API (Global)
-    if (url === '/api/snippets') {
+    if (path === '/api/snippets') {
         if (method === 'GET') return { command: 'list_snippets', args: {} };
         if (method === 'POST') return { command: 'create_snippet', args: { request: data } };
     }
-    const snippetMatch = url.match(/\/api\/snippets\/([^/]+)$/);
+    const snippetMatch = path.match(/\/api\/snippets\/([^/]+)$/);
     if (snippetMatch) {
         const id = parseInt(snippetMatch[1]);
         if (method === 'PUT') return { command: 'update_snippet', args: { id, request: data } };
@@ -193,7 +209,7 @@ const routeToCommand = (method: string, url: string, data?: any): { command: str
     }
 
     // 2. Connection-scoped Routes
-    const connMatch = url.match(/\/api\/connections\/([^/]+)/);
+    const connMatch = path.match(/\/api\/connections\/([^/]+)/);
     if (connMatch) {
         return handleConnectionRoutes(method, url, data, connMatch[1]);
     }
@@ -243,7 +259,8 @@ const api = {
             const sql = data?.query || data?.sql;
             const isSelect = isExecuteQuery && sql?.trim()?.toLowerCase()?.startsWith('select');
 
-            const connMatch = url.match(/\/api\/connections\/([^/]+)/);
+            const [path] = url.split('?');
+            const connMatch = path.match(/\/api\/connections\/([^/]+)/);
             const connectionId = connMatch ? connMatch[1] : null;
 
             if (isSelect && connectionId) {
