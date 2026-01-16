@@ -54,13 +54,13 @@ export default function Breadcrumbs() {
                     {connection.type}
                 </span>
                 <span className="font-bold text-text-primary text-xs">{connection.name}</span>
-                <div className="w-1 h-3 bg-white/10 mx-1 rounded-full" />
+                <div className="w-1 h-3 bg-border-light mx-1 rounded-full" />
                 <Database size={12} className="text-text-muted" />
                 <span className="text-xs font-medium">{displayedDatabase}</span>
                 {version && (
                     <>
-                        <div className="w-1 h-3 bg-white/10 mx-1 rounded-full" />
-                        <span className="text-[10px] text-text-tertiary font-mono bg-black/20 px-1.5 py-0.5 rounded" title={version}>
+                        <div className="w-1 h-3 bg-border-light mx-1 rounded-full" />
+                        <span className="text-[10px] text-text-tertiary font-mono bg-background-sunken px-1.5 py-0.5 rounded" title={version}>
                             {formatVersion(version)}
                         </span>
                     </>

@@ -141,7 +141,7 @@ export default function CommandPalette({ isOpen, onClose, connectionId }: Comman
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl bg-bg-1 rounded-md shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100 ring-1 ring-white/5">
+      <div className="relative w-full max-w-xl bg-bg-1 rounded-md shadow-2xl border border-border-subtle flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border-light/10">
         <div className="flex items-center px-4 py-3 border-b border-border-light gap-3">
           <Search size={18} className="text-text-secondary" />
           <input

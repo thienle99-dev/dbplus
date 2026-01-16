@@ -367,7 +367,7 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
 
   return (
     <div className="flex flex-col pb-[20px] h-full bg-transparent overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/5 bg-bg-1/40 backdrop-blur-xl p-4 rounded-t-2xl shadow-sm z-10">
+      <div className="flex items-center justify-between border-b border-border-subtle bg-bg-1/40 backdrop-blur-xl p-4 rounded-t-2xl shadow-sm z-10">
         <div className="premium-tabs-container">
           <button
             onClick={() => setActiveTab('data')}

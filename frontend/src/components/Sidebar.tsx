@@ -338,7 +338,7 @@ export default function Sidebar() {
                         queryClient.invalidateQueries({ queryKey: ['columns', connectionId] }),
                       ]);
                     }}
-                    className="p-1.5 hover:bg-white/5 rounded-lg text-text-secondary hover:text-text-primary transition-colors"
+                    className="p-1.5 hover:bg-background-hover rounded-lg text-text-secondary hover:text-text-primary transition-colors"
                     title="Refresh Schema"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -351,8 +351,8 @@ export default function Sidebar() {
                       setShowPinnedOnly(newValue);
                       localStorage.setItem('show-pinned-only', JSON.stringify(newValue));
                     }}
-                    className={`p-1.5 hover:bg-white/5 rounded-lg transition-colors ${showPinnedOnly
-                      ? 'text-accent bg-white/10'
+                    className={`p-1.5 hover:bg-background-hover rounded-lg transition-colors ${showPinnedOnly
+                      ? 'text-accent bg-accent/10'
                       : 'text-text-secondary hover:text-text-primary'
                       }`}
                     title={showPinnedOnly ? "Show All Tables" : "Show Pinned Tables Only"}

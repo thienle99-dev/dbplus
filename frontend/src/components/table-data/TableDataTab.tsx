@@ -173,7 +173,7 @@ export default function TableDataTab({
               e.stopPropagation();
               onDelete?.(info.row.index);
             }}
-            className="p-1 hover:bg-error-50 rounded text-text-secondary hover:text-error transition-colors"
+            className="p-1 hover:bg-error-bg rounded text-text-secondary hover:text-error transition-colors"
             title="Delete Row"
           >
             <Trash2 size={12} />
@@ -298,7 +298,7 @@ export default function TableDataTab({
   return (
     <>
       {/* Generic Toolbar for SQL and NoSQL */}
-      <div className="px-3 py-2 border-b border-white/5 flex flex-wrap items-center gap-4 bg-bg-1/20 backdrop-blur-md shadow-sm z-10 relative">
+      <div className="px-3 py-2 border-b border-border-subtle flex flex-wrap items-center gap-4 bg-background-panel/40 backdrop-blur-md shadow-sm z-10 relative">
         {isCouchbase && (
           <>
             {/* Bucket Selector */}
@@ -390,7 +390,7 @@ export default function TableDataTab({
         </div>
       </div>
 
-      <div className="px-3 py-1.5 bg-black/20 border-b border-white/5 flex items-center justify-between text-[10px] text-text-tertiary">
+      <div className="px-3 py-1.5 bg-background-sunken border-b border-border-subtle flex items-center justify-between text-[10px] text-text-tertiary">
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded-md bg-bg-1/50 border border-border-light/20 shadow-inner">
           <span className="text-accent font-bold">
             {filteredRows.length}{localSearch ? ` / ${data.rows.length}` : ''} records
@@ -439,7 +439,7 @@ export default function TableDataTab({
         </div>
       </div>
 
-      <div className="px-3 py-2 border-b border-white/5 flex justify-between items-center bg-bg-1/20 backdrop-blur-lg">
+      <div className="px-3 py-2 border-b border-border-subtle flex justify-between items-center bg-background-panel/40 backdrop-blur-lg">
         <div className="flex items-center gap-3">
           <h2 className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest px-1 py-0.5 rounded bg-bg-2 border border-border-light/50">
             {!isCouchbase && `${schema}.${table}`}
@@ -683,7 +683,7 @@ export default function TableDataTab({
                     group transition-colors duration-150 ease-out cursor-pointer
                     ${isSelected
                       ? 'bg-primary-transparent'
-                      : isModified ? 'bg-warning-50' : `hover:bg-bg-2/50 ${row.index % 2 === 1 ? 'bg-bg-subtle' : ''}`
+                      : isModified ? 'bg-warning-bg' : `hover:bg-bg-2/50 ${row.index % 2 === 1 ? 'bg-bg-subtle' : ''}`
                     }
                   `}
                   onClick={() => {
