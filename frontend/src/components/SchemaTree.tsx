@@ -535,6 +535,9 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
     [connections, connectionId],
   );
 
+  const isCouchbase = connectionType?.toLowerCase().startsWith('couchbase');
+
+
   const schemas = useMemo(() => {
     return rawSchemas;
   }, [rawSchemas, connectionType]);
@@ -570,10 +573,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
         setVisibleSchemas(new Set(schemas));
       }
     } else if (schemas.length > 0) {
-      // Default to showing all schemas if none stored
-      setVisibleSchemas(new Set(schemas));
+      // Default to showing schemas, but hide _default for Couchbase by default
+      const initialSet = new Set(
+        isCouchbase
+          ? schemas.filter(s => !s.endsWith('._default') && s !== '_default')
+          : schemas
+      );
+      setVisibleSchemas(initialSet);
     }
-  }, [connectionId, dbKey, schemas.length === 0]); // Re-run if schemas arrive or context changes
+  }, [connectionId, dbKey, schemas.length === 0, isCouchbase]); // Re-run if schemas arrive or context changes
 
   // Update visible schemas when schemas change if we haven't initialized yet or if we want to ensure new schemas are visible
   useEffect(() => {
@@ -581,10 +589,15 @@ export default function SchemaTree({ searchTerm, showPinnedOnly }: { searchTerm?
       const storageKey = `visible-schemas:${connectionId}:${dbKey}`;
       const stored = localStorage.getItem(storageKey);
       if (!stored) {
-        setVisibleSchemas(new Set(schemas));
+        const initialSet = new Set(
+          isCouchbase
+            ? schemas.filter(s => !s.endsWith('._default') && s !== '_default')
+            : schemas
+        );
+        setVisibleSchemas(initialSet);
       }
     }
-  }, [schemas, connectionId, dbKey, visibleSchemas]);
+  }, [schemas, connectionId, dbKey, visibleSchemas, isCouchbase]);
 
   // Save to localStorage when visibleSchemas changes
   useEffect(() => {

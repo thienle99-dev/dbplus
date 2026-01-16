@@ -50,6 +50,16 @@ impl CouchbaseDriver {
             },
         })
     }
+
+    pub fn resolve_scope<'a>(&'a self, schema: &'a str) -> (&'a str, &'a str) {
+        if let Some(bucket) = &self.bucket_name {
+            (bucket, schema)
+        } else if let Some((b, s)) = schema.split_once('.') {
+            (b, s)
+        } else {
+            (schema, "_default")
+        }
+    }
 }
 
 #[async_trait]

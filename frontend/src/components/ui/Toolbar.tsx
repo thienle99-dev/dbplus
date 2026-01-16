@@ -9,11 +9,12 @@ export default function Toolbar({ children, className = '' }: ToolbarProps) {
     return (
         <div
             className={`
-        h-[var(--toolbar-height)]
+        h-11
         px-4
         flex items-center gap-3
-        bg-[var(--color-panel)]
-        border-b border-[var(--color-divider)]
+        bg-background-panel
+        border-b border-border-subtle
+        backdrop-blur-md
         ${className}
       `}
         >
@@ -33,7 +34,7 @@ export function ToolbarSection({ children, className = '' }: { children: React.R
 
 export function ToolbarDivider() {
     return (
-        <div className="h-6 w-px bg-[var(--color-divider)]" />
+        <div className="h-6 w-px bg-border-subtle" />
     );
 }
 

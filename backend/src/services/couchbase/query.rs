@@ -47,7 +47,7 @@ impl QueryDriver for CouchbaseDriver {
             .cluster
             .query(query, None)
             .await
-            .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
+            .map_err(|e| super::normalize_error(e, "Query failed"))?;
 
         // Couchbase SDK might return metrics in metadata
         // For now return 0 or implement metrics parsing if available in the crate
@@ -91,7 +91,7 @@ impl QueryDriver for CouchbaseDriver {
             .cluster
             .query(last_stmt, None)
             .await
-            .map_err(|e| anyhow::anyhow!("Query failed: {}", e))?;
+            .map_err(|e| super::normalize_error(e, "Query failed"))?;
 
         let rows: Vec<Value> = result
             .rows::<Value>()

@@ -50,17 +50,22 @@ export default function ConnectionCard({
             className="
         group
         w-full
-        p-4
-        bg-white
-        border border-[var(--color-border)]
-        rounded-[var(--radius-md)]
-        hover:border-[var(--primary)]
-        hover:shadow-md
+        p-5
+        bg-[var(--color-bg-panel)]
+        border border-[var(--color-border-default)]
+        rounded-[var(--radius-xl)]
+        hover:border-[var(--color-primary-default)]
+        hover:shadow-lg hover:shadow-black/5
+        hover:-translate-y-1
         transition-all
-        duration-200
+        duration-300
         text-left
+        relative
+        overflow-hidden
       "
         >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
             <div className="flex items-start gap-3">
                 {/* Icon */}
                 <div

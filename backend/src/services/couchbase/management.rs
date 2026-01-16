@@ -13,9 +13,9 @@ impl DatabaseManagementDriver for CouchbaseDriver {
             .ram_quota_mb(100)
             .bucket_type(BucketType::COUCHBASE);
 
-        mgr.create_bucket(settings, None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to create bucket '{}': {}", name, e))?;
+        mgr.create_bucket(settings, None).await.map_err(|e| {
+            super::normalize_error(e, &format!("Failed to create bucket '{}'", name))
+        })?;
         Ok(())
     }
 
@@ -23,33 +23,39 @@ impl DatabaseManagementDriver for CouchbaseDriver {
         let mgr = self.cluster.buckets();
         mgr.drop_bucket(name, None)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to drop bucket '{}': {}", name, e))?;
+            .map_err(|e| super::normalize_error(e, &format!("Failed to drop bucket '{}'", name)))?;
         Ok(())
     }
 
     async fn create_schema(&self, name: &str) -> Result<()> {
-        let bucket_name = self
-            .bucket_name
-            .as_deref()
-            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
+        let (bucket_name, scope_name) = self.resolve_scope(name);
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        mgr.create_scope(name, None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to create scope '{}': {}", name, e))?;
+        mgr.create_scope(scope_name, None).await.map_err(|e| {
+            super::normalize_error(
+                e,
+                &format!(
+                    "Failed to create scope '{}' in bucket '{}'",
+                    scope_name, bucket_name
+                ),
+            )
+        })?;
         Ok(())
     }
 
     async fn drop_schema(&self, name: &str) -> Result<()> {
-        let bucket_name = self
-            .bucket_name
-            .as_deref()
-            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
+        let (bucket_name, scope_name) = self.resolve_scope(name);
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        mgr.drop_scope(name, None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to drop scope '{}': {}", name, e))?;
+        mgr.drop_scope(scope_name, None).await.map_err(|e| {
+            super::normalize_error(
+                e,
+                &format!(
+                    "Failed to drop scope '{}' in bucket '{}'",
+                    scope_name, bucket_name
+                ),
+            )
+        })?;
         Ok(())
     }
 

@@ -8,34 +8,45 @@ use async_trait::async_trait;
 use couchbase::options::kv_options::{MutateInOptions, RemoveOptions};
 use couchbase::subdoc::mutate_in_specs::MutateInSpec;
 use serde_json::Value;
+use tokio::time::{timeout, Duration};
 
 #[async_trait]
 impl TableOperations for CouchbaseDriver {
     async fn create_table(&self, schema: &str, table: &str) -> Result<()> {
-        let bucket_name = self
-            .bucket_name
-            .as_deref()
-            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
-
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        mgr.create_collection(schema, table, None, None)
+
+        // Check if collection already exists to avoid error
+        let scopes = timeout(Duration::from_secs(5), mgr.get_all_scopes(None))
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to create collection: {}", e))?;
+            .map_err(|_| anyhow::anyhow!("Timeout checking collection existence"))??;
+
+        if let Some(scope) = scopes.iter().find(|s| s.name() == scope_name) {
+            if scope.collections().iter().any(|c| c.name() == table) {
+                tracing::info!(
+                    "Couchbase: Collection '{}.{}.{}' already exists, skipping creation.",
+                    bucket_name,
+                    scope_name,
+                    table
+                );
+                return Ok(());
+            }
+        }
+
+        mgr.create_collection(scope_name, table, None, None)
+            .await
+            .map_err(|e| super::normalize_error(e, "Failed to create collection"))?;
         Ok(())
     }
 
     async fn drop_table(&self, schema: &str, table: &str) -> Result<()> {
-        let bucket_name = self
-            .bucket_name
-            .as_deref()
-            .ok_or_else(|| anyhow::anyhow!("No bucket selected. Please select a bucket first."))?;
-
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         let bucket = self.cluster.bucket(bucket_name);
         let mgr = bucket.collections();
-        mgr.drop_collection(schema, table, None)
+        mgr.drop_collection(scope_name, table, None)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to drop collection: {}", e))?;
+            .map_err(|e| super::normalize_error(e, "Failed to drop collection"))?;
         Ok(())
     }
 
@@ -49,7 +60,7 @@ impl TableOperations for CouchbaseDriver {
         document_id: Option<String>,
         fields: Option<Vec<String>>,
     ) -> Result<QueryResult> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
 
         let select_clause = if let Some(f) = &fields {
             if f.is_empty() {
@@ -73,14 +84,14 @@ impl TableOperations for CouchbaseDriver {
             if id.trim().is_empty() {
                 format!(
                     "SELECT {} FROM `{}`.`{}`.`{}` t",
-                    select_clause, bucket, schema, table
+                    select_clause, bucket_name, scope_name, table
                 )
             } else {
                 format!(
                     "SELECT {} FROM `{}`.`{}`.`{}` t USE KEYS '{}'",
                     select_clause,
-                    bucket,
-                    schema,
+                    bucket_name,
+                    scope_name,
                     table,
                     id.replace("'", "''")
                 )
@@ -88,7 +99,7 @@ impl TableOperations for CouchbaseDriver {
         } else {
             format!(
                 "SELECT {} FROM `{}`.`{}`.`{}` t",
-                select_clause, bucket, schema, table
+                select_clause, bucket_name, scope_name, table
             )
         };
 
@@ -113,10 +124,10 @@ impl TableOperations for CouchbaseDriver {
     }
 
     async fn get_table_statistics(&self, schema: &str, table: &str) -> Result<TableStatistics> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         let query = format!(
             "SELECT count(*) as count FROM `{}`.`{}`.`{}`",
-            bucket, schema, table
+            bucket_name, scope_name, table
         );
 
         let result = crate::services::driver::QueryDriver::execute_query(self, &query).await?;
@@ -139,13 +150,13 @@ impl TableOperations for CouchbaseDriver {
     }
 
     async fn get_table_indexes(&self, schema: &str, table: &str) -> Result<Vec<IndexInfo>> {
-        let bucket = self.bucket_name.as_deref().unwrap_or("default");
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         // Query system:indexes
         // Filter by bucket, scope (schema), collection (table)
         // Need to pass raw N1QL query to extract index info
         let query = format!(
             "SELECT name, is_primary, index_key FROM system:indexes WHERE bucket_id = '{}' AND scope_id = '{}' AND keyspace_id = '{}'",
-            bucket, schema, table
+            bucket_name, scope_name, table
         );
 
         // Execute query via driver
@@ -289,7 +300,7 @@ impl TableOperations for CouchbaseDriver {
         updates: &std::collections::HashMap<String, Value>,
         row_metadata: Option<&std::collections::HashMap<String, Value>>,
     ) -> Result<u64> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         let id = primary_key
             .get("_id")
             .or_else(|| primary_key.get("id"))
@@ -297,7 +308,7 @@ impl TableOperations for CouchbaseDriver {
             .ok_or_else(|| anyhow::anyhow!("Missing _id in primary_key"))?;
 
         let bucket = self.cluster.bucket(bucket_name);
-        let scope = bucket.scope(schema);
+        let scope = bucket.scope(scope_name);
         let collection = scope.collection(table);
 
         let cas: Option<u64> = if let Some(meta) = row_metadata {
@@ -341,7 +352,7 @@ impl TableOperations for CouchbaseDriver {
         primary_key: &std::collections::HashMap<String, Value>,
         row_metadata: Option<&std::collections::HashMap<String, Value>>,
     ) -> Result<u64> {
-        let bucket_name = self.bucket_name.as_deref().unwrap_or("default");
+        let (bucket_name, scope_name) = self.resolve_scope(schema);
         let id = primary_key
             .get("_id")
             .or_else(|| primary_key.get("id"))
@@ -349,7 +360,7 @@ impl TableOperations for CouchbaseDriver {
             .ok_or_else(|| anyhow::anyhow!("Missing _id in primary_key"))?;
 
         let bucket = self.cluster.bucket(bucket_name);
-        let scope = bucket.scope(schema);
+        let scope = bucket.scope(scope_name);
         let collection = scope.collection(table);
 
         let cas: Option<u64> = if let Some(meta) = row_metadata {

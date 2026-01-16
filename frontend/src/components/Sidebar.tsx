@@ -288,7 +288,11 @@ export default function Sidebar() {
               className={`premium-tab ${activeTab === 'items' ? 'active' : ''}`}
               title="Explorer"
             >
-              <Database size={13} strokeWidth={activeTab === 'items' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
+              <Database
+                size={14}
+                strokeWidth={activeTab === 'items' ? 2.5 : 2}
+                className={`flex-shrink-0 ${sidebarWidth > 280 ? "mr-1.5" : ""}`}
+              />
               {sidebarWidth > 280 && <span>Explorer</span>}
             </button>
             <button
@@ -296,7 +300,11 @@ export default function Sidebar() {
               className={`premium-tab ${activeTab === 'queries' ? 'active' : ''}`}
               title="Saved Queries"
             >
-              <FileText size={13} strokeWidth={activeTab === 'queries' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
+              <FileText
+                size={14}
+                strokeWidth={activeTab === 'queries' ? 2.5 : 2}
+                className={`flex-shrink-0 ${sidebarWidth > 280 ? "mr-1.5" : ""}`}
+              />
               {sidebarWidth > 280 && <span>Saved</span>}
             </button>
             <button
@@ -304,7 +312,11 @@ export default function Sidebar() {
               className={`premium-tab ${activeTab === 'history' ? 'active' : ''}`}
               title="History"
             >
-              <Clock size={13} strokeWidth={activeTab === 'history' ? 3 : 2} className={sidebarWidth > 280 ? "mr-1" : ""} />
+              <Clock
+                size={14}
+                strokeWidth={activeTab === 'history' ? 2.5 : 2}
+                className={`flex-shrink-0 ${sidebarWidth > 280 ? "mr-1.5" : ""}`}
+              />
               {sidebarWidth > 280 && <span>History</span>}
             </button>
           </div>

@@ -162,6 +162,16 @@ pub async fn execute_query(
                     }));
                     break;
                 }
+
+                // Check for Couchbase errors which often contain "index failure" or a JSON blob
+                let msg = cause.to_string();
+                if msg.contains("index failure:") || msg.contains("{\"extended_context\"") {
+                    db_payload = Some(json!({
+                        "engine": "couchbase",
+                        "message": msg,
+                    }));
+                    break;
+                }
             }
 
             let status = if db_payload.is_some() {

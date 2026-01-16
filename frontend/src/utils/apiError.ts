@@ -30,9 +30,25 @@ export function extractApiErrorDetails(err: any): ApiErrorDetails {
 
   // Clean up Couchbase JSON error dumps from the message
   if (message.includes('{"extended_context"')) {
-    const parts = message.split(': {');
-    if (parts.length > 0) {
-      message = parts[0];
+    try {
+      const startIndex = message.indexOf('{');
+      if (startIndex !== -1) {
+        const jsonStr = message.substring(startIndex);
+        const errorObj = JSON.parse(jsonStr);
+
+        // Couchbase error structure often has extended_context.message
+        if (errorObj.extended_context?.message) {
+          message = errorObj.extended_context.message;
+        } else if (errorObj.message) {
+          message = errorObj.message;
+        }
+      }
+    } catch (e) {
+      // Fallback: just strip the JSON blob if parsing fails
+      const parts = message.split(': {');
+      if (parts.length > 0) {
+        message = parts[0].trim();
+      }
     }
   }
 

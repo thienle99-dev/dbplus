@@ -24,21 +24,21 @@ export default function DesignSystemShowcase() {
     const [selectValue, setSelectValue] = useState('postgres');
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg)] p-8">
+        <div className="min-h-screen bg-background p-8">
             <div className="max-w-6xl mx-auto space-y-12">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-semibold text-[var(--color-text)] mb-2">
+                    <h1 className="text-3xl font-semibold text-text-primary mb-2">
                         TablePlus Design System
                     </h1>
-                    <p className="text-[var(--color-text-muted)]">
+                    <p className="text-text-muted">
                         Clean, minimal, macOS-native components for Database Client
                     </p>
                 </div>
 
                 {/* Buttons */}
                 <section>
-                    <h2 className="text-xl font-semibold text-[var(--color-text)] mb-4">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4">
                         Buttons
                     </h2>
                     <div className="space-y-4">
@@ -229,7 +229,7 @@ export default function DesignSystemShowcase() {
 
                 {/* Modal */}
                 <section>
-                    <h2 className="text-xl font-semibold text-[var(--color-text)] mb-4">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4">
                         Modal
                     </h2>
                     <Button variant="primary" onClick={() => setModalOpen(true)}>
@@ -288,7 +288,7 @@ export default function DesignSystemShowcase() {
 
                 {/* Color Palette */}
                 <section>
-                    <h2 className="text-xl font-semibold text-[var(--color-text)] mb-4">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4">
                         Color Palette
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -297,8 +297,8 @@ export default function DesignSystemShowcase() {
                                 className="h-20 rounded-md mb-2"
                                 style={{ backgroundColor: 'var(--accent-blue)' }}
                             />
-                            <p className="text-sm text-[var(--color-text)]">Blue</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">#039BE5</p>
+                            <p className="text-sm text-text-primary">Blue</p>
+                            <p className="text-xs text-text-muted">#039BE5</p>
                         </div>
 
                         <div>
@@ -306,8 +306,8 @@ export default function DesignSystemShowcase() {
                                 className="h-20 rounded-md mb-2"
                                 style={{ backgroundColor: 'var(--accent-green)' }}
                             />
-                            <p className="text-sm text-[var(--color-text)]">Green</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">#43A047</p>
+                            <p className="text-sm text-text-primary">Green</p>
+                            <p className="text-xs text-text-muted">#43A047</p>
                         </div>
 
                         <div>
@@ -315,8 +315,8 @@ export default function DesignSystemShowcase() {
                                 className="h-20 rounded-md mb-2"
                                 style={{ backgroundColor: 'var(--accent-orange)' }}
                             />
-                            <p className="text-sm text-[var(--color-text)]">Orange</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">#F57C00</p>
+                            <p className="text-sm text-text-primary">Orange</p>
+                            <p className="text-xs text-text-muted">#F57C00</p>
                         </div>
 
                         <div>
@@ -324,8 +324,8 @@ export default function DesignSystemShowcase() {
                                 className="h-20 rounded-md mb-2"
                                 style={{ backgroundColor: 'var(--accent-yellow)' }}
                             />
-                            <p className="text-sm text-[var(--color-text)]">Yellow</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">#FFB300</p>
+                            <p className="text-sm text-text-primary">Yellow</p>
+                            <p className="text-xs text-text-muted">#FFB300</p>
                         </div>
 
                         <div>
@@ -333,8 +333,8 @@ export default function DesignSystemShowcase() {
                                 className="h-20 rounded-md mb-2"
                                 style={{ backgroundColor: 'var(--accent-red)' }}
                             />
-                            <p className="text-sm text-[var(--color-text)]">Red</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">#E53935</p>
+                            <p className="text-sm text-text-primary">Red</p>
+                            <p className="text-xs text-text-muted">#E53935</p>
                         </div>
                     </div>
                 </section>

@@ -373,21 +373,33 @@ export default function TableDataView({ schema: schemaProp, table: tableProp, ta
             onClick={() => setActiveTab('data')}
             className={`premium-tab ${activeTab === 'data' ? 'active' : ''}`}
           >
-            <Table size={13} strokeWidth={activeTab === 'data' ? 3 : 2} className={activeTab === 'data' ? "text-accent" : ""} />
+            <Table
+              size={14}
+              strokeWidth={activeTab === 'data' ? 2.5 : 2}
+              className="flex-shrink-0"
+            />
             Data
           </button>
           <button
             onClick={() => setActiveTab('structure')}
             className={`premium-tab ${activeTab === 'structure' ? 'active' : ''}`}
           >
-            <Database size={13} strokeWidth={activeTab === 'structure' ? 3 : 2} className={activeTab === 'structure' ? "text-accent" : ""} />
+            <Database
+              size={14}
+              strokeWidth={activeTab === 'structure' ? 2.5 : 2}
+              className="flex-shrink-0"
+            />
             Structure
           </button>
           <button
             onClick={() => setActiveTab('info')}
             className={`premium-tab ${activeTab === 'info' ? 'active' : ''}`}
           >
-            <Info size={13} strokeWidth={activeTab === 'info' ? 3 : 2} className={activeTab === 'info' ? "text-accent" : ""} />
+            <Info
+              size={14}
+              strokeWidth={activeTab === 'info' ? 2.5 : 2}
+              className="flex-shrink-0"
+            />
             Info
           </button>
         </div>
